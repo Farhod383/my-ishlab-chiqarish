@@ -1,0 +1,104 @@
+export const uz = {
+  // Navigation
+  nav: {
+    dashboard: "Boshqaruv paneli",
+    orders: "Zakazlar",
+    production: "Ishlab chiqarish",
+    warehouse: "Sklad",
+    workers: "Ishchilar statistikasi",
+  },
+  // Dashboard
+  dashboard: {
+    title: "Boshqaruv paneli",
+    totalOrders: "Jami zakazlar",
+    activeOrders: "Faol zakazlar",
+    completedOrders: "Tugallangan",
+    overdueOrders: "Kechikkan",
+    warehouseAlerts: "Sklad ogohlantirishlari",
+    recentOrders: "So'nggi zakazlar",
+    productionStatus: "Ishlab chiqarish holati",
+  },
+  // Orders
+  orders: {
+    title: "Zakazlar ro'yxati",
+    newOrder: "Yangi zakaz",
+    orderNumber: "Zakaz raqami",
+    client: "Mijoz",
+    product: "Mahsulot",
+    quantity: "Miqdor",
+    status: "Holat",
+    deadline: "Muddat",
+    priority: "Muhimlik",
+    responsible: "Javobgar",
+    created: "Yaratilgan",
+    actions: "Amallar",
+    detail: "Batafsil",
+    timeline: "Vaqt chizig'i",
+    stages: "Bosqichlar",
+    log: "Jurnal",
+    exception: "Istisno",
+    normal: "Oddiy",
+  },
+  // Statuses
+  status: {
+    pending: "Kutilmoqda",
+    inProgress: "Jarayonda",
+    completed: "Tugallangan",
+    delayed: "Kechikkan",
+    onTime: "Muddatida",
+    overdue: "Muddati o'tgan",
+  },
+  // Production
+  production: {
+    title: "Ishlab chiqarish taxtasi",
+    stage: "Bosqich",
+    normTime: "Norma vaqt",
+    actualTime: "Haqiqiy vaqt",
+    worker: "Ishchi",
+    startTime: "Boshlanish",
+    endTime: "Tugash",
+    comment: "Izoh",
+    changeWorker: "Ishchi almashtirildi",
+  },
+  // Warehouse
+  warehouse: {
+    title: "Sklad",
+    part: "Detal",
+    normUsage: "Norma sarfi",
+    actualUsage: "Haqiqiy sarfi",
+    difference: "Farq",
+    alert: "Ogohlantirish",
+    overNorm: "Normadan oshdi!",
+    takenBy: "Olgan ishchi",
+    takenAmount: "Olingan miqdor",
+    stock: "Zaxira",
+    unit: "Birlik",
+  },
+  // Workers
+  workers: {
+    title: "Ishchilar statistikasi",
+    name: "Ism",
+    completedStages: "Tugallangan bosqichlar",
+    avgTime: "O'rtacha vaqt",
+    partsUsed: "Ishlatilgan detallar",
+    efficiency: "Samaradorlik",
+    hours: "soat",
+  },
+  // Common
+  common: {
+    search: "Qidirish...",
+    filter: "Filtr",
+    all: "Barchasi",
+    save: "Saqlash",
+    cancel: "Bekor qilish",
+    delete: "O'chirish",
+    edit: "Tahrirlash",
+    view: "Ko'rish",
+    back: "Orqaga",
+    pieces: "dona",
+    hours: "soat",
+    minutes: "daqiqa",
+  },
+};
+
+export type Translations = typeof uz;
