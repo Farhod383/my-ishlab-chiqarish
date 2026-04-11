@@ -78,11 +78,17 @@ export const uz = {
   workers: {
     title: "Ishchilar statistikasi",
     name: "Ism",
-    completedStages: "Tugallangan bosqichlar",
-    avgTime: "O'rtacha vaqt",
-    partsUsed: "Ishlatilgan detallar",
-    efficiency: "Samaradorlik",
-    hours: "soat",
+    role: "Lavozim",
+    totalAssigned: "Jami biriktirilgan",
+    completed: "Tugallangan",
+    onTime: "Kechikmagan",
+    delayed: "Kechikkan",
+    active: "Faol zakazlar",
+    status: "Holat",
+    recentOrders: "Oxirgi zakazlar",
+    noDelay: "Kechikmagan",
+    atRisk: "Risk",
+    hasDelay: "Kechikkan",
   },
   // Common
   common: {
