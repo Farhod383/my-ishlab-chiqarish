@@ -1,106 +1,137 @@
-import { useI18n } from "@/i18n/context";
-import { demoOrders } from "@/data/demo";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ClipboardList, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatusBadge, PriorityBadge, HealthDot } from "@/components/StatusBadge";
+import { orderHealth, type OrderRow } from "@/types/erp";
+import { ClipboardList, Activity, AlertTriangle, CheckCircle2, AlertOctagon, Package, History, Clock } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const statusLabels: Record<string, string> = {
-  pending: "Kutilmoqda",
-  in_progress: "Jarayonda",
-  completed: "Tugallangan",
-  delayed: "Kechikkan",
-};
+interface DashStats {
+  total: number; active: number; delayed: number; today: number; exception: number;
+}
 
 export default function Dashboard() {
-  const { t } = useI18n();
-  const total = demoOrders.length;
-  const active = demoOrders.filter((o) => o.status === "in_progress").length;
-  const completed = demoOrders.filter((o) => o.status === "completed").length;
-  const delayed = demoOrders.filter((o) => o.status === "delayed").length;
-  const alerts = demoOrders.flatMap((o) => o.parts.filter((p) => p.actualQuantity > p.normQuantity));
+  const [stats, setStats] = useState<DashStats>({ total: 0, active: 0, delayed: 0, today: 0, exception: 0 });
+  const [recent, setRecent] = useState<OrderRow[]>([]);
+  const [lowStock, setLowStock] = useState<any[]>([]);
+  const [recentLog, setRecentLog] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const stats = [
-    { label: t.dashboard.totalOrders, value: total, icon: ClipboardList, color: "text-primary" },
-    { label: t.dashboard.activeOrders, value: active, icon: Clock, color: "text-status-blue" },
-    { label: t.dashboard.completedOrders, value: completed, icon: CheckCircle2, color: "text-status-green" },
-    { label: t.dashboard.overdueOrders, value: delayed, icon: AlertTriangle, color: "text-status-red" },
+  useEffect(() => {
+    (async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const [{ data: orders }, { data: products }, { data: log }] = await Promise.all([
+        supabase.from("orders").select("*").order("queue_position"),
+        supabase.from("products").select("*"),
+        supabase.from("audit_log").select("*").order("created_at", { ascending: false }).limit(8),
+      ]);
+      const all = orders ?? [];
+      setStats({
+        total: all.length,
+        active: all.filter((o) => o.status === "in_progress" || o.status === "pending").length,
+        delayed: all.filter((o) => o.status === "delayed" || (o.status !== "completed" && o.deadline < today)).length,
+        today: all.filter((o) => o.deadline === today && o.status !== "completed").length,
+        exception: all.filter((o) => o.priority === "exception" && o.status !== "completed").length,
+      });
+      setRecent(all.slice(0, 6));
+      setLowStock((products ?? []).filter((p) => Number(p.stock_qty) <= Number(p.min_limit)));
+      setRecentLog(log ?? []);
+      setLoading(false);
+    })();
+  }, []);
+
+  const cards = [
+    { label: "Jami zakazlar", value: stats.total, icon: ClipboardList, accent: "text-primary bg-primary/10" },
+    { label: "Aktiv zakazlar", value: stats.active, icon: Activity, accent: "text-status-blue bg-status-blue/10" },
+    { label: "Kechikayotgan", value: stats.delayed, icon: AlertTriangle, accent: "text-status-red bg-status-red/10" },
+    { label: "Bugun tugashi kerak", value: stats.today, icon: Clock, accent: "text-status-yellow bg-status-yellow/15" },
+    { label: "Istisno zakazlar", value: stats.exception, icon: AlertOctagon, accent: "text-status-red bg-status-red/10" },
   ];
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">{t.dashboard.title}</h1>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Boshqaruv paneli</h1>
+        <p className="text-sm text-muted-foreground">Ishlab chiqarish jarayoni umumiy ko'rinishi</p>
+      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((s) => (
-          <Card key={s.label}>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        {cards.map((c) => (
+          <Card key={c.label}>
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">{s.label}</p>
-                  <p className="text-3xl font-bold mt-1">{s.value}</p>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wide">{c.label}</div>
+                  <div className="text-2xl font-bold mt-1">{loading ? <Skeleton className="h-7 w-10" /> : c.value}</div>
                 </div>
-                <s.icon className={`h-10 w-10 ${s.color} opacity-80`} />
+                <div className={`p-2 rounded-md ${c.accent}`}><c.icon className="h-4 w-4" /></div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {alerts.length > 0 && (
-        <Card className="border-status-red/30">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2 text-status-red">
-              <AlertTriangle className="h-4 w-4" /> {t.dashboard.warehouseAlerts} ({alerts.length})
-            </CardTitle>
+      <div className="grid lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2"><ClipboardList className="h-4 w-4" /> Oxirgi zakazlar</CardTitle>
           </CardHeader>
-          <CardContent>
-            <ul className="text-sm space-y-1">
-              {alerts.map((p, i) => (
-                <li key={i}>
-                  <span className="font-medium">{p.partName}</span>: {p.actualQuantity}/{p.normQuantity} {p.unit} — {t.warehouse.overNorm}
-                </li>
+          <CardContent className="space-y-2">
+            {loading ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />) :
+              recent.map((o) => (
+                <Link to={`/orders/${o.id}`} key={o.id} className="flex items-center justify-between p-3 rounded-md border hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <HealthDot color={orderHealth(o)} />
+                    <div className="min-w-0">
+                      <div className="font-medium text-sm truncate">{o.order_number} · {o.product_name}</div>
+                      <div className="text-xs text-muted-foreground truncate">Muddat: {o.deadline}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <PriorityBadge priority={o.priority} />
+                    <StatusBadge status={o.status as any} />
+                  </div>
+                </Link>
               ))}
-            </ul>
+            {!loading && recent.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Hozircha zakaz yo'q</p>}
           </CardContent>
         </Card>
-      )}
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">{t.dashboard.recentOrders}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-muted-foreground">
-                  <th className="text-left py-2 pr-4">{t.orders.orderNumber}</th>
-                  <th className="text-left py-2 pr-4">{t.orders.client}</th>
-                  <th className="text-left py-2 pr-4">{t.orders.product}</th>
-                  <th className="text-left py-2 pr-4">{t.orders.priority}</th>
-                  <th className="text-left py-2 pr-4">{t.orders.status}</th>
-                  <th className="text-left py-2">{t.orders.deadline}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {demoOrders.map((o) => (
-                  <tr key={o.id} className="border-b last:border-0 hover:bg-muted/50">
-                    <td className="py-2.5 pr-4">
-                      <Link to={`/orders/${o.id}`} className="text-primary hover:underline font-medium">{o.orderNumber}</Link>
-                    </td>
-                    <td className="py-2.5 pr-4">{o.client}</td>
-                    <td className="py-2.5 pr-4">{o.product}</td>
-                    <td className="py-2.5 pr-4"><PriorityBadge priority={o.priority} /></td>
-                    <td className="py-2.5 pr-4"><StatusBadge status={o.status} label={statusLabels[o.status]} /></td>
-                    <td className="py-2.5">{o.deadline}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2"><Package className="h-4 w-4 text-status-red" /> Skladda kam qolganlar</CardTitle>
+              <CardDescription className="text-xs">Min. limitdan past mahsulotlar</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {lowStock.length === 0 && <p className="text-sm text-muted-foreground">Hammasi yetarli ✓</p>}
+              {lowStock.map((p) => (
+                <div key={p.id} className="flex items-center justify-between text-sm p-2 rounded border border-status-red/30 bg-status-red/5">
+                  <span className="truncate pr-2">{p.name}</span>
+                  <span className="font-mono text-status-red shrink-0">{p.stock_qty} / {p.min_limit} {p.unit}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2"><History className="h-4 w-4" /> Oxirgi harakatlar</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {recentLog.map((l) => (
+                <div key={l.id} className="text-xs border-l-2 border-primary/30 pl-2 py-1">
+                  <div className="font-medium">{l.action}</div>
+                  <div className="text-muted-foreground truncate">{l.details}</div>
+                  <div className="text-[10px] text-muted-foreground">{new Date(l.created_at).toLocaleString("uz-UZ")}</div>
+                </div>
+              ))}
+              {recentLog.length === 0 && <p className="text-sm text-muted-foreground">Yozuvlar yo'q</p>}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

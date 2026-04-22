@@ -1,70 +1,107 @@
-import { useI18n } from "@/i18n/context";
-import { demoOrders } from "@/data/demo";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-
-const statusLabels: Record<string, string> = {
-  pending: "Kutilmoqda",
-  in_progress: "Jarayonda",
-  completed: "Tugallangan",
-  delayed: "Kechikkan",
-};
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { StatusBadge, PriorityBadge, HealthDot } from "@/components/StatusBadge";
+import { orderHealth, type OrderRow } from "@/types/erp";
+import { useAuth } from "@/auth/AuthContext";
+import { Plus, Search } from "lucide-react";
 
 export default function Orders() {
-  const { t } = useI18n();
+  const { hasRole } = useAuth();
+  const [rows, setRows] = useState<(OrderRow & { client?: any })[]>([]);
+  const [filter, setFilter] = useState<"all" | "active" | "exception" | "delayed" | "completed">("all");
+  const [q, setQ] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  // Sort: exception first, then by created date
-  const sorted = [...demoOrders].sort((a, b) => {
-    if (a.priority === "exception" && b.priority !== "exception") return -1;
-    if (b.priority === "exception" && a.priority !== "exception") return 1;
-    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("orders")
+        .select("*, client:clients(name)")
+        .order("priority", { ascending: false })
+        .order("queue_position");
+      setRows((data as any) ?? []);
+      setLoading(false);
+    })();
+  }, []);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const filtered = rows.filter((o) => {
+    if (q && !o.order_number.toLowerCase().includes(q.toLowerCase()) && !o.product_name.toLowerCase().includes(q.toLowerCase())) return false;
+    if (filter === "active") return o.status === "in_progress" || o.status === "pending";
+    if (filter === "exception") return o.priority === "exception";
+    if (filter === "delayed") return o.status === "delayed" || (o.status !== "completed" && o.deadline < today);
+    if (filter === "completed") return o.status === "completed";
+    return true;
   });
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{t.orders.title}</h1>
-        <span className="text-sm text-muted-foreground">{demoOrders.length} {t.orders.title.toLowerCase()}</span>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Zakazlar</h1>
+          <p className="text-sm text-muted-foreground">Navbat asosida ishlaydi · Istisno yuqorida</p>
+        </div>
+        {hasRole(["marketing", "admin"]) && (
+          <Button asChild><Link to="/orders/new"><Plus className="h-4 w-4 mr-2" />Yangi zakaz</Link></Button>
+        )}
       </div>
 
       <Card>
-        <CardContent className="pt-6">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-muted-foreground">
-                  <th className="text-left py-2 pr-4">#</th>
-                  <th className="text-left py-2 pr-4">{t.orders.orderNumber}</th>
-                  <th className="text-left py-2 pr-4">{t.orders.client}</th>
-                  <th className="text-left py-2 pr-4">{t.orders.product}</th>
-                  <th className="text-left py-2 pr-4">{t.orders.quantity}</th>
-                  <th className="text-left py-2 pr-4">{t.orders.priority}</th>
-                  <th className="text-left py-2 pr-4">{t.orders.status}</th>
-                  <th className="text-left py-2 pr-4">{t.orders.deadline}</th>
-                  <th className="text-left py-2">{t.orders.actions}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map((o, i) => (
-                  <tr key={o.id} className="border-b last:border-0 hover:bg-muted/50">
-                    <td className="py-3 pr-4 text-muted-foreground">{i + 1}</td>
-                    <td className="py-3 pr-4 font-medium">{o.orderNumber}</td>
-                    <td className="py-3 pr-4">{o.client}</td>
-                    <td className="py-3 pr-4">{o.product}</td>
-                    <td className="py-3 pr-4">{o.quantity} {t.common.pieces}</td>
-                    <td className="py-3 pr-4"><PriorityBadge priority={o.priority} /></td>
-                    <td className="py-3 pr-4"><StatusBadge status={o.status} label={statusLabels[o.status]} /></td>
-                    <td className="py-3 pr-4">{o.deadline}</td>
-                    <td className="py-3">
-                      <Link to={`/orders/${o.id}`} className="text-primary hover:underline text-sm font-medium">
-                        {t.orders.detail} →
-                      </Link>
-                    </td>
-                  </tr>
+        <CardHeader>
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <Tabs value={filter} onValueChange={(v) => setFilter(v as any)}>
+              <TabsList>
+                <TabsTrigger value="all">Barchasi</TabsTrigger>
+                <TabsTrigger value="active">Aktiv</TabsTrigger>
+                <TabsTrigger value="exception">Istisno</TabsTrigger>
+                <TabsTrigger value="delayed">Kechikkan</TabsTrigger>
+                <TabsTrigger value="completed">Tugallangan</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input className="pl-8 w-64" placeholder="Qidirish..." value={q} onChange={(e) => setQ(e.target.value)} />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="border rounded-md overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-8"></TableHead>
+                  <TableHead>Raqam</TableHead>
+                  <TableHead>Klient</TableHead>
+                  <TableHead>Mahsulot</TableHead>
+                  <TableHead className="text-right">Soni</TableHead>
+                  <TableHead>Muhimlik</TableHead>
+                  <TableHead>Holat</TableHead>
+                  <TableHead>Muddat</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Yuklanmoqda...</TableCell></TableRow>}
+                {!loading && filtered.map((o) => (
+                  <TableRow key={o.id} className="cursor-pointer" onClick={() => window.location.assign(`/orders/${o.id}`)}>
+                    <TableCell><HealthDot color={orderHealth(o)} /></TableCell>
+                    <TableCell className="font-mono text-sm">{o.order_number}</TableCell>
+                    <TableCell className="text-sm">{(o as any).client?.name ?? "—"}</TableCell>
+                    <TableCell className="text-sm font-medium">{o.product_name}</TableCell>
+                    <TableCell className="text-right text-sm">{o.quantity}</TableCell>
+                    <TableCell><PriorityBadge priority={o.priority} /></TableCell>
+                    <TableCell><StatusBadge status={o.status as any} /></TableCell>
+                    <TableCell className="text-sm">{o.deadline}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+                {!loading && filtered.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Zakaz yo'q</TableCell></TableRow>}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>

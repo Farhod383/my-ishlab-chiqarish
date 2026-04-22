@@ -4,13 +4,20 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { I18nProvider } from "@/i18n/context";
+import { AuthProvider } from "@/auth/AuthContext";
+import { ProtectedRoute } from "@/auth/ProtectedRoute";
 import { Layout } from "@/components/Layout";
+import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Orders from "./pages/Orders";
+import NewOrder from "./pages/NewOrder";
 import OrderDetail from "./pages/OrderDetail";
 import ProductionBoard from "./pages/ProductionBoard";
 import WarehousePage from "./pages/WarehousePage";
+import SupplyPage from "./pages/SupplyPage";
 import WorkerStats from "./pages/WorkerStats";
+import Templates from "./pages/Templates";
+import AuditLog from "./pages/AuditLog";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,19 +28,32 @@ const App = () => (
       <Toaster />
       <Sonner />
       <I18nProvider>
-        <BrowserRouter>
-          <Layout>
+        <AuthProvider>
+          <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/orders" element={<Orders />} />
-              <Route path="/orders/:id" element={<OrderDetail />} />
-              <Route path="/production" element={<ProductionBoard />} />
-              <Route path="/warehouse" element={<WarehousePage />} />
-              <Route path="/workers" element={<WorkerStats />} />
-              <Route path="*" element={<NotFound />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/*" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/orders" element={<Orders />} />
+                      <Route path="/orders/new" element={<ProtectedRoute roles={["marketing","admin"]}><NewOrder /></ProtectedRoute>} />
+                      <Route path="/orders/:id" element={<OrderDetail />} />
+                      <Route path="/production" element={<ProductionBoard />} />
+                      <Route path="/warehouse" element={<WarehousePage />} />
+                      <Route path="/supply" element={<ProtectedRoute roles={["supply","admin","warehouse"]}><SupplyPage /></ProtectedRoute>} />
+                      <Route path="/workers" element={<WorkerStats />} />
+                      <Route path="/templates" element={<ProtectedRoute roles={["marketing","admin"]}><Templates /></ProtectedRoute>} />
+                      <Route path="/audit" element={<ProtectedRoute roles={["admin","manager"]}><AuditLog /></ProtectedRoute>} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Layout>
+                </ProtectedRoute>
+              } />
             </Routes>
-          </Layout>
-        </BrowserRouter>
+          </BrowserRouter>
+        </AuthProvider>
       </I18nProvider>
     </TooltipProvider>
   </QueryClientProvider>
