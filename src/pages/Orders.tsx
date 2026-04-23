@@ -22,7 +22,7 @@ export default function Orders() {
     (async () => {
       const { data } = await supabase
         .from("orders")
-        .select("*, client:clients(name)")
+        .select("*, client:clients(name), order_stages(stage_order, started_at)")
         .order("priority", { ascending: false })
         .order("queue_position");
       setRows((data as any) ?? []);
