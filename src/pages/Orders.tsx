@@ -95,6 +95,9 @@ export default function Orders() {
                   const dl = new Date(o.deadline); dl.setHours(0,0,0,0);
                   const diffDays = Math.ceil((dl.getTime() - today0.getTime()) / 86400000);
                   const isDone = o.status === "completed";
+                  const stages = ((o as any).order_stages ?? []).slice().sort((a:any,b:any)=>a.stage_order-b.stage_order);
+                  const startedAt = stages[0]?.started_at;
+                  const startStr = startedAt ? new Date(startedAt).toISOString().slice(0,10) : "—";
                   return (
                     <TableRow key={o.id} className="cursor-pointer" onClick={() => window.location.assign(`/orders/${o.id}`)}>
                       <TableCell><HealthDot color={orderHealth(o)} /></TableCell>
@@ -105,7 +108,7 @@ export default function Orders() {
                       <TableCell><PriorityBadge priority={o.priority} /></TableCell>
                       <TableCell><StatusBadge status={o.status as any} /></TableCell>
                       <TableCell className="text-sm whitespace-nowrap">{o.order_date}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap text-muted-foreground">—</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap text-muted-foreground">{startStr}</TableCell>
                       <TableCell className="text-sm whitespace-nowrap">{o.deadline}</TableCell>
                       <TableCell className="text-xs whitespace-nowrap">
                         {isDone ? <span className="text-status-green font-medium">Tugadi</span>
