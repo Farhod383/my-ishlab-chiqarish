@@ -82,24 +82,41 @@ export default function Orders() {
                   <TableHead className="text-right">Soni</TableHead>
                   <TableHead>Muhimlik</TableHead>
                   <TableHead>Holat</TableHead>
-                  <TableHead>Muddat</TableHead>
+                  <TableHead>Olingan</TableHead>
+                  <TableHead>Boshlanish</TableHead>
+                  <TableHead>Tugash</TableHead>
+                  <TableHead>Qoldi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Yuklanmoqda...</TableCell></TableRow>}
-                {!loading && filtered.map((o) => (
-                  <TableRow key={o.id} className="cursor-pointer" onClick={() => window.location.assign(`/orders/${o.id}`)}>
-                    <TableCell><HealthDot color={orderHealth(o)} /></TableCell>
-                    <TableCell className="font-mono text-sm">{o.order_number}</TableCell>
-                    <TableCell className="text-sm">{(o as any).client?.name ?? "—"}</TableCell>
-                    <TableCell className="text-sm font-medium">{o.product_name}</TableCell>
-                    <TableCell className="text-right text-sm">{o.quantity}</TableCell>
-                    <TableCell><PriorityBadge priority={o.priority} /></TableCell>
-                    <TableCell><StatusBadge status={o.status as any} /></TableCell>
-                    <TableCell className="text-sm">{o.deadline}</TableCell>
-                  </TableRow>
-                ))}
-                {!loading && filtered.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Zakaz yo'q</TableCell></TableRow>}
+                {loading && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Yuklanmoqda...</TableCell></TableRow>}
+                {!loading && filtered.map((o) => {
+                  const today0 = new Date(); today0.setHours(0,0,0,0);
+                  const dl = new Date(o.deadline); dl.setHours(0,0,0,0);
+                  const diffDays = Math.ceil((dl.getTime() - today0.getTime()) / 86400000);
+                  const isDone = o.status === "completed";
+                  return (
+                    <TableRow key={o.id} className="cursor-pointer" onClick={() => window.location.assign(`/orders/${o.id}`)}>
+                      <TableCell><HealthDot color={orderHealth(o)} /></TableCell>
+                      <TableCell className="font-mono text-sm">{o.order_number}</TableCell>
+                      <TableCell className="text-sm">{(o as any).client?.name ?? "—"}</TableCell>
+                      <TableCell className="text-sm font-medium">{o.product_name}</TableCell>
+                      <TableCell className="text-right text-sm">{o.quantity}</TableCell>
+                      <TableCell><PriorityBadge priority={o.priority} /></TableCell>
+                      <TableCell><StatusBadge status={o.status as any} /></TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{o.order_date}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap text-muted-foreground">—</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{o.deadline}</TableCell>
+                      <TableCell className="text-xs whitespace-nowrap">
+                        {isDone ? <span className="text-status-green font-medium">Tugadi</span>
+                          : diffDays < 0 ? <span className="text-status-red font-semibold">{Math.abs(diffDays)} kun kechikdi</span>
+                          : diffDays === 0 ? <span className="text-status-yellow font-semibold">Bugun</span>
+                          : <span className={diffDays <= 2 ? "text-status-yellow font-semibold" : "text-status-green font-medium"}>{diffDays} kun qoldi</span>}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {!loading && filtered.length === 0 && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Zakaz yo'q</TableCell></TableRow>}
               </TableBody>
             </Table>
           </div>
