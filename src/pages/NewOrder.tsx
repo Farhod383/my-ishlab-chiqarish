@@ -19,14 +19,15 @@ export default function NewOrder() {
   const nav = useNavigate();
   const { user } = useAuth();
   const [orderNumber, setOrderNumber] = useState("");
-  const [clients, setClients] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
-  const [clientId, setClientId] = useState<string>("");
+  const [clientName, setClientName] = useState<string>("");
   const [productName, setProductName] = useState("");
   const [quantity, setQuantity] = useState<number>(1);
   const [priority, setPriority] = useState<"normal" | "exception">("normal");
+  const [orderDate, setOrderDate] = useState<string>(() => new Date().toISOString().slice(0,10));
   const [deadline, setDeadline] = useState<string>(() => { const d = new Date(); d.setDate(d.getDate() + 14); return d.toISOString().slice(0,10); });
+  const [activeQueueDays, setActiveQueueDays] = useState<number>(0);
   const [tzFile, setTzFile] = useState<File | null>(null);
   const [productImage, setProductImage] = useState<File | null>(null);
   const [stages, setStages] = useState<StageDraft[]>([{ name: "Kesish", norm_days: 1, qc_required: false }]);
@@ -37,15 +38,23 @@ export default function NewOrder() {
 
   useEffect(() => {
     (async () => {
-      const [{ data: c }, { data: p }, { data: t }, { count }] = await Promise.all([
-        supabase.from("clients").select("id, name"),
+      const [{ data: p }, { data: t }, { count }, { data: activeOrders }] = await Promise.all([
         supabase.from("products").select("id, name, unit"),
         supabase.from("stage_templates").select("id, name, template_stages(*)"),
         supabase.from("orders").select("*", { count: "exact", head: true }),
+        supabase.from("orders").select("id, order_stages(norm_days, status)").neq("status", "completed"),
       ]);
-      setClients(c ?? []); setProducts(p ?? []); setTemplates(t ?? []);
+      setProducts(p ?? []); setTemplates(t ?? []);
       const num = (count ?? 0) + 1;
       setOrderNumber(`Z-${new Date().getFullYear()}-${String(num).padStart(3, "0")}`);
+      // Sum norm_days of all not-yet-finished stages of active orders → days until our turn
+      let sum = 0;
+      for (const o of activeOrders ?? []) {
+        for (const s of (o as any).order_stages ?? []) {
+          if (s.status !== "completed") sum += Number(s.norm_days || 0);
+        }
+      }
+      setActiveQueueDays(sum);
     })();
   }, []);
 
@@ -99,10 +108,24 @@ export default function NewOrder() {
         }
       }
 
+      // Resolve / create client by name
+      let clientId: string | null = null;
+      if (clientName.trim()) {
+        const trimmed = clientName.trim();
+        const { data: existingClient } = await supabase.from("clients").select("id").ilike("name", trimmed).maybeSingle();
+        if (existingClient) {
+          clientId = existingClient.id;
+        } else {
+          const { data: newClient, error: cErr } = await supabase.from("clients").insert({ name: trimmed }).select().single();
+          if (cErr) throw cErr;
+          clientId = newClient.id;
+        }
+      }
+
       const { data: order, error } = await supabase.from("orders").insert({
-        order_number: orderNumber, client_id: clientId || null, product_name: productName,
+        order_number: orderNumber, client_id: clientId, product_name: productName,
         product_image_url: imgUrl, tz_file_url: tzUrl,
-        quantity, priority, status: "pending", deadline,
+        quantity, priority, status: "pending", deadline, order_date: orderDate,
         queue_position: queuePos, created_by: user?.id ?? null,
       }).select().single();
       if (error) throw error;
@@ -128,7 +151,7 @@ export default function NewOrder() {
         actor_id: user?.id, actor_name: user?.email,
         action: priority === "exception" ? "Istisno zakaz yaratildi" : "Zakaz yaratildi",
         entity: "order", order_id: order.id,
-        details: `${orderNumber}, mijoz: ${clients.find(c => c.id === clientId)?.name ?? "—"}, ${stages.length} bosqich`,
+        details: `${orderNumber}, mijoz: ${clientName || "—"}, ${stages.length} bosqich`,
       });
 
       // Save template
@@ -164,14 +187,21 @@ export default function NewOrder() {
             <div className="grid sm:grid-cols-2 gap-4">
               <div><Label>Zakaz raqami</Label><Input value={orderNumber} onChange={(e) => setOrderNumber(e.target.value)} /></div>
               <div>
-                <Label>Klient</Label>
-                <Select value={clientId} onValueChange={setClientId}>
-                  <SelectTrigger><SelectValue placeholder="Klient tanlang" /></SelectTrigger>
-                  <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-                </Select>
+                <Label>Klient nomi</Label>
+                <Input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Mijoz nomini kiriting" />
               </div>
               <div className="sm:col-span-2"><Label>Mahsulot turi</Label><Input value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="Konveyer ramasi" /></div>
               <div><Label>Mahsulot soni</Label><Input type="number" min={1} value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} /></div>
+              <div><Label>Zakaz olingan sana</Label><Input type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} /></div>
+              <div>
+                <Label>Boshlanish sanasi (avto)</Label>
+                <Input type="date" value={(() => {
+                  const d = new Date(orderDate);
+                  if (priority !== "exception") d.setDate(d.getDate() + Math.ceil(activeQueueDays));
+                  return d.toISOString().slice(0,10);
+                })()} disabled readOnly />
+                <p className="text-xs text-muted-foreground mt-1">{priority === "exception" ? "Istisno — darhol boshlanadi" : `Aktiv navbat: ~${Math.ceil(activeQueueDays)} kun`}</p>
+              </div>
               <div><Label>Tugash sanasi (rejalashtirilgan)</Label><Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} /></div>
             </div>
 
