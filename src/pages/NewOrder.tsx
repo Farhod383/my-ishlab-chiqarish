@@ -38,15 +38,23 @@ export default function NewOrder() {
 
   useEffect(() => {
     (async () => {
-      const [{ data: c }, { data: p }, { data: t }, { count }] = await Promise.all([
-        supabase.from("clients").select("id, name"),
+      const [{ data: p }, { data: t }, { count }, { data: activeOrders }] = await Promise.all([
         supabase.from("products").select("id, name, unit"),
         supabase.from("stage_templates").select("id, name, template_stages(*)"),
         supabase.from("orders").select("*", { count: "exact", head: true }),
+        supabase.from("orders").select("id, order_stages(norm_days, status)").neq("status", "completed"),
       ]);
-      setClients(c ?? []); setProducts(p ?? []); setTemplates(t ?? []);
+      setProducts(p ?? []); setTemplates(t ?? []);
       const num = (count ?? 0) + 1;
       setOrderNumber(`Z-${new Date().getFullYear()}-${String(num).padStart(3, "0")}`);
+      // Sum norm_days of all not-yet-finished stages of active orders → days until our turn
+      let sum = 0;
+      for (const o of activeOrders ?? []) {
+        for (const s of (o as any).order_stages ?? []) {
+          if (s.status !== "completed") sum += Number(s.norm_days || 0);
+        }
+      }
+      setActiveQueueDays(sum);
     })();
   }, []);
 
