@@ -19,14 +19,15 @@ export default function NewOrder() {
   const nav = useNavigate();
   const { user } = useAuth();
   const [orderNumber, setOrderNumber] = useState("");
-  const [clients, setClients] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
-  const [clientId, setClientId] = useState<string>("");
+  const [clientName, setClientName] = useState<string>("");
   const [productName, setProductName] = useState("");
   const [quantity, setQuantity] = useState<number>(1);
   const [priority, setPriority] = useState<"normal" | "exception">("normal");
+  const [orderDate, setOrderDate] = useState<string>(() => new Date().toISOString().slice(0,10));
   const [deadline, setDeadline] = useState<string>(() => { const d = new Date(); d.setDate(d.getDate() + 14); return d.toISOString().slice(0,10); });
+  const [activeQueueDays, setActiveQueueDays] = useState<number>(0);
   const [tzFile, setTzFile] = useState<File | null>(null);
   const [productImage, setProductImage] = useState<File | null>(null);
   const [stages, setStages] = useState<StageDraft[]>([{ name: "Kesish", norm_days: 1, qc_required: false }]);
