@@ -108,10 +108,24 @@ export default function NewOrder() {
         }
       }
 
+      // Resolve / create client by name
+      let clientId: string | null = null;
+      if (clientName.trim()) {
+        const trimmed = clientName.trim();
+        const { data: existingClient } = await supabase.from("clients").select("id").ilike("name", trimmed).maybeSingle();
+        if (existingClient) {
+          clientId = existingClient.id;
+        } else {
+          const { data: newClient, error: cErr } = await supabase.from("clients").insert({ name: trimmed }).select().single();
+          if (cErr) throw cErr;
+          clientId = newClient.id;
+        }
+      }
+
       const { data: order, error } = await supabase.from("orders").insert({
-        order_number: orderNumber, client_id: clientId || null, product_name: productName,
+        order_number: orderNumber, client_id: clientId, product_name: productName,
         product_image_url: imgUrl, tz_file_url: tzUrl,
-        quantity, priority, status: "pending", deadline,
+        quantity, priority, status: "pending", deadline, order_date: orderDate,
         queue_position: queuePos, created_by: user?.id ?? null,
       }).select().single();
       if (error) throw error;
@@ -137,7 +151,7 @@ export default function NewOrder() {
         actor_id: user?.id, actor_name: user?.email,
         action: priority === "exception" ? "Istisno zakaz yaratildi" : "Zakaz yaratildi",
         entity: "order", order_id: order.id,
-        details: `${orderNumber}, mijoz: ${clients.find(c => c.id === clientId)?.name ?? "—"}, ${stages.length} bosqich`,
+        details: `${orderNumber}, mijoz: ${clientName || "—"}, ${stages.length} bosqich`,
       });
 
       // Save template
