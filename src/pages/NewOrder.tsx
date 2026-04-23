@@ -187,14 +187,21 @@ export default function NewOrder() {
             <div className="grid sm:grid-cols-2 gap-4">
               <div><Label>Zakaz raqami</Label><Input value={orderNumber} onChange={(e) => setOrderNumber(e.target.value)} /></div>
               <div>
-                <Label>Klient</Label>
-                <Select value={clientId} onValueChange={setClientId}>
-                  <SelectTrigger><SelectValue placeholder="Klient tanlang" /></SelectTrigger>
-                  <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-                </Select>
+                <Label>Klient nomi</Label>
+                <Input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Mijoz nomini kiriting" />
               </div>
               <div className="sm:col-span-2"><Label>Mahsulot turi</Label><Input value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="Konveyer ramasi" /></div>
               <div><Label>Mahsulot soni</Label><Input type="number" min={1} value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} /></div>
+              <div><Label>Zakaz olingan sana</Label><Input type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} /></div>
+              <div>
+                <Label>Boshlanish sanasi (avto)</Label>
+                <Input type="date" value={(() => {
+                  const d = new Date(orderDate);
+                  if (priority !== "exception") d.setDate(d.getDate() + Math.ceil(activeQueueDays));
+                  return d.toISOString().slice(0,10);
+                })()} disabled readOnly />
+                <p className="text-xs text-muted-foreground mt-1">{priority === "exception" ? "Istisno — darhol boshlanadi" : `Aktiv navbat: ~${Math.ceil(activeQueueDays)} kun`}</p>
+              </div>
               <div><Label>Tugash sanasi (rejalashtirilgan)</Label><Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} /></div>
             </div>
 
