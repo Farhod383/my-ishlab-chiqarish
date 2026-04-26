@@ -8,11 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import { useAuth } from "@/auth/AuthContext";
 import { logAudit, type OrderRow, type StageRow, type OrderPartRow, type AuditLogRow } from "@/types/erp";
-import { ArrowLeft, CheckCircle2, Play, FileText, Image as ImageIcon, AlertTriangle, ShieldCheck, Loader2, ClipboardList } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, CheckCircle2, Play, FileText, Image as ImageIcon, AlertTriangle, ShieldCheck, Loader2, ClipboardList, Receipt } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
+import { OrderCostReport } from "@/components/OrderCostReport";
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -23,32 +23,33 @@ export default function OrderDetail() {
   const [parts, setParts] = useState<OrderPartRow[]>([]);
   const [logs, setLogs] = useState<AuditLogRow[]>([]);
   const [movements, setMovements] = useState<any[]>([]);
-  const [workers, setWorkers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [otkEdit, setOtkEdit] = useState<Record<string, string>>({});
 
   const load = async () => {
     if (!id) return;
-    const [o, s, p, l, mv, w] = await Promise.all([
+    const [o, s, p, l, mv] = await Promise.all([
       supabase.from("orders").select("*, client:clients(*)").eq("id", id).single(),
       supabase.from("order_stages").select("*").eq("order_id", id).order("stage_order"),
       supabase.from("order_parts").select("*").eq("order_id", id),
       supabase.from("audit_log").select("*").eq("order_id", id).order("created_at", { ascending: false }),
       supabase.from("stock_movements").select("*, product:products(name, unit)").eq("order_id", id).order("created_at", { ascending: false }),
-      supabase.from("profiles").select("id, full_name, department"),
     ]);
     setOrder(o.data as any);
     setStages(s.data ?? []);
     setParts(p.data ?? []);
     setLogs(l.data ?? []);
     setMovements(mv.data ?? []);
-    setWorkers(w.data ?? []);
+    const map: Record<string, string> = {};
+    (s.data ?? []).forEach((st: any) => { map[st.id] = st.otk_comment ?? ""; });
+    setOtkEdit(map);
     setLoading(false);
   };
 
   useEffect(() => { load(); }, [id]);
 
   const startStage = async (stage: StageRow) => {
-    // Only allow if previous stages completed
     const prev = stages.find((x) => x.stage_order === stage.stage_order - 1);
     if (prev && prev.status !== "completed") { toast.error("Avval oldingi bosqichni tugating"); return; }
     await supabase.from("order_stages").update({ status: "in_progress", started_at: new Date().toISOString() }).eq("id", stage.id);
@@ -58,10 +59,9 @@ export default function OrderDetail() {
   };
 
   const finishStage = async (stage: StageRow) => {
-    if (stage.qc_required && !stage.qc_passed) { toast.error("Avval QC tasdiqlang"); return; }
+    if (stage.qc_required && !stage.qc_passed) { toast.error("Avval OTK tasdiqlang"); return; }
     await supabase.from("order_stages").update({ status: "completed", finished_at: new Date().toISOString() }).eq("id", stage.id);
     await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Bosqich tugatildi", entity: "stage", order_id: order!.id, stage_id: stage.id, details: stage.name });
-    // Check if all completed
     const others = stages.filter((x) => x.id !== stage.id);
     if (others.every((x) => x.status === "completed")) {
       await supabase.from("orders").update({ status: "completed" }).eq("id", order!.id);
@@ -70,19 +70,20 @@ export default function OrderDetail() {
     load();
   };
 
-  const setQC = async (stage: StageRow, val: boolean) => {
-    await supabase.from("order_stages").update({ qc_passed: val }).eq("id", stage.id);
-    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: val ? "QC o'tdi" : "QC bekor", entity: "stage", order_id: order!.id, stage_id: stage.id, details: stage.name });
+  const setOtkPassed = async (stage: StageRow, val: boolean) => {
+    await supabase.from("order_stages").update({
+      qc_passed: val,
+      otk_checked_at: val ? new Date().toISOString() : null,
+    }).eq("id", stage.id);
+    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: val ? "OTK o'tdi" : "OTK bekor", entity: "stage", order_id: order!.id, stage_id: stage.id, details: stage.name });
     load();
   };
 
-  const assignWorker = async (stage: StageRow, workerId: string) => {
-    const oldWorker = workers.find((w) => w.id === stage.worker_id);
-    const newWorker = workers.find((w) => w.id === workerId);
-    const comment = stage.worker_id && stage.worker_id !== workerId
-      ? `Ishchi almashtirildi: ${oldWorker?.full_name ?? "—"} → ${newWorker?.full_name ?? "—"}` : null;
-    await supabase.from("order_stages").update({ worker_id: workerId, worker_changed_comment: comment ?? stage.worker_changed_comment }).eq("id", stage.id);
-    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: comment ? "Ishchi almashtirildi" : "Ishchi biriktirildi", entity: "stage", order_id: order!.id, stage_id: stage.id, details: `${stage.name}: ${newWorker?.full_name}` });
+  const saveOtkComment = async (stage: StageRow) => {
+    const c = otkEdit[stage.id] ?? "";
+    await supabase.from("order_stages").update({ otk_comment: c || null }).eq("id", stage.id);
+    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "OTK izoh", entity: "stage", order_id: order!.id, stage_id: stage.id, details: `${stage.name}: ${c}` });
+    toast.success("Saqlandi");
     load();
   };
 
@@ -91,6 +92,13 @@ export default function OrderDetail() {
   const today = new Date(); today.setHours(0,0,0,0);
   const dl = new Date(order.deadline); dl.setHours(0,0,0,0);
   const daysLeft = Math.ceil((dl.getTime() - today.getTime()) / 86400000);
+  const startedAt = stages[0]?.started_at;
+
+  const otkColor = (s: any): "red" | "yellow" | "green" => {
+    if (s.qc_passed) return "green";
+    if (s.otk_comment && s.otk_comment.trim()) return "yellow";
+    return "red";
+  };
 
   return (
     <div className="space-y-6">
@@ -98,21 +106,26 @@ export default function OrderDetail() {
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => nav(-1)}><ArrowLeft className="h-4 w-4 mr-1" /> Orqaga</Button>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl font-bold tracking-tight">{order.order_number}</h1>
               <PriorityBadge priority={order.priority} />
               <StatusBadge status={order.status as any} />
             </div>
-            <p className="text-sm text-muted-foreground">{order.product_name} · {order.quantity} {order.client?.unit ?? "dona"} · Klient: {order.client?.name ?? "—"}</p>
+            <p className="text-sm text-muted-foreground">{order.product_name} · {order.quantity} dona · Mijoz: {order.client?.name ?? "—"}</p>
           </div>
         </div>
+        <Button variant="outline" onClick={() => setReportOpen(true)}>
+          <Receipt className="h-4 w-4 mr-2" /> Hisobot
+        </Button>
       </div>
 
+      <OrderCostReport orderId={order.id} orderNumber={order.order_number} open={reportOpen} onOpenChange={setReportOpen} />
+
       <div className="grid md:grid-cols-4 gap-3">
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Yaratilgan</div><div className="font-semibold">{order.order_date}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Olingan sana</div><div className="font-semibold">{order.order_date}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Boshlanish</div><div className="font-semibold">{startedAt ? new Date(startedAt).toISOString().slice(0,10) : "—"}</div></CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Muddat</div><div className="font-semibold">{order.deadline}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Qolgan kun</div><div className={`font-bold text-lg ${daysLeft < 0 ? "text-status-red" : daysLeft <= 2 ? "text-status-yellow" : "text-status-green"}`}>{daysLeft < 0 ? `${Math.abs(daysLeft)} kun kechikkan` : `${daysLeft} kun`}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Bosqichlar</div><div className="font-semibold">{stages.filter(s => s.status === "completed").length} / {stages.length}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Qoldi</div><div className={`font-bold text-lg ${daysLeft < 0 ? "text-status-red" : daysLeft <= 2 ? "text-status-yellow" : "text-status-green"}`}>{order.status === "completed" ? "Tugadi" : daysLeft < 0 ? `${Math.abs(daysLeft)} kun kechikkan` : `${daysLeft} kun`}</div></CardContent></Card>
       </div>
 
       {(order.tz_file_url || order.product_image_url) && (
@@ -135,7 +148,7 @@ export default function OrderDetail() {
 
       <Tabs defaultValue="timeline">
         <TabsList>
-          <TabsTrigger value="timeline">Bosqichlar (timeline)</TabsTrigger>
+          <TabsTrigger value="timeline">Bosqichlar</TabsTrigger>
           <TabsTrigger value="warehouse">Sklad</TabsTrigger>
           <TabsTrigger value="movements">Sklad harakati</TabsTrigger>
           <TabsTrigger value="log">Audit log</TabsTrigger>
@@ -145,7 +158,7 @@ export default function OrderDetail() {
           {stages.map((s, idx) => {
             const prev = stages[idx - 1];
             const canStart = !prev || prev.status === "completed";
-            const worker = workers.find((w) => w.id === s.worker_id);
+            const color = otkColor(s);
             return (
               <Card key={s.id} className={s.status === "delayed" ? "border-status-red/50" : s.status === "in_progress" ? "border-status-blue/50" : ""}>
                 <CardContent className="p-4">
@@ -162,30 +175,42 @@ export default function OrderDetail() {
                           <span className="font-semibold">{s.name}</span>
                           <StatusBadge status={s.status as any} />
                           {s.qc_required && (
-                            <Badge variant="outline" className="border-primary/30 text-primary"><ShieldCheck className="h-3 w-3 mr-1" />QC</Badge>
+                            <Badge variant="outline" className={`border ${
+                              color === "green" ? "border-status-green/40 text-status-green bg-status-green/10" :
+                              color === "yellow" ? "border-status-yellow/40 text-status-yellow bg-status-yellow/10" :
+                              "border-status-red/40 text-status-red bg-status-red/10"
+                            }`}><ShieldCheck className="h-3 w-3 mr-1" />OTK</Badge>
                           )}
                         </div>
-                        <div className="text-xs text-muted-foreground mt-1">Norma: {s.norm_days} kun · Ishchi: {worker?.full_name ?? "—"} {worker?.department && `(${worker.department})`}</div>
-                        {s.worker_changed_comment && <div className="text-xs text-status-yellow mt-1 flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{s.worker_changed_comment}</div>}
+                        <div className="text-xs text-muted-foreground mt-1">Norma: {s.norm_days} kun</div>
                         {s.started_at && <div className="text-xs text-muted-foreground mt-1">Boshlandi: {new Date(s.started_at).toLocaleString("uz-UZ")}</div>}
                         {s.finished_at && <div className="text-xs text-muted-foreground">Tugadi: {new Date(s.finished_at).toLocaleString("uz-UZ")}</div>}
                       </div>
                     </div>
-                    <div className="flex flex-col gap-2 shrink-0 min-w-[200px]">
-                      {hasRole(["worker", "manager", "marketing", "admin"]) && (
-                        <Select value={s.worker_id ?? ""} onValueChange={(v) => assignWorker(s, v)}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Ishchi tanlash" /></SelectTrigger>
-                          <SelectContent>{workers.map((w) => <SelectItem key={w.id} value={w.id}>{w.full_name}</SelectItem>)}</SelectContent>
-                        </Select>
-                      )}
-                      {s.qc_required && s.status !== "pending" && (
-                        <label className="flex items-center gap-2 text-xs"><Checkbox checked={!!s.qc_passed} onCheckedChange={(v) => setQC(s, !!v)} /> QC o'tdi</label>
+                    <div className="flex flex-col gap-2 shrink-0 min-w-[220px]">
+                      {s.qc_required && hasRole(["admin", "manager", "marketing"]) && (
+                        <div className="space-y-1.5 border rounded-md p-2 bg-muted/30">
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">OTK</div>
+                          <Textarea
+                            rows={2}
+                            placeholder="Izoh (sariq holat)..."
+                            value={otkEdit[s.id] ?? ""}
+                            onChange={(e) => setOtkEdit({ ...otkEdit, [s.id]: e.target.value })}
+                            className="text-xs"
+                          />
+                          <div className="flex items-center justify-between gap-2">
+                            <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                              <Checkbox checked={!!s.qc_passed} onCheckedChange={(v) => setOtkPassed(s, !!v)} /> O'tdi
+                            </label>
+                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => saveOtkComment(s)}>Saqlash</Button>
+                          </div>
+                        </div>
                       )}
                       <div className="flex gap-2">
-                        {s.status === "pending" && canStart && hasRole(["worker", "manager", "admin"]) && (
+                        {s.status === "pending" && canStart && hasRole(["manager", "admin", "marketing"]) && (
                           <Button size="sm" variant="outline" onClick={() => startStage(s)}><Play className="h-3 w-3 mr-1" />Boshlash</Button>
                         )}
-                        {s.status === "in_progress" && hasRole(["worker", "manager", "admin"]) && (
+                        {s.status === "in_progress" && hasRole(["manager", "admin", "marketing"]) && (
                           <Button size="sm" onClick={() => finishStage(s)}><CheckCircle2 className="h-3 w-3 mr-1" />Tugatish</Button>
                         )}
                       </div>
