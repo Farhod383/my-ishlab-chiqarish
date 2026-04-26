@@ -15,7 +15,8 @@ import OrderDetail from "./pages/OrderDetail";
 import ProductionBoard from "./pages/ProductionBoard";
 import WarehousePage from "./pages/WarehousePage";
 import SupplyPage from "./pages/SupplyPage";
-import WorkerStats from "./pages/WorkerStats";
+import OtkPage from "./pages/OtkPage";
+import ChatPage from "./pages/ChatPage";
 import Templates from "./pages/Templates";
 import AuditLog from "./pages/AuditLog";
 import NotFound from "./pages/NotFound";
@@ -41,9 +42,10 @@ const App = () => (
                       <Route path="/orders/new" element={<ProtectedRoute roles={["marketing","admin"]}><NewOrder /></ProtectedRoute>} />
                       <Route path="/orders/:id" element={<OrderDetail />} />
                       <Route path="/production" element={<ProductionBoard />} />
+                      <Route path="/otk" element={<OtkPage />} />
                       <Route path="/warehouse" element={<WarehousePage />} />
                       <Route path="/supply" element={<ProtectedRoute roles={["supply","admin","warehouse"]}><SupplyPage /></ProtectedRoute>} />
-                      <Route path="/workers" element={<WorkerStats />} />
+                      <Route path="/chat" element={<ChatPage />} />
                       <Route path="/templates" element={<ProtectedRoute roles={["marketing","admin"]}><Templates /></ProtectedRoute>} />
                       <Route path="/audit" element={<ProtectedRoute roles={["admin","manager"]}><AuditLog /></ProtectedRoute>} />
                       <Route path="*" element={<NotFound />} />
