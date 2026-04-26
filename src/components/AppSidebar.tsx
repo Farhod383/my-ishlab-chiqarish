@@ -1,4 +1,4 @@
-import { LayoutDashboard, ClipboardList, Factory, Warehouse, Truck, Users, ShieldCheck, Layers, LogOut } from "lucide-react";
+import { LayoutDashboard, ClipboardList, Factory, Warehouse, Truck, ShieldCheck, Layers, LogOut, MessageSquare, History } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -6,26 +6,28 @@ import {
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth, type AppRole } from "@/auth/AuthContext";
+import { useI18n } from "@/i18n/context";
 import { Button } from "@/components/ui/button";
-
-interface Item { title: string; url: string; icon: any; roles?: AppRole[] }
-
-const items: Item[] = [
-  { title: "Boshqaruv paneli", url: "/", icon: LayoutDashboard },
-  { title: "Zakazlar", url: "/orders", icon: ClipboardList },
-  { title: "Ishlab chiqarish", url: "/production", icon: Factory },
-  { title: "Sklad", url: "/warehouse", icon: Warehouse },
-  { title: "Ta'minot", url: "/supply", icon: Truck, roles: ["supply", "admin", "warehouse"] },
-  { title: "Ishchilar statistikasi", url: "/workers", icon: Users },
-  { title: "Bosqich shablonlari", url: "/templates", icon: Layers, roles: ["marketing", "admin"] },
-  { title: "Audit log", url: "/audit", icon: ShieldCheck, roles: ["admin", "manager"] },
-];
 
 export function AppSidebar() {
   const { state } = useSidebar();
-  const { roles, user, signOut, hasRole } = useAuth();
+  const { user, signOut, hasRole, roles } = useAuth();
+  const { t } = useI18n();
   const collapsed = state === "collapsed";
   const loc = useLocation();
+
+  interface Item { title: string; url: string; icon: any; roles?: AppRole[] }
+  const items: Item[] = [
+    { title: t.nav.dashboard, url: "/", icon: LayoutDashboard },
+    { title: t.nav.orders, url: "/orders", icon: ClipboardList },
+    { title: t.nav.production, url: "/production", icon: Factory },
+    { title: t.nav.otk, url: "/otk", icon: ShieldCheck },
+    { title: t.nav.warehouse, url: "/warehouse", icon: Warehouse },
+    { title: t.nav.supply, url: "/supply", icon: Truck, roles: ["supply", "admin", "warehouse"] },
+    { title: t.nav.chat, url: "/chat", icon: MessageSquare },
+    { title: t.nav.templates, url: "/templates", icon: Layers, roles: ["marketing", "admin"] },
+    { title: t.nav.audit, url: "/audit", icon: History, roles: ["admin", "manager"] },
+  ];
 
   const visible = items.filter((i) => !i.roles || hasRole(i.roles));
 
@@ -37,14 +39,14 @@ export function AppSidebar() {
           {!collapsed && (
             <div className="leading-tight min-w-0">
               <div className="font-semibold text-sm truncate">Manufacturing ERP</div>
-              <div className="text-[10px] text-muted-foreground uppercase tracking-wide truncate">{roles[0] ?? "ishchi"}</div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide truncate">{(t.roles as any)[roles[0] ?? "admin"] ?? roles[0]}</div>
             </div>
           )}
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Menyu</SidebarGroupLabel>
+          <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {visible.map((item) => (
@@ -67,7 +69,7 @@ export function AppSidebar() {
         )}
         <Button variant="ghost" size="sm" onClick={signOut} className="w-full justify-start">
           <LogOut className="h-4 w-4" />
-          {!collapsed && <span className="ml-2">Chiqish</span>}
+          {!collapsed && <span className="ml-2">{t.nav.signOut}</span>}
         </Button>
       </SidebarFooter>
     </Sidebar>
