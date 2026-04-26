@@ -4,8 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge, PriorityBadge, HealthDot } from "@/components/StatusBadge";
 import { orderHealth, type OrderRow } from "@/types/erp";
-import { ClipboardList, Activity, AlertTriangle, CheckCircle2, AlertOctagon, Package, History, Clock } from "lucide-react";
+import { ClipboardList, Activity, AlertTriangle, AlertOctagon, Package, History, Clock, Receipt } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { OrderCostReport } from "@/components/OrderCostReport";
+import { Button } from "@/components/ui/button";
 
 interface DashStats {
   total: number; active: number; delayed: number; today: number; exception: number;

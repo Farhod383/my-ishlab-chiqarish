@@ -31,7 +31,7 @@ export default function Templates() {
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground font-mono text-xs">{s.stage_order}.</span>
                       <span className="font-medium">{s.name}</span>
-                      {s.qc_required && <Badge variant="outline" className="text-primary border-primary/30 text-xs"><ShieldCheck className="h-3 w-3 mr-1" />QC</Badge>}
+                      {s.qc_required && <Badge variant="outline" className="text-primary border-primary/30 text-xs"><ShieldCheck className="h-3 w-3 mr-1" />OTK</Badge>}
                     </div>
                     <span className="text-xs text-muted-foreground">{s.norm_days} kun</span>
                   </div>

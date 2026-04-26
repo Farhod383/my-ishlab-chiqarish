@@ -264,7 +264,7 @@ export default function NewOrder() {
               </div>
               <label className="col-span-2 flex items-center gap-2 text-sm cursor-pointer">
                 <Checkbox checked={s.qc_required} onCheckedChange={(v) => updateStage(i, { qc_required: !!v })} />
-                QC
+                OTK
               </label>
               <Button size="icon" variant="ghost" onClick={() => removeStage(i)} className="col-span-1"><Trash2 className="h-4 w-4 text-status-red" /></Button>
             </div>
