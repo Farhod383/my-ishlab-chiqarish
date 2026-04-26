@@ -4,8 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge, PriorityBadge, HealthDot } from "@/components/StatusBadge";
 import { orderHealth, type OrderRow } from "@/types/erp";
-import { ClipboardList, Activity, AlertTriangle, CheckCircle2, AlertOctagon, Package, History, Clock } from "lucide-react";
+import { ClipboardList, Activity, AlertTriangle, AlertOctagon, Package, History, Clock, Receipt } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { OrderCostReport } from "@/components/OrderCostReport";
+import { Button } from "@/components/ui/button";
 
 interface DashStats {
   total: number; active: number; delayed: number; today: number; exception: number;
@@ -14,9 +16,11 @@ interface DashStats {
 export default function Dashboard() {
   const [stats, setStats] = useState<DashStats>({ total: 0, active: 0, delayed: 0, today: 0, exception: 0 });
   const [recent, setRecent] = useState<OrderRow[]>([]);
+  const [completed, setCompleted] = useState<OrderRow[]>([]);
   const [lowStock, setLowStock] = useState<any[]>([]);
   const [recentLog, setRecentLog] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reportFor, setReportFor] = useState<{ id: string; number: string } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -34,7 +38,8 @@ export default function Dashboard() {
         today: all.filter((o) => o.deadline === today && o.status !== "completed").length,
         exception: all.filter((o) => o.priority === "exception" && o.status !== "completed").length,
       });
-      setRecent(all.slice(0, 6));
+      setRecent(all.filter(o => o.status !== "completed").slice(0, 6));
+      setCompleted(all.filter(o => o.status === "completed").slice(0, 6));
       setLowStock((products ?? []).filter((p) => Number(p.stock_qty) <= Number(p.min_limit)));
       setRecentLog(log ?? []);
       setLoading(false);
@@ -95,6 +100,28 @@ export default function Dashboard() {
                 </Link>
               ))}
             {!loading && recent.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Hozircha zakaz yo'q</p>}
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2"><Receipt className="h-4 w-4 text-status-green" /> Tugatilgan zakazlar — hisobotni ochish uchun bosing</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {completed.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Tugatilgan zakaz yo'q</p>}
+            {completed.map((o) => (
+              <button key={o.id} onClick={() => setReportFor({ id: o.id, number: o.order_number })} className="w-full flex items-center justify-between p-3 rounded-md border hover:bg-muted/50 transition-colors text-left">
+                <div className="flex items-center gap-3 min-w-0">
+                  <HealthDot color="green" />
+                  <div className="min-w-0">
+                    <div className="font-medium text-sm truncate">{o.order_number} · {o.product_name}</div>
+                    <div className="text-xs text-muted-foreground">Tugadi · {o.deadline}</div>
+                  </div>
+                </div>
+                <Button size="sm" variant="ghost"><Receipt className="h-3.5 w-3.5 mr-1" />Hisobot</Button>
+              </button>
+            ))}
+            {reportFor && <OrderCostReport orderId={reportFor.id} orderNumber={reportFor.number} open={!!reportFor} onOpenChange={(o) => !o && setReportFor(null)} />}
           </CardContent>
         </Card>
 

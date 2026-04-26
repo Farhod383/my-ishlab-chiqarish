@@ -65,6 +65,91 @@ export type Database = {
           },
         ]
       }
+      chat_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          is_global: boolean
+          title: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_global?: boolean
+          title?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_global?: boolean
+          title?: string | null
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          body: string
+          conversation_id: string
+          created_at: string
+          id: string
+          sender_id: string
+          sender_name: string | null
+        }
+        Insert: {
+          body: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          sender_id: string
+          sender_name?: string | null
+        }
+        Update: {
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+          sender_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_participants: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_participants_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null
@@ -145,6 +230,8 @@ export type Database = {
           name: string
           norm_days: number
           order_id: string
+          otk_checked_at: string | null
+          otk_comment: string | null
           qc_passed: boolean | null
           qc_required: boolean
           stage_order: number
@@ -160,6 +247,8 @@ export type Database = {
           name: string
           norm_days?: number
           order_id: string
+          otk_checked_at?: string | null
+          otk_comment?: string | null
           qc_passed?: boolean | null
           qc_required?: boolean
           stage_order: number
@@ -175,6 +264,8 @@ export type Database = {
           name?: string
           norm_days?: number
           order_id?: string
+          otk_checked_at?: string | null
+          otk_comment?: string | null
           qc_passed?: boolean | null
           qc_required?: boolean
           stage_order?: number
@@ -263,6 +354,7 @@ export type Database = {
           created_at: string
           id: string
           image_url: string | null
+          last_price: number
           min_limit: number
           name: string
           stock_qty: number
@@ -272,6 +364,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          last_price?: number
           min_limit?: number
           name: string
           stock_qty?: number
@@ -281,6 +374,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          last_price?: number
           min_limit?: number
           name?: string
           stock_qty?: number
@@ -345,6 +439,7 @@ export type Database = {
           quantity: number
           recipient_name: string | null
           taken_by: string | null
+          unit_price: number
         }
         Insert: {
           comment?: string | null
@@ -357,6 +452,7 @@ export type Database = {
           quantity: number
           recipient_name?: string | null
           taken_by?: string | null
+          unit_price?: number
         }
         Update: {
           comment?: string | null
@@ -369,6 +465,7 @@ export type Database = {
           quantity?: number
           recipient_name?: string | null
           taken_by?: string | null
+          unit_price?: number
         }
         Relationships: [
           {
@@ -454,6 +551,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_chat_participant: {
+        Args: { _conv: string; _user: string }
         Returns: boolean
       }
     }
