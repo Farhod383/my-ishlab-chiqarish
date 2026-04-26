@@ -1,24 +1,43 @@
-import React, { createContext, useContext } from "react";
-import { uz, type Translations } from "./uz";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { uz, ru, uzc, type Translations } from "./uz";
 
-type Locale = "uz" | "ru" | "en";
+export type Locale = "uz" | "ru" | "uzc";
 
 interface I18nContextType {
   locale: Locale;
   t: Translations;
+  setLocale: (l: Locale) => void;
+  available: { code: Locale; label: string }[];
 }
 
-const I18nContext = createContext<I18nContextType>({ locale: "uz", t: uz });
+const dict: Record<Locale, Translations> = { uz, ru, uzc };
+
+const I18nContext = createContext<I18nContextType>({
+  locale: "uz", t: uz, setLocale: () => {},
+  available: [{ code: "uz", label: uz.meta.label }, { code: "ru", label: ru.meta.label }, { code: "uzc", label: uzc.meta.label }],
+});
 
 export const useI18n = () => useContext(I18nContext);
 
-// For now only Uzbek, but i18n-ready
-const translations: Record<Locale, Translations> = { uz, ru: uz, en: uz };
+const LS_KEY = "erp_locale";
 
 export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const locale: Locale = "uz";
+  const [locale, setLocaleState] = useState<Locale>(() => {
+    const saved = (typeof localStorage !== "undefined" && localStorage.getItem(LS_KEY)) as Locale | null;
+    return saved && dict[saved] ? saved : "uz";
+  });
+  useEffect(() => { localStorage.setItem(LS_KEY, locale); }, [locale]);
+  const setLocale = (l: Locale) => setLocaleState(l);
+
   return (
-    <I18nContext.Provider value={{ locale, t: translations[locale] }}>
+    <I18nContext.Provider value={{
+      locale, t: dict[locale], setLocale,
+      available: [
+        { code: "uz", label: uz.meta.label },
+        { code: "ru", label: ru.meta.label },
+        { code: "uzc", label: uzc.meta.label },
+      ],
+    }}>
       {children}
     </I18nContext.Provider>
   );
