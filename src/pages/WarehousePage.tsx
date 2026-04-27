@@ -11,11 +11,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { AlertTriangle, Package, ArrowDownToLine, ArrowDownCircle, ArrowUpCircle, History } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
+import { useI18n } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
 import { toast } from "sonner";
 
 export default function WarehousePage() {
   const { user, hasRole } = useAuth();
+  const { t } = useI18n();
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [movements, setMovements] = useState<any[]>([]);
@@ -38,7 +40,7 @@ export default function WarehousePage() {
   useEffect(() => { load(); }, []);
 
   const release = async () => {
-    if (!outProduct || !outQty || !outRecipient) { toast.error("Maydonlarni to'ldiring"); return; }
+    if (!outProduct || !outQty || !outRecipient) { toast.error(t.warehouse.fillFields); return; }
     const { error } = await supabase.from("stock_movements").insert({
       product_id: outProduct, order_id: outOrder || null, direction: "out",
       quantity: outQty, recipient_name: outRecipient, comment: outComment, created_by: user?.id, taken_by: user?.id,
@@ -47,9 +49,9 @@ export default function WarehousePage() {
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: user?.email, action: "Sklad chiqimi",
       entity: "stock_movement", order_id: outOrder || null,
-      details: `${products.find(p=>p.id===outProduct)?.name} — ${outQty} dona, qabul qildi: ${outRecipient}`,
+      details: `${products.find(p=>p.id===outProduct)?.name} — ${outQty}, ${outRecipient}`,
     });
-    toast.success("Chiqim qayd etildi");
+    toast.success(t.warehouse.outRecorded);
     setOutProduct(""); setOutOrder(""); setOutQty(1); setOutRecipient(""); setOutComment("");
     load();
   };
@@ -59,37 +61,37 @@ export default function WarehousePage() {
     [movements, selectedProduct]
   );
 
-  const fmtDateTime = (s: string) => new Date(s).toLocaleString("uz-UZ", { dateStyle: "short", timeStyle: "short" });
+  const fmtDateTime = (s: string) => new Date(s).toLocaleString();
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Sklad</h1>
-          <p className="text-sm text-muted-foreground">Umumiy qoldiq, chiqim/kirim, tarix</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t.warehouse.title}</h1>
+          <p className="text-sm text-muted-foreground">{t.warehouse.subtitle}</p>
         </div>
         {hasRole(["warehouse", "admin"]) && (
           <Dialog>
-            <DialogTrigger asChild><Button><ArrowDownToLine className="h-4 w-4 mr-2" />Chiqim qilish</Button></DialogTrigger>
+            <DialogTrigger asChild><Button><ArrowDownToLine className="h-4 w-4 mr-2" />{t.warehouse.release}</Button></DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>Sklad chiqimi</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>{t.warehouse.releaseTitle}</DialogTitle></DialogHeader>
               <div className="space-y-3">
-                <div><Label>Mahsulot</Label>
+                <div><Label>{t.warehouse.cols.product}</Label>
                   <Select value={outProduct} onValueChange={setOutProduct}>
-                    <SelectTrigger><SelectValue placeholder="Tanlang" /></SelectTrigger>
-                    <SelectContent>{products.map(p => <SelectItem key={p.id} value={p.id}>{p.name} (qoldiq: {p.stock_qty} {p.unit})</SelectItem>)}</SelectContent>
+                    <SelectTrigger><SelectValue placeholder={t.supply.select} /></SelectTrigger>
+                    <SelectContent>{products.map(p => <SelectItem key={p.id} value={p.id}>{p.name} ({t.warehouse.cols.stock}: {p.stock_qty} {p.unit})</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <div><Label>Qaysi zakaz uchun (ixtiyoriy)</Label>
+                <div><Label>{t.warehouse.forOrder}</Label>
                   <Select value={outOrder} onValueChange={setOutOrder}>
-                    <SelectTrigger><SelectValue placeholder="Zakaz" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={t.warehouse.orderPh} /></SelectTrigger>
                     <SelectContent>{orders.map(o => <SelectItem key={o.id} value={o.id}>{o.order_number} — {o.product_name}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <div><Label>Miqdor</Label><Input type="number" min={0.1} step={0.1} value={outQty} onChange={e => setOutQty(Number(e.target.value))} /></div>
-                <div><Label>Kim oldi (ishchi ismi)</Label><Input value={outRecipient} onChange={e => setOutRecipient(e.target.value)} placeholder="Masalan: Ahmad Karimov" /></div>
-                <div><Label>Izoh (ixtiyoriy)</Label><Textarea value={outComment} onChange={e => setOutComment(e.target.value)} /></div>
-                <Button className="w-full" onClick={release}>Chiqimni qayd etish</Button>
+                <div><Label>{t.warehouse.qty}</Label><Input type="number" min={0.1} step={0.1} value={outQty} onChange={e => setOutQty(Number(e.target.value))} /></div>
+                <div><Label>{t.warehouse.takenBy}</Label><Input value={outRecipient} onChange={e => setOutRecipient(e.target.value)} placeholder={t.warehouse.takenByPh} /></div>
+                <div><Label>{t.warehouse.commentOpt}</Label><Textarea value={outComment} onChange={e => setOutComment(e.target.value)} /></div>
+                <Button className="w-full" onClick={release}>{t.warehouse.saveOut}</Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -98,8 +100,8 @@ export default function WarehousePage() {
 
       <Tabs defaultValue="stock">
         <TabsList>
-          <TabsTrigger value="stock">Umumiy qoldiq</TabsTrigger>
-          <TabsTrigger value="history">Harakatlar tarixi</TabsTrigger>
+          <TabsTrigger value="stock">{t.warehouse.tabs.stock}</TabsTrigger>
+          <TabsTrigger value="history">{t.warehouse.tabs.history}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="stock" className="mt-4">
@@ -107,10 +109,10 @@ export default function WarehousePage() {
             <div className="border rounded-md overflow-x-auto">
               <Table>
                 <TableHeader><TableRow>
-                  <TableHead>Mahsulot</TableHead>
-                  <TableHead className="text-right">Qoldiq</TableHead>
-                  <TableHead className="text-right">Min limit</TableHead>
-                  <TableHead>Holat</TableHead>
+                  <TableHead>{t.warehouse.cols.product}</TableHead>
+                  <TableHead className="text-right">{t.warehouse.cols.stock}</TableHead>
+                  <TableHead className="text-right">{t.warehouse.cols.min}</TableHead>
+                  <TableHead>{t.warehouse.cols.state}</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
                   {products.map(p => {
@@ -120,7 +122,7 @@ export default function WarehousePage() {
                         <TableCell className="font-medium flex items-center gap-2"><Package className="h-4 w-4 text-muted-foreground" />{p.name}</TableCell>
                         <TableCell className="text-right font-mono">{p.stock_qty} {p.unit}</TableCell>
                         <TableCell className="text-right text-sm text-muted-foreground">{p.min_limit} {p.unit}</TableCell>
-                        <TableCell>{low ? <span className="text-status-red text-xs font-semibold flex items-center gap-1"><AlertTriangle className="h-3 w-3" />Kam qoldi</span> : <span className="text-status-green text-xs">Yetarli</span>}</TableCell>
+                        <TableCell>{low ? <span className="text-status-red text-xs font-semibold flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{t.warehouse.low}</span> : <span className="text-status-green text-xs">{t.warehouse.enough}</span>}</TableCell>
                       </TableRow>
                     );
                   })}
@@ -128,27 +130,27 @@ export default function WarehousePage() {
               </Table>
             </div>
           </CardContent></Card>
-          <p className="text-xs text-muted-foreground mt-2">Mahsulot ustiga bosing — to'liq tarix ochiladi</p>
+          <p className="text-xs text-muted-foreground mt-2">{t.warehouse.clickRow}</p>
         </TabsContent>
 
         <TabsContent value="history" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Sklad harakati (oxirgi 100)</CardTitle>
-              <CardDescription>Kim, qachon, qaysi zakaz uchun, qaysi mahsulot va qancha</CardDescription>
+              <CardTitle className="text-base">{t.warehouse.historyTitle}</CardTitle>
+              <CardDescription>{t.warehouse.historyDesc}</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <div className="border-t overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Sana / vaqt</TableHead>
-                      <TableHead>Yo'nalish</TableHead>
-                      <TableHead>Mahsulot</TableHead>
-                      <TableHead className="text-right">Miqdor</TableHead>
-                      <TableHead>Kim oldi / keltirdi</TableHead>
-                      <TableHead>Zakaz</TableHead>
-                      <TableHead>Izoh</TableHead>
+                      <TableHead>{t.warehouse.cols.datetime}</TableHead>
+                      <TableHead>{t.warehouse.cols.direction}</TableHead>
+                      <TableHead>{t.warehouse.cols.product}</TableHead>
+                      <TableHead className="text-right">{t.warehouse.cols.qty}</TableHead>
+                      <TableHead>{t.warehouse.cols.whoTook}</TableHead>
+                      <TableHead>{t.warehouse.cols.order}</TableHead>
+                      <TableHead>{t.warehouse.cols.comment}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -157,19 +159,19 @@ export default function WarehousePage() {
                         <TableCell className="text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</TableCell>
                         <TableCell>
                           {m.direction === "out"
-                            ? <span className="inline-flex items-center gap-1 text-status-red text-xs font-semibold"><ArrowDownCircle className="h-3.5 w-3.5" />Chiqim</span>
-                            : <span className="inline-flex items-center gap-1 text-status-green text-xs font-semibold"><ArrowUpCircle className="h-3.5 w-3.5" />Kirim</span>}
+                            ? <span className="inline-flex items-center gap-1 text-status-red text-xs font-semibold"><ArrowDownCircle className="h-3.5 w-3.5" />{t.warehouse.out}</span>
+                            : <span className="inline-flex items-center gap-1 text-status-green text-xs font-semibold"><ArrowUpCircle className="h-3.5 w-3.5" />{t.warehouse.in}</span>}
                         </TableCell>
                         <TableCell className="text-sm font-medium">{m.product?.name ?? "—"}</TableCell>
                         <TableCell className={`text-right font-mono font-semibold ${m.direction==="out" ? "text-status-red" : "text-status-green"}`}>
                           {m.direction==="out"?"-":"+"}{m.quantity} {m.product?.unit}
                         </TableCell>
                         <TableCell className="text-sm">{m.recipient_name ?? <span className="text-muted-foreground">—</span>}</TableCell>
-                        <TableCell className="text-sm font-mono">{m.order?.order_number ?? <span className="text-muted-foreground">Umumiy</span>}</TableCell>
+                        <TableCell className="text-sm font-mono">{m.order?.order_number ?? <span className="text-muted-foreground">{t.warehouse.common}</span>}</TableCell>
                         <TableCell className="text-xs italic text-muted-foreground max-w-[200px] truncate">{m.comment ?? "—"}</TableCell>
                       </TableRow>
                     ))}
-                    {movements.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">Harakatlar yo'q</TableCell></TableRow>}
+                    {movements.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">{t.warehouse.noMov}</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </div>
@@ -185,7 +187,7 @@ export default function WarehousePage() {
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2"><Package className="h-5 w-5" />{selectedProduct.name}</DialogTitle>
-                <DialogDescription>Mahsulot bo'yicha to'liq ma'lumot va harakatlar tarixi</DialogDescription>
+                <DialogDescription>{t.warehouse.detailDesc}</DialogDescription>
               </DialogHeader>
 
               <div className="grid sm:grid-cols-3 gap-4">
@@ -200,20 +202,20 @@ export default function WarehousePage() {
                 </div>
                 <div className="sm:col-span-2 grid grid-cols-2 gap-3">
                   <div className="border rounded-md p-3">
-                    <div className="text-xs text-muted-foreground">Umumiy qoldiq</div>
+                    <div className="text-xs text-muted-foreground">{t.warehouse.totalQty}</div>
                     <div className="text-2xl font-bold font-mono mt-1">{selectedProduct.stock_qty} <span className="text-sm font-normal text-muted-foreground">{selectedProduct.unit}</span></div>
                   </div>
                   <div className="border rounded-md p-3">
-                    <div className="text-xs text-muted-foreground">Minimal limit</div>
+                    <div className="text-xs text-muted-foreground">{t.warehouse.minLimit}</div>
                     <div className="text-2xl font-bold font-mono mt-1">{selectedProduct.min_limit} <span className="text-sm font-normal text-muted-foreground">{selectedProduct.unit}</span></div>
                   </div>
                   <div className="col-span-2">
                     {Number(selectedProduct.stock_qty) <= Number(selectedProduct.min_limit) ? (
                       <div className="flex items-center gap-2 text-status-red text-sm font-semibold border border-status-red/30 bg-status-red/5 rounded-md p-2">
-                        <AlertTriangle className="h-4 w-4" />Diqqat: qoldiq minimal limitdan past
+                        <AlertTriangle className="h-4 w-4" />{t.warehouse.lowAlert}
                       </div>
                     ) : (
-                      <div className="text-status-green text-sm font-medium">Qoldiq yetarli</div>
+                      <div className="text-status-green text-sm font-medium">{t.warehouse.enoughOk}</div>
                     )}
                   </div>
                 </div>
@@ -221,19 +223,19 @@ export default function WarehousePage() {
 
               <Tabs defaultValue="in" className="mt-2">
                 <TabsList>
-                  <TabsTrigger value="in"><ArrowUpCircle className="h-3.5 w-3.5 mr-1" />Prixod tarixi</TabsTrigger>
-                  <TabsTrigger value="out"><ArrowDownCircle className="h-3.5 w-3.5 mr-1" />Chiqim tarixi</TabsTrigger>
-                  <TabsTrigger value="all"><History className="h-3.5 w-3.5 mr-1" />Audit log</TabsTrigger>
+                  <TabsTrigger value="in"><ArrowUpCircle className="h-3.5 w-3.5 mr-1" />{t.warehouse.inHistory}</TabsTrigger>
+                  <TabsTrigger value="out"><ArrowDownCircle className="h-3.5 w-3.5 mr-1" />{t.warehouse.outHistory}</TabsTrigger>
+                  <TabsTrigger value="all"><History className="h-3.5 w-3.5 mr-1" />{t.warehouse.auditLog}</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="in" className="mt-3">
                   <div className="border rounded-md overflow-x-auto">
                     <Table>
                       <TableHeader><TableRow>
-                        <TableHead>Sana / vaqt</TableHead>
-                        <TableHead>Kim olib keldi</TableHead>
-                        <TableHead className="text-right">Miqdor</TableHead>
-                        <TableHead>Izoh</TableHead>
+                        <TableHead>{t.warehouse.cols.datetime}</TableHead>
+                        <TableHead>{t.warehouse.cols.whoBrought}</TableHead>
+                        <TableHead className="text-right">{t.warehouse.cols.qty}</TableHead>
+                        <TableHead>{t.warehouse.cols.comment}</TableHead>
                       </TableRow></TableHeader>
                       <TableBody>
                         {productMovements.filter(m => m.direction === "in").map(m => (
@@ -245,7 +247,7 @@ export default function WarehousePage() {
                           </TableRow>
                         ))}
                         {productMovements.filter(m => m.direction === "in").length === 0 && (
-                          <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-4 text-sm">Prixodlar yo'q</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-4 text-sm">{t.warehouse.noIn}</TableCell></TableRow>
                         )}
                       </TableBody>
                     </Table>
@@ -256,24 +258,24 @@ export default function WarehousePage() {
                   <div className="border rounded-md overflow-x-auto">
                     <Table>
                       <TableHeader><TableRow>
-                        <TableHead>Sana / vaqt</TableHead>
-                        <TableHead>Kimga berilgan</TableHead>
-                        <TableHead>Qaysi zakaz</TableHead>
-                        <TableHead className="text-right">Miqdor</TableHead>
-                        <TableHead>Izoh</TableHead>
+                        <TableHead>{t.warehouse.cols.datetime}</TableHead>
+                        <TableHead>{t.warehouse.cols.whoGot}</TableHead>
+                        <TableHead>{t.warehouse.cols.whichOrder}</TableHead>
+                        <TableHead className="text-right">{t.warehouse.cols.qty}</TableHead>
+                        <TableHead>{t.warehouse.cols.comment}</TableHead>
                       </TableRow></TableHeader>
                       <TableBody>
                         {productMovements.filter(m => m.direction === "out").map(m => (
                           <TableRow key={m.id}>
                             <TableCell className="text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</TableCell>
                             <TableCell className="text-sm">{m.recipient_name ?? "—"}</TableCell>
-                            <TableCell className="text-sm font-mono">{m.order?.order_number ?? <span className="text-muted-foreground">Umumiy</span>}</TableCell>
+                            <TableCell className="text-sm font-mono">{m.order?.order_number ?? <span className="text-muted-foreground">{t.warehouse.common}</span>}</TableCell>
                             <TableCell className="text-right font-mono text-status-red font-semibold">-{m.quantity} {selectedProduct.unit}</TableCell>
                             <TableCell className="text-xs italic text-muted-foreground">{m.comment ?? "—"}</TableCell>
                           </TableRow>
                         ))}
                         {productMovements.filter(m => m.direction === "out").length === 0 && (
-                          <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-4 text-sm">Chiqimlar yo'q</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-4 text-sm">{t.warehouse.noOut}</TableCell></TableRow>
                         )}
                       </TableBody>
                     </Table>
@@ -282,21 +284,21 @@ export default function WarehousePage() {
 
                 <TabsContent value="all" className="mt-3">
                   <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {productMovements.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Harakatlar yo'q</p>}
+                    {productMovements.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">{t.warehouse.noMov}</p>}
                     {productMovements.map(m => (
                       <div key={m.id} className={`text-sm border-l-2 pl-3 py-1.5 ${m.direction === "out" ? "border-status-red/60" : "border-status-green/60"}`}>
                         <div className="flex items-center justify-between">
                           <span className="font-medium flex items-center gap-1.5">
                             {m.direction === "out" ? <ArrowDownCircle className="h-3.5 w-3.5 text-status-red" /> : <ArrowUpCircle className="h-3.5 w-3.5 text-status-green" />}
-                            {m.direction === "out" ? "Chiqim" : "Prixod"}
+                            {m.direction === "out" ? t.warehouse.out : t.warehouse.movIn}
                           </span>
                           <span className={`font-mono font-semibold ${m.direction==="out" ? "text-status-red" : "text-status-green"}`}>
                             {m.direction==="out"?"-":"+"}{m.quantity} {selectedProduct.unit}
                           </span>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {fmtDateTime(m.created_at)} · {m.direction==="out" ? "Oldi" : "Keltirdi"}: {m.recipient_name ?? "—"}
-                          {m.order?.order_number && <> · Zakaz: <span className="font-mono">{m.order.order_number}</span></>}
+                          {fmtDateTime(m.created_at)} · {m.direction==="out" ? t.warehouse.got : t.warehouse.brought}: {m.recipient_name ?? "—"}
+                          {m.order?.order_number && <> · {t.warehouse.cols.order}: <span className="font-mono">{m.order.order_number}</span></>}
                         </div>
                         {m.comment && <div className="text-xs italic text-muted-foreground mt-0.5">"{m.comment}"</div>}
                       </div>
