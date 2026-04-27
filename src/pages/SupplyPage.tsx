@@ -59,7 +59,7 @@ export default function SupplyPage() {
           <h1 className="text-2xl font-bold tracking-tight">{t.supply.title}</h1>
           <p className="text-sm text-muted-foreground">{t.supply.subtitle}</p>
         </div>
-        {hasRole(["supply", "admin", "warehouse"]) && (
+        {hasRole(["supply", "admin"]) && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{t.supply.receive}</Button></DialogTrigger>
             <DialogContent>

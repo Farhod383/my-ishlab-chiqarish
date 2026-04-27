@@ -406,27 +406,6 @@ export type Database = {
         }
         Relationships: []
       }
-      stage_templates: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          id: string
-          name: string
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          name: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          name?: string
-        }
-        Relationships: []
-      }
       stock_movements: {
         Row: {
           comment: string | null
@@ -484,41 +463,6 @@ export type Database = {
           },
         ]
       }
-      template_stages: {
-        Row: {
-          id: string
-          name: string
-          norm_days: number
-          qc_required: boolean
-          stage_order: number
-          template_id: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          norm_days?: number
-          qc_required?: boolean
-          stage_order: number
-          template_id: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          norm_days?: number
-          qc_required?: boolean
-          stage_order?: number
-          template_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "template_stages_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "stage_templates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_roles: {
         Row: {
           created_at: string
@@ -566,6 +510,7 @@ export type Database = {
         | "worker"
         | "warehouse"
         | "supply"
+        | "otk"
       movement_direction: "in" | "out"
       order_priority: "normal" | "exception"
       order_status:
@@ -709,6 +654,7 @@ export const Constants = {
         "worker",
         "warehouse",
         "supply",
+        "otk",
       ],
       movement_direction: ["in", "out"],
       order_priority: ["normal", "exception"],

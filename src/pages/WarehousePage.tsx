@@ -70,7 +70,7 @@ export default function WarehousePage() {
           <h1 className="text-2xl font-bold tracking-tight">{t.warehouse.title}</h1>
           <p className="text-sm text-muted-foreground">{t.warehouse.subtitle}</p>
         </div>
-        {hasRole(["warehouse", "admin"]) && (
+        {(hasRole(["warehouse", "admin"])) && (
           <Dialog>
             <DialogTrigger asChild><Button><ArrowDownToLine className="h-4 w-4 mr-2" />{t.warehouse.release}</Button></DialogTrigger>
             <DialogContent>

@@ -14,8 +14,6 @@ export type OrderPartRow = Database["public"]["Tables"]["order_parts"]["Row"];
 export type StockMovementRow = Database["public"]["Tables"]["stock_movements"]["Row"];
 export type AuditLogRow = Database["public"]["Tables"]["audit_log"]["Row"];
 export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
-export type StageTemplateRow = Database["public"]["Tables"]["stage_templates"]["Row"];
-export type TemplateStageRow = Database["public"]["Tables"]["template_stages"]["Row"];
 
 // Compute health color based on deadline & status
 export type HealthColor = "green" | "yellow" | "red";
