@@ -190,7 +190,7 @@ export default function OrderDetail() {
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 shrink-0 min-w-[220px]">
-                      {s.qc_required && hasRole(["admin", "manager", "marketing"]) && (
+                      {s.qc_required && hasRole(["admin", "manager", "marketing", "otk"]) && (
                         <div className="space-y-1.5 border rounded-md p-2 bg-muted/30">
                           <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">OTK</div>
                           <Textarea

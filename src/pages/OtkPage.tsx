@@ -80,7 +80,7 @@ export default function OtkPage() {
     load();
   };
 
-  const canEdit = hasRole(["admin", "manager", "marketing"]);
+  const canEdit = hasRole(["admin", "manager", "marketing", "otk"]);
 
   return (
     <div className="space-y-6">
