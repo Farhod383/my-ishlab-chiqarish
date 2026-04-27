@@ -23,7 +23,7 @@ export function AppSidebar() {
     { title: t.nav.production, url: "/production", icon: Factory },
     { title: t.nav.otk, url: "/otk", icon: ShieldCheck },
     { title: t.nav.warehouse, url: "/warehouse", icon: Warehouse },
-    { title: t.nav.supply, url: "/supply", icon: Truck, roles: ["supply", "admin", "warehouse"] },
+    { title: t.nav.supply, url: "/supply", icon: Truck, roles: ["supply", "admin"] },
     { title: t.nav.chat, url: "/chat", icon: MessageSquare },
     { title: t.nav.audit, url: "/audit", icon: History, roles: ["admin", "manager"] },
   ];
