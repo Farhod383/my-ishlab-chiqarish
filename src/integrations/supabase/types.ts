@@ -566,6 +566,7 @@ export type Database = {
         | "worker"
         | "warehouse"
         | "supply"
+        | "otk"
       movement_direction: "in" | "out"
       order_priority: "normal" | "exception"
       order_status:
@@ -709,6 +710,7 @@ export const Constants = {
         "worker",
         "warehouse",
         "supply",
+        "otk",
       ],
       movement_direction: ["in", "out"],
       order_priority: ["normal", "exception"],
