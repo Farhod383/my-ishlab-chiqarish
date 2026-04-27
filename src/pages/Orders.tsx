@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,10 +9,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { StatusBadge, PriorityBadge, HealthDot } from "@/components/StatusBadge";
 import { orderHealth, type OrderRow } from "@/types/erp";
 import { useAuth } from "@/auth/AuthContext";
+import { useI18n } from "@/i18n/context";
 import { Plus, Search } from "lucide-react";
 
 export default function Orders() {
   const { hasRole } = useAuth();
+  const { t } = useI18n();
   const [rows, setRows] = useState<(OrderRow & { client?: any })[]>([]);
   const [filter, setFilter] = useState<"all" | "active" | "exception" | "delayed" | "completed">("all");
   const [q, setQ] = useState("");
@@ -44,11 +46,11 @@ export default function Orders() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Zakazlar</h1>
-          <p className="text-sm text-muted-foreground">Navbat asosida ishlaydi · Istisno yuqorida</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t.orders.title}</h1>
+          <p className="text-sm text-muted-foreground">{t.orders.subtitle}</p>
         </div>
         {hasRole(["marketing", "admin"]) && (
-          <Button asChild><Link to="/orders/new"><Plus className="h-4 w-4 mr-2" />Yangi zakaz</Link></Button>
+          <Button asChild><Link to="/orders/new"><Plus className="h-4 w-4 mr-2" />{t.orders.new}</Link></Button>
         )}
       </div>
 
@@ -57,16 +59,16 @@ export default function Orders() {
           <div className="flex items-center justify-between flex-wrap gap-3">
             <Tabs value={filter} onValueChange={(v) => setFilter(v as any)}>
               <TabsList>
-                <TabsTrigger value="all">Barchasi</TabsTrigger>
-                <TabsTrigger value="active">Aktiv</TabsTrigger>
-                <TabsTrigger value="exception">Istisno</TabsTrigger>
-                <TabsTrigger value="delayed">Kechikkan</TabsTrigger>
-                <TabsTrigger value="completed">Tugallangan</TabsTrigger>
+                <TabsTrigger value="all">{t.orders.tabs.all}</TabsTrigger>
+                <TabsTrigger value="active">{t.orders.tabs.active}</TabsTrigger>
+                <TabsTrigger value="exception">{t.orders.tabs.exception}</TabsTrigger>
+                <TabsTrigger value="delayed">{t.orders.tabs.delayed}</TabsTrigger>
+                <TabsTrigger value="completed">{t.orders.tabs.completed}</TabsTrigger>
               </TabsList>
             </Tabs>
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input className="pl-8 w-64" placeholder="Qidirish..." value={q} onChange={(e) => setQ(e.target.value)} />
+              <Input className="pl-8 w-64" placeholder={t.common.search} value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
           </div>
         </CardHeader>
@@ -76,20 +78,20 @@ export default function Orders() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-8"></TableHead>
-                  <TableHead>Raqam</TableHead>
-                  <TableHead>Klient</TableHead>
-                  <TableHead>Mahsulot</TableHead>
-                  <TableHead className="text-right">Soni</TableHead>
-                  <TableHead>Muhimlik</TableHead>
-                  <TableHead>Holat</TableHead>
-                  <TableHead>Olingan</TableHead>
-                  <TableHead>Boshlanish</TableHead>
-                  <TableHead>Tugash</TableHead>
-                  <TableHead>Qoldi</TableHead>
+                  <TableHead>{t.orders.cols.number}</TableHead>
+                  <TableHead>{t.orders.cols.client}</TableHead>
+                  <TableHead>{t.orders.cols.product}</TableHead>
+                  <TableHead className="text-right">{t.orders.cols.qty}</TableHead>
+                  <TableHead>{t.orders.cols.priority}</TableHead>
+                  <TableHead>{t.orders.cols.status}</TableHead>
+                  <TableHead>{t.orders.cols.received}</TableHead>
+                  <TableHead>{t.orders.cols.started}</TableHead>
+                  <TableHead>{t.orders.cols.deadline}</TableHead>
+                  <TableHead>{t.orders.cols.left}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Yuklanmoqda...</TableCell></TableRow>}
+                {loading && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                 {!loading && filtered.map((o) => {
                   const today0 = new Date(); today0.setHours(0,0,0,0);
                   const dl = new Date(o.deadline); dl.setHours(0,0,0,0);
@@ -111,15 +113,15 @@ export default function Orders() {
                       <TableCell className="text-sm whitespace-nowrap text-muted-foreground">{startStr}</TableCell>
                       <TableCell className="text-sm whitespace-nowrap">{o.deadline}</TableCell>
                       <TableCell className="text-xs whitespace-nowrap">
-                        {isDone ? <span className="text-status-green font-medium">Tugadi</span>
-                          : diffDays < 0 ? <span className="text-status-red font-semibold">{Math.abs(diffDays)} kun kechikdi</span>
-                          : diffDays === 0 ? <span className="text-status-yellow font-semibold">Bugun</span>
-                          : <span className={diffDays <= 2 ? "text-status-yellow font-semibold" : "text-status-green font-medium"}>{diffDays} kun qoldi</span>}
+                        {isDone ? <span className="text-status-green font-medium">{t.orders.finished}</span>
+                          : diffDays < 0 ? <span className="text-status-red font-semibold">{Math.abs(diffDays)} {t.orders.daysLate}</span>
+                          : diffDays === 0 ? <span className="text-status-yellow font-semibold">{t.common.today}</span>
+                          : <span className={diffDays <= 2 ? "text-status-yellow font-semibold" : "text-status-green font-medium"}>{diffDays} {t.orders.daysLeft}</span>}
                       </TableCell>
                     </TableRow>
                   );
                 })}
-                {!loading && filtered.length === 0 && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Zakaz yo'q</TableCell></TableRow>}
+                {!loading && filtered.length === 0 && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">{t.orders.none}</TableCell></TableRow>}
               </TableBody>
             </Table>
           </div>

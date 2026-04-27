@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge, PriorityBadge, HealthDot } from "@/components/StatusBadge";
 import { orderHealth, logAudit, type OrderRow, type StageRow } from "@/types/erp";
 import { useAuth } from "@/auth/AuthContext";
+import { useI18n } from "@/i18n/context";
 import { ArrowUp, GripVertical, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
@@ -14,6 +15,7 @@ interface OrderWithStages extends OrderRow { stages: StageRow[]; client?: any }
 
 export default function ProductionBoard() {
   const { hasRole, user } = useAuth();
+  const { t } = useI18n();
   const [orders, setOrders] = useState<OrderWithStages[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,8 +37,7 @@ export default function ProductionBoard() {
   useEffect(() => { load(); }, []);
 
   const moveToFront = async (o: OrderWithStages) => {
-    if (!hasRole(["manager", "admin"])) { toast.error("Faqat manager tasdiqlay oladi"); return; }
-    // Push others down, set this to 1
+    if (!hasRole(["manager", "admin"])) { toast.error(t.production.onlyManager); return; }
     for (const x of orders) {
       if (x.id === o.id) continue;
       await supabase.from("orders").update({ queue_position: (x.queue_position ?? 0) + 1 }).eq("id", x.id);
@@ -45,20 +46,20 @@ export default function ProductionBoard() {
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: user?.email,
       action: "Istisno tasdiqlandi", entity: "order", order_id: o.id,
-      details: `${o.order_number} navbatda 1-o'ringa o'tkazildi (boshqalar surildi)`,
+      details: `${o.order_number}`,
     });
-    toast.success("Zakaz oldinga o'tkazildi, boshqalar surildi");
+    toast.success(t.production.movedFront);
     load();
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Ishlab chiqarish taxtasi</h1>
-        <p className="text-sm text-muted-foreground">Navbat tartibi · Istisno zakazni manager oldinga o'tkaza oladi</p>
+        <h1 className="text-2xl font-bold tracking-tight">{t.production.title}</h1>
+        <p className="text-sm text-muted-foreground">{t.production.subtitle}</p>
       </div>
 
-      {loading && <p className="text-muted-foreground">Yuklanmoqda...</p>}
+      {loading && <p className="text-muted-foreground">{t.common.loading}</p>}
 
       <div className="space-y-3">
         {orders.map((o) => {
@@ -82,12 +83,12 @@ export default function ProductionBoard() {
                       <StatusBadge status={o.status as any} />
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      {o.client?.name ?? "—"} · {o.quantity} dona · Muddat: {o.deadline}
+                      {o.client?.name ?? "—"} · {o.quantity} {t.common.pieces} · {t.dashboard.deadline}: {o.deadline}
                     </div>
                     <div className="mt-3">
                       <div className="flex items-center justify-between text-xs mb-1">
-                        <span>Hozirgi bosqich: <strong>{active?.name ?? "—"}</strong></span>
-                        <span className="text-muted-foreground">{completed} / {total} bosqich</span>
+                        <span>{t.production.currentStage}: <strong>{active?.name ?? "—"}</strong></span>
+                        <span className="text-muted-foreground">{t.production.progress.replace("{a}", String(completed)).replace("{b}", String(total))}</span>
                       </div>
                       <Progress value={(completed / total) * 100} className="h-2" />
                       <div className="flex gap-1 mt-2 flex-wrap">
@@ -104,11 +105,11 @@ export default function ProductionBoard() {
                   </div>
                   {o.priority !== "exception" && hasRole(["manager", "admin"]) && (
                     <Button size="sm" variant="outline" onClick={() => moveToFront(o)} className="shrink-0">
-                      <ArrowUp className="h-3 w-3 mr-1" /> Istisno qilib oldinga
+                      <ArrowUp className="h-3 w-3 mr-1" /> {t.production.moveFront}
                     </Button>
                   )}
                   {o.priority === "exception" && o.exception_approved_by && (
-                    <div className="text-xs text-status-red shrink-0 flex items-center gap-1"><AlertTriangle className="h-3 w-3" />Tasdiqlangan</div>
+                    <div className="text-xs text-status-red shrink-0 flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{t.production.confirmed}</div>
                   )}
                 </div>
               </CardContent>
@@ -116,7 +117,7 @@ export default function ProductionBoard() {
           );
         })}
         {!loading && orders.length === 0 && (
-          <Card><CardContent className="py-10 text-center text-muted-foreground">Faol zakazlar yo'q</CardContent></Card>
+          <Card><CardContent className="py-10 text-center text-muted-foreground">{t.production.noActive}</CardContent></Card>
         )}
       </div>
     </div>

@@ -8,12 +8,14 @@ import { ClipboardList, Activity, AlertTriangle, AlertOctagon, Package, History,
 import { Skeleton } from "@/components/ui/skeleton";
 import { OrderCostReport } from "@/components/OrderCostReport";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/i18n/context";
 
 interface DashStats {
   total: number; active: number; delayed: number; today: number; exception: number;
 }
 
 export default function Dashboard() {
+  const { t } = useI18n();
   const [stats, setStats] = useState<DashStats>({ total: 0, active: 0, delayed: 0, today: 0, exception: 0 });
   const [recent, setRecent] = useState<OrderRow[]>([]);
   const [completed, setCompleted] = useState<OrderRow[]>([]);
@@ -47,18 +49,18 @@ export default function Dashboard() {
   }, []);
 
   const cards = [
-    { label: "Jami zakazlar", value: stats.total, icon: ClipboardList, accent: "text-primary bg-primary/10" },
-    { label: "Aktiv zakazlar", value: stats.active, icon: Activity, accent: "text-status-blue bg-status-blue/10" },
-    { label: "Kechikayotgan", value: stats.delayed, icon: AlertTriangle, accent: "text-status-red bg-status-red/10" },
-    { label: "Bugun tugashi kerak", value: stats.today, icon: Clock, accent: "text-status-yellow bg-status-yellow/15" },
-    { label: "Istisno zakazlar", value: stats.exception, icon: AlertOctagon, accent: "text-status-red bg-status-red/10" },
+    { label: t.dashboard.totalOrders, value: stats.total, icon: ClipboardList, accent: "text-primary bg-primary/10" },
+    { label: t.dashboard.activeOrders, value: stats.active, icon: Activity, accent: "text-status-blue bg-status-blue/10" },
+    { label: t.dashboard.delayed, value: stats.delayed, icon: AlertTriangle, accent: "text-status-red bg-status-red/10" },
+    { label: t.dashboard.todayDeadline, value: stats.today, icon: Clock, accent: "text-status-yellow bg-status-yellow/15" },
+    { label: t.dashboard.exception, value: stats.exception, icon: AlertOctagon, accent: "text-status-red bg-status-red/10" },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Boshqaruv paneli</h1>
-        <p className="text-sm text-muted-foreground">Ishlab chiqarish jarayoni umumiy ko'rinishi</p>
+        <h1 className="text-2xl font-bold tracking-tight">{t.dashboard.title}</h1>
+        <p className="text-sm text-muted-foreground">{t.dashboard.subtitle}</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -80,7 +82,7 @@ export default function Dashboard() {
       <div className="grid lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2"><ClipboardList className="h-4 w-4" /> Oxirgi zakazlar</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2"><ClipboardList className="h-4 w-4" /> {t.dashboard.recentOrders}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {loading ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />) :
@@ -90,7 +92,7 @@ export default function Dashboard() {
                     <HealthDot color={orderHealth(o)} />
                     <div className="min-w-0">
                       <div className="font-medium text-sm truncate">{o.order_number} · {o.product_name}</div>
-                      <div className="text-xs text-muted-foreground truncate">Muddat: {o.deadline}</div>
+                      <div className="text-xs text-muted-foreground truncate">{t.dashboard.deadline}: {o.deadline}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
@@ -99,26 +101,26 @@ export default function Dashboard() {
                   </div>
                 </Link>
               ))}
-            {!loading && recent.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Hozircha zakaz yo'q</p>}
+            {!loading && recent.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">{t.dashboard.noOrders}</p>}
           </CardContent>
         </Card>
 
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2"><Receipt className="h-4 w-4 text-status-green" /> Tugatilgan zakazlar — hisobotni ochish uchun bosing</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2"><Receipt className="h-4 w-4 text-status-green" /> {t.dashboard.completedOrdersHint}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {completed.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Tugatilgan zakaz yo'q</p>}
+            {completed.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">{t.dashboard.noCompleted}</p>}
             {completed.map((o) => (
               <button key={o.id} onClick={() => setReportFor({ id: o.id, number: o.order_number })} className="w-full flex items-center justify-between p-3 rounded-md border hover:bg-muted/50 transition-colors text-left">
                 <div className="flex items-center gap-3 min-w-0">
                   <HealthDot color="green" />
                   <div className="min-w-0">
                     <div className="font-medium text-sm truncate">{o.order_number} · {o.product_name}</div>
-                    <div className="text-xs text-muted-foreground">Tugadi · {o.deadline}</div>
+                    <div className="text-xs text-muted-foreground">{t.dashboard.finished} · {o.deadline}</div>
                   </div>
                 </div>
-                <Button size="sm" variant="ghost"><Receipt className="h-3.5 w-3.5 mr-1" />Hisobot</Button>
+                <Button size="sm" variant="ghost"><Receipt className="h-3.5 w-3.5 mr-1" />{t.common.report}</Button>
               </button>
             ))}
             {reportFor && <OrderCostReport orderId={reportFor.id} orderNumber={reportFor.number} open={!!reportFor} onOpenChange={(o) => !o && setReportFor(null)} />}
@@ -128,11 +130,11 @@ export default function Dashboard() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2"><Package className="h-4 w-4 text-status-red" /> Skladda kam qolganlar</CardTitle>
-              <CardDescription className="text-xs">Min. limitdan past mahsulotlar</CardDescription>
+              <CardTitle className="text-base flex items-center gap-2"><Package className="h-4 w-4 text-status-red" /> {t.dashboard.lowStock}</CardTitle>
+              <CardDescription className="text-xs">{t.dashboard.lowStockHint}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              {lowStock.length === 0 && <p className="text-sm text-muted-foreground">Hammasi yetarli ✓</p>}
+              {lowStock.length === 0 && <p className="text-sm text-muted-foreground">{t.dashboard.enough} ✓</p>}
               {lowStock.map((p) => (
                 <div key={p.id} className="flex items-center justify-between text-sm p-2 rounded border border-status-red/30 bg-status-red/5">
                   <span className="truncate pr-2">{p.name}</span>
@@ -144,17 +146,17 @@ export default function Dashboard() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2"><History className="h-4 w-4" /> Oxirgi harakatlar</CardTitle>
+              <CardTitle className="text-base flex items-center gap-2"><History className="h-4 w-4" /> {t.dashboard.recentActivity}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {recentLog.map((l) => (
                 <div key={l.id} className="text-xs border-l-2 border-primary/30 pl-2 py-1">
                   <div className="font-medium">{l.action}</div>
                   <div className="text-muted-foreground truncate">{l.details}</div>
-                  <div className="text-[10px] text-muted-foreground">{new Date(l.created_at).toLocaleString("uz-UZ")}</div>
+                  <div className="text-[10px] text-muted-foreground">{new Date(l.created_at).toLocaleString()}</div>
                 </div>
               ))}
-              {recentLog.length === 0 && <p className="text-sm text-muted-foreground">Yozuvlar yo'q</p>}
+              {recentLog.length === 0 && <p className="text-sm text-muted-foreground">{t.common.noRecords}</p>}
             </CardContent>
           </Card>
         </div>
