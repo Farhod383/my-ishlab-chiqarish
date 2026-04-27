@@ -79,13 +79,13 @@ export default function Auth() {
           <div className="h-10 w-10 rounded-lg bg-primary-foreground/15 flex items-center justify-center">
             <Factory className="h-6 w-6" />
           </div>
-          <div className="font-bold text-lg">Manufacturing ERP</div>
+          <div className="font-bold text-lg">MCITY</div>
         </div>
         <div>
           <h1 className="text-4xl font-bold leading-tight mb-3">{t.auth.heroTitle}</h1>
           <p className="text-primary-foreground/80 text-sm max-w-md">{t.auth.heroSubtitle}</p>
         </div>
-        <div className="text-xs text-primary-foreground/60">© Manufacturing ERP</div>
+        <div className="text-xs text-primary-foreground/60">MCITY</div>
       </div>
 
       <div className="flex items-center justify-center p-6">

@@ -8,7 +8,7 @@ import {
 import { useAuth, type AppRole } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { Button } from "@/components/ui/button";
-
+import logo from "@/assets/logo.png"
 export function AppSidebar() {
   const { state } = useSidebar();
   const { user, signOut, hasRole, roles } = useAuth();
@@ -34,10 +34,10 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b">
         <div className="flex items-center gap-2 px-2 py-3">
-          <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-bold shrink-0">M</div>
+          <img src={logo} className="w-10 h-10 rounded" />
           {!collapsed && (
             <div className="leading-tight min-w-0">
-              <div className="font-semibold text-sm truncate">Manufacturing ERP</div>
+              <div className="font-semibold text-sm truncate">MCITY</div>
               <div className="text-[10px] text-muted-foreground uppercase tracking-wide truncate">{(t.roles as any)[roles[0] ?? "admin"] ?? roles[0]}</div>
             </div>
           )}

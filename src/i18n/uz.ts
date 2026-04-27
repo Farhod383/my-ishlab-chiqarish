@@ -1,6 +1,6 @@
 export const uz = {
   meta: { code: "uz", label: "O'zbekcha (lotin)" },
-  appName: "Manufacturing ERP",
+  appName: "MCITY",
   nav: {
     dashboard: "Boshqaruv paneli",
     orders: "Zakazlar",
@@ -275,7 +275,7 @@ export type Translations = typeof uz;
 
 export const ru: Translations = {
   meta: { code: "ru", label: "Русский" },
-  appName: "Manufacturing ERP",
+  appName: "MCITY",
   nav: {
     dashboard: "Панель управления", orders: "Заказы", newOrder: "Новый заказ",
     production: "Производство", warehouse: "Склад", supply: "Снабжение",
@@ -476,7 +476,7 @@ export const ru: Translations = {
 
 export const uzc: Translations = {
   meta: { code: "uzc", label: "Ўзбекча (кирил)" },
-  appName: "Manufacturing ERP",
+  appName: "MCITY",
   nav: {
     dashboard: "Бошқарув панели", orders: "Заказлар", newOrder: "Янги заказ",
     production: "Ишлаб чиқариш", warehouse: "Склад", supply: "Таъминот",
