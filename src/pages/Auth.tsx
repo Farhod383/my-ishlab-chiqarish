@@ -52,8 +52,8 @@ export default function Auth() {
           <div className="font-bold text-lg">Manufacturing ERP</div>
         </div>
         <div>
-          <h1 className="text-4xl font-bold leading-tight mb-3">Ishlab chiqarishni boshqarish<br/>oson va aniq.</h1>
-          <p className="text-primary-foreground/80 text-sm max-w-md">Zakaz, bosqich, sklad, ta'minot va sifat nazoratini bitta panelda boshqaring.</p>
+          <h1 className="text-4xl font-bold leading-tight mb-3">{t.auth.heroTitle}</h1>
+          <p className="text-primary-foreground/80 text-sm max-w-md">{t.auth.heroSubtitle}</p>
         </div>
         <div className="text-xs text-primary-foreground/60">© Manufacturing ERP</div>
       </div>

@@ -1,4 +1,4 @@
-import { LayoutDashboard, ClipboardList, Factory, Warehouse, Truck, ShieldCheck, Layers, LogOut, MessageSquare, History } from "lucide-react";
+import { LayoutDashboard, ClipboardList, Factory, Warehouse, Truck, ShieldCheck, LogOut, MessageSquare, History } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -25,7 +25,6 @@ export function AppSidebar() {
     { title: t.nav.warehouse, url: "/warehouse", icon: Warehouse },
     { title: t.nav.supply, url: "/supply", icon: Truck, roles: ["supply", "admin", "warehouse"] },
     { title: t.nav.chat, url: "/chat", icon: MessageSquare },
-    { title: t.nav.templates, url: "/templates", icon: Layers, roles: ["marketing", "admin"] },
     { title: t.nav.audit, url: "/audit", icon: History, roles: ["admin", "manager"] },
   ];
 

@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import { useAuth } from "@/auth/AuthContext";
+import { useI18n } from "@/i18n/context";
 import { logAudit, type OrderRow, type StageRow, type OrderPartRow, type AuditLogRow } from "@/types/erp";
 import { ArrowLeft, CheckCircle2, Play, FileText, Image as ImageIcon, AlertTriangle, ShieldCheck, Loader2, ClipboardList, Receipt } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,6 +19,7 @@ export default function OrderDetail() {
   const { id } = useParams();
   const nav = useNavigate();
   const { user, hasRole } = useAuth();
+  const { t } = useI18n();
   const [order, setOrder] = useState<(OrderRow & { client?: any }) | null>(null);
   const [stages, setStages] = useState<StageRow[]>([]);
   const [parts, setParts] = useState<OrderPartRow[]>([]);
@@ -51,7 +53,7 @@ export default function OrderDetail() {
 
   const startStage = async (stage: StageRow) => {
     const prev = stages.find((x) => x.stage_order === stage.stage_order - 1);
-    if (prev && prev.status !== "completed") { toast.error("Avval oldingi bosqichni tugating"); return; }
+    if (prev && prev.status !== "completed") { toast.error(t.orderDetail.prevError); return; }
     await supabase.from("order_stages").update({ status: "in_progress", started_at: new Date().toISOString() }).eq("id", stage.id);
     if (order?.status === "pending") await supabase.from("orders").update({ status: "in_progress" }).eq("id", order.id);
     await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Bosqich boshlandi", entity: "stage", order_id: order!.id, stage_id: stage.id, details: stage.name });
@@ -59,7 +61,7 @@ export default function OrderDetail() {
   };
 
   const finishStage = async (stage: StageRow) => {
-    if (stage.qc_required && !stage.qc_passed) { toast.error("Avval OTK tasdiqlang"); return; }
+    if (stage.qc_required && !stage.qc_passed) { toast.error(t.orderDetail.finishOrderError); return; }
     await supabase.from("order_stages").update({ status: "completed", finished_at: new Date().toISOString() }).eq("id", stage.id);
     await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Bosqich tugatildi", entity: "stage", order_id: order!.id, stage_id: stage.id, details: stage.name });
     const others = stages.filter((x) => x.id !== stage.id);
@@ -83,7 +85,7 @@ export default function OrderDetail() {
     const c = otkEdit[stage.id] ?? "";
     await supabase.from("order_stages").update({ otk_comment: c || null }).eq("id", stage.id);
     await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "OTK izoh", entity: "stage", order_id: order!.id, stage_id: stage.id, details: `${stage.name}: ${c}` });
-    toast.success("Saqlandi");
+    toast.success(t.otk.save);
     load();
   };
 
@@ -104,28 +106,28 @@ export default function OrderDetail() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => nav(-1)}><ArrowLeft className="h-4 w-4 mr-1" /> Orqaga</Button>
+          <Button variant="ghost" size="sm" onClick={() => nav(-1)}><ArrowLeft className="h-4 w-4 mr-1" /> {t.orderDetail.backToList}</Button>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl font-bold tracking-tight">{order.order_number}</h1>
               <PriorityBadge priority={order.priority} />
               <StatusBadge status={order.status as any} />
             </div>
-            <p className="text-sm text-muted-foreground">{order.product_name} · {order.quantity} dona · Mijoz: {order.client?.name ?? "—"}</p>
+            <p className="text-sm text-muted-foreground">{order.product_name} · {order.quantity} {t.common.pieces} · {t.orderDetail.client}: {order.client?.name ?? "—"}</p>
           </div>
         </div>
         <Button variant="outline" onClick={() => setReportOpen(true)}>
-          <Receipt className="h-4 w-4 mr-2" /> Hisobot
+          <Receipt className="h-4 w-4 mr-2" /> {t.common.report}
         </Button>
       </div>
 
       <OrderCostReport orderId={order.id} orderNumber={order.order_number} open={reportOpen} onOpenChange={setReportOpen} />
 
       <div className="grid md:grid-cols-4 gap-3">
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Olingan sana</div><div className="font-semibold">{order.order_date}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Boshlanish</div><div className="font-semibold">{startedAt ? new Date(startedAt).toISOString().slice(0,10) : "—"}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Muddat</div><div className="font-semibold">{order.deadline}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Qoldi</div><div className={`font-bold text-lg ${daysLeft < 0 ? "text-status-red" : daysLeft <= 2 ? "text-status-yellow" : "text-status-green"}`}>{order.status === "completed" ? "Tugadi" : daysLeft < 0 ? `${Math.abs(daysLeft)} kun kechikkan` : `${daysLeft} kun`}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{t.orderDetail.received}</div><div className="font-semibold">{order.order_date}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{t.orderDetail.started}</div><div className="font-semibold">{startedAt ? new Date(startedAt).toISOString().slice(0,10) : "—"}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{t.orderDetail.deadline}</div><div className="font-semibold">{order.deadline}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{t.orderDetail.left}</div><div className={`font-bold text-lg ${daysLeft < 0 ? "text-status-red" : daysLeft <= 2 ? "text-status-yellow" : "text-status-green"}`}>{order.status === "completed" ? t.orderDetail.finished : daysLeft < 0 ? `${Math.abs(daysLeft)} ${t.orderDetail.daysLate}` : `${daysLeft} ${t.common.days}`}</div></CardContent></Card>
       </div>
 
       {(order.tz_file_url || order.product_image_url) && (
@@ -133,13 +135,13 @@ export default function OrderDetail() {
           <CardContent className="p-4 flex flex-wrap gap-4">
             {order.product_image_url && (
               <div>
-                <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><ImageIcon className="h-3 w-3" /> Mahsulot rasmi</div>
+                <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><ImageIcon className="h-3 w-3" /> {t.orderDetail.productImage}</div>
                 <img src={order.product_image_url} alt={order.product_name} className="h-28 w-28 object-cover rounded border" />
               </div>
             )}
             {order.tz_file_url && (
               <a href={order.tz_file_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline self-start mt-5">
-                <FileText className="h-4 w-4" /> TZ faylni ochish
+                <FileText className="h-4 w-4" /> {t.orderDetail.openTz}
               </a>
             )}
           </CardContent>
@@ -148,10 +150,10 @@ export default function OrderDetail() {
 
       <Tabs defaultValue="timeline">
         <TabsList>
-          <TabsTrigger value="timeline">Bosqichlar</TabsTrigger>
-          <TabsTrigger value="warehouse">Sklad</TabsTrigger>
-          <TabsTrigger value="movements">Sklad harakati</TabsTrigger>
-          <TabsTrigger value="log">Audit log</TabsTrigger>
+          <TabsTrigger value="timeline">{t.orderDetail.tabs.stages}</TabsTrigger>
+          <TabsTrigger value="warehouse">{t.orderDetail.tabs.warehouse}</TabsTrigger>
+          <TabsTrigger value="movements">{t.orderDetail.tabs.movements}</TabsTrigger>
+          <TabsTrigger value="log">{t.orderDetail.tabs.log}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="timeline" className="space-y-3 mt-4">
@@ -182,9 +184,9 @@ export default function OrderDetail() {
                             }`}><ShieldCheck className="h-3 w-3 mr-1" />OTK</Badge>
                           )}
                         </div>
-                        <div className="text-xs text-muted-foreground mt-1">Norma: {s.norm_days} kun</div>
-                        {s.started_at && <div className="text-xs text-muted-foreground mt-1">Boshlandi: {new Date(s.started_at).toLocaleString("uz-UZ")}</div>}
-                        {s.finished_at && <div className="text-xs text-muted-foreground">Tugadi: {new Date(s.finished_at).toLocaleString("uz-UZ")}</div>}
+                        <div className="text-xs text-muted-foreground mt-1">{t.orderDetail.norm}: {s.norm_days} {t.common.days}</div>
+                        {s.started_at && <div className="text-xs text-muted-foreground mt-1">{t.orderDetail.started2}: {new Date(s.started_at).toLocaleString()}</div>}
+                        {s.finished_at && <div className="text-xs text-muted-foreground">{t.orderDetail.finished2}: {new Date(s.finished_at).toLocaleString()}</div>}
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 shrink-0 min-w-[220px]">
@@ -193,25 +195,25 @@ export default function OrderDetail() {
                           <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">OTK</div>
                           <Textarea
                             rows={2}
-                            placeholder="Izoh (sariq holat)..."
+                            placeholder={t.otk.placeholder}
                             value={otkEdit[s.id] ?? ""}
                             onChange={(e) => setOtkEdit({ ...otkEdit, [s.id]: e.target.value })}
                             className="text-xs"
                           />
                           <div className="flex items-center justify-between gap-2">
                             <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-                              <Checkbox checked={!!s.qc_passed} onCheckedChange={(v) => setOtkPassed(s, !!v)} /> O'tdi
+                              <Checkbox checked={!!s.qc_passed} onCheckedChange={(v) => setOtkPassed(s, !!v)} /> {t.orderDetail.passed}
                             </label>
-                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => saveOtkComment(s)}>Saqlash</Button>
+                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => saveOtkComment(s)}>{t.common.save}</Button>
                           </div>
                         </div>
                       )}
                       <div className="flex gap-2">
                         {s.status === "pending" && canStart && hasRole(["manager", "admin", "marketing"]) && (
-                          <Button size="sm" variant="outline" onClick={() => startStage(s)}><Play className="h-3 w-3 mr-1" />Boshlash</Button>
+                          <Button size="sm" variant="outline" onClick={() => startStage(s)}><Play className="h-3 w-3 mr-1" />{t.orderDetail.start}</Button>
                         )}
                         {s.status === "in_progress" && hasRole(["manager", "admin", "marketing"]) && (
-                          <Button size="sm" onClick={() => finishStage(s)}><CheckCircle2 className="h-3 w-3 mr-1" />Tugatish</Button>
+                          <Button size="sm" onClick={() => finishStage(s)}><CheckCircle2 className="h-3 w-3 mr-1" />{t.orderDetail.complete}</Button>
                         )}
                       </div>
                     </div>
@@ -224,9 +226,9 @@ export default function OrderDetail() {
 
         <TabsContent value="warehouse" className="mt-4">
           <Card>
-            <CardHeader><CardTitle className="text-base">Detallar normasi va sarfi</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">{t.orderDetail.partsTitle}</CardTitle></CardHeader>
             <CardContent className="space-y-2">
-              {parts.length === 0 && <p className="text-sm text-muted-foreground">Bu zakaz uchun detal kiritilmagan</p>}
+              {parts.length === 0 && <p className="text-sm text-muted-foreground">{t.orderDetail.noParts}</p>}
               {parts.map((p) => {
                 const diff = Number(p.actual_qty) - Number(p.norm_qty);
                 const over = diff > 0;
@@ -234,13 +236,13 @@ export default function OrderDetail() {
                   <div key={p.id} className={`flex items-center justify-between p-3 rounded border ${over ? "bg-status-red/5 border-status-red/30" : ""}`}>
                     <div>
                       <div className="font-medium text-sm">{p.part_name}</div>
-                      <div className="text-xs text-muted-foreground">Norma: {p.norm_qty} {p.unit}</div>
+                      <div className="text-xs text-muted-foreground">{t.orderDetail.norm}: {p.norm_qty} {p.unit}</div>
                     </div>
                     <div className="text-right">
                       <div className="font-mono font-semibold">{p.actual_qty} {p.unit}</div>
                       <div className={`text-xs ${over ? "text-status-red font-semibold" : "text-muted-foreground"}`}>
                         {over && <AlertTriangle className="h-3 w-3 inline mr-1" />}
-                        Farq: {diff > 0 ? "+" : ""}{diff.toFixed(1)}
+                        {t.orderDetail.diff}: {diff > 0 ? "+" : ""}{diff.toFixed(1)}
                       </div>
                     </div>
                   </div>
@@ -252,13 +254,13 @@ export default function OrderDetail() {
 
         <TabsContent value="movements" className="mt-4">
           <Card>
-            <CardHeader><CardTitle className="text-base">Sklad chiqimlari/kirimlari</CardTitle><CardDescription>Kim oldi, qancha, qachon</CardDescription></CardHeader>
+            <CardHeader><CardTitle className="text-base">{t.orderDetail.movementsTitle}</CardTitle><p className="text-sm text-muted-foreground">{t.orderDetail.movementsDesc}</p></CardHeader>
             <CardContent className="space-y-2">
-              {movements.length === 0 && <p className="text-sm text-muted-foreground">Harakatlar yo'q</p>}
+              {movements.length === 0 && <p className="text-sm text-muted-foreground">{t.orderDetail.noMovements}</p>}
               {movements.map((m) => (
                 <div key={m.id} className="text-sm border-l-2 border-primary/40 pl-3 py-1">
                   <div><span className="font-medium">{m.product?.name}</span> — <span className="font-mono">{m.direction === "out" ? "-" : "+"}{m.quantity} {m.product?.unit}</span></div>
-                  <div className="text-xs text-muted-foreground">Qabul qildi: {m.recipient_name ?? "—"} · {new Date(m.created_at).toLocaleString("uz-UZ")}</div>
+                  <div className="text-xs text-muted-foreground">{t.orderDetail.receivedBy}: {m.recipient_name ?? "—"} · {new Date(m.created_at).toLocaleString()}</div>
                   {m.comment && <div className="text-xs text-muted-foreground italic">"{m.comment}"</div>}
                 </div>
               ))}
@@ -268,16 +270,16 @@ export default function OrderDetail() {
 
         <TabsContent value="log" className="mt-4">
           <Card>
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><ClipboardList className="h-4 w-4" /> Audit log</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><ClipboardList className="h-4 w-4" /> {t.orderDetail.tabs.log}</CardTitle></CardHeader>
             <CardContent className="space-y-2">
               {logs.map((l) => (
                 <div key={l.id} className="text-sm border-l-2 border-border pl-3 py-1">
-                  <div><span className="font-semibold">{l.action}</span> — <span className="text-muted-foreground">{l.actor_name ?? "Tizim"}</span></div>
+                  <div><span className="font-semibold">{l.action}</span> — <span className="text-muted-foreground">{l.actor_name ?? t.common.system}</span></div>
                   {l.details && <div className="text-xs text-muted-foreground">{l.details}</div>}
-                  <div className="text-[10px] text-muted-foreground">{new Date(l.created_at).toLocaleString("uz-UZ")}</div>
+                  <div className="text-[10px] text-muted-foreground">{new Date(l.created_at).toLocaleString()}</div>
                 </div>
               ))}
-              {logs.length === 0 && <p className="text-sm text-muted-foreground">Yozuvlar yo'q</p>}
+              {logs.length === 0 && <p className="text-sm text-muted-foreground">{t.common.noRecords}</p>}
             </CardContent>
           </Card>
         </TabsContent>
