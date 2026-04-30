@@ -721,6 +721,7 @@ export const uzc: Translations = {
       product: "Маҳсулот", stock: "Қолдиқ", min: "Мин лимит",
       lastPrice: "Охирги нарх", missing: "Етишмайди",
     },
+    image: "Расм", phone: "Телефон", phonePh: "+998 ...",
   },
   audit: {
     title: "Аудит лог",
