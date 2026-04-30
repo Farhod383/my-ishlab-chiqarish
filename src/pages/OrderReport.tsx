@@ -289,7 +289,7 @@ export default function OrderReport() {
                 <TableHead>{t.report.started}</TableHead>
                 <TableHead>{t.report.finished}</TableHead>
                 <TableHead>{t.report.handoverComment}</TableHead>
-                <TableHead>{t.common.status}</TableHead>
+                <TableHead>{t.orders.cols.status}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
