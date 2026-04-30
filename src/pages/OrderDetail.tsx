@@ -9,9 +9,12 @@ import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { logAudit, type OrderRow, type StageRow, type OrderPartRow, type AuditLogRow } from "@/types/erp";
-import { ArrowLeft, CheckCircle2, Play, FileText, Image as ImageIcon, AlertTriangle, ShieldCheck, Loader2, ClipboardList, Receipt } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Play, FileText, Image as ImageIcon, AlertTriangle, ShieldCheck, Loader2, ClipboardList, Receipt, UserCog, MessageCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { OrderCostReport } from "@/components/OrderCostReport";
 
@@ -148,6 +151,15 @@ export default function OrderDetail() {
         </Card>
       )}
 
+      {(order as any).comment && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="p-3 flex gap-2 items-start">
+            <MessageCircle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+            <p className="text-sm whitespace-pre-wrap">{(order as any).comment}</p>
+          </CardContent>
+        </Card>
+      )}
+
       <Tabs defaultValue="timeline">
         <TabsList>
           <TabsTrigger value="timeline">{t.orderDetail.tabs.stages}</TabsTrigger>
@@ -208,14 +220,26 @@ export default function OrderDetail() {
                           </div>
                         </div>
                       )}
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         {s.status === "pending" && canStart && hasRole(["manager", "admin", "marketing"]) && (
                           <Button size="sm" variant="outline" onClick={() => startStage(s)}><Play className="h-3 w-3 mr-1" />{t.orderDetail.start}</Button>
                         )}
                         {s.status === "in_progress" && hasRole(["manager", "admin", "marketing"]) && (
                           <Button size="sm" onClick={() => finishStage(s)}><CheckCircle2 className="h-3 w-3 mr-1" />{t.orderDetail.complete}</Button>
                         )}
+                        {hasRole(["manager", "admin"]) && (
+                          <StageAssignDialog stage={s} onSaved={load} />
+                        )}
                       </div>
+                      {((s as any).worker_name || (s as any).planned_start || (s as any).handover_comment) && (
+                        <div className="text-xs text-muted-foreground border rounded p-2 bg-muted/20 space-y-0.5">
+                          {(s as any).worker_name && <div><strong>{t.orderDetail.workerName}:</strong> {(s as any).worker_name}</div>}
+                          {((s as any).planned_start || (s as any).planned_end) && (
+                            <div>{(s as any).planned_start ?? "—"} → {(s as any).planned_end ?? "—"}</div>
+                          )}
+                          {(s as any).handover_comment && <div className="italic">"{(s as any).handover_comment}"</div>}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -285,5 +309,52 @@ export default function OrderDetail() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+function StageAssignDialog({ stage, onSaved }: { stage: any; onSaved: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [worker, setWorker] = useState(stage.worker_name ?? "");
+  const [start, setStart] = useState(stage.planned_start ?? "");
+  const [end, setEnd] = useState(stage.planned_end ?? "");
+  const [handover, setHandover] = useState(stage.handover_comment ?? "");
+  const { t } = useI18n();
+  const { user } = useAuth();
+  const save = async () => {
+    const { error } = await supabase.from("order_stages").update({
+      worker_name: worker.trim() || null,
+      planned_start: start || null,
+      planned_end: end || null,
+      handover_comment: handover.trim() || null,
+    } as any).eq("id", stage.id);
+    if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: "Bosqich tayinlandi", entity: "stage",
+      order_id: stage.order_id, stage_id: stage.id,
+      details: `${stage.name}${worker ? ` → ${worker}` : ""}${handover ? ` · ${handover}` : ""}`,
+    });
+    toast.success(t.orderDetail.saveAssign);
+    setOpen(false);
+    onSaved();
+  };
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="ghost" className="h-7 text-xs"><UserCog className="h-3 w-3 mr-1" />{t.orderDetail.assignWorker}</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>{stage.name}</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div><Label>{t.orderDetail.workerName}</Label><Input value={worker} onChange={(e) => setWorker(e.target.value)} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>{t.orderDetail.plannedStart}</Label><Input type="date" value={start} onChange={(e) => setStart(e.target.value)} /></div>
+            <div><Label>{t.orderDetail.plannedEnd}</Label><Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></div>
+          </div>
+          <div><Label>{t.orderDetail.handover}</Label><Textarea rows={3} value={handover} onChange={(e) => setHandover(e.target.value)} placeholder={t.orderDetail.handoverPh} /></div>
+          <Button onClick={save} className="w-full">{t.orderDetail.saveAssign}</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

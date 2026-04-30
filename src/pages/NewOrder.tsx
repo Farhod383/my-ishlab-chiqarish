@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -33,6 +34,7 @@ export default function NewOrder() {
   const [productImage, setProductImage] = useState<File | null>(null);
   const [stages, setStages] = useState<StageDraft[]>([{ name: "", norm_days: 1, qc_required: false }]);
   const [parts, setParts] = useState<{ product_id: string; norm_qty: number }[]>([]);
+  const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -113,7 +115,8 @@ export default function NewOrder() {
         product_image_url: imgUrl, tz_file_url: tzUrl,
         quantity, priority, status: "pending", deadline, order_date: orderDate,
         queue_position: queuePos, created_by: user?.id ?? null,
-      }).select().single();
+        comment: comment.trim() || null,
+      } as any).select().single();
       if (error) throw error;
 
       const stageRows = stages.map((s, idx) => ({
@@ -196,6 +199,10 @@ export default function NewOrder() {
               <Input type="file" accept="image/*" onChange={(e) => setProductImage(e.target.files?.[0] ?? null)} />
               {productImage && <p className="text-xs text-muted-foreground mt-1">{productImage.name}</p>}
             </div>
+          </div>
+          <div>
+            <Label>{t.newOrder.comment}</Label>
+            <Textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder={t.newOrder.commentPh} rows={3} />
           </div>
         </CardContent>
       </Card>

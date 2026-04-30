@@ -21,6 +21,8 @@ export default function SupplyPage() {
   const [qty, setQty] = useState<number>(0);
   const [price, setPrice] = useState<number>(0);
   const [supplier, setSupplier] = useState("");
+  const [phone, setPhone] = useState("");
+  const [image, setImage] = useState<File | null>(null);
   const [open, setOpen] = useState(false);
 
   const load = async () => {
@@ -33,20 +35,33 @@ export default function SupplyPage() {
 
   const receive = async () => {
     if (!pid || !qty || !supplier) { toast.error(t.warehouse.fillFields); return; }
+    let imgUrl: string | null = null;
+    if (image) {
+      const ext = image.name.split(".").pop();
+      const path = `${crypto.randomUUID()}.${ext}`;
+      const up = await supabase.storage.from("product-images").upload(path, image);
+      if (!up.error) imgUrl = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+    }
     const { error } = await supabase.from("stock_movements").insert({
       product_id: pid, direction: "in", quantity: qty,
       unit_price: price || 0,
       recipient_name: supplier, created_by: user?.id,
+      phone: phone || null, image_url: imgUrl,
       comment: `${t.supply.title}: ${supplier}${price ? ` · ${fmt(price)} ${t.common.sum}/${t.common.pieces}` : ""}`,
-    });
+    } as any);
     if (error) { toast.error(error.message); return; }
+    // update product phone + image if provided
+    const patch: any = {};
+    if (phone) patch.phone = phone;
+    if (imgUrl) patch.image_url = imgUrl;
+    if (Object.keys(patch).length) await supabase.from("products").update(patch).eq("id", pid);
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: user?.email,
       action: "Mahsulot keltirildi", entity: "stock_movement",
       details: `${products.find(p=>p.id===pid)?.name}: +${qty} × ${fmt(price)} = ${fmt(qty * price)} ${t.common.sum}`,
     });
     toast.success(t.warehouse.inRecorded);
-    setPid(""); setQty(0); setPrice(0); setSupplier(""); setOpen(false);
+    setPid(""); setQty(0); setPrice(0); setSupplier(""); setPhone(""); setImage(null); setOpen(false);
     load();
   };
 
@@ -59,7 +74,7 @@ export default function SupplyPage() {
           <h1 className="text-2xl font-bold tracking-tight">{t.supply.title}</h1>
           <p className="text-sm text-muted-foreground">{t.supply.subtitle}</p>
         </div>
-        {hasRole(["supply", "admin"]) && (
+        {hasRole(["supply", "warehouse", "admin"]) && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{t.supply.receive}</Button></DialogTrigger>
             <DialogContent>
@@ -82,6 +97,8 @@ export default function SupplyPage() {
                   </div>
                 )}
                 <div><Label>{t.supply.bringer}</Label><Input value={supplier} onChange={e => setSupplier(e.target.value)} placeholder={t.supply.bringerPh} /></div>
+                <div><Label>{t.supply.phone}</Label><Input value={phone} onChange={e => setPhone(e.target.value)} placeholder={t.supply.phonePh} /></div>
+                <div><Label>{t.supply.image}</Label><Input type="file" accept="image/*" onChange={e => setImage(e.target.files?.[0] ?? null)} /></div>
                 <Button className="w-full" onClick={receive}>{t.supply.saveIn}</Button>
               </div>
             </DialogContent>
