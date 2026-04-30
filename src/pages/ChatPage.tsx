@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MessageSquare, Plus, Send, Globe, User as UserIcon } from "lucide-react";
+import { MessageSquare, Plus, Send, Globe, User as UserIcon, Mic, Square, Video, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 
 interface Conversation {
