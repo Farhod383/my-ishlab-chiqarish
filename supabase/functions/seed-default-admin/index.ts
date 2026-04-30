@@ -19,6 +19,7 @@ const USERS: Array<{
   { email: "sklad@gmail.com",     password: "sklad123",     full_name: "Skladchi",        department: "Sklad",          roles: ["warehouse"] },
   { email: "taminot@gmail.com",   password: "taminot123",   full_name: "Ta'minotchi",     department: "Ta'minot",       roles: ["supply"] },
   { email: "otk@gmail.com",       password: "otk123",       full_name: "OTK Inspektor",   department: "OTK",            roles: ["otk"] },
+  { email: "manager@gmail.com",   password: "manager123",   full_name: "Nachalnik",       department: "Boshqaruv",      roles: ["manager"] },
 ];
 
 const DEMO_EMAILS = [
