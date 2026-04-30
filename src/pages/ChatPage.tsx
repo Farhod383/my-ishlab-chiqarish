@@ -24,6 +24,8 @@ interface Message {
   sender_name: string | null;
   body: string;
   created_at: string;
+  media_url?: string | null;
+  media_type?: string | null;
 }
 
 export default function ChatPage() {
