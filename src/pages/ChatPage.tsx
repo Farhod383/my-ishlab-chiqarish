@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MessageSquare, Plus, Send, Globe, User as UserIcon } from "lucide-react";
+import { MessageSquare, Plus, Send, Globe, User as UserIcon, Mic, Square, Video } from "lucide-react";
 import { toast } from "sonner";
 
 interface Conversation {
@@ -24,6 +24,8 @@ interface Message {
   sender_name: string | null;
   body: string;
   created_at: string;
+  media_url?: string | null;
+  media_type?: string | null;
 }
 
 export default function ChatPage() {
@@ -37,6 +39,11 @@ export default function ChatPage() {
   const [newPartner, setNewPartner] = useState("");
   const [openNew, setOpenNew] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const [recording, setRecording] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<BlobPart[]>([]);
 
   const load = async () => {
     const [{ data: c }, { data: parts }, { data: profs }] = await Promise.all([
@@ -91,6 +98,60 @@ export default function ChatPage() {
     if (error) { toast.error(error.message); setText(body); }
   };
 
+  const sendMedia = async (blob: Blob, ext: string, type: "audio" | "video") => {
+    if (!active || !user) return;
+    setUploading(true);
+    try {
+      const path = `${active}/${Date.now()}.${ext}`;
+      const up = await supabase.storage.from("chat-media").upload(path, blob, { contentType: blob.type });
+      if (up.error) throw up.error;
+      const url = supabase.storage.from("chat-media").getPublicUrl(path).data.publicUrl;
+      const myProfile = profiles.find((p) => p.id === user.id);
+      const { error } = await supabase.from("chat_messages").insert({
+        conversation_id: active, sender_id: user.id,
+        sender_name: myProfile?.full_name || user.email,
+        body: "", media_url: url, media_type: type,
+      });
+      if (error) throw error;
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const startRec = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      mr.onstop = async () => {
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        stream.getTracks().forEach((tr) => tr.stop());
+        await sendMedia(blob, "webm", "audio");
+      };
+      mr.start();
+      mediaRecorderRef.current = mr;
+      setRecording(true);
+    } catch (e: any) {
+      toast.error(e.message || "Mic ruxsati yo'q");
+    }
+  };
+
+  const stopRec = () => {
+    mediaRecorderRef.current?.stop();
+    mediaRecorderRef.current = null;
+    setRecording(false);
+  };
+
+  const onVideoPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const ext = f.name.split(".").pop() || "mp4";
+    await sendMedia(f, ext, "video");
+    if (videoInputRef.current) videoInputRef.current.value = "";
+  };
   const startPrivate = async () => {
     if (!user || !newPartner) return;
     // find existing 1-1 (non-global) with both members
@@ -182,7 +243,13 @@ export default function ChatPage() {
                 <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                   <div className={`max-w-[70%] rounded-lg px-3 py-2 text-sm ${mine ? "bg-primary text-primary-foreground" : "bg-card border"}`}>
                     {!mine && <div className="text-[10px] font-semibold opacity-70 mb-0.5">{m.sender_name ?? "—"}</div>}
-                    <div className="whitespace-pre-wrap break-words">{m.body}</div>
+                    {m.media_url && m.media_type === "audio" && (
+                      <audio controls src={m.media_url} className="max-w-full" />
+                    )}
+                    {m.media_url && m.media_type === "video" && (
+                      <video controls src={m.media_url} className="max-w-full max-h-64 rounded" />
+                    )}
+                    {m.body && <div className="whitespace-pre-wrap break-words">{m.body}</div>}
                     <div className={`text-[10px] mt-1 ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                       {new Date(m.created_at).toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}
                     </div>
@@ -191,15 +258,28 @@ export default function ChatPage() {
               );
             })}
           </div>
-          <div className="border-t p-3 flex gap-2">
+          <div className="border-t p-3 flex gap-2 items-center">
+            <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={onVideoPick} />
+            <Button type="button" size="icon" variant="ghost" disabled={!active || uploading} onClick={() => videoInputRef.current?.click()} title={t.chat.attachVideo}>
+              <Video className="h-4 w-4" />
+            </Button>
+            {recording ? (
+              <Button type="button" size="icon" variant="destructive" onClick={stopRec} title={t.chat.stopRecording}>
+                <Square className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button type="button" size="icon" variant="ghost" disabled={!active || uploading} onClick={startRec} title={t.chat.recordAudio}>
+                <Mic className="h-4 w-4" />
+              </Button>
+            )}
             <Input
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-              placeholder={t.chat.placeholder}
-              disabled={!active}
+              placeholder={uploading ? t.chat.uploading : t.chat.placeholder}
+              disabled={!active || uploading}
             />
-            <Button onClick={send} disabled={!text.trim() || !active}><Send className="h-4 w-4" /></Button>
+            <Button onClick={send} disabled={!text.trim() || !active || uploading}><Send className="h-4 w-4" /></Button>
           </div>
         </Card>
       </div>
