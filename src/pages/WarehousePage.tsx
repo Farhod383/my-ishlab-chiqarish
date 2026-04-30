@@ -126,30 +126,71 @@ export default function WarehousePage() {
           <p className="text-sm text-muted-foreground">{t.warehouse.subtitle}</p>
         </div>
         {(hasRole(["warehouse", "admin"])) && (
-          <Dialog>
-            <DialogTrigger asChild><Button><ArrowDownToLine className="h-4 w-4 mr-2" />{t.warehouse.release}</Button></DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>{t.warehouse.releaseTitle}</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div><Label>{t.warehouse.cols.product}</Label>
-                  <Select value={outProduct} onValueChange={setOutProduct}>
-                    <SelectTrigger><SelectValue placeholder={t.supply.select} /></SelectTrigger>
-                    <SelectContent>{products.map(p => <SelectItem key={p.id} value={p.id}>{p.name} ({t.warehouse.cols.stock}: {p.stock_qty} {p.unit})</SelectItem>)}</SelectContent>
-                  </Select>
+          <div className="flex flex-wrap gap-2">
+            <Dialog open={addOpen} onOpenChange={setAddOpen}>
+              <DialogTrigger asChild><Button variant="outline"><Plus className="h-4 w-4 mr-2" />{t.warehouse.addProduct}</Button></DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>{t.warehouse.addProduct}</DialogTitle></DialogHeader>
+                <div className="space-y-3">
+                  <div><Label>{t.warehouse.productName}</Label><Input value={newName} onChange={e => setNewName(e.target.value)} /></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>{t.warehouse.cols.product} ({t.common.pieces})</Label><Input value={newUnit} onChange={e => setNewUnit(e.target.value)} placeholder="dona / kg / m" /></div>
+                    <div><Label>{t.warehouse.minLimitField}</Label><Input type="number" min={0} value={newMin} onChange={e => setNewMin(Number(e.target.value))} /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>{t.warehouse.price}</Label><Input type="number" min={0} value={newPrice} onChange={e => setNewPrice(Number(e.target.value))} /></div>
+                    <div><Label>{t.warehouse.phone}</Label><Input value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+998..." /></div>
+                  </div>
+                  <div><Label>{t.warehouse.image}</Label><Input type="file" accept="image/*" onChange={e => setNewImage(e.target.files?.[0] ?? null)} /></div>
+                  <Button className="w-full" onClick={addProduct}>{t.common.save}</Button>
                 </div>
-                <div><Label>{t.warehouse.forOrder}</Label>
-                  <Select value={outOrder} onValueChange={setOutOrder}>
-                    <SelectTrigger><SelectValue placeholder={t.warehouse.orderPh} /></SelectTrigger>
-                    <SelectContent>{orders.map(o => <SelectItem key={o.id} value={o.id}>{o.order_number} — {o.product_name}</SelectItem>)}</SelectContent>
-                  </Select>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={otherOpen} onOpenChange={setOtherOpen}>
+              <DialogTrigger asChild><Button variant="outline"><PackageMinus className="h-4 w-4 mr-2" />{t.warehouse.otherOut}</Button></DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>{t.warehouse.otherOutTitle}</DialogTitle></DialogHeader>
+                <div className="space-y-3">
+                  <div><Label>{t.warehouse.cols.product}</Label>
+                    <Select value={otherProduct} onValueChange={setOtherProduct}>
+                      <SelectTrigger><SelectValue placeholder={t.supply.select} /></SelectTrigger>
+                      <SelectContent>{products.map(p => <SelectItem key={p.id} value={p.id}>{p.name} ({p.stock_qty} {p.unit})</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label>{t.warehouse.qty}</Label><Input type="number" min={0.1} step={0.1} value={otherQty} onChange={e => setOtherQty(Number(e.target.value))} /></div>
+                  <div><Label>{t.warehouse.takenBy}</Label><Input value={otherRecipient} onChange={e => setOtherRecipient(e.target.value)} /></div>
+                  <div><Label>{t.warehouse.reason} *</Label><Textarea value={otherReason} onChange={e => setOtherReason(e.target.value)} placeholder={t.warehouse.reasonPh} /></div>
+                  <Button className="w-full" onClick={otherOut}>{t.warehouse.saveOut}</Button>
                 </div>
-                <div><Label>{t.warehouse.qty}</Label><Input type="number" min={0.1} step={0.1} value={outQty} onChange={e => setOutQty(Number(e.target.value))} /></div>
-                <div><Label>{t.warehouse.takenBy}</Label><Input value={outRecipient} onChange={e => setOutRecipient(e.target.value)} placeholder={t.warehouse.takenByPh} /></div>
-                <div><Label>{t.warehouse.commentOpt}</Label><Textarea value={outComment} onChange={e => setOutComment(e.target.value)} /></div>
-                <Button className="w-full" onClick={release}>{t.warehouse.saveOut}</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog>
+              <DialogTrigger asChild><Button><ArrowDownToLine className="h-4 w-4 mr-2" />{t.warehouse.release}</Button></DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>{t.warehouse.releaseTitle}</DialogTitle></DialogHeader>
+                <div className="space-y-3">
+                  <div><Label>{t.warehouse.cols.product}</Label>
+                    <Select value={outProduct} onValueChange={setOutProduct}>
+                      <SelectTrigger><SelectValue placeholder={t.supply.select} /></SelectTrigger>
+                      <SelectContent>{products.map(p => <SelectItem key={p.id} value={p.id}>{p.name} ({t.warehouse.cols.stock}: {p.stock_qty} {p.unit})</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label>{t.warehouse.forOrder}</Label>
+                    <Select value={outOrder} onValueChange={setOutOrder}>
+                      <SelectTrigger><SelectValue placeholder={t.warehouse.orderPh} /></SelectTrigger>
+                      <SelectContent>{orders.map(o => <SelectItem key={o.id} value={o.id}>{o.order_number} — {o.product_name}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label>{t.warehouse.qty}</Label><Input type="number" min={0.1} step={0.1} value={outQty} onChange={e => setOutQty(Number(e.target.value))} /></div>
+                  <div><Label>{t.warehouse.takenBy}</Label><Input value={outRecipient} onChange={e => setOutRecipient(e.target.value)} placeholder={t.warehouse.takenByPh} /></div>
+                  <div><Label>{t.warehouse.commentOpt}</Label><Textarea value={outComment} onChange={e => setOutComment(e.target.value)} /></div>
+                  <Button className="w-full" onClick={release}>{t.warehouse.saveOut}</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         )}
       </div>
 
