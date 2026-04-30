@@ -29,6 +29,22 @@ export default function WarehousePage() {
   const [outRecipient, setOutRecipient] = useState("");
   const [outComment, setOutComment] = useState("");
 
+  // Add product
+  const [addOpen, setAddOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newUnit, setNewUnit] = useState("dona");
+  const [newPrice, setNewPrice] = useState<number>(0);
+  const [newMin, setNewMin] = useState<number>(0);
+  const [newPhone, setNewPhone] = useState("");
+  const [newImage, setNewImage] = useState<File | null>(null);
+
+  // Other output (no order)
+  const [otherOpen, setOtherOpen] = useState(false);
+  const [otherProduct, setOtherProduct] = useState("");
+  const [otherQty, setOtherQty] = useState<number>(1);
+  const [otherRecipient, setOtherRecipient] = useState("");
+  const [otherReason, setOtherReason] = useState("");
+
   const load = async () => {
     const [p, o, m] = await Promise.all([
       supabase.from("products").select("*").order("name"),
