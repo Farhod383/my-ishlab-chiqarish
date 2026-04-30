@@ -119,12 +119,12 @@ export default function OrderDetail() {
             <p className="text-sm text-muted-foreground">{order.product_name} · {order.quantity} {t.common.pieces} · {t.orderDetail.client}: {order.client?.name ?? "—"}</p>
           </div>
         </div>
-        <Button variant="outline" onClick={() => setReportOpen(true)}>
-          <Receipt className="h-4 w-4 mr-2" /> {t.common.report}
+        <Button variant="outline" asChild>
+          <Link to={`/orders/${order.id}/report`}>
+            <Receipt className="h-4 w-4 mr-2" /> {t.common.report}
+          </Link>
         </Button>
       </div>
-
-      <OrderCostReport orderId={order.id} orderNumber={order.order_number} open={reportOpen} onOpenChange={setReportOpen} />
 
       <div className="grid md:grid-cols-4 gap-3">
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{t.orderDetail.received}</div><div className="font-semibold">{order.order_date}</div></CardContent></Card>
