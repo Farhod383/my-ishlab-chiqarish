@@ -415,6 +415,7 @@ export const ru: Translations = {
     fillRequired: "Заполните обязательные поля и хотя бы 1 этап",
     minStage: "Добавьте хотя бы 1 этап",
     created: "Заказ создан", error: "Ошибка",
+    comment: "Комментарий", commentPh: "Дополнительная информация о заказе...",
   },
   orderDetail: {
     backToList: "Назад", client: "Клиент",
@@ -433,6 +434,9 @@ export const ru: Translations = {
     movementsDesc: "Кто взял, сколько, когда",
     receivedBy: "Получил",
     noMovements: "Движений нет",
+    comment: "Комментарий", assignWorker: "Назначить рабочего", workerName: "Имя рабочего",
+    plannedStart: "Дата начала", plannedEnd: "Срок", handover: "Передача смены",
+    handoverPh: "Кто работал, что сделано, кому передано, причина...", saveAssign: "Сохранить",
   },
   production: {
     title: "Производственная доска",
@@ -481,6 +485,12 @@ export const ru: Translations = {
     fillFields: "Заполните поля",
     inRecorded: "Приход зафиксирован",
     outRecorded: "Выдача зафиксирована",
+    addProduct: "Добавить товар", productName: "Название", price: "Цена",
+    phone: "Телефон", image: "Изображение", minLimitField: "Мин. лимит",
+    productAdded: "Товар добавлен", otherOut: "Другая выдача",
+    otherOutTitle: "Выдача на другие цели", reason: "Причина",
+    reasonPh: "Зачем выдаётся товар...", lastIn: "Последний приход",
+    importedBy: "Кто внёс",
   },
   supply: {
     title: "Снабжение", subtitle: "Товары ниже лимита и фиксация прихода",
@@ -497,6 +507,7 @@ export const ru: Translations = {
       product: "Товар", stock: "Остаток", min: "Мин. лимит",
       lastPrice: "Посл. цена", missing: "Не хватает",
     },
+    image: "Изображение", phone: "Телефон", phonePh: "+998 ...",
   },
   audit: {
     title: "Журнал аудита",
