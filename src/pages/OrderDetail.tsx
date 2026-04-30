@@ -311,3 +311,51 @@ export default function OrderDetail() {
     </div>
   );
 }
+
+function StageAssignDialog({ stage, onSaved }: { stage: any; onSaved: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [worker, setWorker] = useState(stage.worker_name ?? "");
+  const [start, setStart] = useState(stage.planned_start ?? "");
+  const [end, setEnd] = useState(stage.planned_end ?? "");
+  const [handover, setHandover] = useState(stage.handover_comment ?? "");
+  const { useI18n: _ } = { useI18n };
+  const { t } = useI18n();
+  const { user } = useAuth();
+  const save = async () => {
+    const { error } = await supabase.from("order_stages").update({
+      worker_name: worker.trim() || null,
+      planned_start: start || null,
+      planned_end: end || null,
+      handover_comment: handover.trim() || null,
+    } as any).eq("id", stage.id);
+    if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: "Bosqich tayinlandi", entity: "stage",
+      order_id: stage.order_id, stage_id: stage.id,
+      details: `${stage.name}${worker ? ` → ${worker}` : ""}${handover ? ` · ${handover}` : ""}`,
+    });
+    toast.success(t.orderDetail.saveAssign);
+    setOpen(false);
+    onSaved();
+  };
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="ghost" className="h-7 text-xs"><UserCog className="h-3 w-3 mr-1" />{t.orderDetail.assignWorker}</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>{stage.name}</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div><Label>{t.orderDetail.workerName}</Label><Input value={worker} onChange={(e) => setWorker(e.target.value)} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>{t.orderDetail.plannedStart}</Label><Input type="date" value={start} onChange={(e) => setStart(e.target.value)} /></div>
+            <div><Label>{t.orderDetail.plannedEnd}</Label><Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></div>
+          </div>
+          <div><Label>{t.orderDetail.handover}</Label><Textarea rows={3} value={handover} onChange={(e) => setHandover(e.target.value)} placeholder={t.orderDetail.handoverPh} /></div>
+          <Button onClick={save} className="w-full">{t.orderDetail.saveAssign}</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
