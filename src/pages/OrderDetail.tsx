@@ -9,9 +9,12 @@ import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { logAudit, type OrderRow, type StageRow, type OrderPartRow, type AuditLogRow } from "@/types/erp";
-import { ArrowLeft, CheckCircle2, Play, FileText, Image as ImageIcon, AlertTriangle, ShieldCheck, Loader2, ClipboardList, Receipt } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Play, FileText, Image as ImageIcon, AlertTriangle, ShieldCheck, Loader2, ClipboardList, Receipt, UserCog, MessageCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { OrderCostReport } from "@/components/OrderCostReport";
 
@@ -144,6 +147,15 @@ export default function OrderDetail() {
                 <FileText className="h-4 w-4" /> {t.orderDetail.openTz}
               </a>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {(order as any).comment && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="p-3 flex gap-2 items-start">
+            <MessageCircle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+            <p className="text-sm whitespace-pre-wrap">{(order as any).comment}</p>
           </CardContent>
         </Card>
       )}
