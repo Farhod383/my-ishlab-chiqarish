@@ -574,6 +574,8 @@ export const uzc: Translations = {
     send: "Юбориш", empty: "Суҳбатни бошланг",
     subtitle: "Realtime · умумий ва шахсий",
     conversation: "Суҳбат",
+    recordAudio: "Аудио ёзиш", stopRecording: "Тўхтатиш",
+    attachVideo: "Видео қўшиш", uploading: "Юкланмоқда...",
   },
   report: {
     title: "Заказ ҳисоботи", materials: "Кетган маҳсулотлар", totalCost: "Умумий харажат",
@@ -627,6 +629,7 @@ export const uzc: Translations = {
     fillRequired: "Мажбурий майдонларни тўлдиринг ва камида 1 босқич киритинг",
     minStage: "Камида 1 босқич қўшинг",
     created: "Заказ яратилди", error: "Хатолик",
+    comment: "Изоҳ", commentPh: "Заказ ҳақида қўшимча маълумот...",
   },
   orderDetail: {
     backToList: "Орқага", client: "Мижоз",
@@ -645,6 +648,9 @@ export const uzc: Translations = {
     movementsDesc: "Ким олди, қанча, қачон",
     receivedBy: "Қабул қилди",
     noMovements: "Ҳаракатлар йўқ",
+    comment: "Изоҳ", assignWorker: "Ишчи тайинлаш", workerName: "Ишчи исми",
+    plannedStart: "Бошлаш санаси", plannedEnd: "Тугаш санаси", handover: "Смена топшириш",
+    handoverPh: "Ким ишлади, нима қилинди, кимга берилди, сабаб...", saveAssign: "Сақлаш",
   },
   production: {
     title: "Ишлаб чиқариш тахтаси",
@@ -693,6 +699,12 @@ export const uzc: Translations = {
     fillFields: "Майдонларни тўлдиринг",
     inRecorded: "Кирим қайд этилди",
     outRecorded: "Чиқим қайд этилди",
+    addProduct: "Маҳсулот қўшиш", productName: "Номи", price: "Нарх",
+    phone: "Телефон", image: "Расм", minLimitField: "Мин лимит",
+    productAdded: "Маҳсулот қўшилди", otherOut: "Бошқа чиқим",
+    otherOutTitle: "Бошқа мақсад учун чиқим", reason: "Сабаб",
+    reasonPh: "Нима учун чиқим қилинмоқда...", lastIn: "Охирги кирим",
+    importedBy: "Ким киритди",
   },
   supply: {
     title: "Таъминот", subtitle: "Лимит остидаги маҳсулотлар ва кирим қайд этиш",
