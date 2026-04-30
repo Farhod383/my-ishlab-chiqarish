@@ -101,7 +101,7 @@ export default function Orders() {
                   const startedAt = stages[0]?.started_at;
                   const startStr = startedAt ? new Date(startedAt).toISOString().slice(0,10) : "—";
                   return (
-                    <TableRow key={o.id} className="cursor-pointer" onClick={() => window.location.assign(`/orders/${o.id}`)}>
+                    <TableRow key={o.id} className="cursor-pointer" onClick={() => window.location.assign(isDone ? `/orders/${o.id}/report` : `/orders/${o.id}`)}>
                       <TableCell><HealthDot color={orderHealth(o)} /></TableCell>
                       <TableCell className="font-mono text-sm">{o.order_number}</TableCell>
                       <TableCell className="text-sm">{(o as any).client?.name ?? "—"}</TableCell>
