@@ -360,6 +360,8 @@ export const ru: Translations = {
     send: "Отправить", empty: "Начните диалог",
     subtitle: "Realtime · общий и приватный",
     conversation: "Чат",
+    recordAudio: "Запись аудио", stopRecording: "Остановить",
+    attachVideo: "Прикрепить видео", uploading: "Загрузка...",
   },
   report: {
     title: "Отчёт по заказу", materials: "Использованные материалы", totalCost: "Общая стоимость",
