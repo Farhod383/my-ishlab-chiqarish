@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Orders from "./pages/Orders";
 import NewOrder from "./pages/NewOrder";
 import OrderDetail from "./pages/OrderDetail";
+import OrderReport from "./pages/OrderReport";
 import ProductionBoard from "./pages/ProductionBoard";
 import WarehousePage from "./pages/WarehousePage";
 import SupplyPage from "./pages/SupplyPage";
@@ -41,6 +42,7 @@ const App = () => (
                       <Route path="/orders" element={<Orders />} />
                       <Route path="/orders/new" element={<ProtectedRoute roles={["marketing","admin"]}><NewOrder /></ProtectedRoute>} />
                       <Route path="/orders/:id" element={<OrderDetail />} />
+                      <Route path="/orders/:id/report" element={<OrderReport />} />
                       <Route path="/production" element={<ProductionBoard />} />
                       <Route path="/otk" element={<ProtectedRoute roles={["otk","admin","manager","marketing"]}><OtkPage /></ProtectedRoute>} />
                       <Route path="/warehouse" element={<WarehousePage />} />
