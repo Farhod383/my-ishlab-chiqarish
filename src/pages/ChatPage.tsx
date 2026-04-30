@@ -39,6 +39,11 @@ export default function ChatPage() {
   const [newPartner, setNewPartner] = useState("");
   const [openNew, setOpenNew] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const [recording, setRecording] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<BlobPart[]>([]);
 
   const load = async () => {
     const [{ data: c }, { data: parts }, { data: profs }] = await Promise.all([
