@@ -318,7 +318,6 @@ function StageAssignDialog({ stage, onSaved }: { stage: any; onSaved: () => void
   const [start, setStart] = useState(stage.planned_start ?? "");
   const [end, setEnd] = useState(stage.planned_end ?? "");
   const [handover, setHandover] = useState(stage.handover_comment ?? "");
-  const { useI18n: _ } = { useI18n };
   const { t } = useI18n();
   const { user } = useAuth();
   const save = async () => {
