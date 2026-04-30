@@ -11,15 +11,22 @@ export const uz = {
     otk: "OTK (Sifat nazorati)",
     chat: "Suhbatlar",
     audit: "Audit log",
+    nachalnik: "Nachalnik",
     signOut: "Chiqish",
   },
   roles: {
     admin: "Administrator",
     marketing: "Marketing",
-    manager: "Manager",
+    manager: "Nachalnik",
     warehouse: "Skladchi",
     supply: "Ta'minotchi",
     otk: "OTK",
+  },
+  nachalnik: {
+    title: "Nachalnik paneli",
+    subtitle: "Bosqichlarga ishchi tayinlash, muddat belgilash va smena topshirish",
+    manage: "Boshqarish →",
+    empty: "Faol zakazlar yo'q",
   },
   status: {
     pending: "Kutilmoqda",
