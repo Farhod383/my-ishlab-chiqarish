@@ -243,7 +243,13 @@ export default function ChatPage() {
                 <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                   <div className={`max-w-[70%] rounded-lg px-3 py-2 text-sm ${mine ? "bg-primary text-primary-foreground" : "bg-card border"}`}>
                     {!mine && <div className="text-[10px] font-semibold opacity-70 mb-0.5">{m.sender_name ?? "—"}</div>}
-                    <div className="whitespace-pre-wrap break-words">{m.body}</div>
+                    {m.media_url && m.media_type === "audio" && (
+                      <audio controls src={m.media_url} className="max-w-full" />
+                    )}
+                    {m.media_url && m.media_type === "video" && (
+                      <video controls src={m.media_url} className="max-w-full max-h-64 rounded" />
+                    )}
+                    {m.body && <div className="whitespace-pre-wrap break-words">{m.body}</div>}
                     <div className={`text-[10px] mt-1 ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                       {new Date(m.created_at).toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}
                     </div>
@@ -252,15 +258,28 @@ export default function ChatPage() {
               );
             })}
           </div>
-          <div className="border-t p-3 flex gap-2">
+          <div className="border-t p-3 flex gap-2 items-center">
+            <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={onVideoPick} />
+            <Button type="button" size="icon" variant="ghost" disabled={!active || uploading} onClick={() => videoInputRef.current?.click()} title={t.chat.attachVideo}>
+              <Video className="h-4 w-4" />
+            </Button>
+            {recording ? (
+              <Button type="button" size="icon" variant="destructive" onClick={stopRec} title={t.chat.stopRecording}>
+                <Square className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button type="button" size="icon" variant="ghost" disabled={!active || uploading} onClick={startRec} title={t.chat.recordAudio}>
+                <Mic className="h-4 w-4" />
+              </Button>
+            )}
             <Input
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-              placeholder={t.chat.placeholder}
-              disabled={!active}
+              placeholder={uploading ? t.chat.uploading : t.chat.placeholder}
+              disabled={!active || uploading}
             />
-            <Button onClick={send} disabled={!text.trim() || !active}><Send className="h-4 w-4" /></Button>
+            <Button onClick={send} disabled={!text.trim() || !active || uploading}><Send className="h-4 w-4" /></Button>
           </div>
         </Card>
       </div>
