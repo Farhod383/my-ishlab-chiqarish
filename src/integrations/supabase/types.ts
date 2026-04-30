@@ -88,26 +88,32 @@ export type Database = {
       }
       chat_messages: {
         Row: {
-          body: string
+          body: string | null
           conversation_id: string
           created_at: string
           id: string
+          media_type: string | null
+          media_url: string | null
           sender_id: string
           sender_name: string | null
         }
         Insert: {
-          body: string
+          body?: string | null
           conversation_id: string
           created_at?: string
           id?: string
+          media_type?: string | null
+          media_url?: string | null
           sender_id: string
           sender_name?: string | null
         }
         Update: {
-          body?: string
+          body?: string | null
           conversation_id?: string
           created_at?: string
           id?: string
+          media_type?: string | null
+          media_url?: string | null
           sender_id?: string
           sender_name?: string | null
         }
@@ -226,12 +232,15 @@ export type Database = {
         Row: {
           created_at: string
           finished_at: string | null
+          handover_comment: string | null
           id: string
           name: string
           norm_days: number
           order_id: string
           otk_checked_at: string | null
           otk_comment: string | null
+          planned_end: string | null
+          planned_start: string | null
           qc_passed: boolean | null
           qc_required: boolean
           stage_order: number
@@ -239,16 +248,20 @@ export type Database = {
           status: Database["public"]["Enums"]["stage_status"]
           worker_changed_comment: string | null
           worker_id: string | null
+          worker_name: string | null
         }
         Insert: {
           created_at?: string
           finished_at?: string | null
+          handover_comment?: string | null
           id?: string
           name: string
           norm_days?: number
           order_id: string
           otk_checked_at?: string | null
           otk_comment?: string | null
+          planned_end?: string | null
+          planned_start?: string | null
           qc_passed?: boolean | null
           qc_required?: boolean
           stage_order: number
@@ -256,16 +269,20 @@ export type Database = {
           status?: Database["public"]["Enums"]["stage_status"]
           worker_changed_comment?: string | null
           worker_id?: string | null
+          worker_name?: string | null
         }
         Update: {
           created_at?: string
           finished_at?: string | null
+          handover_comment?: string | null
           id?: string
           name?: string
           norm_days?: number
           order_id?: string
           otk_checked_at?: string | null
           otk_comment?: string | null
+          planned_end?: string | null
+          planned_start?: string | null
           qc_passed?: boolean | null
           qc_required?: boolean
           stage_order?: number
@@ -273,6 +290,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["stage_status"]
           worker_changed_comment?: string | null
           worker_id?: string | null
+          worker_name?: string | null
         }
         Relationships: [
           {
@@ -287,6 +305,7 @@ export type Database = {
       orders: {
         Row: {
           client_id: string | null
+          comment: string | null
           created_at: string
           created_by: string | null
           deadline: string
@@ -305,6 +324,7 @@ export type Database = {
         }
         Insert: {
           client_id?: string | null
+          comment?: string | null
           created_at?: string
           created_by?: string | null
           deadline: string
@@ -323,6 +343,7 @@ export type Database = {
         }
         Update: {
           client_id?: string | null
+          comment?: string | null
           created_at?: string
           created_by?: string | null
           deadline?: string
@@ -357,6 +378,7 @@ export type Database = {
           last_price: number
           min_limit: number
           name: string
+          phone: string | null
           stock_qty: number
           unit: string
         }
@@ -367,6 +389,7 @@ export type Database = {
           last_price?: number
           min_limit?: number
           name: string
+          phone?: string | null
           stock_qty?: number
           unit?: string
         }
@@ -377,6 +400,7 @@ export type Database = {
           last_price?: number
           min_limit?: number
           name?: string
+          phone?: string | null
           stock_qty?: number
           unit?: string
         }
@@ -413,9 +437,12 @@ export type Database = {
           created_by: string | null
           direction: Database["public"]["Enums"]["movement_direction"]
           id: string
+          image_url: string | null
           order_id: string | null
+          phone: string | null
           product_id: string | null
           quantity: number
+          reason: string | null
           recipient_name: string | null
           taken_by: string | null
           unit_price: number
@@ -426,9 +453,12 @@ export type Database = {
           created_by?: string | null
           direction: Database["public"]["Enums"]["movement_direction"]
           id?: string
+          image_url?: string | null
           order_id?: string | null
+          phone?: string | null
           product_id?: string | null
           quantity: number
+          reason?: string | null
           recipient_name?: string | null
           taken_by?: string | null
           unit_price?: number
@@ -439,9 +469,12 @@ export type Database = {
           created_by?: string | null
           direction?: Database["public"]["Enums"]["movement_direction"]
           id?: string
+          image_url?: string | null
           order_id?: string | null
+          phone?: string | null
           product_id?: string | null
           quantity?: number
+          reason?: string | null
           recipient_name?: string | null
           taken_by?: string | null
           unit_price?: number
