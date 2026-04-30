@@ -72,7 +72,44 @@ export default function WarehousePage() {
     load();
   };
 
-  const productMovements = useMemo(
+  const addProduct = async () => {
+    if (!newName.trim()) { toast.error(t.warehouse.fillFields); return; }
+    let image_url: string | null = null;
+    if (newImage) {
+      const path = `${Date.now()}_${newImage.name}`;
+      const up = await supabase.storage.from("product-images").upload(path, newImage);
+      if (up.error) { toast.error(up.error.message); return; }
+      image_url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+    }
+    const { error } = await supabase.from("products").insert({
+      name: newName.trim(), unit: newUnit || "dona", last_price: newPrice || 0,
+      min_limit: newMin || 0, phone: newPhone || null, image_url,
+    });
+    if (error) { toast.error(error.message); return; }
+    toast.success(t.warehouse.productAdded);
+    setNewName(""); setNewUnit("dona"); setNewPrice(0); setNewMin(0); setNewPhone(""); setNewImage(null);
+    setAddOpen(false);
+    load();
+  };
+
+  const otherOut = async () => {
+    if (!otherProduct || !otherQty || !otherRecipient || !otherReason.trim()) { toast.error(t.warehouse.fillFields); return; }
+    const { error } = await supabase.from("stock_movements").insert({
+      product_id: otherProduct, order_id: null, direction: "out",
+      quantity: otherQty, recipient_name: otherRecipient, reason: otherReason,
+      comment: otherReason, created_by: user?.id, taken_by: user?.id,
+    });
+    if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email, action: "Sklad chiqimi (boshqa)",
+      entity: "stock_movement",
+      details: `${products.find(p=>p.id===otherProduct)?.name} — ${otherQty}, sabab: ${otherReason}`,
+    });
+    toast.success(t.warehouse.outRecorded);
+    setOtherProduct(""); setOtherQty(1); setOtherRecipient(""); setOtherReason("");
+    setOtherOpen(false);
+    load();
+  };
     () => selectedProduct ? movements.filter(m => m.product_id === selectedProduct.id) : [],
     [movements, selectedProduct]
   );
