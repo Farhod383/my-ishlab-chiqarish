@@ -98,6 +98,60 @@ export default function ChatPage() {
     if (error) { toast.error(error.message); setText(body); }
   };
 
+  const sendMedia = async (blob: Blob, ext: string, type: "audio" | "video") => {
+    if (!active || !user) return;
+    setUploading(true);
+    try {
+      const path = `${active}/${Date.now()}.${ext}`;
+      const up = await supabase.storage.from("chat-media").upload(path, blob, { contentType: blob.type });
+      if (up.error) throw up.error;
+      const url = supabase.storage.from("chat-media").getPublicUrl(path).data.publicUrl;
+      const myProfile = profiles.find((p) => p.id === user.id);
+      const { error } = await supabase.from("chat_messages").insert({
+        conversation_id: active, sender_id: user.id,
+        sender_name: myProfile?.full_name || user.email,
+        body: "", media_url: url, media_type: type,
+      });
+      if (error) throw error;
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const startRec = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      mr.onstop = async () => {
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        stream.getTracks().forEach((tr) => tr.stop());
+        await sendMedia(blob, "webm", "audio");
+      };
+      mr.start();
+      mediaRecorderRef.current = mr;
+      setRecording(true);
+    } catch (e: any) {
+      toast.error(e.message || "Mic ruxsati yo'q");
+    }
+  };
+
+  const stopRec = () => {
+    mediaRecorderRef.current?.stop();
+    mediaRecorderRef.current = null;
+    setRecording(false);
+  };
+
+  const onVideoPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const ext = f.name.split(".").pop() || "mp4";
+    await sendMedia(f, ext, "video");
+    if (videoInputRef.current) videoInputRef.current.value = "";
+  };
   const startPrivate = async () => {
     if (!user || !newPartner) return;
     // find existing 1-1 (non-global) with both members
