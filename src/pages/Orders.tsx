@@ -105,7 +105,10 @@ export default function Orders() {
                       <TableCell><HealthDot color={orderHealth(o)} /></TableCell>
                       <TableCell className="font-mono text-sm">{o.order_number}</TableCell>
                       <TableCell className="text-sm">{(o as any).client?.name ?? "—"}</TableCell>
-                      <TableCell className="text-sm font-medium">{o.product_name}</TableCell>
+                      <TableCell className="text-sm font-medium">
+                        <div>{o.product_name}</div>
+                        {(o as any).comment && <div className="text-xs text-muted-foreground italic truncate max-w-[180px]">"{(o as any).comment}"</div>}
+                      </TableCell>
                       <TableCell className="text-right text-sm">{o.quantity}</TableCell>
                       <TableCell><PriorityBadge priority={o.priority} /></TableCell>
                       <TableCell><StatusBadge status={o.status as any} /></TableCell>
