@@ -220,14 +220,26 @@ export default function OrderDetail() {
                           </div>
                         </div>
                       )}
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         {s.status === "pending" && canStart && hasRole(["manager", "admin", "marketing"]) && (
                           <Button size="sm" variant="outline" onClick={() => startStage(s)}><Play className="h-3 w-3 mr-1" />{t.orderDetail.start}</Button>
                         )}
                         {s.status === "in_progress" && hasRole(["manager", "admin", "marketing"]) && (
                           <Button size="sm" onClick={() => finishStage(s)}><CheckCircle2 className="h-3 w-3 mr-1" />{t.orderDetail.complete}</Button>
                         )}
+                        {hasRole(["manager", "admin"]) && (
+                          <StageAssignDialog stage={s} onSaved={load} />
+                        )}
                       </div>
+                      {((s as any).worker_name || (s as any).planned_start || (s as any).handover_comment) && (
+                        <div className="text-xs text-muted-foreground border rounded p-2 bg-muted/20 space-y-0.5">
+                          {(s as any).worker_name && <div><strong>{t.orderDetail.workerName}:</strong> {(s as any).worker_name}</div>}
+                          {((s as any).planned_start || (s as any).planned_end) && (
+                            <div>{(s as any).planned_start ?? "—"} → {(s as any).planned_end ?? "—"}</div>
+                          )}
+                          {(s as any).handover_comment && <div className="italic">"{(s as any).handover_comment}"</div>}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>
