@@ -17,6 +17,7 @@ import WarehousePage from "./pages/WarehousePage";
 import SupplyPage from "./pages/SupplyPage";
 import OtkPage from "./pages/OtkPage";
 import ChatPage from "./pages/ChatPage";
+import NachalnikPage from "./pages/NachalnikPage";
 import AuditLog from "./pages/AuditLog";
 import NotFound from "./pages/NotFound";
 
@@ -45,6 +46,7 @@ const App = () => (
                       <Route path="/warehouse" element={<WarehousePage />} />
                       <Route path="/supply" element={<ProtectedRoute roles={["supply","admin"]}><SupplyPage /></ProtectedRoute>} />
                       <Route path="/chat" element={<ChatPage />} />
+                      <Route path="/nachalnik" element={<ProtectedRoute roles={["manager","admin"]}><NachalnikPage /></ProtectedRoute>} />
                       <Route path="/audit" element={<ProtectedRoute roles={["admin","manager"]}><AuditLog /></ProtectedRoute>} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
