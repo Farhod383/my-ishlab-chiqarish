@@ -65,6 +65,50 @@ export type Database = {
           },
         ]
       }
+      cash_expenses: {
+        Row: {
+          amount: number
+          comment: string | null
+          created_at: string
+          created_by: string | null
+          expense_date: string
+          id: string
+          reason: string
+          recipient_id: string | null
+          recipient_name: string | null
+        }
+        Insert: {
+          amount?: number
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          expense_date?: string
+          id?: string
+          reason?: string
+          recipient_id?: string | null
+          recipient_name?: string | null
+        }
+        Update: {
+          amount?: number
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          expense_date?: string
+          id?: string
+          reason?: string
+          recipient_id?: string | null
+          recipient_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_expenses_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_conversations: {
         Row: {
           created_at: string
@@ -177,6 +221,108 @@ export type Database = {
           id?: string
           name?: string
           phone?: string | null
+        }
+        Relationships: []
+      }
+      defects: {
+        Row: {
+          comment: string | null
+          created_at: string
+          created_by: string | null
+          detected_by_id: string | null
+          detected_by_name: string | null
+          id: string
+          image_url: string | null
+          order_id: string | null
+          product_id: string | null
+          quantity: number
+          reason: string | null
+          resolution: Database["public"]["Enums"]["defect_resolution"]
+          stage_id: string | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          detected_by_id?: string | null
+          detected_by_name?: string | null
+          id?: string
+          image_url?: string | null
+          order_id?: string | null
+          product_id?: string | null
+          quantity?: number
+          reason?: string | null
+          resolution?: Database["public"]["Enums"]["defect_resolution"]
+          stage_id?: string | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          detected_by_id?: string | null
+          detected_by_name?: string | null
+          id?: string
+          image_url?: string | null
+          order_id?: string | null
+          product_id?: string | null
+          quantity?: number
+          reason?: string | null
+          resolution?: Database["public"]["Enums"]["defect_resolution"]
+          stage_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "defects_detected_by_id_fkey"
+            columns: ["detected_by_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "defects_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employees: {
+        Row: {
+          created_at: string
+          department: string
+          full_name: string
+          hire_date: string
+          id: string
+          leave_date: string | null
+          phone: string | null
+          position: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string
+          full_name: string
+          hire_date?: string
+          id?: string
+          leave_date?: string | null
+          phone?: string | null
+          position?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string
+          full_name?: string
+          hire_date?: string
+          id?: string
+          leave_date?: string | null
+          phone?: string | null
+          position?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -430,6 +576,63 @@ export type Database = {
         }
         Relationships: []
       }
+      returns: {
+        Row: {
+          comment: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          image_url: string | null
+          product_id: string | null
+          quantity: number
+          reason: string | null
+          return_type: Database["public"]["Enums"]["return_type"]
+          returned_by_id: string | null
+          returned_by_name: string | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url?: string | null
+          product_id?: string | null
+          quantity?: number
+          reason?: string | null
+          return_type: Database["public"]["Enums"]["return_type"]
+          returned_by_id?: string | null
+          returned_by_name?: string | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url?: string | null
+          product_id?: string | null
+          quantity?: number
+          reason?: string | null
+          return_type?: Database["public"]["Enums"]["return_type"]
+          returned_by_id?: string | null
+          returned_by_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "returns_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "returns_returned_by_id_fkey"
+            columns: ["returned_by_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_movements: {
         Row: {
           comment: string | null
@@ -544,6 +747,9 @@ export type Database = {
         | "warehouse"
         | "supply"
         | "otk"
+        | "hr"
+        | "cashier"
+      defect_resolution: "rework" | "write_off" | "pending"
       movement_direction: "in" | "out"
       order_priority: "normal" | "exception"
       order_status:
@@ -552,6 +758,7 @@ export type Database = {
         | "completed"
         | "delayed"
         | "cancelled"
+      return_type: "worker_to_warehouse" | "warehouse_to_shop"
       stage_status: "pending" | "in_progress" | "completed" | "delayed"
     }
     CompositeTypes: {
@@ -688,7 +895,10 @@ export const Constants = {
         "warehouse",
         "supply",
         "otk",
+        "hr",
+        "cashier",
       ],
+      defect_resolution: ["rework", "write_off", "pending"],
       movement_direction: ["in", "out"],
       order_priority: ["normal", "exception"],
       order_status: [
@@ -698,6 +908,7 @@ export const Constants = {
         "delayed",
         "cancelled",
       ],
+      return_type: ["worker_to_warehouse", "warehouse_to_shop"],
       stage_status: ["pending", "in_progress", "completed", "delayed"],
     },
   },
