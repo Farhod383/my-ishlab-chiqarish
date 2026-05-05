@@ -48,6 +48,7 @@ export default function OrderDetail() {
     setParts(p.data ?? []);
     setLogs(l.data ?? []);
     setMovements(mv.data ?? []);
+    setOrderFiles(of.data ?? []);
     const map: Record<string, string> = {};
     (s.data ?? []).forEach((st: any) => { map[st.id] = st.otk_comment ?? ""; });
     setOtkEdit(map);
