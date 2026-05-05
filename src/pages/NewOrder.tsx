@@ -123,6 +123,13 @@ export default function NewOrder() {
       } as any).select().single();
       if (error) throw error;
 
+      if (uploadedFileUrls.length > 0) {
+        await supabase.from("order_files").insert(
+          uploadedFileUrls.map((f) => ({ order_id: order.id, file_url: f.file_url, file_name: f.file_name, uploaded_by: user?.id ?? null }))
+        );
+      }
+
+
       const stageRows = stages.map((s, idx) => ({
         order_id: order.id, name: s.name, stage_order: idx + 1,
         norm_days: s.norm_days, qc_required: s.qc_required, status: "pending" as const,
