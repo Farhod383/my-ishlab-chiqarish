@@ -326,6 +326,33 @@ export type Database = {
         }
         Relationships: []
       }
+      order_files: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_url: string
+          id: string
+          order_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_name?: string
+          file_url: string
+          id?: string
+          order_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_url?: string
+          id?: string
+          order_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       order_parts: {
         Row: {
           actual_qty: number
