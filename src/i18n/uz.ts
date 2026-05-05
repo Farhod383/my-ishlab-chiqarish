@@ -191,6 +191,7 @@ export const uz = {
     comment: "Izoh",
     commentPh: "Zakaz haqida qo'shimcha ma'lumot...",
   },
+  editOrder: { title: "Zakazni tahrirlash", saved: "Zakaz yangilandi", currentImage: "Joriy rasm" },
   orderDetail: {
     backToList: "Orqaga",
     client: "Mijoz",
@@ -463,6 +464,7 @@ export const ru: Translations = {
     created: "Заказ создан", error: "Ошибка",
     comment: "Комментарий", commentPh: "Дополнительная информация о заказе...",
   },
+  editOrder: { title: "Редактировать заказ", saved: "Заказ обновлён", currentImage: "Текущее изображение" },
   orderDetail: {
     backToList: "Назад", client: "Клиент",
     received: "Дата получения", started: "Начало", deadline: "Срок", left: "Осталось",
@@ -698,6 +700,7 @@ export const uzc: Translations = {
     created: "Заказ яратилди", error: "Хатолик",
     comment: "Изоҳ", commentPh: "Заказ ҳақида қўшимча маълумот...",
   },
+  editOrder: { title: "Заказни таҳрирлаш", saved: "Заказ янгиланди", currentImage: "Жорий расм" },
   orderDetail: {
     backToList: "Орқага", client: "Мижоз",
     received: "Олинган сана", started: "Бошланиш", deadline: "Муддат", left: "Қолди",
