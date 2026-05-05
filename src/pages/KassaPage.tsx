@@ -21,7 +21,8 @@ export default function KassaPage() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ amount: 0, reason: "", recipient_id: "", comment: "" });
+  const [form, setForm] = useState({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "" });
+  const [recipientMode, setRecipientMode] = useState<"employee" | "manual">("employee");
 
   const load = async () => {
     const [{ data: exp }, { data: emp }] = await Promise.all([
