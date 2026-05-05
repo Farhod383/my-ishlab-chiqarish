@@ -202,8 +202,20 @@ export default function NewOrder() {
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <Label>{t.newOrder.tzFile}</Label>
-              <Input type="file" onChange={(e) => setTzFile(e.target.files?.[0] ?? null)} />
-              {tzFile && <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1"><Upload className="h-3 w-3" />{tzFile.name}</p>}
+              <Input type="file" multiple onChange={(e) => {
+                const files = e.target.files;
+                if (files) setTzFiles((prev) => [...prev, ...Array.from(files)]);
+              }} />
+              {tzFiles.length > 0 && (
+                <div className="mt-1 space-y-1">
+                  {tzFiles.map((f, i) => (
+                    <div key={i} className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Upload className="h-3 w-3" />{f.name}
+                      <button type="button" className="ml-1 text-destructive hover:underline" onClick={() => setTzFiles(tzFiles.filter((_, idx) => idx !== i))}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div>
               <Label>{t.newOrder.productImage}</Label>
