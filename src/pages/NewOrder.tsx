@@ -30,7 +30,7 @@ export default function NewOrder() {
   const [orderDate, setOrderDate] = useState<string>(() => new Date().toISOString().slice(0,10));
   const [deadline, setDeadline] = useState<string>(() => { const d = new Date(); d.setDate(d.getDate() + 14); return d.toISOString().slice(0,10); });
   const [activeQueueDays, setActiveQueueDays] = useState<number>(0);
-  const [tzFile, setTzFile] = useState<File | null>(null);
+  const [tzFiles, setTzFiles] = useState<File[]>([]);
   const [productImage, setProductImage] = useState<File | null>(null);
   const [stages, setStages] = useState<StageDraft[]>([{ name: "", norm_days: 1, qc_required: false }]);
   const [parts, setParts] = useState<{ product_id: string; norm_qty: number }[]>([]);
