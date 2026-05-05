@@ -15,10 +15,13 @@ import OrderDetail from "./pages/OrderDetail";
 import OrderReport from "./pages/OrderReport";
 import ProductionBoard from "./pages/ProductionBoard";
 import WarehousePage from "./pages/WarehousePage";
-import SupplyPage from "./pages/SupplyPage";
 import OtkPage from "./pages/OtkPage";
 import ChatPage from "./pages/ChatPage";
 import NachalnikPage from "./pages/NachalnikPage";
+import HRPage from "./pages/HRPage";
+import KassaPage from "./pages/KassaPage";
+import ReturnsPage from "./pages/ReturnsPage";
+import DefectsPage from "./pages/DefectsPage";
 import AuditLog from "./pages/AuditLog";
 import NotFound from "./pages/NotFound";
 
@@ -46,9 +49,12 @@ const App = () => (
                       <Route path="/production" element={<ProductionBoard />} />
                       <Route path="/otk" element={<ProtectedRoute roles={["otk","admin","manager","marketing"]}><OtkPage /></ProtectedRoute>} />
                       <Route path="/warehouse" element={<WarehousePage />} />
-                      <Route path="/supply" element={<ProtectedRoute roles={["supply","admin"]}><SupplyPage /></ProtectedRoute>} />
                       <Route path="/chat" element={<ChatPage />} />
                       <Route path="/nachalnik" element={<ProtectedRoute roles={["manager","admin"]}><NachalnikPage /></ProtectedRoute>} />
+                      <Route path="/hr" element={<ProtectedRoute roles={["hr","admin"]}><HRPage /></ProtectedRoute>} />
+                      <Route path="/kassa" element={<ProtectedRoute roles={["cashier","admin"]}><KassaPage /></ProtectedRoute>} />
+                      <Route path="/returns" element={<ProtectedRoute roles={["warehouse","admin"]}><ReturnsPage /></ProtectedRoute>} />
+                      <Route path="/defects" element={<DefectsPage />} />
                       <Route path="/audit" element={<ProtectedRoute roles={["admin","manager"]}><AuditLog /></ProtectedRoute>} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>

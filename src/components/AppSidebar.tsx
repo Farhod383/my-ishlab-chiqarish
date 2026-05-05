@@ -1,4 +1,4 @@
-import { LayoutDashboard, ClipboardList, Factory, Warehouse, Truck, ShieldCheck, LogOut, MessageSquare, History, UserCog } from "lucide-react";
+import { LayoutDashboard, ClipboardList, Factory, Warehouse, ShieldCheck, LogOut, MessageSquare, History, UserCog, Users, Wallet, RotateCcw, AlertOctagon } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -9,6 +9,7 @@ import { useAuth, type AppRole } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png"
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const { user, signOut, hasRole, roles } = useAuth();
@@ -24,7 +25,10 @@ export function AppSidebar() {
     { title: t.nav.nachalnik, url: "/nachalnik", icon: UserCog, roles: ["manager", "admin"] },
     { title: t.nav.otk, url: "/otk", icon: ShieldCheck },
     { title: t.nav.warehouse, url: "/warehouse", icon: Warehouse },
-    { title: t.nav.supply, url: "/supply", icon: Truck, roles: ["supply", "admin"] },
+    { title: (t as any).nav.returns ?? "Vozvrat", url: "/returns", icon: RotateCcw, roles: ["warehouse", "admin"] },
+    { title: (t as any).nav.defects ?? "Brak", url: "/defects", icon: AlertOctagon },
+    { title: (t as any).nav.hr ?? "Xodimlar", url: "/hr", icon: Users, roles: ["hr", "admin"] },
+    { title: (t as any).nav.kassa ?? "Kassa", url: "/kassa", icon: Wallet, roles: ["cashier", "admin"] },
     { title: t.nav.chat, url: "/chat", icon: MessageSquare },
     { title: t.nav.audit, url: "/audit", icon: History, roles: ["admin", "manager"] },
   ];
