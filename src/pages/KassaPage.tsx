@@ -21,7 +21,8 @@ export default function KassaPage() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ amount: 0, reason: "", recipient_id: "", comment: "" });
+  const [form, setForm] = useState({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "" });
+  const [recipientMode, setRecipientMode] = useState<"employee" | "manual">("employee");
 
   const load = async () => {
     const [{ data: exp }, { data: emp }] = await Promise.all([
@@ -40,18 +41,20 @@ export default function KassaPage() {
 
   const save = async () => {
     if (!form.amount || !form.reason.trim()) { toast.error(k.fillFields ?? "Maydonlarni to'ldiring"); return; }
-    const emp = employees.find(e => e.id === form.recipient_id);
+    const emp = recipientMode === "employee" ? employees.find(e => e.id === form.recipient_id) : null;
+    const recipientName = recipientMode === "employee" ? (emp?.full_name ?? null) : (form.recipient_manual.trim() || null);
     const { error } = await supabase.from("cash_expenses").insert({
       amount: form.amount,
       reason: form.reason.trim(),
-      recipient_id: form.recipient_id || null,
-      recipient_name: emp?.full_name ?? null,
+      recipient_id: recipientMode === "employee" ? (form.recipient_id || null) : null,
+      recipient_name: recipientName,
       comment: form.comment.trim() || null,
       created_by: user?.id,
     });
     if (error) { toast.error(error.message); return; }
     toast.success(k.saved ?? "Saqlandi");
-    setForm({ amount: 0, reason: "", recipient_id: "", comment: "" });
+    setForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "" });
+    setRecipientMode("employee");
     setOpen(false);
     load();
   };
@@ -73,11 +76,20 @@ export default function KassaPage() {
               <div className="space-y-3">
                 <div><Label>{k.amount ?? "Summa"}</Label><Input type="number" min={0} value={form.amount || ""} onChange={e => setForm({ ...form, amount: Number(e.target.value) })} /></div>
                 <div><Label>{k.reason ?? "Sabab"}</Label><Input value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })} /></div>
-                <div><Label>{k.recipient ?? "Oluvchi"}</Label>
-                  <Select value={form.recipient_id} onValueChange={v => setForm({ ...form, recipient_id: v })}>
-                    <SelectTrigger><SelectValue placeholder={k.selectEmployee ?? "Xodimni tanlang"} /></SelectTrigger>
-                    <SelectContent>{employees.map(e => <SelectItem key={e.id} value={e.id}>{e.full_name} {e.department && `(${e.department})`}</SelectItem>)}</SelectContent>
-                  </Select>
+                <div>
+                  <Label>{k.recipient ?? "Oluvchi"}</Label>
+                  <div className="flex gap-2 mt-1 mb-2">
+                    <Button type="button" size="sm" variant={recipientMode === "employee" ? "default" : "outline"} onClick={() => setRecipientMode("employee")}>{k.fromEmployees ?? "Xodimdan"}</Button>
+                    <Button type="button" size="sm" variant={recipientMode === "manual" ? "default" : "outline"} onClick={() => setRecipientMode("manual")}>{k.manualInput ?? "Boshqa"}</Button>
+                  </div>
+                  {recipientMode === "employee" ? (
+                    <Select value={form.recipient_id} onValueChange={v => setForm({ ...form, recipient_id: v })}>
+                      <SelectTrigger><SelectValue placeholder={k.selectEmployee ?? "Xodimni tanlang"} /></SelectTrigger>
+                      <SelectContent>{employees.map(e => <SelectItem key={e.id} value={e.id}>{e.full_name} {e.department && `(${e.department})`}</SelectItem>)}</SelectContent>
+                    </Select>
+                  ) : (
+                    <Input placeholder={k.recipientPlaceholder ?? "Yandex, Dostavka, ..."} value={form.recipient_manual} onChange={e => setForm({ ...form, recipient_manual: e.target.value })} />
+                  )}
                 </div>
                 <div><Label>{k.comment ?? "Izoh"}</Label><Textarea value={form.comment} onChange={e => setForm({ ...form, comment: e.target.value })} /></div>
                 <Button className="w-full" onClick={save}>{t.common.save}</Button>
