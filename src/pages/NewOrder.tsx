@@ -81,7 +81,6 @@ export default function NewOrder() {
     }
     setBusy(true);
     try {
-      let tzUrl: string | null = null;
       let imgUrl: string | null = null;
       const uploadedFileUrls: { file_url: string; file_name: string }[] = [];
       for (const f of tzFiles) {
