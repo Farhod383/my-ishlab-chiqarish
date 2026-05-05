@@ -41,18 +41,20 @@ export default function KassaPage() {
 
   const save = async () => {
     if (!form.amount || !form.reason.trim()) { toast.error(k.fillFields ?? "Maydonlarni to'ldiring"); return; }
-    const emp = employees.find(e => e.id === form.recipient_id);
+    const emp = recipientMode === "employee" ? employees.find(e => e.id === form.recipient_id) : null;
+    const recipientName = recipientMode === "employee" ? (emp?.full_name ?? null) : (form.recipient_manual.trim() || null);
     const { error } = await supabase.from("cash_expenses").insert({
       amount: form.amount,
       reason: form.reason.trim(),
-      recipient_id: form.recipient_id || null,
-      recipient_name: emp?.full_name ?? null,
+      recipient_id: recipientMode === "employee" ? (form.recipient_id || null) : null,
+      recipient_name: recipientName,
       comment: form.comment.trim() || null,
       created_by: user?.id,
     });
     if (error) { toast.error(error.message); return; }
     toast.success(k.saved ?? "Saqlandi");
-    setForm({ amount: 0, reason: "", recipient_id: "", comment: "" });
+    setForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "" });
+    setRecipientMode("employee");
     setOpen(false);
     load();
   };
