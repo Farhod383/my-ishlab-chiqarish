@@ -116,7 +116,7 @@ export default function NewOrder() {
 
       const { data: order, error } = await supabase.from("orders").insert({
         order_number: orderNumber, client_id: clientId, product_name: productName,
-        product_image_url: imgUrl, tz_file_url: tzUrl,
+        product_image_url: imgUrl, tz_file_url: uploadedFileUrls[0]?.file_url ?? null,
         quantity, priority, status: "pending", deadline, order_date: orderDate,
         queue_position: queuePos, created_by: user?.id ?? null,
         comment: comment.trim() || null,
