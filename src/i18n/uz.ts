@@ -12,6 +12,10 @@ export const uz = {
     chat: "Suhbatlar",
     audit: "Audit log",
     nachalnik: "Nachalnik",
+    hr: "Xodimlar",
+    kassa: "Kassa",
+    returns: "Vozvrat",
+    defects: "Brak",
     signOut: "Chiqish",
   },
   roles: {
@@ -21,6 +25,8 @@ export const uz = {
     warehouse: "Skladchi",
     supply: "Ta'minotchi",
     otk: "OTK",
+    hr: "HR",
+    cashier: "Kassir",
   },
   nachalnik: {
     title: "Nachalnik paneli",
