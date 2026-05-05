@@ -28,6 +28,7 @@ export default function OrderDetail() {
   const [parts, setParts] = useState<OrderPartRow[]>([]);
   const [logs, setLogs] = useState<AuditLogRow[]>([]);
   const [movements, setMovements] = useState<any[]>([]);
+  const [orderFiles, setOrderFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [reportOpen, setReportOpen] = useState(false);
   const [otkEdit, setOtkEdit] = useState<Record<string, string>>({});
