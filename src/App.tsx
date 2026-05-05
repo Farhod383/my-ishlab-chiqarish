@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Orders from "./pages/Orders";
 import NewOrder from "./pages/NewOrder";
+import EditOrder from "./pages/EditOrder";
 import OrderDetail from "./pages/OrderDetail";
 import OrderReport from "./pages/OrderReport";
 import ProductionBoard from "./pages/ProductionBoard";
@@ -44,6 +45,7 @@ const App = () => (
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/orders" element={<Orders />} />
                       <Route path="/orders/new" element={<ProtectedRoute roles={["marketing","admin"]}><NewOrder /></ProtectedRoute>} />
+                      <Route path="/orders/:id/edit" element={<ProtectedRoute roles={["marketing","admin"]}><EditOrder /></ProtectedRoute>} />
                       <Route path="/orders/:id" element={<OrderDetail />} />
                       <Route path="/orders/:id/report" element={<OrderReport />} />
                       <Route path="/production" element={<ProductionBoard />} />

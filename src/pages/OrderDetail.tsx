@@ -9,7 +9,7 @@ import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { logAudit, type OrderRow, type StageRow, type OrderPartRow, type AuditLogRow } from "@/types/erp";
-import { ArrowLeft, CheckCircle2, Play, FileText, Image as ImageIcon, AlertTriangle, ShieldCheck, Loader2, ClipboardList, Receipt, UserCog, MessageCircle, Download, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Play, FileText, Image as ImageIcon, AlertTriangle, ShieldCheck, Loader2, ClipboardList, Receipt, UserCog, MessageCircle, Download, Trash2, Upload, Pencil } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -122,11 +122,20 @@ export default function OrderDetail() {
             <p className="text-sm text-muted-foreground">{order.product_name} · {order.quantity} {t.common.pieces} · {t.orderDetail.client}: {order.client?.name ?? "—"}</p>
           </div>
         </div>
-        <Button variant="outline" asChild>
-          <Link to={`/orders/${order.id}/report`}>
-            <Receipt className="h-4 w-4 mr-2" /> {t.common.report}
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          {hasRole(["admin", "marketing"]) && (
+            <Button variant="outline" asChild>
+              <Link to={`/orders/${order.id}/edit`}>
+                <Pencil className="h-4 w-4 mr-2" /> {t.common.edit}
+              </Link>
+            </Button>
+          )}
+          <Button variant="outline" asChild>
+            <Link to={`/orders/${order.id}/report`}>
+              <Receipt className="h-4 w-4 mr-2" /> {t.common.report}
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-4 gap-3">
