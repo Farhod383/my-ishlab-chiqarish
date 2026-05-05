@@ -83,7 +83,11 @@ export default function NewOrder() {
     try {
       let tzUrl: string | null = null;
       let imgUrl: string | null = null;
-      if (tzFile) tzUrl = await uploadFile(tzFile, "order-files");
+      const uploadedFileUrls: { file_url: string; file_name: string }[] = [];
+      for (const f of tzFiles) {
+        const url = await uploadFile(f, "order-files");
+        uploadedFileUrls.push({ file_url: url, file_name: f.name });
+      }
       if (productImage) imgUrl = await uploadFile(productImage, "product-images");
 
       const { data: existing } = await supabase.from("orders").select("queue_position").order("queue_position", { ascending: false }).limit(1);
