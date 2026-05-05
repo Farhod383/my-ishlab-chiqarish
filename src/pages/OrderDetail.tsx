@@ -136,19 +136,56 @@ export default function OrderDetail() {
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{t.orderDetail.left}</div><div className={`font-bold text-lg ${daysLeft < 0 ? "text-status-red" : daysLeft <= 2 ? "text-status-yellow" : "text-status-green"}`}>{order.status === "completed" ? t.orderDetail.finished : daysLeft < 0 ? `${Math.abs(daysLeft)} ${t.orderDetail.daysLate}` : `${daysLeft} ${t.common.days}`}</div></CardContent></Card>
       </div>
 
-      {(order.tz_file_url || order.product_image_url) && (
+      {(order.product_image_url || orderFiles.length > 0) && (
         <Card>
-          <CardContent className="p-4 flex flex-wrap gap-4">
+          <CardContent className="p-4 space-y-3">
             {order.product_image_url && (
               <div>
                 <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><ImageIcon className="h-3 w-3" /> {t.orderDetail.productImage}</div>
                 <img src={order.product_image_url} alt={order.product_name} className="h-28 w-28 object-cover rounded border" />
               </div>
             )}
-            {order.tz_file_url && (
-              <a href={order.tz_file_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline self-start mt-5">
-                <FileText className="h-4 w-4" /> {t.orderDetail.openTz}
-              </a>
+            {orderFiles.length > 0 && (
+              <div>
+                <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1"><FileText className="h-3 w-3" /> {t.orderDetail.openTz} ({orderFiles.length})</div>
+                <div className="space-y-1">
+                  {orderFiles.map((f: any) => (
+                    <div key={f.id} className="flex items-center gap-2 text-sm border rounded p-2">
+                      <FileText className="h-4 w-4 text-primary shrink-0" />
+                      <a href={f.file_url} target="_blank" rel="noreferrer" className="text-primary hover:underline flex-1 truncate">{f.file_name || "Fayl"}</a>
+                      <a href={f.file_url} download className="text-muted-foreground hover:text-primary"><Download className="h-4 w-4" /></a>
+                      {hasRole(["admin", "marketing"]) && (
+                        <button onClick={async () => {
+                          await supabase.from("order_files").delete().eq("id", f.id);
+                          toast.success("Fayl o'chirildi");
+                          load();
+                        }} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {hasRole(["admin", "marketing"]) && (
+              <div>
+                <Input type="file" multiple onChange={async (e) => {
+                  const files = e.target.files;
+                  if (!files || files.length === 0) return;
+                  try {
+                    for (const file of Array.from(files)) {
+                      const ext = file.name.split(".").pop();
+                      const path = `${crypto.randomUUID()}.${ext}`;
+                      const { error } = await supabase.storage.from("order-files").upload(path, file);
+                      if (error) throw error;
+                      const { data } = supabase.storage.from("order-files").getPublicUrl(path);
+                      await supabase.from("order_files").insert({ order_id: order.id, file_url: data.publicUrl, file_name: file.name, uploaded_by: user?.id ?? null } as any);
+                    }
+                    toast.success("Fayllar yuklandi");
+                    load();
+                  } catch (err: any) { toast.error(err.message); }
+                  e.target.value = "";
+                }} />
+              </div>
             )}
           </CardContent>
         </Card>
