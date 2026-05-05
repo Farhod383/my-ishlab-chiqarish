@@ -35,12 +35,13 @@ export default function OrderDetail() {
 
   const load = async () => {
     if (!id) return;
-    const [o, s, p, l, mv] = await Promise.all([
+    const [o, s, p, l, mv, of] = await Promise.all([
       supabase.from("orders").select("*, client:clients(*)").eq("id", id).single(),
       supabase.from("order_stages").select("*").eq("order_id", id).order("stage_order"),
       supabase.from("order_parts").select("*").eq("order_id", id),
       supabase.from("audit_log").select("*").eq("order_id", id).order("created_at", { ascending: false }),
       supabase.from("stock_movements").select("*, product:products(name, unit)").eq("order_id", id).order("created_at", { ascending: false }),
+      supabase.from("order_files").select("*").eq("order_id", id).order("created_at"),
     ]);
     setOrder(o.data as any);
     setStages(s.data ?? []);
