@@ -15,7 +15,7 @@ interface Conversation {
   id: string;
   is_global: boolean;
   title: string | null;
-  participants?: { user_id: string; profile?: { full_name: string; email?: string } }[];
+  participants?: { user_id: string; profile?: { full_name: string; email?: string; department?: string } }[];
 }
 interface Message {
   id: string;
@@ -36,6 +36,7 @@ export default function ChatPage() {
   const [msgs, setMsgs] = useState<Message[]>([]);
   const [text, setText] = useState("");
   const [profiles, setProfiles] = useState<any[]>([]);
+  const [userRoles, setUserRoles] = useState<Record<string, string[]>>({});
   const [newPartner, setNewPartner] = useState("");
   const [openNew, setOpenNew] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -46,12 +47,21 @@ export default function ChatPage() {
   const audioChunksRef = useRef<BlobPart[]>([]);
 
   const load = async () => {
-    const [{ data: c }, { data: parts }, { data: profs }] = await Promise.all([
+    const [{ data: c }, { data: parts }, { data: profs }, { data: roles }] = await Promise.all([
       supabase.from("chat_conversations").select("*"),
       supabase.from("chat_participants").select("conversation_id, user_id"),
       supabase.from("profiles").select("id, full_name, email, department"),
+      supabase.from("user_roles").select("user_id, role"),
     ]);
     setProfiles(profs ?? []);
+    // Build roles map
+    const rm: Record<string, string[]> = {};
+    (roles ?? []).forEach((r: any) => {
+      if (!rm[r.user_id]) rm[r.user_id] = [];
+      rm[r.user_id].push(r.role);
+    });
+    setUserRoles(rm);
+
     const profMap: Record<string, any> = {};
     (profs ?? []).forEach((p) => { profMap[p.id] = p; });
     const convsWithParts = (c ?? []).map((cv: any) => ({
@@ -85,6 +95,13 @@ export default function ChatPage() {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [active]);
+
+  const getRoleLabel = (userId: string) => {
+    const roles = userRoles[userId];
+    if (!roles?.length) return "";
+    const roleLabels = (t.roles as any);
+    return roles.map(r => roleLabels[r] ?? r).join(", ");
+  };
 
   const send = async () => {
     if (!text.trim() || !active || !user) return;
@@ -152,9 +169,9 @@ export default function ChatPage() {
     await sendMedia(f, ext, "video");
     if (videoInputRef.current) videoInputRef.current.value = "";
   };
+
   const startPrivate = async () => {
     if (!user || !newPartner) return;
-    // find existing 1-1 (non-global) with both members
     const candidate = convs.find((c) => !c.is_global
       && c.participants?.length === 2
       && c.participants.some((p) => p.user_id === user.id)
@@ -239,10 +256,16 @@ export default function ChatPage() {
             {msgs.length === 0 && <p className="text-center text-sm text-muted-foreground py-12">{t.chat.empty}</p>}
             {msgs.map((m) => {
               const mine = m.sender_id === user?.id;
+              const role = getRoleLabel(m.sender_id);
               return (
                 <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                   <div className={`max-w-[70%] rounded-lg px-3 py-2 text-sm ${mine ? "bg-primary text-primary-foreground" : "bg-card border"}`}>
-                    {!mine && <div className="text-[10px] font-semibold opacity-70 mb-0.5">{m.sender_name ?? "—"}</div>}
+                    {!mine && (
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className="text-[11px] font-semibold opacity-80">{m.sender_name ?? "—"}</span>
+                        {role && <span className={`text-[9px] px-1 py-0.5 rounded ${mine ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"}`}>{role}</span>}
+                      </div>
+                    )}
                     {m.media_url && m.media_type === "audio" && (
                       <audio controls src={m.media_url} className="max-w-full" />
                     )}
