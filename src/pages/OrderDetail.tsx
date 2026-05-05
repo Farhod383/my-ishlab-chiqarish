@@ -136,7 +136,7 @@ export default function OrderDetail() {
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{t.orderDetail.left}</div><div className={`font-bold text-lg ${daysLeft < 0 ? "text-status-red" : daysLeft <= 2 ? "text-status-yellow" : "text-status-green"}`}>{order.status === "completed" ? t.orderDetail.finished : daysLeft < 0 ? `${Math.abs(daysLeft)} ${t.orderDetail.daysLate}` : `${daysLeft} ${t.common.days}`}</div></CardContent></Card>
       </div>
 
-      {(order.product_image_url || orderFiles.length > 0) && (
+      {(order.product_image_url || orderFiles.length > 0 || hasRole(["admin", "marketing"])) && (
         <Card>
           <CardContent className="p-4 space-y-3">
             {order.product_image_url && (
