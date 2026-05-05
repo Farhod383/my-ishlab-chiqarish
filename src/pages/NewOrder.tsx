@@ -30,7 +30,7 @@ export default function NewOrder() {
   const [orderDate, setOrderDate] = useState<string>(() => new Date().toISOString().slice(0,10));
   const [deadline, setDeadline] = useState<string>(() => { const d = new Date(); d.setDate(d.getDate() + 14); return d.toISOString().slice(0,10); });
   const [activeQueueDays, setActiveQueueDays] = useState<number>(0);
-  const [tzFile, setTzFile] = useState<File | null>(null);
+  const [tzFiles, setTzFiles] = useState<File[]>([]);
   const [productImage, setProductImage] = useState<File | null>(null);
   const [stages, setStages] = useState<StageDraft[]>([{ name: "", norm_days: 1, qc_required: false }]);
   const [parts, setParts] = useState<{ product_id: string; norm_qty: number }[]>([]);
@@ -81,9 +81,12 @@ export default function NewOrder() {
     }
     setBusy(true);
     try {
-      let tzUrl: string | null = null;
       let imgUrl: string | null = null;
-      if (tzFile) tzUrl = await uploadFile(tzFile, "order-files");
+      const uploadedFileUrls: { file_url: string; file_name: string }[] = [];
+      for (const f of tzFiles) {
+        const url = await uploadFile(f, "order-files");
+        uploadedFileUrls.push({ file_url: url, file_name: f.name });
+      }
       if (productImage) imgUrl = await uploadFile(productImage, "product-images");
 
       const { data: existing } = await supabase.from("orders").select("queue_position").order("queue_position", { ascending: false }).limit(1);
@@ -112,12 +115,19 @@ export default function NewOrder() {
 
       const { data: order, error } = await supabase.from("orders").insert({
         order_number: orderNumber, client_id: clientId, product_name: productName,
-        product_image_url: imgUrl, tz_file_url: tzUrl,
+        product_image_url: imgUrl, tz_file_url: uploadedFileUrls[0]?.file_url ?? null,
         quantity, priority, status: "pending", deadline, order_date: orderDate,
         queue_position: queuePos, created_by: user?.id ?? null,
         comment: comment.trim() || null,
       } as any).select().single();
       if (error) throw error;
+
+      if (uploadedFileUrls.length > 0) {
+        await supabase.from("order_files").insert(
+          uploadedFileUrls.map((f) => ({ order_id: order.id, file_url: f.file_url, file_name: f.file_name, uploaded_by: user?.id ?? null }))
+        );
+      }
+
 
       const stageRows = stages.map((s, idx) => ({
         order_id: order.id, name: s.name, stage_order: idx + 1,
@@ -191,8 +201,20 @@ export default function NewOrder() {
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <Label>{t.newOrder.tzFile}</Label>
-              <Input type="file" onChange={(e) => setTzFile(e.target.files?.[0] ?? null)} />
-              {tzFile && <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1"><Upload className="h-3 w-3" />{tzFile.name}</p>}
+              <Input type="file" multiple onChange={(e) => {
+                const files = e.target.files;
+                if (files) setTzFiles((prev) => [...prev, ...Array.from(files)]);
+              }} />
+              {tzFiles.length > 0 && (
+                <div className="mt-1 space-y-1">
+                  {tzFiles.map((f, i) => (
+                    <div key={i} className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Upload className="h-3 w-3" />{f.name}
+                      <button type="button" className="ml-1 text-destructive hover:underline" onClick={() => setTzFiles(tzFiles.filter((_, idx) => idx !== i))}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div>
               <Label>{t.newOrder.productImage}</Label>
