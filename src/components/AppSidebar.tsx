@@ -18,7 +18,8 @@ export function AppSidebar() {
   const loc = useLocation();
 
   interface Item { title: string; url: string; icon: any; roles?: AppRole[] }
-  const items: Item[] = [
+  const isEngineerOnly = roles.length > 0 && roles.every((r) => r === "engineer");
+  const allItems: Item[] = [
     { title: t.nav.dashboard, url: "/", icon: LayoutDashboard },
     { title: t.nav.orders, url: "/orders", icon: ClipboardList },
     { title: t.nav.production, url: "/production", icon: Factory },
@@ -32,6 +33,9 @@ export function AppSidebar() {
     { title: t.nav.chat, url: "/chat", icon: MessageSquare },
     { title: t.nav.audit, url: "/audit", icon: History, roles: ["admin", "manager"] },
   ];
+
+  const engineerAllowed = new Set(["/", "/orders", "/production", "/chat"]);
+  const items = isEngineerOnly ? allItems.filter((i) => engineerAllowed.has(i.url)) : allItems;
 
   const visible = items.filter((i) => !i.roles || hasRole(i.roles));
 
