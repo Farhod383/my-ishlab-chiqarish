@@ -776,6 +776,7 @@ export type Database = {
         | "otk"
         | "hr"
         | "cashier"
+        | "engineer"
       defect_resolution: "rework" | "write_off" | "pending"
       movement_direction: "in" | "out"
       order_priority: "normal" | "exception"
@@ -924,6 +925,7 @@ export const Constants = {
         "otk",
         "hr",
         "cashier",
+        "engineer",
       ],
       defect_resolution: ["rework", "write_off", "pending"],
       movement_direction: ["in", "out"],

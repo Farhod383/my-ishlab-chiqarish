@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-type Role = "admin" | "marketing" | "manager" | "warehouse" | "supply" | "otk";
+type Role = "admin" | "marketing" | "manager" | "warehouse" | "supply" | "otk" | "hr" | "cashier" | "engineer";
 
 const USERS: Array<{
   email: string;
@@ -20,6 +20,8 @@ const USERS: Array<{
   { email: "taminot@gmail.com",   password: "taminot123",   full_name: "Ta'minotchi",     department: "Ta'minot",       roles: ["supply"] },
   { email: "otk@gmail.com",       password: "otk123",       full_name: "OTK Inspektor",   department: "OTK",            roles: ["otk"] },
   { email: "manager@gmail.com",   password: "manager123",   full_name: "Nachalnik",       department: "Boshqaruv",      roles: ["manager"] },
+  { email: "cashier@gmail.com",   password: "cashier123",   full_name: "Kassir",          department: "Kassa",          roles: ["cashier"] },
+  { email: "engineer@gmail.com",  password: "engineer123",  full_name: "Injener",         department: "Injeneriya",     roles: ["engineer"] },
 ];
 
 const DEMO_EMAILS = [
