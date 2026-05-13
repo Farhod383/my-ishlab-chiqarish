@@ -293,11 +293,8 @@ export default function WarehousePage() {
               <DialogContent>
                 <DialogHeader><DialogTitle>{t.supply.receiveTitle}</DialogTitle></DialogHeader>
                 <div className="space-y-3">
-                  <div><Label>{t.supply.cols.product}</Label>
-                    <Select value={impPid} onValueChange={setImpPid}>
-                      <SelectTrigger><SelectValue placeholder={t.supply.select} /></SelectTrigger>
-                      <SelectContent>{products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
-                    </Select>
+                  <div><Label>{t.supply.productName || t.warehouse.productName}</Label>
+                    <Input value={impProductName} onChange={e => setImpProductName(e.target.value)} placeholder={t.warehouse.productName} />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label>{t.supply.qty}</Label><Input type="number" min={0.1} step={0.1} value={impQty || ""} onChange={e => setImpQty(Number(e.target.value))} /></div>
