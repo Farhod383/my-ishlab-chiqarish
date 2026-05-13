@@ -47,7 +47,7 @@ export function AppSidebar() {
           {!collapsed && (
             <div className="leading-tight min-w-0">
               <div className="font-semibold text-sm truncate">MCITY</div>
-              <div className="text-[10px] text-muted-foreground uppercase tracking-wide truncate">{(t.roles as any)[roles[0] ?? "admin"] ?? roles[0]}</div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide truncate">{roles[0] ? ((t.roles as any)[roles[0]] ?? roles[0]) : ""}</div>
             </div>
           )}
         </div>
