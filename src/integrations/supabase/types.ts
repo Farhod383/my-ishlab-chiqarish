@@ -109,6 +109,42 @@ export type Database = {
           },
         ]
       }
+      cash_incomes: {
+        Row: {
+          amount: number
+          comment: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          income_date: string
+          payment_type: string | null
+          receipt_url: string | null
+          source: string
+        }
+        Insert: {
+          amount?: number
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          income_date?: string
+          payment_type?: string | null
+          receipt_url?: string | null
+          source?: string
+        }
+        Update: {
+          amount?: number
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          income_date?: string
+          payment_type?: string | null
+          receipt_url?: string | null
+          source?: string
+        }
+        Relationships: []
+      }
       chat_conversations: {
         Row: {
           created_at: string
