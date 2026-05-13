@@ -300,6 +300,7 @@ export const uz = {
     subtitle: "Limit ostidagi mahsulotlar va kirim qayd etish",
     receive: "Kirim qilish",
     receiveTitle: "Mahsulot kirimi",
+    productName: "Mahsulot nomi",
     select: "Tanlang",
     qty: "Miqdor",
     price: "Narx (so'm/dona)",
