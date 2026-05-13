@@ -52,6 +52,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = async () => {
+    if (user) {
+      await supabase.from("audit_log").insert({
+        actor_id: user.id, actor_name: user.email, action: "Tizimdan chiqish",
+        entity: "auth", details: `Logout: ${user.email}`,
+      });
+    }
     await supabase.auth.signOut();
     setRoles([]);
   };
