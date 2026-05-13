@@ -781,6 +781,7 @@ export const uzc: Translations = {
   supply: {
     title: "Таъминот", subtitle: "Лимит остидаги маҳсулотлар ва кирим қайд этиш",
     receive: "Кирим қилиш", receiveTitle: "Маҳсулот кирими",
+    productName: "Маҳсулот номи",
     select: "Танланг", qty: "Миқдор",
     price: "Нарх (сўм/дона)", totalValue: "Умумий қиймат",
     bringer: "Ким олиб келди", bringerPh: "Етказиб берувчи номи",
