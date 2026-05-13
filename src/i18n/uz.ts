@@ -544,6 +544,7 @@ export const ru: Translations = {
   supply: {
     title: "Снабжение", subtitle: "Товары ниже лимита и фиксация прихода",
     receive: "Приход", receiveTitle: "Приход товара",
+    productName: "Название товара",
     select: "Выберите", qty: "Количество",
     price: "Цена (сум/ед.)", totalValue: "Общая стоимость",
     bringer: "Кто доставил", bringerPh: "Имя поставщика",
