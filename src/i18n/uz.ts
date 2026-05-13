@@ -300,6 +300,7 @@ export const uz = {
     subtitle: "Limit ostidagi mahsulotlar va kirim qayd etish",
     receive: "Kirim qilish",
     receiveTitle: "Mahsulot kirimi",
+    productName: "Mahsulot nomi",
     select: "Tanlang",
     qty: "Miqdor",
     price: "Narx (so'm/dona)",
@@ -543,6 +544,7 @@ export const ru: Translations = {
   supply: {
     title: "Снабжение", subtitle: "Товары ниже лимита и фиксация прихода",
     receive: "Приход", receiveTitle: "Приход товара",
+    productName: "Название товара",
     select: "Выберите", qty: "Количество",
     price: "Цена (сум/ед.)", totalValue: "Общая стоимость",
     bringer: "Кто доставил", bringerPh: "Имя поставщика",
@@ -779,6 +781,7 @@ export const uzc: Translations = {
   supply: {
     title: "Таъминот", subtitle: "Лимит остидаги маҳсулотлар ва кирим қайд этиш",
     receive: "Кирим қилиш", receiveTitle: "Маҳсулот кирими",
+    productName: "Маҳсулот номи",
     select: "Танланг", qty: "Миқдор",
     price: "Нарх (сўм/дона)", totalValue: "Умумий қиймат",
     bringer: "Ким олиб келди", bringerPh: "Етказиб берувчи номи",

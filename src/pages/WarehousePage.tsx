@@ -49,7 +49,7 @@ export default function WarehousePage() {
 
   // Import (from supply)
   const [importOpen, setImportOpen] = useState(false);
-  const [impPid, setImpPid] = useState("");
+  const [impProductName, setImpProductName] = useState("");
   const [impQty, setImpQty] = useState<number>(0);
   const [impPrice, setImpPrice] = useState<number>(0);
   const [impSupplier, setImpSupplier] = useState("");
@@ -128,7 +128,7 @@ export default function WarehousePage() {
   };
 
   const doImport = async () => {
-    if (!impPid || !impQty || !impSupplier) { toast.error(t.warehouse.fillFields); return; }
+    if (!impProductName.trim() || !impQty || !impSupplier) { toast.error(t.warehouse.fillFields); return; }
     let imgUrl: string | null = null;
     if (impImage) {
       const ext = impImage.name.split(".").pop();
@@ -136,25 +136,61 @@ export default function WarehousePage() {
       const up = await supabase.storage.from("product-images").upload(path, impImage);
       if (!up.error) imgUrl = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
     }
+    const trimmedName = impProductName.trim();
+
+    const { data: existingProducts } = await supabase
+      .from("products")
+      .select("id, name")
+      .ilike("name", trimmedName)
+      .limit(1);
+
+    let productId: string;
+
+    if (existingProducts && existingProducts.length > 0) {
+      productId = existingProducts[0].id;
+      const patch: any = {};
+      if (impPrice > 0) patch.last_price = impPrice;
+      if (impPhone) patch.phone = impPhone;
+      if (imgUrl) patch.image_url = imgUrl;
+      if (Object.keys(patch).length > 0) {
+        await supabase.from("products").update(patch).eq("id", productId);
+      }
+    } else {
+      const { data: newProduct, error: createError } = await supabase
+        .from("products")
+        .insert({
+          name: trimmedName,
+          unit: "dona",
+          last_price: impPrice || 0,
+          min_limit: 0,
+          stock_qty: 0,
+          phone: impPhone || null,
+          image_url: imgUrl,
+        })
+        .select("id")
+        .single();
+      if (createError || !newProduct) {
+        toast.error(createError?.message || "Mahsulot yaratishda xatolik");
+        return;
+      }
+      productId = newProduct.id;
+    }
+
     const { error } = await supabase.from("stock_movements").insert({
-      product_id: impPid, direction: "in", quantity: impQty,
+      product_id: productId, direction: "in", quantity: impQty,
       unit_price: impPrice || 0,
       recipient_name: impSupplier, created_by: user?.id,
       phone: impPhone || null, image_url: imgUrl,
       comment: `${t.supply.title}: ${impSupplier}${impPrice ? ` · ${fmt(impPrice)} ${t.common.sum}/${t.common.pieces}` : ""}`,
     } as any);
     if (error) { toast.error(error.message); return; }
-    const patch: any = {};
-    if (impPhone) patch.phone = impPhone;
-    if (imgUrl) patch.image_url = imgUrl;
-    if (Object.keys(patch).length) await supabase.from("products").update(patch).eq("id", impPid);
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: user?.email,
       action: "Mahsulot keltirildi", entity: "stock_movement",
-      details: `${products.find(p=>p.id===impPid)?.name}: +${impQty} × ${fmt(impPrice)} = ${fmt(impQty * impPrice)} ${t.common.sum}`,
+      details: `${trimmedName}: +${impQty} × ${fmt(impPrice)} = ${fmt(impQty * impPrice)} ${t.common.sum}`,
     });
     toast.success(t.warehouse.inRecorded);
-    setImpPid(""); setImpQty(0); setImpPrice(0); setImpSupplier(""); setImpPhone(""); setImpImage(null); setImportOpen(false);
+    setImpProductName(""); setImpQty(0); setImpPrice(0); setImpSupplier(""); setImpPhone(""); setImpImage(null); setImportOpen(false);
     load();
   };
 
@@ -257,11 +293,8 @@ export default function WarehousePage() {
               <DialogContent>
                 <DialogHeader><DialogTitle>{t.supply.receiveTitle}</DialogTitle></DialogHeader>
                 <div className="space-y-3">
-                  <div><Label>{t.supply.cols.product}</Label>
-                    <Select value={impPid} onValueChange={setImpPid}>
-                      <SelectTrigger><SelectValue placeholder={t.supply.select} /></SelectTrigger>
-                      <SelectContent>{products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
-                    </Select>
+                  <div><Label>{t.supply.productName || t.warehouse.productName}</Label>
+                    <Input value={impProductName} onChange={e => setImpProductName(e.target.value)} placeholder={t.warehouse.productName} />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label>{t.supply.qty}</Label><Input type="number" min={0.1} step={0.1} value={impQty || ""} onChange={e => setImpQty(Number(e.target.value))} /></div>
