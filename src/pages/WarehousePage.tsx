@@ -49,7 +49,7 @@ export default function WarehousePage() {
 
   // Import (from supply)
   const [importOpen, setImportOpen] = useState(false);
-  const [impPid, setImpPid] = useState("");
+  const [impProductName, setImpProductName] = useState("");
   const [impQty, setImpQty] = useState<number>(0);
   const [impPrice, setImpPrice] = useState<number>(0);
   const [impSupplier, setImpSupplier] = useState("");
