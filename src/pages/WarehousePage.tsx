@@ -128,7 +128,7 @@ export default function WarehousePage() {
   };
 
   const doImport = async () => {
-    if (!impProductName.trim() || !impQty || !impSupplier) { toast.error(t.warehouse.fillFields); return; }
+    if (!impProductName.trim() || !impQty) { toast.error(t.warehouse.fillFields); return; }
     let imgUrl: string | null = null;
     if (impImage) {
       const ext = impImage.name.split(".").pop();
@@ -179,9 +179,9 @@ export default function WarehousePage() {
     const { error } = await supabase.from("stock_movements").insert({
       product_id: productId, direction: "in", quantity: impQty,
       unit_price: impPrice || 0,
-      recipient_name: impSupplier, created_by: user?.id,
+      recipient_name: impSupplier || null, created_by: user?.id,
       phone: impPhone || null, image_url: imgUrl,
-      comment: `${t.supply.title}: ${impSupplier}${impPrice ? ` · ${fmt(impPrice)} ${t.common.sum}/${t.common.pieces}` : ""}`,
+      comment: `${t.supply.title}${impSupplier ? `: ${impSupplier}` : ""}${impPrice ? ` · ${fmt(impPrice)} ${t.common.sum}/${t.common.pieces}` : ""}`,
     } as any);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {

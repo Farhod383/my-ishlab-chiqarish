@@ -33,9 +33,21 @@ export default function Auth() {
 
   const signIn = async () => {
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
-    if (error) { toast.error(`${t.auth.loginErr}: ${error.message}`); return; }
+    if (error) {
+      await supabase.from("audit_log").insert({
+        actor_id: null, actor_name: email, action: "Kirishda xatolik",
+        entity: "auth", details: error.message,
+      });
+      toast.error(`${t.auth.loginErr}: ${error.message}`); return;
+    }
+    if (data.user) {
+      await supabase.from("audit_log").insert({
+        actor_id: data.user.id, actor_name: email, action: "Tizimga kirish",
+        entity: "auth", details: `Login: ${email}`,
+      });
+    }
     nav("/", { replace: true });
   };
 
