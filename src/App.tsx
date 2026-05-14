@@ -24,6 +24,7 @@ import KassaPage from "./pages/KassaPage";
 import ReturnsPage from "./pages/ReturnsPage";
 import DefectsPage from "./pages/DefectsPage";
 import AuditLog from "./pages/AuditLog";
+import ReportsPage from "./pages/ReportsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -58,6 +59,7 @@ const App = () => (
                       <Route path="/returns" element={<ProtectedRoute roles={["warehouse","admin"]}><ReturnsPage /></ProtectedRoute>} />
                       <Route path="/defects" element={<DefectsPage />} />
                       <Route path="/audit" element={<ProtectedRoute roles={["admin","manager"]}><AuditLog /></ProtectedRoute>} />
+                      <Route path="/reports" element={<ProtectedRoute roles={["admin"]}><ReportsPage /></ProtectedRoute>} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Layout>
