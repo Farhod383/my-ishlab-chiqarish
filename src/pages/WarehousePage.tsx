@@ -106,6 +106,8 @@ export default function WarehousePage() {
 
   const addProduct = async () => {
     if (!newName.trim()) { toast.error(t.warehouse.fillFields); return; }
+    const qtyN = Number(newQty) || 0;
+    if (qtyN < 0) { toast.error(t.warehouse.fillFields); return; }
     let image_url: string | null = null;
     if (newImage) {
       const path = `${Date.now()}_${newImage.name}`;
@@ -115,21 +117,36 @@ export default function WarehousePage() {
     }
     const priceN = Number(newPrice) || 0;
     const minN = newMin === "" ? 0 : Number(newMin);
-    const { error } = await supabase.from("products").insert({
+    const { data: created, error } = await supabase.from("products").insert({
       name: newName.trim(), unit: newUnit || "dona", last_price: priceN,
       min_limit: minN, phone: newPhone || null, image_url,
       source: newSource.trim() || null,
-    } as any);
-    if (error) { toast.error(error.message); return; }
-    if (newSupplier.trim()) {
+    } as any).select("id").single();
+    if (error || !created) { toast.error(error?.message || "Error"); return; }
+    if (qtyN > 0) {
+      await supabase.from("stock_movements").insert({
+        product_id: created.id, direction: "in", quantity: qtyN,
+        unit_price: priceN,
+        recipient_name: newSupplier.trim() || null,
+        source: newSource.trim() || null,
+        phone: newPhone || null, image_url,
+        created_by: user?.id,
+        comment: `${t.warehouse.addProduct}: ${newName.trim()}`,
+      } as any);
+    } else if (newSupplier.trim()) {
       await supabase.from("stock_movements").insert({
         product_id: null, direction: "in", quantity: 0,
         recipient_name: newSupplier.trim(), source: newSource.trim() || null,
         created_by: user?.id, comment: `${t.warehouse.addProduct}: ${newName.trim()}`,
       } as any);
     }
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: "Mahsulot qo'shildi", entity: "product",
+      details: `${newName.trim()}${qtyN > 0 ? `: +${qtyN} ${newUnit}` : ""}`,
+    });
     toast.success(t.warehouse.productAdded);
-    setNewName(""); setNewUnit("dona"); setNewPrice(""); setNewMin(""); setNewPhone(""); setNewSource(""); setNewSupplier(""); setNewImage(null);
+    setNewName(""); setNewQty(""); setNewUnit("dona"); setNewPrice(""); setNewMin(""); setNewPhone(""); setNewSource(""); setNewSupplier(""); setNewImage(null);
     setAddOpen(false);
     load();
   };
