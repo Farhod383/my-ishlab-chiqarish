@@ -254,10 +254,10 @@ export default function KassaPage() {
 
         <TabsContent value="income" className="space-y-3">
           {canManage && (
-            <Dialog open={openInc} onOpenChange={setOpenInc}>
+            <Dialog open={openInc} onOpenChange={(o) => { setOpenInc(o); if (!o) { setIncEditId(null); setIncForm({ amount: 0, source: "", payment_type: "cash", comment: "" }); setIncFile(null); } }}>
               <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{k.addIncome ?? "Kirim qo'shish"}</Button></DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>{k.addIncome ?? "Kirim qo'shish"}</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{incEditId ? ((t as any).kassaExtra?.editIncome ?? "Kirimni tahrirlash") : (k.addIncome ?? "Kirim qo'shish")}</DialogTitle></DialogHeader>
                 <div className="space-y-3">
                   <div><Label>{k.amount ?? "Summa"}</Label><Input type="number" min={0} value={incForm.amount || ""} onChange={e => setIncForm({ ...incForm, amount: Number(e.target.value) })} /></div>
                   <div><Label>{k.source ?? "Kimdan / Manba"}</Label><Input placeholder={k.sourcePlaceholder ?? "Mijoz, qarz qaytarish, ..."} value={incForm.source} onChange={e => setIncForm({ ...incForm, source: e.target.value })} /></div>
@@ -286,9 +286,10 @@ export default function KassaPage() {
                   <TableHead>{k.paymentType ?? "To'lov turi"}</TableHead>
                   <TableHead>{k.comment ?? "Izoh"}</TableHead>
                   <TableHead>{k.receipt ?? "Chek"}</TableHead>
+                  {canManage && <TableHead></TableHead>}
                 </TableRow></TableHeader>
                 <TableBody>
-                  {loading && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
+                  {loading && <TableRow><TableCell colSpan={canManage ? 7 : 6} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                   {!loading && fInc.map(i => (
                     <TableRow key={i.id}>
                       <TableCell className="text-sm whitespace-nowrap">{new Date(i.income_date).toLocaleString()}</TableCell>
@@ -297,9 +298,10 @@ export default function KassaPage() {
                       <TableCell className="text-sm">{(k.pt?.[i.payment_type]) ?? i.payment_type ?? "—"}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{i.comment ?? "—"}</TableCell>
                       <TableCell>{i.receipt_url ? <a href={i.receipt_url} target="_blank" rel="noreferrer" className="text-primary underline text-xs">{k.view ?? "Ko'rish"}</a> : "—"}</TableCell>
+                      {canManage && <TableCell><Button size="sm" variant="ghost" onClick={() => openEditInc(i)}><Edit2 className="h-3 w-3" /></Button></TableCell>}
                     </TableRow>
                   ))}
-                  {!loading && fInc.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{k.emptyIncome ?? "Kirimlar yo'q"}</TableCell></TableRow>}
+                  {!loading && fInc.length === 0 && <TableRow><TableCell colSpan={canManage ? 7 : 6} className="text-center text-muted-foreground py-8">{k.emptyIncome ?? "Kirimlar yo'q"}</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </div>
@@ -308,10 +310,10 @@ export default function KassaPage() {
 
         <TabsContent value="expense" className="space-y-3">
           {canManage && (
-            <Dialog open={openExp} onOpenChange={setOpenExp}>
+            <Dialog open={openExp} onOpenChange={(o) => { setOpenExp(o); if (!o) { setExpEditId(null); setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "" }); setRecipientMode("employee"); } }}>
               <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{k.addExpense ?? "Xarajat qo'shish"}</Button></DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>{k.addExpense ?? "Xarajat qo'shish"}</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{expEditId ? ((t as any).kassaExtra?.editExpense ?? "Xarajatni tahrirlash") : (k.addExpense ?? "Xarajat qo'shish")}</DialogTitle></DialogHeader>
                 <div className="space-y-3">
                   <div><Label>{k.amount ?? "Summa"}</Label><Input type="number" min={0} value={expForm.amount || ""} onChange={e => setExpForm({ ...expForm, amount: Number(e.target.value) })} /></div>
                   <div><Label>{k.reason ?? "Sabab"}</Label><Input value={expForm.reason} onChange={e => setExpForm({ ...expForm, reason: e.target.value })} /></div>
@@ -346,9 +348,10 @@ export default function KassaPage() {
                   <TableHead>{k.reason ?? "Sabab"}</TableHead>
                   <TableHead>{k.recipient ?? "Oluvchi"}</TableHead>
                   <TableHead>{k.comment ?? "Izoh"}</TableHead>
+                  {canManage && <TableHead></TableHead>}
                 </TableRow></TableHeader>
                 <TableBody>
-                  {loading && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
+                  {loading && <TableRow><TableCell colSpan={canManage ? 6 : 5} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                   {!loading && fExp.map(e => (
                     <TableRow key={e.id}>
                       <TableCell className="text-sm whitespace-nowrap">{new Date(e.expense_date).toLocaleString()}</TableCell>
@@ -356,9 +359,10 @@ export default function KassaPage() {
                       <TableCell className="text-sm">{e.reason}</TableCell>
                       <TableCell className="text-sm">{e.recipient?.full_name ?? e.recipient_name ?? "—"}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{e.comment ?? "—"}</TableCell>
+                      {canManage && <TableCell><Button size="sm" variant="ghost" onClick={() => openEditExp(e)}><Edit2 className="h-3 w-3" /></Button></TableCell>}
                     </TableRow>
                   ))}
-                  {!loading && fExp.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">{k.empty ?? "Xarajatlar yo'q"}</TableCell></TableRow>}
+                  {!loading && fExp.length === 0 && <TableRow><TableCell colSpan={canManage ? 6 : 5} className="text-center text-muted-foreground py-8">{k.empty ?? "Xarajatlar yo'q"}</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </div>
