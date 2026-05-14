@@ -387,7 +387,8 @@ export default function WarehousePage() {
           <TabsTrigger value="history">{t.warehouse.tabs.history}</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="stock" className="mt-4">
+        <TabsContent value="stock" className="mt-4 space-y-3">
+          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={(t.warehouse as any).search} className="max-w-md" />
           <Card><CardContent className="p-0">
             <div className="border rounded-md overflow-x-auto">
               <Table>
@@ -396,22 +397,30 @@ export default function WarehousePage() {
                   <TableHead className="text-right">{t.warehouse.cols.stock}</TableHead>
                   <TableHead className="text-right">{t.warehouse.cols.min}</TableHead>
                   <TableHead className="text-right">{t.warehouse.price}</TableHead>
+                  <TableHead>{(t.warehouse.cols as any).source}</TableHead>
                   <TableHead>{t.warehouse.cols.state}</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
-                  {products.map(p => {
-                    const low = Number(p.stock_qty) <= Number(p.min_limit);
-                    return (
-                      <TableRow key={p.id} className={`cursor-pointer hover:bg-muted/40 ${low ? "bg-status-red/5" : ""}`} onClick={() => setSelectedProduct(p)}>
-                        <TableCell className="font-medium flex items-center gap-2"><Package className="h-4 w-4 text-muted-foreground" />{p.name}</TableCell>
-                        <TableCell className="text-right font-mono">{p.stock_qty} {p.unit}</TableCell>
-                        <TableCell className="text-right text-sm text-muted-foreground">{p.min_limit} {p.unit}</TableCell>
-                        <TableCell className="text-right text-sm font-mono">{fmt(Number(p.last_price ?? 0))}</TableCell>
-                        <TableCell>{low ? <span className="text-status-red text-xs font-semibold flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{t.warehouse.low}</span> : <span className="text-status-green text-xs">{t.warehouse.enough}</span>}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                  {products.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">{t.common.noRecords}</TableCell></TableRow>}
+                  {(() => {
+                    const q = search.trim().toLowerCase();
+                    const filtered = q ? products.filter(p =>
+                      [p.name, p.unit, p.source, p.phone].some((v: any) => (v ?? "").toString().toLowerCase().includes(q))
+                    ) : products;
+                    if (filtered.length === 0) return <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{q ? (t.warehouse as any).noResults : t.common.noRecords}</TableCell></TableRow>;
+                    return filtered.map(p => {
+                      const low = Number(p.stock_qty) <= Number(p.min_limit);
+                      return (
+                        <TableRow key={p.id} className={`cursor-pointer hover:bg-muted/40 ${low ? "bg-status-red/5" : ""}`} onClick={() => setSelectedProduct(p)}>
+                          <TableCell className="font-medium flex items-center gap-2"><Package className="h-4 w-4 text-muted-foreground" />{p.name}</TableCell>
+                          <TableCell className="text-right font-mono">{p.stock_qty} {p.unit}</TableCell>
+                          <TableCell className="text-right text-sm text-muted-foreground">{p.min_limit} {p.unit}</TableCell>
+                          <TableCell className="text-right text-sm font-mono">{fmt(Number(p.last_price ?? 0))}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{p.source ?? "—"}</TableCell>
+                          <TableCell>{low ? <span className="text-status-red text-xs font-semibold flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{t.warehouse.low}</span> : <span className="text-status-green text-xs">{t.warehouse.enough}</span>}</TableCell>
+                        </TableRow>
+                      );
+                    });
+                  })()}
                 </TableBody>
               </Table>
             </div>
@@ -435,6 +444,8 @@ export default function WarehousePage() {
                       <TableHead>{t.warehouse.cols.product}</TableHead>
                       <TableHead className="text-right">{t.warehouse.cols.qty}</TableHead>
                       <TableHead>{t.warehouse.cols.whoTook}</TableHead>
+                      <TableHead>{(t.warehouse.cols as any).source}</TableHead>
+                      <TableHead>{(t.warehouse.cols as any).addedBy}</TableHead>
                       <TableHead>{t.warehouse.cols.order}</TableHead>
                       <TableHead>{t.warehouse.cols.comment}</TableHead>
                     </TableRow>
@@ -453,11 +464,13 @@ export default function WarehousePage() {
                           {m.direction==="out"?"-":"+"}{m.quantity} {m.product?.unit}
                         </TableCell>
                         <TableCell className="text-sm">{m.recipient_name ?? <span className="text-muted-foreground">—</span>}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{m.source ?? "—"}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{profiles[m.created_by] ?? "—"}</TableCell>
                         <TableCell className="text-sm font-mono">{m.order?.order_number ?? <span className="text-muted-foreground">{t.warehouse.common}</span>}</TableCell>
                         <TableCell className="text-xs italic text-muted-foreground max-w-[200px] truncate">{m.comment ?? "—"}</TableCell>
                       </TableRow>
                     ))}
-                    {movements.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">{t.warehouse.noMov}</TableCell></TableRow>}
+                    {movements.length === 0 && <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-6">{t.warehouse.noMov}</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </div>
