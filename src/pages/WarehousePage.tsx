@@ -15,6 +15,8 @@ import { useI18n } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
 import { toast } from "sonner";
 
+const UNITS = ["dona", "kg", "metr", "litr", "rulon", "komplekt"] as const;
+
 export default function WarehousePage() {
   const { user, hasRole } = useAuth();
   const { t } = useI18n();
@@ -22,7 +24,9 @@ export default function WarehousePage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [movements, setMovements] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+  const [search, setSearch] = useState("");
 
   // Output states
   const [outProduct, setOutProduct] = useState("");
@@ -34,10 +38,12 @@ export default function WarehousePage() {
   // Add product
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState("");
-  const [newUnit, setNewUnit] = useState("dona");
-  const [newPrice, setNewPrice] = useState<number>(0);
-  const [newMin, setNewMin] = useState<number>(0);
+  const [newUnit, setNewUnit] = useState<string>("dona");
+  const [newPrice, setNewPrice] = useState<string>("");
+  const [newMin, setNewMin] = useState<string>("");
   const [newPhone, setNewPhone] = useState("");
+  const [newSource, setNewSource] = useState("");
+  const [newSupplier, setNewSupplier] = useState("");
   const [newImage, setNewImage] = useState<File | null>(null);
 
   // Other output (no order)
@@ -50,20 +56,29 @@ export default function WarehousePage() {
   // Import (from supply)
   const [importOpen, setImportOpen] = useState(false);
   const [impProductName, setImpProductName] = useState("");
-  const [impQty, setImpQty] = useState<number>(0);
-  const [impPrice, setImpPrice] = useState<number>(0);
+  const [impQty, setImpQty] = useState<string>("");
+  const [impUnit, setImpUnit] = useState<string>("dona");
+  const [impPrice, setImpPrice] = useState<string>("");
   const [impSupplier, setImpSupplier] = useState("");
   const [impPhone, setImpPhone] = useState("");
+  const [impSource, setImpSource] = useState("");
   const [impImage, setImpImage] = useState<File | null>(null);
 
   const load = async () => {
     const [p, o, m, e] = await Promise.all([
       supabase.from("products").select("*").order("name"),
       supabase.from("orders").select("id, order_number, product_name").neq("status", "completed"),
-      supabase.from("stock_movements").select("*, product:products(name, unit), order:orders(order_number, product_name)").order("created_at", { ascending: false }).limit(100),
+      supabase.from("stock_movements").select("*, product:products(name, unit), order:orders(order_number, product_name)").order("created_at", { ascending: false }).limit(200),
       supabase.from("employees").select("id, full_name, department").eq("status", "active").order("full_name"),
     ]);
     setProducts(p.data ?? []); setOrders(o.data ?? []); setMovements(m.data ?? []); setEmployees(e.data ?? []);
+    const ids = Array.from(new Set((m.data ?? []).map((x: any) => x.created_by).filter(Boolean)));
+    if (ids.length) {
+      const { data: profs } = await supabase.from("profiles").select("id, full_name, email").in("id", ids);
+      const map: Record<string, string> = {};
+      (profs ?? []).forEach((pr: any) => { map[pr.id] = pr.full_name || pr.email || ""; });
+      setProfiles(map);
+    }
   };
   useEffect(() => { load(); }, []);
 
