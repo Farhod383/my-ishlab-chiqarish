@@ -112,13 +112,23 @@ export default function WarehousePage() {
       if (up.error) { toast.error(up.error.message); return; }
       image_url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
     }
+    const priceN = Number(newPrice) || 0;
+    const minN = newMin === "" ? 0 : Number(newMin);
     const { error } = await supabase.from("products").insert({
-      name: newName.trim(), unit: newUnit || "dona", last_price: newPrice || 0,
-      min_limit: newMin || 0, phone: newPhone || null, image_url,
-    });
+      name: newName.trim(), unit: newUnit || "dona", last_price: priceN,
+      min_limit: minN, phone: newPhone || null, image_url,
+      source: newSource.trim() || null,
+    } as any);
     if (error) { toast.error(error.message); return; }
+    if (newSupplier.trim()) {
+      await supabase.from("stock_movements").insert({
+        product_id: null, direction: "in", quantity: 0,
+        recipient_name: newSupplier.trim(), source: newSource.trim() || null,
+        created_by: user?.id, comment: `${t.warehouse.addProduct}: ${newName.trim()}`,
+      } as any);
+    }
     toast.success(t.warehouse.productAdded);
-    setNewName(""); setNewUnit("dona"); setNewPrice(0); setNewMin(0); setNewPhone(""); setNewImage(null);
+    setNewName(""); setNewUnit("dona"); setNewPrice(""); setNewMin(""); setNewPhone(""); setNewSource(""); setNewSupplier(""); setNewImage(null);
     setAddOpen(false);
     load();
   };
