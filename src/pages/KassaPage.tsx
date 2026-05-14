@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Wallet, Plus, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Wallet, Plus, ArrowDownCircle, ArrowUpCircle, Users, Edit2, Search } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { toast } from "sonner";
@@ -25,7 +26,14 @@ export default function KassaPage() {
   const [incomes, setIncomes] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"income" | "expense">("income");
+  const [tab, setTab] = useState<"income" | "expense" | "employees">("income");
+  const [allEmployees, setAllEmployees] = useState<any[]>([]);
+  const [empSearch, setEmpSearch] = useState("");
+  const [empStatusFilter, setEmpStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [empDeptFilter, setEmpDeptFilter] = useState("all");
+  const [empOpen, setEmpOpen] = useState(false);
+  const [empEditId, setEmpEditId] = useState<string | null>(null);
+  const [empForm, setEmpForm] = useState({ full_name: "", position: "", department: "", phone: "", salary: 0, hire_date: new Date().toISOString().slice(0,10), leave_date: "", status: "active" });
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
 
@@ -41,20 +49,71 @@ export default function KassaPage() {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: exp }, { data: inc }, { data: emp }] = await Promise.all([
+    const [{ data: exp }, { data: inc }, { data: emp }, { data: allEmp }] = await Promise.all([
       supabase.from("cash_expenses").select("*, recipient:employees(full_name)").order("expense_date", { ascending: false }),
       (supabase.from as any)("cash_incomes").select("*").order("income_date", { ascending: false }),
       supabase.from("employees").select("id, full_name, department").eq("status", "active").order("full_name"),
+      supabase.from("employees").select("*").order("full_name"),
     ]);
     setExpenses(exp ?? []);
     setIncomes(inc ?? []);
     setEmployees(emp ?? []);
+    setAllEmployees(allEmp ?? []);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
 
   const canManage = hasRole(["cashier", "admin"]);
   const fmt = (n: number) => new Intl.NumberFormat("uz-UZ").format(Math.round(n));
+
+  const resetEmpForm = () => setEmpForm({ full_name: "", position: "", department: "", phone: "", salary: 0, hire_date: new Date().toISOString().slice(0,10), leave_date: "", status: "active" });
+
+  const saveEmployee = async () => {
+    if (!empForm.full_name.trim()) { toast.error(k.fillFields ?? "Maydonlarni to'ldiring"); return; }
+    const payload: any = {
+      full_name: empForm.full_name.trim(),
+      position: empForm.position.trim(),
+      department: empForm.department.trim(),
+      phone: empForm.phone.trim() || null,
+      salary: Number(empForm.salary) || 0,
+      hire_date: empForm.hire_date,
+      leave_date: empForm.leave_date || null,
+      status: empForm.status,
+    };
+    const q = empEditId
+      ? supabase.from("employees").update(payload).eq("id", empEditId)
+      : supabase.from("employees").insert(payload);
+    const { error } = await q;
+    if (error) { toast.error(error.message); return; }
+    toast.success(k.saved ?? "Saqlandi");
+    setEmpOpen(false); setEmpEditId(null); resetEmpForm(); load();
+  };
+
+  const openEditEmp = (e: any) => {
+    setEmpForm({
+      full_name: e.full_name, position: e.position, department: e.department,
+      phone: e.phone ?? "", salary: e.salary ?? 0,
+      hire_date: e.hire_date, leave_date: e.leave_date ?? "", status: e.status,
+    });
+    setEmpEditId(e.id);
+    setEmpOpen(true);
+  };
+
+  const toggleEmpStatus = async (e: any) => {
+    const newStatus = e.status === "active" ? "inactive" : "active";
+    const { error } = await supabase.from("employees").update({ status: newStatus, leave_date: newStatus === "inactive" ? new Date().toISOString().slice(0,10) : null }).eq("id", e.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(k.saved ?? "Saqlandi"); load();
+  };
+
+  const departments = useMemo(() => Array.from(new Set(allEmployees.map(e => e.department).filter(Boolean))), [allEmployees]);
+  const filteredEmps = useMemo(() => allEmployees.filter(e => {
+    if (empStatusFilter !== "all" && e.status !== empStatusFilter) return false;
+    if (empDeptFilter !== "all" && e.department !== empDeptFilter) return false;
+    const s = empSearch.trim().toLowerCase();
+    if (s && !`${e.full_name} ${e.position} ${e.department} ${e.phone ?? ""}`.toLowerCase().includes(s)) return false;
+    return true;
+  }), [allEmployees, empSearch, empStatusFilter, empDeptFilter]);
 
   const inRange = (d: string) => {
     const t = new Date(d).getTime();
@@ -139,6 +198,7 @@ export default function KassaPage() {
         <TabsList>
           <TabsTrigger value="income"><ArrowDownCircle className="h-4 w-4 mr-1 text-status-green" />{k.income ?? "Kirim"}</TabsTrigger>
           <TabsTrigger value="expense"><ArrowUpCircle className="h-4 w-4 mr-1 text-status-red" />{k.expense ?? "Chiqim"}</TabsTrigger>
+          <TabsTrigger value="employees"><Users className="h-4 w-4 mr-1" />{k.employees ?? "Xodimlar"}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="income" className="space-y-3">
@@ -248,6 +308,106 @@ export default function KassaPage() {
                     </TableRow>
                   ))}
                   {!loading && fExp.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">{k.empty ?? "Xarajatlar yo'q"}</TableCell></TableRow>}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent></Card>
+        </TabsContent>
+
+        <TabsContent value="employees" className="space-y-3">
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input className="pl-8" placeholder={k.searchEmployee ?? "Qidirish..."} value={empSearch} onChange={e => setEmpSearch(e.target.value)} />
+            </div>
+            <Select value={empStatusFilter} onValueChange={(v: any) => setEmpStatusFilter(v)}>
+              <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{k.allStatuses ?? "Barcha holat"}</SelectItem>
+                <SelectItem value="active">{k.active ?? "Faol"}</SelectItem>
+                <SelectItem value="inactive">{k.inactive ?? "Nofaol"}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={empDeptFilter} onValueChange={setEmpDeptFilter}>
+              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{k.allDepartments ?? "Barcha bo'lim"}</SelectItem>
+                {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {canManage && (
+              <Dialog open={empOpen} onOpenChange={(o) => { setEmpOpen(o); if (!o) { setEmpEditId(null); resetEmpForm(); } }}>
+                <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{k.addEmployee ?? "Xodim qo'shish"}</Button></DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>{empEditId ? (k.editEmployee ?? "Tahrirlash") : (k.addEmployee ?? "Xodim qo'shish")}</DialogTitle></DialogHeader>
+                  <div className="space-y-3">
+                    <div><Label>{k.fullName ?? "To'liq ism"}</Label><Input value={empForm.full_name} onChange={e => setEmpForm({ ...empForm, full_name: e.target.value })} /></div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><Label>{k.position ?? "Lavozim"}</Label><Input value={empForm.position} onChange={e => setEmpForm({ ...empForm, position: e.target.value })} /></div>
+                      <div><Label>{k.department ?? "Bo'lim"}</Label><Input value={empForm.department} onChange={e => setEmpForm({ ...empForm, department: e.target.value })} /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><Label>{k.phone ?? "Telefon"}</Label><Input value={empForm.phone} onChange={e => setEmpForm({ ...empForm, phone: e.target.value })} placeholder="+998..." /></div>
+                      <div><Label>{k.salary ?? "Maosh"}</Label><Input type="number" min={0} value={empForm.salary || ""} onChange={e => setEmpForm({ ...empForm, salary: Number(e.target.value) })} /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><Label>{k.hireDate ?? "Ish boshlagan"}</Label><Input type="date" value={empForm.hire_date} onChange={e => setEmpForm({ ...empForm, hire_date: e.target.value })} /></div>
+                      <div><Label>{k.leaveDate ?? "Ketgan sana"}</Label><Input type="date" value={empForm.leave_date} onChange={e => setEmpForm({ ...empForm, leave_date: e.target.value })} /></div>
+                    </div>
+                    <div>
+                      <Label>{k.status ?? "Holat"}</Label>
+                      <Select value={empForm.status} onValueChange={v => setEmpForm({ ...empForm, status: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">{k.active ?? "Faol"}</SelectItem>
+                          <SelectItem value="inactive">{k.inactive ?? "Nofaol"}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button className="w-full" onClick={saveEmployee}>{t.common.save}</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
+
+          <Card><CardContent className="p-0">
+            <div className="border rounded-md overflow-x-auto">
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead>{k.fullName ?? "Ism"}</TableHead>
+                  <TableHead>{k.position ?? "Lavozim"}</TableHead>
+                  <TableHead>{k.department ?? "Bo'lim"}</TableHead>
+                  <TableHead>{k.phone ?? "Telefon"}</TableHead>
+                  <TableHead className="text-right">{k.salary ?? "Maosh"}</TableHead>
+                  <TableHead>{k.hireDate ?? "Ish boshlagan"}</TableHead>
+                  <TableHead>{k.status ?? "Holat"}</TableHead>
+                  {canManage && <TableHead></TableHead>}
+                </TableRow></TableHeader>
+                <TableBody>
+                  {loading && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
+                  {!loading && filteredEmps.map(e => (
+                    <TableRow key={e.id}>
+                      <TableCell className="font-medium">{e.full_name}</TableCell>
+                      <TableCell className="text-sm">{e.position}</TableCell>
+                      <TableCell className="text-sm">{e.department}</TableCell>
+                      <TableCell className="text-sm">{e.phone ?? "—"}</TableCell>
+                      <TableCell className="text-right font-mono text-sm">{e.salary ? `${fmt(Number(e.salary))} ${t.common.sum}` : "—"}</TableCell>
+                      <TableCell className="text-sm">{e.hire_date}</TableCell>
+                      <TableCell>
+                        <Badge variant={e.status === "active" ? "default" : "secondary"}>
+                          {e.status === "active" ? (k.active ?? "Faol") : (k.inactive ?? "Nofaol")}
+                        </Badge>
+                      </TableCell>
+                      {canManage && (
+                        <TableCell className="whitespace-nowrap">
+                          <Button size="sm" variant="ghost" onClick={() => openEditEmp(e)}><Edit2 className="h-3 w-3" /></Button>
+                          <Button size="sm" variant="ghost" onClick={() => toggleEmpStatus(e)}>{e.status === "active" ? (k.deactivate ?? "O'chirish") : (k.activate ?? "Faollash")}</Button>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                  {!loading && filteredEmps.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{k.emptyEmployees ?? "Xodimlar yo'q"}</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </div>
