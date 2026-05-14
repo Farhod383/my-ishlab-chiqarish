@@ -333,6 +333,7 @@ export type Database = {
           leave_date: string | null
           phone: string | null
           position: string
+          salary: number
           status: string
           updated_at: string
         }
@@ -345,6 +346,7 @@ export type Database = {
           leave_date?: string | null
           phone?: string | null
           position?: string
+          salary?: number
           status?: string
           updated_at?: string
         }
@@ -357,6 +359,7 @@ export type Database = {
           leave_date?: string | null
           phone?: string | null
           position?: string
+          salary?: number
           status?: string
           updated_at?: string
         }
