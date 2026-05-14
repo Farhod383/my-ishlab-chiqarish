@@ -153,7 +153,9 @@ export default function WarehousePage() {
   };
 
   const doImport = async () => {
-    if (!impProductName.trim() || !impQty) { toast.error(t.warehouse.fillFields); return; }
+    const qtyN = Number(impQty);
+    const priceN = Number(impPrice) || 0;
+    if (!impProductName.trim() || !qtyN) { toast.error(t.warehouse.fillFields); return; }
     let imgUrl: string | null = null;
     if (impImage) {
       const ext = impImage.name.split(".").pop();
@@ -174,9 +176,11 @@ export default function WarehousePage() {
     if (existingProducts && existingProducts.length > 0) {
       productId = existingProducts[0].id;
       const patch: any = {};
-      if (impPrice > 0) patch.last_price = impPrice;
+      if (priceN > 0) patch.last_price = priceN;
       if (impPhone) patch.phone = impPhone;
       if (imgUrl) patch.image_url = imgUrl;
+      if (impSource.trim()) patch.source = impSource.trim();
+      if (impUnit) patch.unit = impUnit;
       if (Object.keys(patch).length > 0) {
         await supabase.from("products").update(patch).eq("id", productId);
       }
@@ -185,13 +189,14 @@ export default function WarehousePage() {
         .from("products")
         .insert({
           name: trimmedName,
-          unit: "dona",
-          last_price: impPrice || 0,
+          unit: impUnit || "dona",
+          last_price: priceN,
           min_limit: 0,
           stock_qty: 0,
           phone: impPhone || null,
           image_url: imgUrl,
-        })
+          source: impSource.trim() || null,
+        } as any)
         .select("id")
         .single();
       if (createError || !newProduct) {
@@ -202,20 +207,21 @@ export default function WarehousePage() {
     }
 
     const { error } = await supabase.from("stock_movements").insert({
-      product_id: productId, direction: "in", quantity: impQty,
-      unit_price: impPrice || 0,
+      product_id: productId, direction: "in", quantity: qtyN,
+      unit_price: priceN,
       recipient_name: impSupplier || null, created_by: user?.id,
       phone: impPhone || null, image_url: imgUrl,
-      comment: `${t.supply.title}${impSupplier ? `: ${impSupplier}` : ""}${impPrice ? ` · ${fmt(impPrice)} ${t.common.sum}/${t.common.pieces}` : ""}`,
+      source: impSource.trim() || null,
+      comment: `${t.supply.title}${impSupplier ? `: ${impSupplier}` : ""}${priceN ? ` · ${fmt(priceN)} ${t.common.sum}/${t.common.pieces}` : ""}`,
     } as any);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: user?.email,
       action: "Mahsulot keltirildi", entity: "stock_movement",
-      details: `${trimmedName}: +${impQty} × ${fmt(impPrice)} = ${fmt(impQty * impPrice)} ${t.common.sum}`,
+      details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${t.common.sum}`,
     });
     toast.success(t.warehouse.inRecorded);
-    setImpProductName(""); setImpQty(0); setImpPrice(0); setImpSupplier(""); setImpPhone(""); setImpImage(null); setImportOpen(false);
+    setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpSupplier(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImportOpen(false);
     load();
   };
 
