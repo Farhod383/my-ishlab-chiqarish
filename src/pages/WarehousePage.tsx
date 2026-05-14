@@ -38,6 +38,7 @@ export default function WarehousePage() {
   // Add product
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState("");
+  const [newQty, setNewQty] = useState<string>("");
   const [newUnit, setNewUnit] = useState<string>("dona");
   const [newPrice, setNewPrice] = useState<string>("");
   const [newMin, setNewMin] = useState<string>("");
