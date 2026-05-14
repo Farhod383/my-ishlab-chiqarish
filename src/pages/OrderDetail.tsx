@@ -264,24 +264,6 @@ export default function OrderDetail() {
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 shrink-0 min-w-[220px]">
-                      {s.qc_required && hasRole(["admin", "manager", "marketing", "otk"]) && (
-                        <div className="space-y-1.5 border rounded-md p-2 bg-muted/30">
-                          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">OTK</div>
-                          <Textarea
-                            rows={2}
-                            placeholder={t.otk.placeholder}
-                            value={otkEdit[s.id] ?? ""}
-                            onChange={(e) => setOtkEdit({ ...otkEdit, [s.id]: e.target.value })}
-                            className="text-xs"
-                          />
-                          <div className="flex items-center justify-between gap-2">
-                            <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-                              <Checkbox checked={!!s.qc_passed} onCheckedChange={(v) => setOtkPassed(s, !!v)} /> {t.orderDetail.passed}
-                            </label>
-                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => saveOtkComment(s)}>{t.common.save}</Button>
-                          </div>
-                        </div>
-                      )}
                       <div className="flex gap-2 flex-wrap">
                         {s.status === "pending" && canStart && hasRole(["manager", "admin", "marketing"]) && (
                           <Button size="sm" variant="outline" onClick={() => startStage(s)}><Play className="h-3 w-3 mr-1" />{t.orderDetail.start}</Button>
