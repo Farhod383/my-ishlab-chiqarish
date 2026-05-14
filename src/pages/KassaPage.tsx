@@ -40,11 +40,13 @@ export default function KassaPage() {
 
   // expense form
   const [openExp, setOpenExp] = useState(false);
+  const [expEditId, setExpEditId] = useState<string | null>(null);
   const [expForm, setExpForm] = useState({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "" });
   const [recipientMode, setRecipientMode] = useState<"employee" | "manual">("employee");
 
   // income form
   const [openInc, setOpenInc] = useState(false);
+  const [incEditId, setIncEditId] = useState<string | null>(null);
   const [incForm, setIncForm] = useState({ amount: 0, source: "", payment_type: "cash", comment: "" });
   const [incFile, setIncFile] = useState<File | null>(null);
 
@@ -141,20 +143,37 @@ export default function KassaPage() {
     if (!expForm.amount || !expForm.reason.trim()) { toast.error(k.fillFields ?? "Maydonlarni to'ldiring"); return; }
     const emp = recipientMode === "employee" ? employees.find(e => e.id === expForm.recipient_id) : null;
     const recipientName = recipientMode === "employee" ? (emp?.full_name ?? null) : (expForm.recipient_manual.trim() || null);
-    const { error } = await supabase.from("cash_expenses").insert({
+    const payload: any = {
       amount: expForm.amount,
       reason: expForm.reason.trim(),
       recipient_id: recipientMode === "employee" ? (expForm.recipient_id || null) : null,
       recipient_name: recipientName,
       comment: expForm.comment.trim() || null,
-      created_by: user?.id,
-    });
+    };
+    const q = expEditId
+      ? supabase.from("cash_expenses").update(payload).eq("id", expEditId)
+      : supabase.from("cash_expenses").insert({ ...payload, created_by: user?.id });
+    const { error } = await q;
     if (error) { toast.error(error.message); return; }
     toast.success(k.saved ?? "Saqlandi");
     setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "" });
     setRecipientMode("employee");
+    setExpEditId(null);
     setOpenExp(false);
     load();
+  };
+
+  const openEditExp = (e: any) => {
+    setExpEditId(e.id);
+    setExpForm({
+      amount: Number(e.amount) || 0,
+      reason: e.reason ?? "",
+      recipient_id: e.recipient_id ?? "",
+      recipient_manual: e.recipient_id ? "" : (e.recipient_name ?? ""),
+      comment: e.comment ?? "",
+    });
+    setRecipientMode(e.recipient_id ? "employee" : "manual");
+    setOpenExp(true);
   };
 
   const saveIncome = async () => {
@@ -166,20 +185,36 @@ export default function KassaPage() {
       if (up.error) { toast.error(up.error.message); return; }
       receipt_url = supabase.storage.from("order-files").getPublicUrl(path).data.publicUrl;
     }
-    const { error } = await (supabase.from as any)("cash_incomes").insert({
+    const payload: any = {
       amount: incForm.amount,
       source: incForm.source.trim(),
       payment_type: incForm.payment_type,
       comment: incForm.comment.trim() || null,
-      receipt_url,
-      created_by: user?.id,
-    });
+    };
+    if (receipt_url) payload.receipt_url = receipt_url;
+    const q = incEditId
+      ? (supabase.from as any)("cash_incomes").update(payload).eq("id", incEditId)
+      : (supabase.from as any)("cash_incomes").insert({ ...payload, created_by: user?.id });
+    const { error } = await q;
     if (error) { toast.error(error.message); return; }
     toast.success(k.saved ?? "Saqlandi");
     setIncForm({ amount: 0, source: "", payment_type: "cash", comment: "" });
     setIncFile(null);
+    setIncEditId(null);
     setOpenInc(false);
     load();
+  };
+
+  const openEditInc = (i: any) => {
+    setIncEditId(i.id);
+    setIncForm({
+      amount: Number(i.amount) || 0,
+      source: i.source ?? "",
+      payment_type: i.payment_type ?? "cash",
+      comment: i.comment ?? "",
+    });
+    setIncFile(null);
+    setOpenInc(true);
   };
 
   return (
