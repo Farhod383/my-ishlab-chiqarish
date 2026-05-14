@@ -93,12 +93,15 @@ export default function ProductionBoard() {
                       <Progress value={(completed / total) * 100} className="h-2" />
                       <div className="flex gap-1 mt-2 flex-wrap">
                         {o.stages.map((s) => (
-                          <div key={s.id} title={s.name} className={`h-1.5 flex-1 min-w-[20px] rounded-full ${
-                            s.status === "completed" ? "bg-status-green" :
-                            s.status === "in_progress" ? "bg-status-blue" :
-                            s.status === "delayed" ? "bg-status-red" :
-                            "bg-muted"
-                          }`} />
+                          <div key={s.id} className="flex-1 min-w-[60px]">
+                            <div title={s.name} className={`h-1.5 rounded-full ${
+                              s.status === "completed" ? "bg-status-green" :
+                              s.status === "in_progress" ? "bg-status-blue" :
+                              s.status === "delayed" ? "bg-status-red" :
+                              "bg-muted"
+                            }`} />
+                            <div className="text-[10px] text-muted-foreground mt-1 truncate text-center" title={s.name}>{s.name}</div>
+                          </div>
                         ))}
                       </div>
                     </div>
