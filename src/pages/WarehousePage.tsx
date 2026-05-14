@@ -268,18 +268,19 @@ export default function WarehousePage() {
                   <div className="space-y-3">
                     <div><Label>{t.warehouse.productName} *</Label><Input value={newName} onChange={e => setNewName(e.target.value)} /></div>
                     <div className="grid grid-cols-2 gap-3">
+                      <div><Label>{t.warehouse.qty} *</Label><Input type="number" inputMode="numeric" min={0} step="any" value={newQty} onChange={e => setNewQty(e.target.value.replace(/[^0-9.]/g, ""))} placeholder="0" /></div>
                       <div><Label>{t.warehouse.unit} *</Label>
                         <Select value={newUnit} onValueChange={setNewUnit}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
-                      <div><Label>{t.warehouse.minLimitField}</Label><Input type="number" min={0} value={newMin} onChange={e => setNewMin(e.target.value)} placeholder={(t.warehouse as any).minLimitPh} /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
+                      <div><Label>{t.warehouse.minLimitField}</Label><Input type="number" min={0} value={newMin} onChange={e => setNewMin(e.target.value)} placeholder={(t.warehouse as any).minLimitPh} /></div>
                       <div><Label>{t.warehouse.price}</Label><Input type="number" min={0} value={newPrice} onChange={e => setNewPrice(e.target.value)} placeholder="0" /></div>
-                      <div><Label>{t.warehouse.phone}</Label><Input value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+998..." /></div>
                     </div>
+                    <div><Label>{t.warehouse.phone}</Label><Input value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+998..." /></div>
                     <div><Label>{(t.warehouse as any).source}</Label><Input value={newSource} onChange={e => setNewSource(e.target.value)} placeholder={(t.warehouse as any).sourcePh} /></div>
                     <div><Label>{(t.warehouse.cols as any).supplier}</Label><Input value={newSupplier} onChange={e => setNewSupplier(e.target.value)} placeholder={t.supply.bringerPh} /></div>
                     <div><Label>{t.warehouse.image}</Label><Input type="file" accept="image/*" onChange={e => setNewImage(e.target.files?.[0] ?? null)} /></div>
