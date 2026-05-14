@@ -38,6 +38,7 @@ export default function WarehousePage() {
   // Add product
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState("");
+  const [newQty, setNewQty] = useState<string>("");
   const [newUnit, setNewUnit] = useState<string>("dona");
   const [newPrice, setNewPrice] = useState<string>("");
   const [newMin, setNewMin] = useState<string>("");
@@ -105,6 +106,8 @@ export default function WarehousePage() {
 
   const addProduct = async () => {
     if (!newName.trim()) { toast.error(t.warehouse.fillFields); return; }
+    const qtyN = Number(newQty) || 0;
+    if (qtyN < 0) { toast.error(t.warehouse.fillFields); return; }
     let image_url: string | null = null;
     if (newImage) {
       const path = `${Date.now()}_${newImage.name}`;
@@ -114,21 +117,36 @@ export default function WarehousePage() {
     }
     const priceN = Number(newPrice) || 0;
     const minN = newMin === "" ? 0 : Number(newMin);
-    const { error } = await supabase.from("products").insert({
+    const { data: created, error } = await supabase.from("products").insert({
       name: newName.trim(), unit: newUnit || "dona", last_price: priceN,
       min_limit: minN, phone: newPhone || null, image_url,
       source: newSource.trim() || null,
-    } as any);
-    if (error) { toast.error(error.message); return; }
-    if (newSupplier.trim()) {
+    } as any).select("id").single();
+    if (error || !created) { toast.error(error?.message || "Error"); return; }
+    if (qtyN > 0) {
+      await supabase.from("stock_movements").insert({
+        product_id: created.id, direction: "in", quantity: qtyN,
+        unit_price: priceN,
+        recipient_name: newSupplier.trim() || null,
+        source: newSource.trim() || null,
+        phone: newPhone || null, image_url,
+        created_by: user?.id,
+        comment: `${t.warehouse.addProduct}: ${newName.trim()}`,
+      } as any);
+    } else if (newSupplier.trim()) {
       await supabase.from("stock_movements").insert({
         product_id: null, direction: "in", quantity: 0,
         recipient_name: newSupplier.trim(), source: newSource.trim() || null,
         created_by: user?.id, comment: `${t.warehouse.addProduct}: ${newName.trim()}`,
       } as any);
     }
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: "Mahsulot qo'shildi", entity: "product",
+      details: `${newName.trim()}${qtyN > 0 ? `: +${qtyN} ${newUnit}` : ""}`,
+    });
     toast.success(t.warehouse.productAdded);
-    setNewName(""); setNewUnit("dona"); setNewPrice(""); setNewMin(""); setNewPhone(""); setNewSource(""); setNewSupplier(""); setNewImage(null);
+    setNewName(""); setNewQty(""); setNewUnit("dona"); setNewPrice(""); setNewMin(""); setNewPhone(""); setNewSource(""); setNewSupplier(""); setNewImage(null);
     setAddOpen(false);
     load();
   };
@@ -250,18 +268,19 @@ export default function WarehousePage() {
                   <div className="space-y-3">
                     <div><Label>{t.warehouse.productName} *</Label><Input value={newName} onChange={e => setNewName(e.target.value)} /></div>
                     <div className="grid grid-cols-2 gap-3">
+                      <div><Label>{t.warehouse.qty} *</Label><Input type="number" inputMode="numeric" min={0} step="any" value={newQty} onChange={e => setNewQty(e.target.value.replace(/[^0-9.]/g, ""))} placeholder="0" /></div>
                       <div><Label>{t.warehouse.unit} *</Label>
                         <Select value={newUnit} onValueChange={setNewUnit}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
-                      <div><Label>{t.warehouse.minLimitField}</Label><Input type="number" min={0} value={newMin} onChange={e => setNewMin(e.target.value)} placeholder={(t.warehouse as any).minLimitPh} /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
+                      <div><Label>{t.warehouse.minLimitField}</Label><Input type="number" min={0} value={newMin} onChange={e => setNewMin(e.target.value)} placeholder={(t.warehouse as any).minLimitPh} /></div>
                       <div><Label>{t.warehouse.price}</Label><Input type="number" min={0} value={newPrice} onChange={e => setNewPrice(e.target.value)} placeholder="0" /></div>
-                      <div><Label>{t.warehouse.phone}</Label><Input value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+998..." /></div>
                     </div>
+                    <div><Label>{t.warehouse.phone}</Label><Input value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+998..." /></div>
                     <div><Label>{(t.warehouse as any).source}</Label><Input value={newSource} onChange={e => setNewSource(e.target.value)} placeholder={(t.warehouse as any).sourcePh} /></div>
                     <div><Label>{(t.warehouse.cols as any).supplier}</Label><Input value={newSupplier} onChange={e => setNewSupplier(e.target.value)} placeholder={t.supply.bringerPh} /></div>
                     <div><Label>{t.warehouse.image}</Label><Input type="file" accept="image/*" onChange={e => setNewImage(e.target.files?.[0] ?? null)} /></div>
