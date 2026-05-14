@@ -15,6 +15,8 @@ import { useI18n } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
 import { toast } from "sonner";
 
+const UNITS = ["dona", "kg", "metr", "litr", "rulon", "komplekt"] as const;
+
 export default function WarehousePage() {
   const { user, hasRole } = useAuth();
   const { t } = useI18n();
@@ -22,7 +24,9 @@ export default function WarehousePage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [movements, setMovements] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+  const [search, setSearch] = useState("");
 
   // Output states
   const [outProduct, setOutProduct] = useState("");
@@ -34,10 +38,12 @@ export default function WarehousePage() {
   // Add product
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState("");
-  const [newUnit, setNewUnit] = useState("dona");
-  const [newPrice, setNewPrice] = useState<number>(0);
-  const [newMin, setNewMin] = useState<number>(0);
+  const [newUnit, setNewUnit] = useState<string>("dona");
+  const [newPrice, setNewPrice] = useState<string>("");
+  const [newMin, setNewMin] = useState<string>("");
   const [newPhone, setNewPhone] = useState("");
+  const [newSource, setNewSource] = useState("");
+  const [newSupplier, setNewSupplier] = useState("");
   const [newImage, setNewImage] = useState<File | null>(null);
 
   // Other output (no order)
@@ -50,20 +56,29 @@ export default function WarehousePage() {
   // Import (from supply)
   const [importOpen, setImportOpen] = useState(false);
   const [impProductName, setImpProductName] = useState("");
-  const [impQty, setImpQty] = useState<number>(0);
-  const [impPrice, setImpPrice] = useState<number>(0);
+  const [impQty, setImpQty] = useState<string>("");
+  const [impUnit, setImpUnit] = useState<string>("dona");
+  const [impPrice, setImpPrice] = useState<string>("");
   const [impSupplier, setImpSupplier] = useState("");
   const [impPhone, setImpPhone] = useState("");
+  const [impSource, setImpSource] = useState("");
   const [impImage, setImpImage] = useState<File | null>(null);
 
   const load = async () => {
     const [p, o, m, e] = await Promise.all([
       supabase.from("products").select("*").order("name"),
       supabase.from("orders").select("id, order_number, product_name").neq("status", "completed"),
-      supabase.from("stock_movements").select("*, product:products(name, unit), order:orders(order_number, product_name)").order("created_at", { ascending: false }).limit(100),
+      supabase.from("stock_movements").select("*, product:products(name, unit), order:orders(order_number, product_name)").order("created_at", { ascending: false }).limit(200),
       supabase.from("employees").select("id, full_name, department").eq("status", "active").order("full_name"),
     ]);
     setProducts(p.data ?? []); setOrders(o.data ?? []); setMovements(m.data ?? []); setEmployees(e.data ?? []);
+    const ids = Array.from(new Set((m.data ?? []).map((x: any) => x.created_by).filter(Boolean)));
+    if (ids.length) {
+      const { data: profs } = await supabase.from("profiles").select("id, full_name, email").in("id", ids);
+      const map: Record<string, string> = {};
+      (profs ?? []).forEach((pr: any) => { map[pr.id] = pr.full_name || pr.email || ""; });
+      setProfiles(map);
+    }
   };
   useEffect(() => { load(); }, []);
 
@@ -97,13 +112,23 @@ export default function WarehousePage() {
       if (up.error) { toast.error(up.error.message); return; }
       image_url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
     }
+    const priceN = Number(newPrice) || 0;
+    const minN = newMin === "" ? 0 : Number(newMin);
     const { error } = await supabase.from("products").insert({
-      name: newName.trim(), unit: newUnit || "dona", last_price: newPrice || 0,
-      min_limit: newMin || 0, phone: newPhone || null, image_url,
-    });
+      name: newName.trim(), unit: newUnit || "dona", last_price: priceN,
+      min_limit: minN, phone: newPhone || null, image_url,
+      source: newSource.trim() || null,
+    } as any);
     if (error) { toast.error(error.message); return; }
+    if (newSupplier.trim()) {
+      await supabase.from("stock_movements").insert({
+        product_id: null, direction: "in", quantity: 0,
+        recipient_name: newSupplier.trim(), source: newSource.trim() || null,
+        created_by: user?.id, comment: `${t.warehouse.addProduct}: ${newName.trim()}`,
+      } as any);
+    }
     toast.success(t.warehouse.productAdded);
-    setNewName(""); setNewUnit("dona"); setNewPrice(0); setNewMin(0); setNewPhone(""); setNewImage(null);
+    setNewName(""); setNewUnit("dona"); setNewPrice(""); setNewMin(""); setNewPhone(""); setNewSource(""); setNewSupplier(""); setNewImage(null);
     setAddOpen(false);
     load();
   };
@@ -128,7 +153,9 @@ export default function WarehousePage() {
   };
 
   const doImport = async () => {
-    if (!impProductName.trim() || !impQty) { toast.error(t.warehouse.fillFields); return; }
+    const qtyN = Number(impQty);
+    const priceN = Number(impPrice) || 0;
+    if (!impProductName.trim() || !qtyN) { toast.error(t.warehouse.fillFields); return; }
     let imgUrl: string | null = null;
     if (impImage) {
       const ext = impImage.name.split(".").pop();
@@ -149,9 +176,11 @@ export default function WarehousePage() {
     if (existingProducts && existingProducts.length > 0) {
       productId = existingProducts[0].id;
       const patch: any = {};
-      if (impPrice > 0) patch.last_price = impPrice;
+      if (priceN > 0) patch.last_price = priceN;
       if (impPhone) patch.phone = impPhone;
       if (imgUrl) patch.image_url = imgUrl;
+      if (impSource.trim()) patch.source = impSource.trim();
+      if (impUnit) patch.unit = impUnit;
       if (Object.keys(patch).length > 0) {
         await supabase.from("products").update(patch).eq("id", productId);
       }
@@ -160,13 +189,14 @@ export default function WarehousePage() {
         .from("products")
         .insert({
           name: trimmedName,
-          unit: "dona",
-          last_price: impPrice || 0,
+          unit: impUnit || "dona",
+          last_price: priceN,
           min_limit: 0,
           stock_qty: 0,
           phone: impPhone || null,
           image_url: imgUrl,
-        })
+          source: impSource.trim() || null,
+        } as any)
         .select("id")
         .single();
       if (createError || !newProduct) {
@@ -177,20 +207,21 @@ export default function WarehousePage() {
     }
 
     const { error } = await supabase.from("stock_movements").insert({
-      product_id: productId, direction: "in", quantity: impQty,
-      unit_price: impPrice || 0,
+      product_id: productId, direction: "in", quantity: qtyN,
+      unit_price: priceN,
       recipient_name: impSupplier || null, created_by: user?.id,
       phone: impPhone || null, image_url: imgUrl,
-      comment: `${t.supply.title}${impSupplier ? `: ${impSupplier}` : ""}${impPrice ? ` · ${fmt(impPrice)} ${t.common.sum}/${t.common.pieces}` : ""}`,
+      source: impSource.trim() || null,
+      comment: `${t.supply.title}${impSupplier ? `: ${impSupplier}` : ""}${priceN ? ` · ${fmt(priceN)} ${t.common.sum}/${t.common.pieces}` : ""}`,
     } as any);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: user?.email,
       action: "Mahsulot keltirildi", entity: "stock_movement",
-      details: `${trimmedName}: +${impQty} × ${fmt(impPrice)} = ${fmt(impQty * impPrice)} ${t.common.sum}`,
+      details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${t.common.sum}`,
     });
     toast.success(t.warehouse.inRecorded);
-    setImpProductName(""); setImpQty(0); setImpPrice(0); setImpSupplier(""); setImpPhone(""); setImpImage(null); setImportOpen(false);
+    setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpSupplier(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImportOpen(false);
     load();
   };
 
@@ -217,15 +248,22 @@ export default function WarehousePage() {
                 <DialogContent>
                   <DialogHeader><DialogTitle>{t.warehouse.addProduct}</DialogTitle></DialogHeader>
                   <div className="space-y-3">
-                    <div><Label>{t.warehouse.productName}</Label><Input value={newName} onChange={e => setNewName(e.target.value)} /></div>
+                    <div><Label>{t.warehouse.productName} *</Label><Input value={newName} onChange={e => setNewName(e.target.value)} /></div>
                     <div className="grid grid-cols-2 gap-3">
-                      <div><Label>{t.warehouse.cols.product} ({t.common.pieces})</Label><Input value={newUnit} onChange={e => setNewUnit(e.target.value)} placeholder="dona / kg / m" /></div>
-                      <div><Label>{t.warehouse.minLimitField}</Label><Input type="number" min={0} value={newMin} onChange={e => setNewMin(Number(e.target.value))} /></div>
+                      <div><Label>{t.warehouse.unit} *</Label>
+                        <Select value={newUnit} onValueChange={setNewUnit}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div><Label>{t.warehouse.minLimitField}</Label><Input type="number" min={0} value={newMin} onChange={e => setNewMin(e.target.value)} placeholder={(t.warehouse as any).minLimitPh} /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <div><Label>{t.warehouse.price}</Label><Input type="number" min={0} value={newPrice} onChange={e => setNewPrice(Number(e.target.value))} /></div>
+                      <div><Label>{t.warehouse.price}</Label><Input type="number" min={0} value={newPrice} onChange={e => setNewPrice(e.target.value)} placeholder="0" /></div>
                       <div><Label>{t.warehouse.phone}</Label><Input value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+998..." /></div>
                     </div>
+                    <div><Label>{(t.warehouse as any).source}</Label><Input value={newSource} onChange={e => setNewSource(e.target.value)} placeholder={(t.warehouse as any).sourcePh} /></div>
+                    <div><Label>{(t.warehouse.cols as any).supplier}</Label><Input value={newSupplier} onChange={e => setNewSupplier(e.target.value)} placeholder={t.supply.bringerPh} /></div>
                     <div><Label>{t.warehouse.image}</Label><Input type="file" accept="image/*" onChange={e => setNewImage(e.target.files?.[0] ?? null)} /></div>
                     <Button className="w-full" onClick={addProduct}>{t.common.save}</Button>
                   </div>
@@ -296,16 +334,23 @@ export default function WarehousePage() {
                   <div><Label>{t.supply.productName || t.warehouse.productName}</Label>
                     <Input value={impProductName} onChange={e => setImpProductName(e.target.value)} placeholder={t.warehouse.productName} />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label>{t.supply.qty}</Label><Input type="number" min={0.1} step={0.1} value={impQty || ""} onChange={e => setImpQty(Number(e.target.value))} /></div>
-                    <div><Label>{t.supply.price}</Label><Input type="number" min={0} step={1} value={impPrice || ""} onChange={e => setImpPrice(Number(e.target.value))} placeholder="0" /></div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="col-span-2"><Label>{t.supply.qty} *</Label><Input type="number" min={0.1} step={0.1} value={impQty} onChange={e => setImpQty(e.target.value)} placeholder={(t.warehouse as any).qtyPh} /></div>
+                    <div><Label>{t.warehouse.unit}</Label>
+                      <Select value={impUnit} onValueChange={setImpUnit}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  {impQty > 0 && impPrice > 0 && (
+                  <div><Label>{t.supply.price}</Label><Input type="number" min={0} step={1} value={impPrice} onChange={e => setImpPrice(e.target.value)} placeholder="0" /></div>
+                  {Number(impQty) > 0 && Number(impPrice) > 0 && (
                     <div className="text-sm bg-primary/5 border border-primary/20 rounded p-2 flex justify-between">
                       <span className="text-muted-foreground">{t.supply.totalValue}:</span>
-                      <span className="font-mono font-bold text-primary">{fmt(impQty * impPrice)} {t.common.sum}</span>
+                      <span className="font-mono font-bold text-primary">{fmt(Number(impQty) * Number(impPrice))} {t.common.sum}</span>
                     </div>
                   )}
+                  <div><Label>{(t.warehouse as any).source}</Label><Input value={impSource} onChange={e => setImpSource(e.target.value)} placeholder={(t.warehouse as any).sourcePh} /></div>
                   <div><Label>{t.supply.bringer}</Label><Input value={impSupplier} onChange={e => setImpSupplier(e.target.value)} placeholder={t.supply.bringerPh} /></div>
                   <div><Label>{t.supply.phone}</Label><Input value={impPhone} onChange={e => setImpPhone(e.target.value)} placeholder={t.supply.phonePh} /></div>
                   <div><Label>{t.supply.image}</Label><Input type="file" accept="image/*" onChange={e => setImpImage(e.target.files?.[0] ?? null)} /></div>
@@ -342,7 +387,8 @@ export default function WarehousePage() {
           <TabsTrigger value="history">{t.warehouse.tabs.history}</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="stock" className="mt-4">
+        <TabsContent value="stock" className="mt-4 space-y-3">
+          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={(t.warehouse as any).search} className="max-w-md" />
           <Card><CardContent className="p-0">
             <div className="border rounded-md overflow-x-auto">
               <Table>
@@ -351,22 +397,30 @@ export default function WarehousePage() {
                   <TableHead className="text-right">{t.warehouse.cols.stock}</TableHead>
                   <TableHead className="text-right">{t.warehouse.cols.min}</TableHead>
                   <TableHead className="text-right">{t.warehouse.price}</TableHead>
+                  <TableHead>{(t.warehouse.cols as any).source}</TableHead>
                   <TableHead>{t.warehouse.cols.state}</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
-                  {products.map(p => {
-                    const low = Number(p.stock_qty) <= Number(p.min_limit);
-                    return (
-                      <TableRow key={p.id} className={`cursor-pointer hover:bg-muted/40 ${low ? "bg-status-red/5" : ""}`} onClick={() => setSelectedProduct(p)}>
-                        <TableCell className="font-medium flex items-center gap-2"><Package className="h-4 w-4 text-muted-foreground" />{p.name}</TableCell>
-                        <TableCell className="text-right font-mono">{p.stock_qty} {p.unit}</TableCell>
-                        <TableCell className="text-right text-sm text-muted-foreground">{p.min_limit} {p.unit}</TableCell>
-                        <TableCell className="text-right text-sm font-mono">{fmt(Number(p.last_price ?? 0))}</TableCell>
-                        <TableCell>{low ? <span className="text-status-red text-xs font-semibold flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{t.warehouse.low}</span> : <span className="text-status-green text-xs">{t.warehouse.enough}</span>}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                  {products.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">{t.common.noRecords}</TableCell></TableRow>}
+                  {(() => {
+                    const q = search.trim().toLowerCase();
+                    const filtered = q ? products.filter(p =>
+                      [p.name, p.unit, p.source, p.phone].some((v: any) => (v ?? "").toString().toLowerCase().includes(q))
+                    ) : products;
+                    if (filtered.length === 0) return <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{q ? (t.warehouse as any).noResults : t.common.noRecords}</TableCell></TableRow>;
+                    return filtered.map(p => {
+                      const low = Number(p.stock_qty) <= Number(p.min_limit);
+                      return (
+                        <TableRow key={p.id} className={`cursor-pointer hover:bg-muted/40 ${low ? "bg-status-red/5" : ""}`} onClick={() => setSelectedProduct(p)}>
+                          <TableCell className="font-medium flex items-center gap-2"><Package className="h-4 w-4 text-muted-foreground" />{p.name}</TableCell>
+                          <TableCell className="text-right font-mono">{p.stock_qty} {p.unit}</TableCell>
+                          <TableCell className="text-right text-sm text-muted-foreground">{p.min_limit} {p.unit}</TableCell>
+                          <TableCell className="text-right text-sm font-mono">{fmt(Number(p.last_price ?? 0))}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{p.source ?? "—"}</TableCell>
+                          <TableCell>{low ? <span className="text-status-red text-xs font-semibold flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{t.warehouse.low}</span> : <span className="text-status-green text-xs">{t.warehouse.enough}</span>}</TableCell>
+                        </TableRow>
+                      );
+                    });
+                  })()}
                 </TableBody>
               </Table>
             </div>
@@ -390,6 +444,8 @@ export default function WarehousePage() {
                       <TableHead>{t.warehouse.cols.product}</TableHead>
                       <TableHead className="text-right">{t.warehouse.cols.qty}</TableHead>
                       <TableHead>{t.warehouse.cols.whoTook}</TableHead>
+                      <TableHead>{(t.warehouse.cols as any).source}</TableHead>
+                      <TableHead>{(t.warehouse.cols as any).addedBy}</TableHead>
                       <TableHead>{t.warehouse.cols.order}</TableHead>
                       <TableHead>{t.warehouse.cols.comment}</TableHead>
                     </TableRow>
@@ -408,11 +464,13 @@ export default function WarehousePage() {
                           {m.direction==="out"?"-":"+"}{m.quantity} {m.product?.unit}
                         </TableCell>
                         <TableCell className="text-sm">{m.recipient_name ?? <span className="text-muted-foreground">—</span>}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{m.source ?? "—"}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{profiles[m.created_by] ?? "—"}</TableCell>
                         <TableCell className="text-sm font-mono">{m.order?.order_number ?? <span className="text-muted-foreground">{t.warehouse.common}</span>}</TableCell>
                         <TableCell className="text-xs italic text-muted-foreground max-w-[200px] truncate">{m.comment ?? "—"}</TableCell>
                       </TableRow>
                     ))}
-                    {movements.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">{t.warehouse.noMov}</TableCell></TableRow>}
+                    {movements.length === 0 && <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-6">{t.warehouse.noMov}</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </div>

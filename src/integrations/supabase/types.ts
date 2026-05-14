@@ -588,6 +588,7 @@ export type Database = {
           min_limit: number
           name: string
           phone: string | null
+          source: string | null
           stock_qty: number
           unit: string
         }
@@ -599,6 +600,7 @@ export type Database = {
           min_limit?: number
           name: string
           phone?: string | null
+          source?: string | null
           stock_qty?: number
           unit?: string
         }
@@ -610,6 +612,7 @@ export type Database = {
           min_limit?: number
           name?: string
           phone?: string | null
+          source?: string | null
           stock_qty?: number
           unit?: string
         }
@@ -710,6 +713,7 @@ export type Database = {
           quantity: number
           reason: string | null
           recipient_name: string | null
+          source: string | null
           taken_by: string | null
           unit_price: number
         }
@@ -726,6 +730,7 @@ export type Database = {
           quantity: number
           reason?: string | null
           recipient_name?: string | null
+          source?: string | null
           taken_by?: string | null
           unit_price?: number
         }
@@ -742,6 +747,7 @@ export type Database = {
           quantity?: number
           reason?: string | null
           recipient_name?: string | null
+          source?: string | null
           taken_by?: string | null
           unit_price?: number
         }
