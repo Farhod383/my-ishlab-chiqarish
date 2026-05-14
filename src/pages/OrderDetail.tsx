@@ -101,7 +101,14 @@ export default function OrderDetail() {
     load();
   };
 
-  if (loading || !order) return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+  if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+  if (!order) return (
+    <div className="flex flex-col items-center justify-center py-16 gap-3">
+      <AlertTriangle className="h-10 w-10 text-status-red" />
+      <h2 className="text-lg font-semibold">Zakaz topilmadi</h2>
+      <Button variant="outline" onClick={() => nav("/orders")}><ArrowLeft className="h-4 w-4 mr-1" /> Zakazlar ro'yxati</Button>
+    </div>
+  );
 
   const today = new Date(); today.setHours(0,0,0,0);
   const dl = new Date(order.deadline); dl.setHours(0,0,0,0);
