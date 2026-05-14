@@ -34,9 +34,9 @@ export default function OrderDetail() {
   const [otkEdit, setOtkEdit] = useState<Record<string, string>>({});
 
   const load = async () => {
-    if (!id) return;
+    if (!id) { setLoading(false); return; }
     const [o, s, p, l, mv, of] = await Promise.all([
-      supabase.from("orders").select("*, client:clients(*)").eq("id", id).single(),
+      supabase.from("orders").select("*, client:clients(*)").eq("id", id).maybeSingle(),
       supabase.from("order_stages").select("*").eq("order_id", id).order("stage_order"),
       supabase.from("order_parts").select("*").eq("order_id", id),
       supabase.from("audit_log").select("*").eq("order_id", id).order("created_at", { ascending: false }),
@@ -60,16 +60,22 @@ export default function OrderDetail() {
   const startStage = async (stage: StageRow) => {
     const prev = stages.find((x) => x.stage_order === stage.stage_order - 1);
     if (prev && prev.status !== "completed") { toast.error(t.orderDetail.prevError); return; }
+    if (!(stage as any).worker_name || !((stage as any).worker_name).trim()) {
+      toast.error("Avval ishchi tayinlang"); return;
+    }
     await supabase.from("order_stages").update({ status: "in_progress", started_at: new Date().toISOString() }).eq("id", stage.id);
     if (order?.status === "pending") await supabase.from("orders").update({ status: "in_progress" }).eq("id", order.id);
-    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Bosqich boshlandi", entity: "stage", order_id: order!.id, stage_id: stage.id, details: stage.name });
+    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Bosqich boshlandi", entity: "stage", order_id: order!.id, stage_id: stage.id, details: `${stage.name} · ishchi: ${(stage as any).worker_name}` });
     load();
   };
 
   const finishStage = async (stage: StageRow) => {
-    if (stage.qc_required && !stage.qc_passed) { toast.error(t.orderDetail.finishOrderError); return; }
-    await supabase.from("order_stages").update({ status: "completed", finished_at: new Date().toISOString() }).eq("id", stage.id);
-    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Bosqich tugatildi", entity: "stage", order_id: order!.id, stage_id: stage.id, details: stage.name });
+    if (stage.qc_required && !stage.qc_passed) { toast.error("Sifat nazorati tasdiqlamagan"); return; }
+    const startedTs = stage.started_at ? new Date(stage.started_at).getTime() : null;
+    const finishedTs = Date.now();
+    const durationMin = startedTs ? Math.round((finishedTs - startedTs) / 60000) : 0;
+    await supabase.from("order_stages").update({ status: "completed", finished_at: new Date(finishedTs).toISOString() }).eq("id", stage.id);
+    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Bosqich tugatildi", entity: "stage", order_id: order!.id, stage_id: stage.id, details: `${stage.name} · ishchi: ${(stage as any).worker_name ?? "—"} · davomiyligi: ${durationMin} daq.` });
     const others = stages.filter((x) => x.id !== stage.id);
     if (others.every((x) => x.status === "completed")) {
       await supabase.from("orders").update({ status: "completed" }).eq("id", order!.id);
@@ -95,7 +101,14 @@ export default function OrderDetail() {
     load();
   };
 
-  if (loading || !order) return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+  if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+  if (!order) return (
+    <div className="flex flex-col items-center justify-center py-16 gap-3">
+      <AlertTriangle className="h-10 w-10 text-status-red" />
+      <h2 className="text-lg font-semibold">Zakaz topilmadi</h2>
+      <Button variant="outline" onClick={() => nav("/orders")}><ArrowLeft className="h-4 w-4 mr-1" /> Zakazlar ro'yxati</Button>
+    </div>
+  );
 
   const today = new Date(); today.setHours(0,0,0,0);
   const dl = new Date(order.deadline); dl.setHours(0,0,0,0);

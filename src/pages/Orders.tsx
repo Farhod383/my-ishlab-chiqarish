@@ -11,10 +11,12 @@ import { orderHealth, type OrderRow } from "@/types/erp";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { Plus, Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Orders() {
   const { hasRole } = useAuth();
   const { t } = useI18n();
+  const nav = useNavigate();
   const [rows, setRows] = useState<(OrderRow & { client?: any })[]>([]);
   const [filter, setFilter] = useState<"all" | "active" | "exception" | "delayed" | "completed">("all");
   const [q, setQ] = useState("");
@@ -101,7 +103,7 @@ export default function Orders() {
                   const startedAt = stages[0]?.started_at;
                   const startStr = startedAt ? new Date(startedAt).toISOString().slice(0,10) : "—";
                   return (
-                    <TableRow key={o.id} className="cursor-pointer" onClick={() => window.location.assign(isDone ? `/orders/${o.id}/report` : `/orders/${o.id}`)}>
+                    <TableRow key={o.id} className="cursor-pointer hover:bg-muted/50" onClick={() => nav(`/orders/${o.id}`)}>
                       <TableCell><HealthDot color={orderHealth(o)} /></TableCell>
                       <TableCell className="font-mono text-sm">{o.order_number}</TableCell>
                       <TableCell className="text-sm">{(o as any).client?.name ?? "—"}</TableCell>

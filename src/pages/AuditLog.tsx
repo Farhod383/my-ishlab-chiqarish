@@ -22,7 +22,7 @@ export default function AuditLog() {
   useEffect(() => {
     (async () => {
       const [{ data: l }, { data: r }] = await Promise.all([
-        supabase.from("audit_log").select("*, order:orders(order_number)").order("created_at", { ascending: false }).limit(500),
+        supabase.from("audit_log").select("*, order:orders(order_number), stage:order_stages(name, worker_name)").order("created_at", { ascending: false }).limit(500),
         supabase.from("user_roles").select("user_id, role"),
       ]);
       setLogs(l ?? []);
@@ -109,6 +109,7 @@ export default function AuditLog() {
                   <TableHead>Role</TableHead>
                   <TableHead>{t.audit.cols.action}</TableHead>
                   <TableHead>{t.audit.cols.order}</TableHead>
+                  <TableHead>Bosqich / Ishchi</TableHead>
                   <TableHead>{t.audit.cols.details}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -120,10 +121,11 @@ export default function AuditLog() {
                     <TableCell className="text-xs"><Badge variant="secondary">{roleLabel(l.actor_id)}</Badge></TableCell>
                     <TableCell className="text-sm font-medium">{l.action}</TableCell>
                     <TableCell className="text-sm font-mono">{l.order?.order_number ?? "—"}</TableCell>
+                    <TableCell className="text-xs">{l.stage?.name ?? "—"}{l.stage?.worker_name ? ` · ${l.stage.worker_name}` : ""}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{l.details ?? "—"}</TableCell>
                   </TableRow>
                 ))}
-                {filtered.length === 0 && <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{t.audit.none}</TableCell></TableRow>}
+                {filtered.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t.audit.none}</TableCell></TableRow>}
               </TableBody>
             </Table>
           </div>

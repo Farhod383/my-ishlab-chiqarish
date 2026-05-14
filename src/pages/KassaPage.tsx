@@ -36,6 +36,7 @@ export default function KassaPage() {
   const [empForm, setEmpForm] = useState({ full_name: "", position: "", department: "", phone: "", salary: 0, hire_date: new Date().toISOString().slice(0,10), leave_date: "", status: "active" });
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
+  const [searchQ, setSearchQ] = useState("");
 
   // expense form
   const [openExp, setOpenExp] = useState(false);
@@ -121,8 +122,16 @@ export default function KassaPage() {
     if (filterTo && t > new Date(filterTo).getTime() + 86400000) return false;
     return true;
   };
-  const fExp = useMemo(() => expenses.filter(e => inRange(e.expense_date)), [expenses, filterFrom, filterTo]);
-  const fInc = useMemo(() => incomes.filter(i => inRange(i.income_date)), [incomes, filterFrom, filterTo]);
+  const matchSearch = (row: any, type: "income" | "expense") => {
+    const s = searchQ.trim().toLowerCase();
+    if (!s) return true;
+    const hay = type === "income"
+      ? `${row.source ?? ""} ${row.amount ?? ""} ${row.comment ?? ""} ${row.payment_type ?? ""} kirim income`
+      : `${row.recipient_name ?? row.recipient?.full_name ?? ""} ${row.reason ?? ""} ${row.amount ?? ""} ${row.comment ?? ""} chiqim expense`;
+    return hay.toLowerCase().includes(s);
+  };
+  const fExp = useMemo(() => expenses.filter(e => inRange(e.expense_date) && matchSearch(e, "expense")), [expenses, filterFrom, filterTo, searchQ]);
+  const fInc = useMemo(() => incomes.filter(i => inRange(i.income_date) && matchSearch(i, "income")), [incomes, filterFrom, filterTo, searchQ]);
 
   const totalExp = fExp.reduce((s, e) => s + Number(e.amount), 0);
   const totalInc = fInc.reduce((s, e) => s + Number(e.amount), 0);
@@ -189,9 +198,16 @@ export default function KassaPage() {
       </div>
 
       <div className="flex gap-2 items-end flex-wrap">
+        <div className="relative flex-1 min-w-[220px]">
+          <Label className="text-xs">{k.search ?? "Qidirish"}</Label>
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input className="pl-8" placeholder={k.searchPh ?? "Oluvchi, manba, summa, izoh..."} value={searchQ} onChange={e => setSearchQ(e.target.value)} />
+          </div>
+        </div>
         <div><Label className="text-xs">{k.from ?? "Dan"}</Label><Input type="date" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} /></div>
         <div><Label className="text-xs">{k.to ?? "Gacha"}</Label><Input type="date" value={filterTo} onChange={e => setFilterTo(e.target.value)} /></div>
-        {(filterFrom || filterTo) && <Button variant="outline" onClick={() => { setFilterFrom(""); setFilterTo(""); }}>{k.reset ?? "Tozalash"}</Button>}
+        {(filterFrom || filterTo || searchQ) && <Button variant="outline" onClick={() => { setFilterFrom(""); setFilterTo(""); setSearchQ(""); }}>{k.reset ?? "Tozalash"}</Button>}
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>

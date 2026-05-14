@@ -1,4 +1,4 @@
-import { LayoutDashboard, ClipboardList, Factory, Warehouse, ShieldCheck, LogOut, MessageSquare, History, UserCog, Users, Wallet, RotateCcw, AlertOctagon } from "lucide-react";
+import { LayoutDashboard, ClipboardList, Factory, Warehouse, ShieldCheck, LogOut, MessageSquare, History, UserCog, Users, Wallet, RotateCcw, AlertOctagon, FileBarChart } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -31,6 +31,7 @@ export function AppSidebar() {
     { title: (t as any).nav.hr ?? "Xodimlar", url: "/hr", icon: Users, roles: ["hr", "admin", "cashier"] },
     { title: (t as any).nav.kassa ?? "Kassa", url: "/kassa", icon: Wallet, roles: ["cashier", "admin"] },
     { title: t.nav.chat, url: "/chat", icon: MessageSquare },
+    { title: "Hisobot / Atchot", url: "/reports", icon: FileBarChart, roles: ["admin"] },
     { title: t.nav.audit, url: "/audit", icon: History, roles: ["admin", "manager"] },
   ];
 
