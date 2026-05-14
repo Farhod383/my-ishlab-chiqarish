@@ -34,9 +34,9 @@ export default function OrderDetail() {
   const [otkEdit, setOtkEdit] = useState<Record<string, string>>({});
 
   const load = async () => {
-    if (!id) return;
+    if (!id) { setLoading(false); return; }
     const [o, s, p, l, mv, of] = await Promise.all([
-      supabase.from("orders").select("*, client:clients(*)").eq("id", id).single(),
+      supabase.from("orders").select("*, client:clients(*)").eq("id", id).maybeSingle(),
       supabase.from("order_stages").select("*").eq("order_id", id).order("stage_order"),
       supabase.from("order_parts").select("*").eq("order_id", id),
       supabase.from("audit_log").select("*").eq("order_id", id).order("created_at", { ascending: false }),
@@ -60,9 +60,12 @@ export default function OrderDetail() {
   const startStage = async (stage: StageRow) => {
     const prev = stages.find((x) => x.stage_order === stage.stage_order - 1);
     if (prev && prev.status !== "completed") { toast.error(t.orderDetail.prevError); return; }
+    if (!(stage as any).worker_name || !((stage as any).worker_name).trim()) {
+      toast.error("Avval ishchi tayinlang"); return;
+    }
     await supabase.from("order_stages").update({ status: "in_progress", started_at: new Date().toISOString() }).eq("id", stage.id);
     if (order?.status === "pending") await supabase.from("orders").update({ status: "in_progress" }).eq("id", order.id);
-    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Bosqich boshlandi", entity: "stage", order_id: order!.id, stage_id: stage.id, details: stage.name });
+    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Bosqich boshlandi", entity: "stage", order_id: order!.id, stage_id: stage.id, details: `${stage.name} · ishchi: ${(stage as any).worker_name}` });
     load();
   };
 
