@@ -313,6 +313,106 @@ export default function KassaPage() {
             </div>
           </CardContent></Card>
         </TabsContent>
+
+        <TabsContent value="employees" className="space-y-3">
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input className="pl-8" placeholder={k.searchEmployee ?? "Qidirish..."} value={empSearch} onChange={e => setEmpSearch(e.target.value)} />
+            </div>
+            <Select value={empStatusFilter} onValueChange={(v: any) => setEmpStatusFilter(v)}>
+              <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{k.allStatuses ?? "Barcha holat"}</SelectItem>
+                <SelectItem value="active">{k.active ?? "Faol"}</SelectItem>
+                <SelectItem value="inactive">{k.inactive ?? "Nofaol"}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={empDeptFilter} onValueChange={setEmpDeptFilter}>
+              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{k.allDepartments ?? "Barcha bo'lim"}</SelectItem>
+                {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {canManage && (
+              <Dialog open={empOpen} onOpenChange={(o) => { setEmpOpen(o); if (!o) { setEmpEditId(null); resetEmpForm(); } }}>
+                <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{k.addEmployee ?? "Xodim qo'shish"}</Button></DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>{empEditId ? (k.editEmployee ?? "Tahrirlash") : (k.addEmployee ?? "Xodim qo'shish")}</DialogTitle></DialogHeader>
+                  <div className="space-y-3">
+                    <div><Label>{k.fullName ?? "To'liq ism"}</Label><Input value={empForm.full_name} onChange={e => setEmpForm({ ...empForm, full_name: e.target.value })} /></div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><Label>{k.position ?? "Lavozim"}</Label><Input value={empForm.position} onChange={e => setEmpForm({ ...empForm, position: e.target.value })} /></div>
+                      <div><Label>{k.department ?? "Bo'lim"}</Label><Input value={empForm.department} onChange={e => setEmpForm({ ...empForm, department: e.target.value })} /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><Label>{k.phone ?? "Telefon"}</Label><Input value={empForm.phone} onChange={e => setEmpForm({ ...empForm, phone: e.target.value })} placeholder="+998..." /></div>
+                      <div><Label>{k.salary ?? "Maosh"}</Label><Input type="number" min={0} value={empForm.salary || ""} onChange={e => setEmpForm({ ...empForm, salary: Number(e.target.value) })} /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><Label>{k.hireDate ?? "Ish boshlagan"}</Label><Input type="date" value={empForm.hire_date} onChange={e => setEmpForm({ ...empForm, hire_date: e.target.value })} /></div>
+                      <div><Label>{k.leaveDate ?? "Ketgan sana"}</Label><Input type="date" value={empForm.leave_date} onChange={e => setEmpForm({ ...empForm, leave_date: e.target.value })} /></div>
+                    </div>
+                    <div>
+                      <Label>{k.status ?? "Holat"}</Label>
+                      <Select value={empForm.status} onValueChange={v => setEmpForm({ ...empForm, status: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">{k.active ?? "Faol"}</SelectItem>
+                          <SelectItem value="inactive">{k.inactive ?? "Nofaol"}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button className="w-full" onClick={saveEmployee}>{t.common.save}</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
+
+          <Card><CardContent className="p-0">
+            <div className="border rounded-md overflow-x-auto">
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead>{k.fullName ?? "Ism"}</TableHead>
+                  <TableHead>{k.position ?? "Lavozim"}</TableHead>
+                  <TableHead>{k.department ?? "Bo'lim"}</TableHead>
+                  <TableHead>{k.phone ?? "Telefon"}</TableHead>
+                  <TableHead className="text-right">{k.salary ?? "Maosh"}</TableHead>
+                  <TableHead>{k.hireDate ?? "Ish boshlagan"}</TableHead>
+                  <TableHead>{k.status ?? "Holat"}</TableHead>
+                  {canManage && <TableHead></TableHead>}
+                </TableRow></TableHeader>
+                <TableBody>
+                  {loading && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
+                  {!loading && filteredEmps.map(e => (
+                    <TableRow key={e.id}>
+                      <TableCell className="font-medium">{e.full_name}</TableCell>
+                      <TableCell className="text-sm">{e.position}</TableCell>
+                      <TableCell className="text-sm">{e.department}</TableCell>
+                      <TableCell className="text-sm">{e.phone ?? "—"}</TableCell>
+                      <TableCell className="text-right font-mono text-sm">{e.salary ? `${fmt(Number(e.salary))} ${t.common.sum}` : "—"}</TableCell>
+                      <TableCell className="text-sm">{e.hire_date}</TableCell>
+                      <TableCell>
+                        <Badge variant={e.status === "active" ? "default" : "secondary"}>
+                          {e.status === "active" ? (k.active ?? "Faol") : (k.inactive ?? "Nofaol")}
+                        </Badge>
+                      </TableCell>
+                      {canManage && (
+                        <TableCell className="whitespace-nowrap">
+                          <Button size="sm" variant="ghost" onClick={() => openEditEmp(e)}><Edit2 className="h-3 w-3" /></Button>
+                          <Button size="sm" variant="ghost" onClick={() => toggleEmpStatus(e)}>{e.status === "active" ? (k.deactivate ?? "O'chirish") : (k.activate ?? "Faollash")}</Button>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                  {!loading && filteredEmps.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{k.emptyEmployees ?? "Xodimlar yo'q"}</TableCell></TableRow>}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent></Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
