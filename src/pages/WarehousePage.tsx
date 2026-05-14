@@ -334,16 +334,23 @@ export default function WarehousePage() {
                   <div><Label>{t.supply.productName || t.warehouse.productName}</Label>
                     <Input value={impProductName} onChange={e => setImpProductName(e.target.value)} placeholder={t.warehouse.productName} />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label>{t.supply.qty}</Label><Input type="number" min={0.1} step={0.1} value={impQty || ""} onChange={e => setImpQty(Number(e.target.value))} /></div>
-                    <div><Label>{t.supply.price}</Label><Input type="number" min={0} step={1} value={impPrice || ""} onChange={e => setImpPrice(Number(e.target.value))} placeholder="0" /></div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="col-span-2"><Label>{t.supply.qty} *</Label><Input type="number" min={0.1} step={0.1} value={impQty} onChange={e => setImpQty(e.target.value)} placeholder={(t.warehouse as any).qtyPh} /></div>
+                    <div><Label>{t.warehouse.unit}</Label>
+                      <Select value={impUnit} onValueChange={setImpUnit}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  {impQty > 0 && impPrice > 0 && (
+                  <div><Label>{t.supply.price}</Label><Input type="number" min={0} step={1} value={impPrice} onChange={e => setImpPrice(e.target.value)} placeholder="0" /></div>
+                  {Number(impQty) > 0 && Number(impPrice) > 0 && (
                     <div className="text-sm bg-primary/5 border border-primary/20 rounded p-2 flex justify-between">
                       <span className="text-muted-foreground">{t.supply.totalValue}:</span>
-                      <span className="font-mono font-bold text-primary">{fmt(impQty * impPrice)} {t.common.sum}</span>
+                      <span className="font-mono font-bold text-primary">{fmt(Number(impQty) * Number(impPrice))} {t.common.sum}</span>
                     </div>
                   )}
+                  <div><Label>{(t.warehouse as any).source}</Label><Input value={impSource} onChange={e => setImpSource(e.target.value)} placeholder={(t.warehouse as any).sourcePh} /></div>
                   <div><Label>{t.supply.bringer}</Label><Input value={impSupplier} onChange={e => setImpSupplier(e.target.value)} placeholder={t.supply.bringerPh} /></div>
                   <div><Label>{t.supply.phone}</Label><Input value={impPhone} onChange={e => setImpPhone(e.target.value)} placeholder={t.supply.phonePh} /></div>
                   <div><Label>{t.supply.image}</Label><Input type="file" accept="image/*" onChange={e => setImpImage(e.target.files?.[0] ?? null)} /></div>
