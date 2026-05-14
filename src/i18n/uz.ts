@@ -331,8 +331,21 @@ export const uz = {
   audit: {
     title: "Audit log",
     subtitle: "Kim, qachon, nima qildi — barcha harakatlar",
-    cols: { date: "Sana", who: "Kim", action: "Amal", order: "Zakaz", details: "Tafsilot" },
+    cols: { date: "Sana", who: "Kim", role: "Rol", action: "Amal", order: "Zakaz", stageWorker: "Bosqich / Ishchi", details: "Tafsilot" },
+    user: "Foydalanuvchi", role: "Rol", action: "Amal",
+    allUsers: "Barcha foydalanuvchilar", allRoles: "Barcha rollar", allActions: "Barcha amallar",
     none: "Yozuvlar yo'q",
+  },
+  reports: {
+    title: "Hisobot", subtitle: "Zakazlar bo'yicha to'liq ishlab chiqarish hisoboti",
+    total: "Jami zakazlar", completed: "Tugatilgan", inProgress: "Jarayonda", delayed: "Kechikkan",
+    number: "Raqam", product: "Mahsulot", client: "Klient", stages: "Bosqichlar",
+    state: "Holat", received: "Olingan", deadline: "Muddat", duration: "Davomiyligi",
+    open: "Hisobot",
+  },
+  kassaExtra: {
+    edit: "Tahrirlash", editIncome: "Kirimni tahrirlash", editExpense: "Xarajatni tahrirlash",
+    actions: "Amallar",
   },
 };
 
@@ -578,8 +591,21 @@ export const ru: Translations = {
   audit: {
     title: "Журнал аудита",
     subtitle: "Кто, когда, что сделал — все действия",
-    cols: { date: "Дата", who: "Кто", action: "Действие", order: "Заказ", details: "Детали" },
+    cols: { date: "Дата", who: "Кто", role: "Роль", action: "Действие", order: "Заказ", stageWorker: "Этап / Рабочий", details: "Детали" },
+    user: "Пользователь", role: "Роль", action: "Действие",
+    allUsers: "Все пользователи", allRoles: "Все роли", allActions: "Все действия",
     none: "Записей нет",
+  },
+  reports: {
+    title: "Отчёт", subtitle: "Полный производственный отчёт по заказам",
+    total: "Всего заказов", completed: "Завершённые", inProgress: "В процессе", delayed: "Просроченные",
+    number: "Номер", product: "Товар", client: "Клиент", stages: "Этапы",
+    state: "Статус", received: "Получен", deadline: "Срок", duration: "Длительность",
+    open: "Отчёт",
+  },
+  kassaExtra: {
+    edit: "Изменить", editIncome: "Изменить приход", editExpense: "Изменить расход",
+    actions: "Действия",
   },
 };
 
@@ -823,7 +849,20 @@ export const uzc: Translations = {
   audit: {
     title: "Аудит лог",
     subtitle: "Ким, қачон, нима қилди — барча ҳаракатлар",
-    cols: { date: "Сана", who: "Ким", action: "Амал", order: "Заказ", details: "Тафсилот" },
+    cols: { date: "Сана", who: "Ким", role: "Рол", action: "Амал", order: "Заказ", stageWorker: "Босқич / Ишчи", details: "Тафсилот" },
+    user: "Фойдаланувчи", role: "Рол", action: "Амал",
+    allUsers: "Барча фойдаланувчилар", allRoles: "Барча роллар", allActions: "Барча амаллар",
     none: "Ёзувлар йўқ",
+  },
+  reports: {
+    title: "Ҳисобот", subtitle: "Заказлар бўйича тўлиқ ишлаб чиқариш ҳисоботи",
+    total: "Жами заказлар", completed: "Тугатилган", inProgress: "Жараёнда", delayed: "Кечиккан",
+    number: "Рақам", product: "Маҳсулот", client: "Клиент", stages: "Босқичлар",
+    state: "Ҳолат", received: "Олинган", deadline: "Муддат", duration: "Давомийлиги",
+    open: "Ҳисобот",
+  },
+  kassaExtra: {
+    edit: "Таҳрирлаш", editIncome: "Киримни таҳрирлаш", editExpense: "Харажатни таҳрирлаш",
+    actions: "Амаллар",
   },
 };

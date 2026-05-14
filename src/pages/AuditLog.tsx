@@ -75,21 +75,21 @@ export default function AuditLog() {
             <Input className="pl-8" placeholder={t.common.search} value={q} onChange={e => setQ(e.target.value)} />
           </div>
           <Select value={userFilter} onValueChange={setUserFilter}>
-            <SelectTrigger><SelectValue placeholder="User" /></SelectTrigger>
-            <SelectContent><SelectItem value="all">All users</SelectItem>{users.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+            <SelectTrigger><SelectValue placeholder={(t.audit as any).user} /></SelectTrigger>
+            <SelectContent><SelectItem value="all">{(t.audit as any).allUsers}</SelectItem>{users.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
           </Select>
           <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger><SelectValue placeholder="Role" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={(t.audit as any).role} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All roles</SelectItem>
+              <SelectItem value="all">{(t.audit as any).allRoles}</SelectItem>
               {["admin","marketing","manager","warehouse","supply","otk","hr","cashier","engineer"].map(r => (
                 <SelectItem key={r} value={r}>{(t.roles as any)[r] ?? r}</SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={actionFilter} onValueChange={setActionFilter}>
-            <SelectTrigger><SelectValue placeholder="Action" /></SelectTrigger>
-            <SelectContent><SelectItem value="all">All actions</SelectItem>{actions.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+            <SelectTrigger><SelectValue placeholder={(t.audit as any).action} /></SelectTrigger>
+            <SelectContent><SelectItem value="all">{(t.audit as any).allActions}</SelectItem>{actions.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
           </Select>
           <div className="flex gap-2">
             <Input type="date" value={from} onChange={e => setFrom(e.target.value)} />
@@ -106,10 +106,10 @@ export default function AuditLog() {
                 <TableRow>
                   <TableHead>{t.audit.cols.date}</TableHead>
                   <TableHead>{t.audit.cols.who}</TableHead>
-                  <TableHead>Role</TableHead>
+                  <TableHead>{(t.audit.cols as any).role}</TableHead>
                   <TableHead>{t.audit.cols.action}</TableHead>
                   <TableHead>{t.audit.cols.order}</TableHead>
-                  <TableHead>Bosqich / Ishchi</TableHead>
+                  <TableHead>{(t.audit.cols as any).stageWorker}</TableHead>
                   <TableHead>{t.audit.cols.details}</TableHead>
                 </TableRow>
               </TableHeader>

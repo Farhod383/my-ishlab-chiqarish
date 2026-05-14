@@ -53,18 +53,19 @@ export default function ReportsPage() {
     return `${h}s ${m}d`;
   };
 
+  const r = (t as any).reports ?? {};
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><FileBarChart className="h-6 w-6 text-primary" /> Hisobot / Atchot</h1>
-        <p className="text-sm text-muted-foreground">Zakazlar bo'yicha to'liq ishlab chiqarish hisoboti</p>
+        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><FileBarChart className="h-6 w-6 text-primary" /> {r.title}</h1>
+        <p className="text-sm text-muted-foreground">{r.subtitle}</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Jami zakazlar</div><div className="text-2xl font-bold mt-1">{totals.total}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Tugatilgan</div><div className="text-2xl font-bold mt-1 text-status-green">{totals.completed}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Jarayonda</div><div className="text-2xl font-bold mt-1 text-status-blue">{totals.in_progress}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Kechikkan</div><div className="text-2xl font-bold mt-1 text-status-red">{totals.delayed}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{r.total}</div><div className="text-2xl font-bold mt-1">{totals.total}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{r.completed}</div><div className="text-2xl font-bold mt-1 text-status-green">{totals.completed}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{r.inProgress}</div><div className="text-2xl font-bold mt-1 text-status-blue">{totals.in_progress}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{r.delayed}</div><div className="text-2xl font-bold mt-1 text-status-red">{totals.delayed}</div></CardContent></Card>
       </div>
 
       <Card>
@@ -73,9 +74,9 @@ export default function ReportsPage() {
             <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
               <TabsList>
                 <TabsTrigger value="all">{t.common.all}</TabsTrigger>
-                <TabsTrigger value="in_progress">Jarayonda</TabsTrigger>
-                <TabsTrigger value="completed">Tugatilgan</TabsTrigger>
-                <TabsTrigger value="delayed">Kechikkan</TabsTrigger>
+                <TabsTrigger value="in_progress">{r.inProgress}</TabsTrigger>
+                <TabsTrigger value="completed">{r.completed}</TabsTrigger>
+                <TabsTrigger value="delayed">{r.delayed}</TabsTrigger>
               </TabsList>
             </Tabs>
             <div className="flex gap-2 flex-wrap">
@@ -93,14 +94,14 @@ export default function ReportsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Raqam</TableHead>
-                  <TableHead>Mahsulot</TableHead>
-                  <TableHead>Klient</TableHead>
-                  <TableHead>Bosqichlar</TableHead>
-                  <TableHead>Holat</TableHead>
-                  <TableHead>Olingan</TableHead>
-                  <TableHead>Muddat</TableHead>
-                  <TableHead>Davomiyligi</TableHead>
+                  <TableHead>{r.number}</TableHead>
+                  <TableHead>{r.product}</TableHead>
+                  <TableHead>{r.client}</TableHead>
+                  <TableHead>{r.stages}</TableHead>
+                  <TableHead>{r.state}</TableHead>
+                  <TableHead>{r.received}</TableHead>
+                  <TableHead>{r.deadline}</TableHead>
+                  <TableHead>{r.duration}</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -121,12 +122,12 @@ export default function ReportsPage() {
                       <TableCell className="text-xs whitespace-nowrap">{o.deadline}</TableCell>
                       <TableCell className="text-xs whitespace-nowrap">{fmtDur(firstStart, lastFin)}</TableCell>
                       <TableCell className="whitespace-nowrap">
-                        <Button asChild size="sm" variant="ghost"><Link to={`/orders/${o.id}/report`}><ExternalLink className="h-3 w-3 mr-1" />Hisobot</Link></Button>
+                        <Button asChild size="sm" variant="ghost"><Link to={`/orders/${o.id}/report`}><ExternalLink className="h-3 w-3 mr-1" />{r.open}</Link></Button>
                       </TableCell>
                     </TableRow>
                   );
                 })}
-                {filtered.length === 0 && <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Yozuvlar yo'q</TableCell></TableRow>}
+                {filtered.length === 0 && <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">{t.common.noRecords}</TableCell></TableRow>}
               </TableBody>
             </Table>
           </div>
