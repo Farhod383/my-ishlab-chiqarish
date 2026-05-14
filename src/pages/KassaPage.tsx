@@ -26,7 +26,14 @@ export default function KassaPage() {
   const [incomes, setIncomes] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"income" | "expense">("income");
+  const [tab, setTab] = useState<"income" | "expense" | "employees">("income");
+  const [allEmployees, setAllEmployees] = useState<any[]>([]);
+  const [empSearch, setEmpSearch] = useState("");
+  const [empStatusFilter, setEmpStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [empDeptFilter, setEmpDeptFilter] = useState("all");
+  const [empOpen, setEmpOpen] = useState(false);
+  const [empEditId, setEmpEditId] = useState<string | null>(null);
+  const [empForm, setEmpForm] = useState({ full_name: "", position: "", department: "", phone: "", salary: 0, hire_date: new Date().toISOString().slice(0,10), leave_date: "", status: "active" });
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
 
