@@ -28,7 +28,7 @@ export function AppSidebar() {
     { title: t.nav.warehouse, url: "/warehouse", icon: Warehouse },
     { title: (t as any).nav.returns ?? "Vozvrat", url: "/returns", icon: RotateCcw, roles: ["warehouse", "admin"] },
     { title: (t as any).nav.defects ?? "Brak", url: "/defects", icon: AlertOctagon },
-    { title: (t as any).nav.hr ?? "Xodimlar", url: "/hr", icon: Users, roles: ["hr", "admin"] },
+    { title: (t as any).nav.hr ?? "Xodimlar", url: "/hr", icon: Users, roles: ["hr", "admin", "cashier"] },
     { title: (t as any).nav.kassa ?? "Kassa", url: "/kassa", icon: Wallet, roles: ["cashier", "admin"] },
     { title: t.nav.chat, url: "/chat", icon: MessageSquare },
     { title: t.nav.audit, url: "/audit", icon: History, roles: ["admin", "manager"] },

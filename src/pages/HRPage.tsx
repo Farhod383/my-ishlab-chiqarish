@@ -30,7 +30,7 @@ export default function HRPage() {
   };
   useEffect(() => { load(); }, []);
 
-  const canManage = hasRole(["hr", "admin"]);
+  const canManage = hasRole(["hr", "admin", "cashier"]);
 
   const resetForm = () => setForm({ full_name: "", position: "", department: "", phone: "", hire_date: new Date().toISOString().slice(0, 10), leave_date: "", status: "active" });
 
