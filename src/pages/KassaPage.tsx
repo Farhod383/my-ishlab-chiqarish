@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Wallet, Plus, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Wallet, Plus, ArrowDownCircle, ArrowUpCircle, Users, Edit2, Search } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { toast } from "sonner";
