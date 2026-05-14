@@ -49,20 +49,71 @@ export default function KassaPage() {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: exp }, { data: inc }, { data: emp }] = await Promise.all([
+    const [{ data: exp }, { data: inc }, { data: emp }, { data: allEmp }] = await Promise.all([
       supabase.from("cash_expenses").select("*, recipient:employees(full_name)").order("expense_date", { ascending: false }),
       (supabase.from as any)("cash_incomes").select("*").order("income_date", { ascending: false }),
       supabase.from("employees").select("id, full_name, department").eq("status", "active").order("full_name"),
+      supabase.from("employees").select("*").order("full_name"),
     ]);
     setExpenses(exp ?? []);
     setIncomes(inc ?? []);
     setEmployees(emp ?? []);
+    setAllEmployees(allEmp ?? []);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
 
   const canManage = hasRole(["cashier", "admin"]);
   const fmt = (n: number) => new Intl.NumberFormat("uz-UZ").format(Math.round(n));
+
+  const resetEmpForm = () => setEmpForm({ full_name: "", position: "", department: "", phone: "", salary: 0, hire_date: new Date().toISOString().slice(0,10), leave_date: "", status: "active" });
+
+  const saveEmployee = async () => {
+    if (!empForm.full_name.trim()) { toast.error(k.fillFields ?? "Maydonlarni to'ldiring"); return; }
+    const payload: any = {
+      full_name: empForm.full_name.trim(),
+      position: empForm.position.trim(),
+      department: empForm.department.trim(),
+      phone: empForm.phone.trim() || null,
+      salary: Number(empForm.salary) || 0,
+      hire_date: empForm.hire_date,
+      leave_date: empForm.leave_date || null,
+      status: empForm.status,
+    };
+    const q = empEditId
+      ? supabase.from("employees").update(payload).eq("id", empEditId)
+      : supabase.from("employees").insert(payload);
+    const { error } = await q;
+    if (error) { toast.error(error.message); return; }
+    toast.success(k.saved ?? "Saqlandi");
+    setEmpOpen(false); setEmpEditId(null); resetEmpForm(); load();
+  };
+
+  const openEditEmp = (e: any) => {
+    setEmpForm({
+      full_name: e.full_name, position: e.position, department: e.department,
+      phone: e.phone ?? "", salary: e.salary ?? 0,
+      hire_date: e.hire_date, leave_date: e.leave_date ?? "", status: e.status,
+    });
+    setEmpEditId(e.id);
+    setEmpOpen(true);
+  };
+
+  const toggleEmpStatus = async (e: any) => {
+    const newStatus = e.status === "active" ? "inactive" : "active";
+    const { error } = await supabase.from("employees").update({ status: newStatus, leave_date: newStatus === "inactive" ? new Date().toISOString().slice(0,10) : null }).eq("id", e.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(k.saved ?? "Saqlandi"); load();
+  };
+
+  const departments = useMemo(() => Array.from(new Set(allEmployees.map(e => e.department).filter(Boolean))), [allEmployees]);
+  const filteredEmps = useMemo(() => allEmployees.filter(e => {
+    if (empStatusFilter !== "all" && e.status !== empStatusFilter) return false;
+    if (empDeptFilter !== "all" && e.department !== empDeptFilter) return false;
+    const s = empSearch.trim().toLowerCase();
+    if (s && !`${e.full_name} ${e.position} ${e.department} ${e.phone ?? ""}`.toLowerCase().includes(s)) return false;
+    return true;
+  }), [allEmployees, empSearch, empStatusFilter, empDeptFilter]);
 
   const inRange = (d: string) => {
     const t = new Date(d).getTime();
