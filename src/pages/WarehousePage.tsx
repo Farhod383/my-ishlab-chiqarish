@@ -250,7 +250,7 @@ export default function WarehousePage() {
       details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${t.common.sum}`,
     });
     toast.success(t.warehouse.inRecorded);
-    setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpSupplier(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImportOpen(false);
+    setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpSupplier(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImportOpen(false);
     load();
   };
 
