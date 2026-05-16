@@ -600,6 +600,7 @@ export default function WarehousePage() {
                       <TableHead>{(t.warehouse.cols as any).addedBy}</TableHead>
                       <TableHead>{t.warehouse.cols.order}</TableHead>
                       <TableHead>{t.warehouse.cols.comment}</TableHead>
+                      {canManage && <TableHead></TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -620,9 +621,10 @@ export default function WarehousePage() {
                         <TableCell className="text-xs text-muted-foreground">{profiles[m.created_by] ?? "—"}</TableCell>
                         <TableCell className="text-sm font-mono">{m.order?.order_number ?? <span className="text-muted-foreground">{t.warehouse.common}</span>}</TableCell>
                         <TableCell className="text-xs italic text-muted-foreground max-w-[200px] truncate">{m.comment ?? "—"}</TableCell>
+                        {canManage && <TableCell><Button size="sm" variant="ghost" onClick={() => openEditMovement(m)}><Pencil className="h-3.5 w-3.5" /></Button></TableCell>}
                       </TableRow>
                     ))}
-                    {movements.length === 0 && <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-6">{t.warehouse.noMov}</TableCell></TableRow>}
+                    {movements.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-6">{t.warehouse.noMov}</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </div>
