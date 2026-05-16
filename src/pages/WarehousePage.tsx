@@ -555,7 +555,7 @@ export default function WarehousePage() {
                     const filtered = q ? products.filter(p =>
                       [p.name, p.unit, p.source, p.phone].some((v: any) => (v ?? "").toString().toLowerCase().includes(q))
                     ) : products;
-                    if (filtered.length === 0) return <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{q ? (t.warehouse as any).noResults : t.common.noRecords}</TableCell></TableRow>;
+                    if (filtered.length === 0) return <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{q ? (t.warehouse as any).noResults : t.common.noRecords}</TableCell></TableRow>;
                     return filtered.map(p => {
                       const low = Number(p.stock_qty) <= Number(p.min_limit);
                       return (
