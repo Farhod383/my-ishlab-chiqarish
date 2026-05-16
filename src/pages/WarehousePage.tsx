@@ -771,6 +771,46 @@ export default function WarehousePage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Edit Product */}
+      <Dialog open={editProdOpen} onOpenChange={setEditProdOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{t.common.edit} — {editProd?.name}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>{t.warehouse.productName}</Label><Input value={epName} onChange={e => setEpName(e.target.value)} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>{t.warehouse.unit}</Label>
+                <Select value={epUnit} onValueChange={setEpUnit}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div><Label>{t.warehouse.price}</Label><Input type="number" value={epPrice} onChange={e => setEpPrice(e.target.value)} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>{t.warehouse.minLimitField}</Label><Input type="number" value={epMin} onChange={e => setEpMin(e.target.value)} /></div>
+              <div><Label>{t.warehouse.phone}</Label><Input value={epPhone} onChange={e => setEpPhone(e.target.value)} /></div>
+            </div>
+            <div><Label>{(t.warehouse as any).source}</Label><Input value={epSource} onChange={e => setEpSource(e.target.value)} /></div>
+            <Button className="w-full" onClick={saveEditProduct}>{t.common.save}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Movement */}
+      <Dialog open={editMovOpen} onOpenChange={setEditMovOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{t.common.edit} — {editMov?.direction === "in" ? t.warehouse.in : t.warehouse.out}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="text-sm text-muted-foreground">{editMov?.product?.name} · {editMov && fmtDateTime(editMov.created_at)}</div>
+            <div><Label>{t.warehouse.qty} *</Label><Input type="number" step="any" value={emQty} onChange={e => setEmQty(e.target.value)} /></div>
+            <div><Label>{editMov?.direction === "in" ? t.warehouse.cols.whoBrought : t.warehouse.cols.whoGot}</Label><Input value={emRecipient} onChange={e => setEmRecipient(e.target.value)} /></div>
+            <div><Label>{(t.warehouse as any).source}</Label><Input value={emSource} onChange={e => setEmSource(e.target.value)} /></div>
+            <div><Label>{t.warehouse.cols.comment}</Label><Textarea value={emComment} onChange={e => setEmComment(e.target.value)} /></div>
+            <Button className="w-full" onClick={saveEditMovement}>{t.common.save}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
