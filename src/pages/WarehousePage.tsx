@@ -254,7 +254,84 @@ export default function WarehousePage() {
     load();
   };
 
-  const productMovements = useMemo(
+  const openEditProduct = (p: any) => {
+    setEditProd(p);
+    setEpName(p.name ?? ""); setEpUnit(p.unit ?? "dona");
+    setEpPrice(String(p.last_price ?? "")); setEpMin(String(p.min_limit ?? ""));
+    setEpPhone(p.phone ?? ""); setEpSource(p.source ?? "");
+    setEditProdOpen(true);
+  };
+  const saveEditProduct = async () => {
+    if (!editProd) return;
+    const newVals = {
+      name: epName.trim(), unit: epUnit, last_price: Number(epPrice) || 0,
+      min_limit: Number(epMin) || 0, phone: epPhone || null, source: epSource.trim() || null,
+    };
+    const diffs: string[] = [];
+    (["name","unit","last_price","min_limit","phone","source"] as const).forEach(k => {
+      const oldV = (editProd as any)[k] ?? ""; const newV = (newVals as any)[k] ?? "";
+      if (String(oldV) !== String(newV)) diffs.push(`${k}: ${oldV || "—"} → ${newV || "—"}`);
+    });
+    const { error } = await supabase.from("products").update(newVals).eq("id", editProd.id);
+    if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: "Mahsulot tahrirlandi", entity: "product",
+      details: diffs.length ? `${editProd.name}: ${diffs.join("; ")}` : `${editProd.name}: o'zgarish yo'q`,
+    });
+    toast.success(t.common.save);
+    setEditProdOpen(false); setEditProd(null); load();
+  };
+
+  const openEditMovement = (m: any) => {
+    setEditMov(m);
+    setEmQty(String(m.quantity ?? "")); setEmRecipient(m.recipient_name ?? "");
+    setEmComment(m.comment ?? ""); setEmSource(m.source ?? "");
+    setEditMovOpen(true);
+  };
+  const saveEditMovement = async () => {
+    if (!editMov) return;
+    const newQty = Number(emQty);
+    if (!newQty || newQty <= 0) { toast.error(t.warehouse.fillFields); return; }
+    const oldQty = Number(editMov.quantity);
+    const delta = newQty - oldQty;
+    const diffs: string[] = [];
+    if (oldQty !== newQty) diffs.push(`miqdor: ${oldQty} → ${newQty}`);
+    if ((editMov.recipient_name ?? "") !== emRecipient) diffs.push(`qabul: ${editMov.recipient_name ?? "—"} → ${emRecipient || "—"}`);
+    if ((editMov.comment ?? "") !== emComment) diffs.push(`izoh o'zgardi`);
+    if ((editMov.source ?? "") !== emSource) diffs.push(`manba: ${editMov.source ?? "—"} → ${emSource || "—"}`);
+
+    const { error } = await supabase.from("stock_movements").update({
+      quantity: newQty, recipient_name: emRecipient || null,
+      comment: emComment || null, source: emSource.trim() || null,
+    }).eq("id", editMov.id);
+    if (error) { toast.error(error.message); return; }
+
+    // Adjust product stock + order_parts for quantity delta (trigger only fires on insert)
+    if (delta !== 0 && editMov.product_id) {
+      const signed = editMov.direction === "in" ? delta : -delta;
+      const prod = products.find(p => p.id === editMov.product_id);
+      const newStock = Number(prod?.stock_qty ?? 0) + signed;
+      await supabase.from("products").update({ stock_qty: newStock }).eq("id", editMov.product_id);
+      if (editMov.direction === "out" && editMov.order_id) {
+        const { data: parts } = await supabase.from("order_parts").select("id, actual_qty")
+          .eq("order_id", editMov.order_id).eq("product_id", editMov.product_id).limit(1);
+        if (parts && parts[0]) {
+          await supabase.from("order_parts").update({ actual_qty: Number(parts[0].actual_qty) + delta }).eq("id", parts[0].id);
+        }
+      }
+    }
+
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: editMov.direction === "in" ? "Kirim tahrirlandi" : "Chiqim tahrirlandi",
+      entity: "stock_movement", order_id: editMov.order_id ?? null,
+      details: diffs.length ? diffs.join("; ") : "o'zgarish yo'q",
+    });
+    toast.success(t.common.save);
+    setEditMovOpen(false); setEditMov(null); load();
+  };
+
     () => selectedProduct ? movements.filter(m => m.product_id === selectedProduct.id) : [],
     [movements, selectedProduct]
   );
