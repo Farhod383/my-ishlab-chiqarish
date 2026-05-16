@@ -547,6 +547,7 @@ export default function WarehousePage() {
                   <TableHead className="text-right">{t.warehouse.price}</TableHead>
                   <TableHead>{(t.warehouse.cols as any).source}</TableHead>
                   <TableHead>{t.warehouse.cols.state}</TableHead>
+                  {canManage && <TableHead></TableHead>}
                 </TableRow></TableHeader>
                 <TableBody>
                   {(() => {
