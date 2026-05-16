@@ -439,8 +439,48 @@ export default function WarehousePage() {
               <DialogContent>
                 <DialogHeader><DialogTitle>{t.supply.receiveTitle}</DialogTitle></DialogHeader>
                 <div className="space-y-3">
-                  <div><Label>{t.supply.productName || t.warehouse.productName}</Label>
-                    <Input value={impProductName} onChange={e => setImpProductName(e.target.value)} placeholder={t.warehouse.productName} />
+                  <div><Label>{t.supply.productName || t.warehouse.productName} *</Label>
+                    <Popover open={impPickerOpen} onOpenChange={setImpPickerOpen}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
+                          <span className={cn("truncate", !impProductName && "text-muted-foreground")}>
+                            {impProductName || t.warehouse.productName}
+                          </span>
+                          <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                        <Command>
+                          <CommandInput
+                            placeholder={(t.warehouse as any).search || "Qidirish..."}
+                            value={impProductName}
+                            onValueChange={(v) => { setImpProductName(v); setImpProductId(""); }}
+                          />
+                          <CommandList>
+                            <CommandEmpty>
+                              <button type="button" className="w-full text-left px-2 py-1.5 text-sm hover:bg-accent rounded" onClick={() => setImpPickerOpen(false)}>
+                                + Yangi mahsulot qo'shish: <b>{impProductName || "..."}</b>
+                              </button>
+                            </CommandEmpty>
+                            <CommandGroup>
+                              {products.map((p) => (
+                                <CommandItem key={p.id} value={`${p.name} ${p.unit}`} onSelect={() => {
+                                  setImpProductId(p.id); setImpProductName(p.name);
+                                  if (p.unit) setImpUnit(p.unit);
+                                  if (p.last_price && !impPrice) setImpPrice(String(p.last_price));
+                                  setImpPickerOpen(false);
+                                }}>
+                                  <Check className={cn("mr-2 h-4 w-4", impProductId === p.id ? "opacity-100" : "opacity-0")} />
+                                  <span className="flex-1">{p.name}</span>
+                                  <span className="text-xs text-muted-foreground ml-2">{p.stock_qty} {p.unit}</span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    {impProductId && <p className="text-xs text-status-green mt-1">✓ Mavjud mahsulot — miqdor qo'shiladi</p>}
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="col-span-2"><Label>{t.supply.qty} *</Label><Input type="number" min={0.1} step={0.1} value={impQty} onChange={e => setImpQty(e.target.value)} placeholder={(t.warehouse as any).qtyPh} /></div>
