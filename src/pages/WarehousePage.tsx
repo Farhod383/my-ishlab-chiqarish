@@ -200,17 +200,10 @@ export default function WarehousePage() {
       if (!up.error) imgUrl = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
     }
     const trimmedName = impProductName.trim();
-
-    const { data: existingProducts } = await supabase
-      .from("products")
-      .select("id, name")
-      .ilike("name", trimmedName)
-      .limit(1);
-
     let productId: string;
 
-    if (existingProducts && existingProducts.length > 0) {
-      productId = existingProducts[0].id;
+    if (impProductId) {
+      productId = impProductId;
       const patch: any = {};
       if (priceN > 0) patch.last_price = priceN;
       if (impPhone) patch.phone = impPhone;
@@ -221,25 +214,25 @@ export default function WarehousePage() {
         await supabase.from("products").update(patch).eq("id", productId);
       }
     } else {
-      const { data: newProduct, error: createError } = await supabase
-        .from("products")
-        .insert({
-          name: trimmedName,
-          unit: impUnit || "dona",
-          last_price: priceN,
-          min_limit: 0,
-          stock_qty: 0,
-          phone: impPhone || null,
-          image_url: imgUrl,
-          source: impSource.trim() || null,
-        } as any)
-        .select("id")
-        .single();
-      if (createError || !newProduct) {
-        toast.error(createError?.message || "Mahsulot yaratishda xatolik");
-        return;
+      const { data: existingProducts } = await supabase
+        .from("products").select("id, name").ilike("name", trimmedName).limit(1);
+      if (existingProducts && existingProducts.length > 0) {
+        productId = existingProducts[0].id;
+      } else {
+        const { data: newProduct, error: createError } = await supabase
+          .from("products")
+          .insert({
+            name: trimmedName, unit: impUnit || "dona", last_price: priceN,
+            min_limit: 0, stock_qty: 0, phone: impPhone || null,
+            image_url: imgUrl, source: impSource.trim() || null,
+          } as any)
+          .select("id").single();
+        if (createError || !newProduct) {
+          toast.error(createError?.message || "Mahsulot yaratishda xatolik");
+          return;
+        }
+        productId = newProduct.id;
       }
-      productId = newProduct.id;
     }
 
     const { error } = await supabase.from("stock_movements").insert({
