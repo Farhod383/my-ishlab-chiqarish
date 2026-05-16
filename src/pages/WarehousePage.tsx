@@ -566,6 +566,9 @@ export default function WarehousePage() {
                           <TableCell className="text-right text-sm font-mono">{fmt(Number(p.last_price ?? 0))}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">{p.source ?? "—"}</TableCell>
                           <TableCell>{low ? <span className="text-status-red text-xs font-semibold flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{t.warehouse.low}</span> : <span className="text-status-green text-xs">{t.warehouse.enough}</span>}</TableCell>
+                          {canManage && <TableCell onClick={(e) => e.stopPropagation()}>
+                            <Button size="sm" variant="ghost" onClick={() => openEditProduct(p)}><Pencil className="h-3.5 w-3.5" /></Button>
+                          </TableCell>}
                         </TableRow>
                       );
                     });
