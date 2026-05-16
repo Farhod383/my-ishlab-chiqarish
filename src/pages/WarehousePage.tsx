@@ -9,7 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import { AlertTriangle, Package, ArrowDownToLine, ArrowDownCircle, ArrowUpCircle, History, Plus, PackageMinus } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { AlertTriangle, Package, ArrowDownToLine, ArrowDownCircle, ArrowUpCircle, History, Plus, PackageMinus, Pencil, Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
@@ -56,7 +59,9 @@ export default function WarehousePage() {
 
   // Import (from supply)
   const [importOpen, setImportOpen] = useState(false);
+  const [impProductId, setImpProductId] = useState<string>("");
   const [impProductName, setImpProductName] = useState("");
+  const [impPickerOpen, setImpPickerOpen] = useState(false);
   const [impQty, setImpQty] = useState<string>("");
   const [impUnit, setImpUnit] = useState<string>("dona");
   const [impPrice, setImpPrice] = useState<string>("");
@@ -64,6 +69,19 @@ export default function WarehousePage() {
   const [impPhone, setImpPhone] = useState("");
   const [impSource, setImpSource] = useState("");
   const [impImage, setImpImage] = useState<File | null>(null);
+
+  // Edit product
+  const [editProdOpen, setEditProdOpen] = useState(false);
+  const [editProd, setEditProd] = useState<any | null>(null);
+  const [epName, setEpName] = useState(""); const [epUnit, setEpUnit] = useState("dona");
+  const [epPrice, setEpPrice] = useState(""); const [epMin, setEpMin] = useState("");
+  const [epPhone, setEpPhone] = useState(""); const [epSource, setEpSource] = useState("");
+
+  // Edit movement
+  const [editMovOpen, setEditMovOpen] = useState(false);
+  const [editMov, setEditMov] = useState<any | null>(null);
+  const [emQty, setEmQty] = useState(""); const [emRecipient, setEmRecipient] = useState("");
+  const [emComment, setEmComment] = useState(""); const [emSource, setEmSource] = useState("");
 
   const load = async () => {
     const [p, o, m, e] = await Promise.all([
@@ -182,17 +200,10 @@ export default function WarehousePage() {
       if (!up.error) imgUrl = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
     }
     const trimmedName = impProductName.trim();
-
-    const { data: existingProducts } = await supabase
-      .from("products")
-      .select("id, name")
-      .ilike("name", trimmedName)
-      .limit(1);
-
     let productId: string;
 
-    if (existingProducts && existingProducts.length > 0) {
-      productId = existingProducts[0].id;
+    if (impProductId) {
+      productId = impProductId;
       const patch: any = {};
       if (priceN > 0) patch.last_price = priceN;
       if (impPhone) patch.phone = impPhone;
@@ -203,25 +214,25 @@ export default function WarehousePage() {
         await supabase.from("products").update(patch).eq("id", productId);
       }
     } else {
-      const { data: newProduct, error: createError } = await supabase
-        .from("products")
-        .insert({
-          name: trimmedName,
-          unit: impUnit || "dona",
-          last_price: priceN,
-          min_limit: 0,
-          stock_qty: 0,
-          phone: impPhone || null,
-          image_url: imgUrl,
-          source: impSource.trim() || null,
-        } as any)
-        .select("id")
-        .single();
-      if (createError || !newProduct) {
-        toast.error(createError?.message || "Mahsulot yaratishda xatolik");
-        return;
+      const { data: existingProducts } = await supabase
+        .from("products").select("id, name").ilike("name", trimmedName).limit(1);
+      if (existingProducts && existingProducts.length > 0) {
+        productId = existingProducts[0].id;
+      } else {
+        const { data: newProduct, error: createError } = await supabase
+          .from("products")
+          .insert({
+            name: trimmedName, unit: impUnit || "dona", last_price: priceN,
+            min_limit: 0, stock_qty: 0, phone: impPhone || null,
+            image_url: imgUrl, source: impSource.trim() || null,
+          } as any)
+          .select("id").single();
+        if (createError || !newProduct) {
+          toast.error(createError?.message || "Mahsulot yaratishda xatolik");
+          return;
+        }
+        productId = newProduct.id;
       }
-      productId = newProduct.id;
     }
 
     const { error } = await supabase.from("stock_movements").insert({
@@ -239,8 +250,86 @@ export default function WarehousePage() {
       details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${t.common.sum}`,
     });
     toast.success(t.warehouse.inRecorded);
-    setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpSupplier(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImportOpen(false);
+    setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpSupplier(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImportOpen(false);
     load();
+  };
+
+  const openEditProduct = (p: any) => {
+    setEditProd(p);
+    setEpName(p.name ?? ""); setEpUnit(p.unit ?? "dona");
+    setEpPrice(String(p.last_price ?? "")); setEpMin(String(p.min_limit ?? ""));
+    setEpPhone(p.phone ?? ""); setEpSource(p.source ?? "");
+    setEditProdOpen(true);
+  };
+  const saveEditProduct = async () => {
+    if (!editProd) return;
+    const newVals = {
+      name: epName.trim(), unit: epUnit, last_price: Number(epPrice) || 0,
+      min_limit: Number(epMin) || 0, phone: epPhone || null, source: epSource.trim() || null,
+    };
+    const diffs: string[] = [];
+    (["name","unit","last_price","min_limit","phone","source"] as const).forEach(k => {
+      const oldV = (editProd as any)[k] ?? ""; const newV = (newVals as any)[k] ?? "";
+      if (String(oldV) !== String(newV)) diffs.push(`${k}: ${oldV || "—"} → ${newV || "—"}`);
+    });
+    const { error } = await supabase.from("products").update(newVals).eq("id", editProd.id);
+    if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: "Mahsulot tahrirlandi", entity: "product",
+      details: diffs.length ? `${editProd.name}: ${diffs.join("; ")}` : `${editProd.name}: o'zgarish yo'q`,
+    });
+    toast.success(t.common.save);
+    setEditProdOpen(false); setEditProd(null); load();
+  };
+
+  const openEditMovement = (m: any) => {
+    setEditMov(m);
+    setEmQty(String(m.quantity ?? "")); setEmRecipient(m.recipient_name ?? "");
+    setEmComment(m.comment ?? ""); setEmSource(m.source ?? "");
+    setEditMovOpen(true);
+  };
+  const saveEditMovement = async () => {
+    if (!editMov) return;
+    const newQty = Number(emQty);
+    if (!newQty || newQty <= 0) { toast.error(t.warehouse.fillFields); return; }
+    const oldQty = Number(editMov.quantity);
+    const delta = newQty - oldQty;
+    const diffs: string[] = [];
+    if (oldQty !== newQty) diffs.push(`miqdor: ${oldQty} → ${newQty}`);
+    if ((editMov.recipient_name ?? "") !== emRecipient) diffs.push(`qabul: ${editMov.recipient_name ?? "—"} → ${emRecipient || "—"}`);
+    if ((editMov.comment ?? "") !== emComment) diffs.push(`izoh o'zgardi`);
+    if ((editMov.source ?? "") !== emSource) diffs.push(`manba: ${editMov.source ?? "—"} → ${emSource || "—"}`);
+
+    const { error } = await supabase.from("stock_movements").update({
+      quantity: newQty, recipient_name: emRecipient || null,
+      comment: emComment || null, source: emSource.trim() || null,
+    }).eq("id", editMov.id);
+    if (error) { toast.error(error.message); return; }
+
+    // Adjust product stock + order_parts for quantity delta (trigger only fires on insert)
+    if (delta !== 0 && editMov.product_id) {
+      const signed = editMov.direction === "in" ? delta : -delta;
+      const prod = products.find(p => p.id === editMov.product_id);
+      const newStock = Number(prod?.stock_qty ?? 0) + signed;
+      await supabase.from("products").update({ stock_qty: newStock }).eq("id", editMov.product_id);
+      if (editMov.direction === "out" && editMov.order_id) {
+        const { data: parts } = await supabase.from("order_parts").select("id, actual_qty")
+          .eq("order_id", editMov.order_id).eq("product_id", editMov.product_id).limit(1);
+        if (parts && parts[0]) {
+          await supabase.from("order_parts").update({ actual_qty: Number(parts[0].actual_qty) + delta }).eq("id", parts[0].id);
+        }
+      }
+    }
+
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: editMov.direction === "in" ? "Kirim tahrirlandi" : "Chiqim tahrirlandi",
+      entity: "stock_movement", order_id: editMov.order_id ?? null,
+      details: diffs.length ? diffs.join("; ") : "o'zgarish yo'q",
+    });
+    toast.success(t.common.save);
+    setEditMovOpen(false); setEditMov(null); load();
   };
 
   const productMovements = useMemo(
@@ -350,8 +439,48 @@ export default function WarehousePage() {
               <DialogContent>
                 <DialogHeader><DialogTitle>{t.supply.receiveTitle}</DialogTitle></DialogHeader>
                 <div className="space-y-3">
-                  <div><Label>{t.supply.productName || t.warehouse.productName}</Label>
-                    <Input value={impProductName} onChange={e => setImpProductName(e.target.value)} placeholder={t.warehouse.productName} />
+                  <div><Label>{t.supply.productName || t.warehouse.productName} *</Label>
+                    <Popover open={impPickerOpen} onOpenChange={setImpPickerOpen}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
+                          <span className={cn("truncate", !impProductName && "text-muted-foreground")}>
+                            {impProductName || t.warehouse.productName}
+                          </span>
+                          <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                        <Command>
+                          <CommandInput
+                            placeholder={(t.warehouse as any).search || "Qidirish..."}
+                            value={impProductName}
+                            onValueChange={(v) => { setImpProductName(v); setImpProductId(""); }}
+                          />
+                          <CommandList>
+                            <CommandEmpty>
+                              <button type="button" className="w-full text-left px-2 py-1.5 text-sm hover:bg-accent rounded" onClick={() => setImpPickerOpen(false)}>
+                                + Yangi mahsulot qo'shish: <b>{impProductName || "..."}</b>
+                              </button>
+                            </CommandEmpty>
+                            <CommandGroup>
+                              {products.map((p) => (
+                                <CommandItem key={p.id} value={`${p.name} ${p.unit}`} onSelect={() => {
+                                  setImpProductId(p.id); setImpProductName(p.name);
+                                  if (p.unit) setImpUnit(p.unit);
+                                  if (p.last_price && !impPrice) setImpPrice(String(p.last_price));
+                                  setImpPickerOpen(false);
+                                }}>
+                                  <Check className={cn("mr-2 h-4 w-4", impProductId === p.id ? "opacity-100" : "opacity-0")} />
+                                  <span className="flex-1">{p.name}</span>
+                                  <span className="text-xs text-muted-foreground ml-2">{p.stock_qty} {p.unit}</span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    {impProductId && <p className="text-xs text-status-green mt-1">✓ Mavjud mahsulot — miqdor qo'shiladi</p>}
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="col-span-2"><Label>{t.supply.qty} *</Label><Input type="number" min={0.1} step={0.1} value={impQty} onChange={e => setImpQty(e.target.value)} placeholder={(t.warehouse as any).qtyPh} /></div>
@@ -418,6 +547,7 @@ export default function WarehousePage() {
                   <TableHead className="text-right">{t.warehouse.price}</TableHead>
                   <TableHead>{(t.warehouse.cols as any).source}</TableHead>
                   <TableHead>{t.warehouse.cols.state}</TableHead>
+                  {canManage && <TableHead></TableHead>}
                 </TableRow></TableHeader>
                 <TableBody>
                   {(() => {
@@ -425,7 +555,7 @@ export default function WarehousePage() {
                     const filtered = q ? products.filter(p =>
                       [p.name, p.unit, p.source, p.phone].some((v: any) => (v ?? "").toString().toLowerCase().includes(q))
                     ) : products;
-                    if (filtered.length === 0) return <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{q ? (t.warehouse as any).noResults : t.common.noRecords}</TableCell></TableRow>;
+                    if (filtered.length === 0) return <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{q ? (t.warehouse as any).noResults : t.common.noRecords}</TableCell></TableRow>;
                     return filtered.map(p => {
                       const low = Number(p.stock_qty) <= Number(p.min_limit);
                       return (
@@ -436,6 +566,9 @@ export default function WarehousePage() {
                           <TableCell className="text-right text-sm font-mono">{fmt(Number(p.last_price ?? 0))}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">{p.source ?? "—"}</TableCell>
                           <TableCell>{low ? <span className="text-status-red text-xs font-semibold flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{t.warehouse.low}</span> : <span className="text-status-green text-xs">{t.warehouse.enough}</span>}</TableCell>
+                          {canManage && <TableCell onClick={(e) => e.stopPropagation()}>
+                            <Button size="sm" variant="ghost" onClick={() => openEditProduct(p)}><Pencil className="h-3.5 w-3.5" /></Button>
+                          </TableCell>}
                         </TableRow>
                       );
                     });
@@ -467,6 +600,7 @@ export default function WarehousePage() {
                       <TableHead>{(t.warehouse.cols as any).addedBy}</TableHead>
                       <TableHead>{t.warehouse.cols.order}</TableHead>
                       <TableHead>{t.warehouse.cols.comment}</TableHead>
+                      {canManage && <TableHead></TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -487,9 +621,10 @@ export default function WarehousePage() {
                         <TableCell className="text-xs text-muted-foreground">{profiles[m.created_by] ?? "—"}</TableCell>
                         <TableCell className="text-sm font-mono">{m.order?.order_number ?? <span className="text-muted-foreground">{t.warehouse.common}</span>}</TableCell>
                         <TableCell className="text-xs italic text-muted-foreground max-w-[200px] truncate">{m.comment ?? "—"}</TableCell>
+                        {canManage && <TableCell><Button size="sm" variant="ghost" onClick={() => openEditMovement(m)}><Pencil className="h-3.5 w-3.5" /></Button></TableCell>}
                       </TableRow>
                     ))}
-                    {movements.length === 0 && <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-6">{t.warehouse.noMov}</TableCell></TableRow>}
+                    {movements.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-6">{t.warehouse.noMov}</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </div>
@@ -634,6 +769,46 @@ export default function WarehousePage() {
               </Tabs>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Product */}
+      <Dialog open={editProdOpen} onOpenChange={setEditProdOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{t.common.edit} — {editProd?.name}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>{t.warehouse.productName}</Label><Input value={epName} onChange={e => setEpName(e.target.value)} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>{t.warehouse.unit}</Label>
+                <Select value={epUnit} onValueChange={setEpUnit}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div><Label>{t.warehouse.price}</Label><Input type="number" value={epPrice} onChange={e => setEpPrice(e.target.value)} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>{t.warehouse.minLimitField}</Label><Input type="number" value={epMin} onChange={e => setEpMin(e.target.value)} /></div>
+              <div><Label>{t.warehouse.phone}</Label><Input value={epPhone} onChange={e => setEpPhone(e.target.value)} /></div>
+            </div>
+            <div><Label>{(t.warehouse as any).source}</Label><Input value={epSource} onChange={e => setEpSource(e.target.value)} /></div>
+            <Button className="w-full" onClick={saveEditProduct}>{t.common.save}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Movement */}
+      <Dialog open={editMovOpen} onOpenChange={setEditMovOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{t.common.edit} — {editMov?.direction === "in" ? t.warehouse.in : t.warehouse.out}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="text-sm text-muted-foreground">{editMov?.product?.name} · {editMov && fmtDateTime(editMov.created_at)}</div>
+            <div><Label>{t.warehouse.qty} *</Label><Input type="number" step="any" value={emQty} onChange={e => setEmQty(e.target.value)} /></div>
+            <div><Label>{editMov?.direction === "in" ? t.warehouse.cols.whoBrought : t.warehouse.cols.whoGot}</Label><Input value={emRecipient} onChange={e => setEmRecipient(e.target.value)} /></div>
+            <div><Label>{(t.warehouse as any).source}</Label><Input value={emSource} onChange={e => setEmSource(e.target.value)} /></div>
+            <div><Label>{t.warehouse.cols.comment}</Label><Textarea value={emComment} onChange={e => setEmComment(e.target.value)} /></div>
+            <Button className="w-full" onClick={saveEditMovement}>{t.common.save}</Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
