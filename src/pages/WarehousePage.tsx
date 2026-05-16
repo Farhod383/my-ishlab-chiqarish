@@ -59,7 +59,9 @@ export default function WarehousePage() {
 
   // Import (from supply)
   const [importOpen, setImportOpen] = useState(false);
+  const [impProductId, setImpProductId] = useState<string>("");
   const [impProductName, setImpProductName] = useState("");
+  const [impPickerOpen, setImpPickerOpen] = useState(false);
   const [impQty, setImpQty] = useState<string>("");
   const [impUnit, setImpUnit] = useState<string>("dona");
   const [impPrice, setImpPrice] = useState<string>("");
@@ -67,6 +69,19 @@ export default function WarehousePage() {
   const [impPhone, setImpPhone] = useState("");
   const [impSource, setImpSource] = useState("");
   const [impImage, setImpImage] = useState<File | null>(null);
+
+  // Edit product
+  const [editProdOpen, setEditProdOpen] = useState(false);
+  const [editProd, setEditProd] = useState<any | null>(null);
+  const [epName, setEpName] = useState(""); const [epUnit, setEpUnit] = useState("dona");
+  const [epPrice, setEpPrice] = useState(""); const [epMin, setEpMin] = useState("");
+  const [epPhone, setEpPhone] = useState(""); const [epSource, setEpSource] = useState("");
+
+  // Edit movement
+  const [editMovOpen, setEditMovOpen] = useState(false);
+  const [editMov, setEditMov] = useState<any | null>(null);
+  const [emQty, setEmQty] = useState(""); const [emRecipient, setEmRecipient] = useState("");
+  const [emComment, setEmComment] = useState(""); const [emSource, setEmSource] = useState("");
 
   const load = async () => {
     const [p, o, m, e] = await Promise.all([
