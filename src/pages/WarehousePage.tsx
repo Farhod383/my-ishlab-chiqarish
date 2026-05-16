@@ -332,6 +332,7 @@ export default function WarehousePage() {
     setEditMovOpen(false); setEditMov(null); load();
   };
 
+  const productMovements = useMemo(
     () => selectedProduct ? movements.filter(m => m.product_id === selectedProduct.id) : [],
     [movements, selectedProduct]
   );
