@@ -403,6 +403,12 @@ export default function WarehousePage() {
 
   return (
     <div className="space-y-6">
+      {/* Autocomplete datalists */}
+      <datalist id="dl-product-names">{productNameOptions.map(v => <option key={v} value={v} />)}</datalist>
+      <datalist id="dl-suppliers">{supplierOptions.map(v => <option key={v} value={v} />)}</datalist>
+      <datalist id="dl-phones">{phoneOptions.map(v => <option key={v} value={v} />)}</datalist>
+      <datalist id="dl-sources">{sourceOptions.map(v => <option key={v} value={v} />)}</datalist>
+      <datalist id="dl-recipients">{recipientOptions.map(v => <option key={v} value={v} />)}</datalist>
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{t.warehouse.title}</h1>
