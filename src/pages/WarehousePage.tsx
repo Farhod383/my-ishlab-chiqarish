@@ -691,7 +691,10 @@ export default function WarehousePage() {
                         <TableCell className="text-xs text-muted-foreground">{profiles[m.created_by] ?? "—"}</TableCell>
                         <TableCell className="text-sm font-mono">{m.order?.order_number ?? <span className="text-muted-foreground">{t.warehouse.common}</span>}</TableCell>
                         <TableCell className="text-xs italic text-muted-foreground max-w-[200px] truncate">{m.comment ?? "—"}</TableCell>
-                        {canManage && <TableCell><Button size="sm" variant="ghost" onClick={() => openEditMovement(m)}><Pencil className="h-3.5 w-3.5" /></Button></TableCell>}
+                        {canManage && <TableCell><div className="flex gap-1">
+                          <Button size="sm" variant="ghost" onClick={() => openEditMovement(m)}><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button size="sm" variant="ghost" onClick={() => deleteMovement(m)}><Trash2 className="h-3.5 w-3.5 text-status-red" /></Button>
+                        </div></TableCell>}
                       </TableRow>
                     ))}
                     {movements.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-6">{t.warehouse.noMov}</TableCell></TableRow>}
