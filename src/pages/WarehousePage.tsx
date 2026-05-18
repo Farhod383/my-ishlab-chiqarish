@@ -850,7 +850,7 @@ export default function WarehousePage() {
         <DialogContent>
           <DialogHeader><DialogTitle>{t.common.edit} — {editProd?.name}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>{t.warehouse.productName}</Label><Input value={epName} onChange={e => setEpName(e.target.value)} /></div>
+            <div><Label>{t.warehouse.productName}</Label><Input list="dl-product-names" value={epName} onChange={e => setEpName(e.target.value)} /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{t.warehouse.unit}</Label>
                 <Select value={epUnit} onValueChange={setEpUnit}>
@@ -862,9 +862,9 @@ export default function WarehousePage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{t.warehouse.minLimitField}</Label><Input type="number" value={epMin} onChange={e => setEpMin(e.target.value)} /></div>
-              <div><Label>{t.warehouse.phone}</Label><Input value={epPhone} onChange={e => setEpPhone(e.target.value)} /></div>
+              <div><Label>{t.warehouse.phone}</Label><Input list="dl-phones" value={epPhone} onChange={e => setEpPhone(e.target.value)} /></div>
             </div>
-            <div><Label>{(t.warehouse as any).source}</Label><Input value={epSource} onChange={e => setEpSource(e.target.value)} /></div>
+            <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={epSource} onChange={e => setEpSource(e.target.value)} /></div>
             <Button className="w-full" onClick={saveEditProduct}>{t.common.save}</Button>
           </div>
         </DialogContent>
