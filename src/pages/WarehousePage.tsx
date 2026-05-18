@@ -422,7 +422,7 @@ export default function WarehousePage() {
                 <DialogContent>
                   <DialogHeader><DialogTitle>{t.warehouse.addProduct}</DialogTitle></DialogHeader>
                   <div className="space-y-3">
-                    <div><Label>{t.warehouse.productName} *</Label><Input value={newName} onChange={e => setNewName(e.target.value)} /></div>
+                    <div><Label>{t.warehouse.productName} *</Label><Input list="dl-product-names" value={newName} onChange={e => setNewName(e.target.value)} /></div>
                     <div className="grid grid-cols-2 gap-3">
                       <div><Label>{t.warehouse.qty} *</Label><Input type="number" inputMode="numeric" min={0} step="any" value={newQty} onChange={e => setNewQty(e.target.value.replace(/[^0-9.]/g, ""))} placeholder="0" /></div>
                       <div><Label>{t.warehouse.unit} *</Label>
