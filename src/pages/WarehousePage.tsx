@@ -634,7 +634,10 @@ export default function WarehousePage() {
                           <TableCell className="text-xs text-muted-foreground">{p.source ?? "—"}</TableCell>
                           <TableCell>{low ? <span className="text-status-red text-xs font-semibold flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{t.warehouse.low}</span> : <span className="text-status-green text-xs">{t.warehouse.enough}</span>}</TableCell>
                           {canManage && <TableCell onClick={(e) => e.stopPropagation()}>
-                            <Button size="sm" variant="ghost" onClick={() => openEditProduct(p)}><Pencil className="h-3.5 w-3.5" /></Button>
+                            <div className="flex gap-1">
+                              <Button size="sm" variant="ghost" onClick={() => openEditProduct(p)}><Pencil className="h-3.5 w-3.5" /></Button>
+                              <Button size="sm" variant="ghost" onClick={() => deleteProduct(p)}><Trash2 className="h-3.5 w-3.5 text-status-red" /></Button>
+                            </div>
                           </TableCell>}
                         </TableRow>
                       );
