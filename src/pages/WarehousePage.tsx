@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { AlertTriangle, Package, ArrowDownToLine, ArrowDownCircle, ArrowUpCircle, History, Plus, PackageMinus, Pencil, Check, ChevronsUpDown } from "lucide-react";
+import { AlertTriangle, Package, ArrowDownToLine, ArrowDownCircle, ArrowUpCircle, History, Plus, PackageMinus, Pencil, Check, ChevronsUpDown, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
@@ -332,9 +332,70 @@ export default function WarehousePage() {
     setEditMovOpen(false); setEditMov(null); load();
   };
 
+  const deleteProduct = async (p: any) => {
+    if (!window.confirm(`${t.common.delete ?? "O'chirish"}: ${p.name}?`)) return;
+    const { error } = await supabase.from("products").delete().eq("id", p.id);
+    if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: "Mahsulot o'chirildi", entity: "product",
+      details: `${p.name} (stock: ${p.stock_qty} ${p.unit})`,
+    });
+    toast.success(t.common.delete ?? "O'chirildi");
+    if (selectedProduct?.id === p.id) setSelectedProduct(null);
+    load();
+  };
+
+  const deleteMovement = async (m: any) => {
+    if (!window.confirm(`${t.common.delete ?? "O'chirish"}: ${m.product?.name ?? ""} ${m.direction === "in" ? "+" : "-"}${m.quantity}?`)) return;
+    // revert stock
+    if (m.product_id) {
+      const signed = m.direction === "in" ? -Number(m.quantity) : Number(m.quantity);
+      const prod = products.find(p => p.id === m.product_id);
+      const newStock = Number(prod?.stock_qty ?? 0) + signed;
+      await supabase.from("products").update({ stock_qty: newStock }).eq("id", m.product_id);
+      if (m.direction === "out" && m.order_id) {
+        const { data: parts } = await supabase.from("order_parts").select("id, actual_qty")
+          .eq("order_id", m.order_id).eq("product_id", m.product_id).limit(1);
+        if (parts && parts[0]) {
+          await supabase.from("order_parts").update({ actual_qty: Math.max(0, Number(parts[0].actual_qty) - Number(m.quantity)) }).eq("id", parts[0].id);
+        }
+      }
+    }
+    const { error } = await supabase.from("stock_movements").delete().eq("id", m.id);
+    if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: m.direction === "in" ? "Kirim o'chirildi" : "Chiqim o'chirildi",
+      entity: "stock_movement", order_id: m.order_id ?? null,
+      details: `${m.product?.name ?? "—"}: ${m.direction === "in" ? "+" : "-"}${m.quantity}${m.recipient_name ? `, ${m.recipient_name}` : ""}`,
+    });
+    toast.success(t.common.delete ?? "O'chirildi");
+    load();
+  };
+
   const productMovements = useMemo(
     () => selectedProduct ? movements.filter(m => m.product_id === selectedProduct.id) : [],
     [movements, selectedProduct]
+  );
+
+  const uniq = (arr: any[]) => Array.from(new Set(arr.map(x => (x ?? "").toString().trim()).filter(Boolean)));
+  const productNameOptions = useMemo(() => uniq(products.map(p => p.name)), [products]);
+  const supplierOptions = useMemo(
+    () => uniq([...movements.filter(m => m.direction === "in").map(m => m.recipient_name)]),
+    [movements]
+  );
+  const phoneOptions = useMemo(
+    () => uniq([...movements.map(m => m.phone), ...products.map(p => p.phone)]),
+    [movements, products]
+  );
+  const sourceOptions = useMemo(
+    () => uniq([...movements.map(m => m.source), ...products.map(p => p.source)]),
+    [movements, products]
+  );
+  const recipientOptions = useMemo(
+    () => uniq(movements.filter(m => m.direction === "out").map(m => m.recipient_name)),
+    [movements]
   );
 
   const fmtDateTime = (s: string) => new Date(s).toLocaleString();
@@ -342,6 +403,12 @@ export default function WarehousePage() {
 
   return (
     <div className="space-y-6">
+      {/* Autocomplete datalists */}
+      <datalist id="dl-product-names">{productNameOptions.map(v => <option key={v} value={v} />)}</datalist>
+      <datalist id="dl-suppliers">{supplierOptions.map(v => <option key={v} value={v} />)}</datalist>
+      <datalist id="dl-phones">{phoneOptions.map(v => <option key={v} value={v} />)}</datalist>
+      <datalist id="dl-sources">{sourceOptions.map(v => <option key={v} value={v} />)}</datalist>
+      <datalist id="dl-recipients">{recipientOptions.map(v => <option key={v} value={v} />)}</datalist>
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{t.warehouse.title}</h1>
@@ -355,7 +422,7 @@ export default function WarehousePage() {
                 <DialogContent>
                   <DialogHeader><DialogTitle>{t.warehouse.addProduct}</DialogTitle></DialogHeader>
                   <div className="space-y-3">
-                    <div><Label>{t.warehouse.productName} *</Label><Input value={newName} onChange={e => setNewName(e.target.value)} /></div>
+                    <div><Label>{t.warehouse.productName} *</Label><Input list="dl-product-names" value={newName} onChange={e => setNewName(e.target.value)} /></div>
                     <div className="grid grid-cols-2 gap-3">
                       <div><Label>{t.warehouse.qty} *</Label><Input type="number" inputMode="numeric" min={0} step="any" value={newQty} onChange={e => setNewQty(e.target.value.replace(/[^0-9.]/g, ""))} placeholder="0" /></div>
                       <div><Label>{t.warehouse.unit} *</Label>
@@ -369,9 +436,9 @@ export default function WarehousePage() {
                       <div><Label>{t.warehouse.minLimitField}</Label><Input type="number" min={0} value={newMin} onChange={e => setNewMin(e.target.value)} placeholder={(t.warehouse as any).minLimitPh} /></div>
                       <div><Label>{t.warehouse.price}</Label><Input type="number" min={0} value={newPrice} onChange={e => setNewPrice(e.target.value)} placeholder="0" /></div>
                     </div>
-                    <div><Label>{t.warehouse.phone}</Label><Input value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+998..." /></div>
-                    <div><Label>{(t.warehouse as any).source}</Label><Input value={newSource} onChange={e => setNewSource(e.target.value)} placeholder={(t.warehouse as any).sourcePh} /></div>
-                    <div><Label>{(t.warehouse.cols as any).supplier}</Label><Input value={newSupplier} onChange={e => setNewSupplier(e.target.value)} placeholder={t.supply.bringerPh} /></div>
+                    <div><Label>{t.warehouse.phone}</Label><Input list="dl-phones" value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+998..." /></div>
+                    <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={newSource} onChange={e => setNewSource(e.target.value)} placeholder={(t.warehouse as any).sourcePh} /></div>
+                    <div><Label>{(t.warehouse.cols as any).supplier}</Label><Input list="dl-suppliers" value={newSupplier} onChange={e => setNewSupplier(e.target.value)} placeholder={t.supply.bringerPh} /></div>
                     <div><Label>{t.warehouse.image}</Label><Input type="file" accept="image/*" onChange={e => setNewImage(e.target.files?.[0] ?? null)} /></div>
                     <Button className="w-full" onClick={addProduct}>{t.common.save}</Button>
                   </div>
@@ -498,9 +565,9 @@ export default function WarehousePage() {
                       <span className="font-mono font-bold text-primary">{fmt(Number(impQty) * Number(impPrice))} {t.common.sum}</span>
                     </div>
                   )}
-                  <div><Label>{(t.warehouse as any).source}</Label><Input value={impSource} onChange={e => setImpSource(e.target.value)} placeholder={(t.warehouse as any).sourcePh} /></div>
-                  <div><Label>{t.supply.bringer}</Label><Input value={impSupplier} onChange={e => setImpSupplier(e.target.value)} placeholder={t.supply.bringerPh} /></div>
-                  <div><Label>{t.supply.phone}</Label><Input value={impPhone} onChange={e => setImpPhone(e.target.value)} placeholder={t.supply.phonePh} /></div>
+                  <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={impSource} onChange={e => setImpSource(e.target.value)} placeholder={(t.warehouse as any).sourcePh} /></div>
+                  <div><Label>{t.supply.bringer}</Label><Input list="dl-suppliers" value={impSupplier} onChange={e => setImpSupplier(e.target.value)} placeholder={t.supply.bringerPh} /></div>
+                  <div><Label>{t.supply.phone}</Label><Input list="dl-phones" value={impPhone} onChange={e => setImpPhone(e.target.value)} placeholder={t.supply.phonePh} /></div>
                   <div><Label>{t.supply.image}</Label><Input type="file" accept="image/*" onChange={e => setImpImage(e.target.files?.[0] ?? null)} /></div>
                   <Button className="w-full" onClick={doImport}>{t.supply.saveIn}</Button>
                 </div>
@@ -567,7 +634,10 @@ export default function WarehousePage() {
                           <TableCell className="text-xs text-muted-foreground">{p.source ?? "—"}</TableCell>
                           <TableCell>{low ? <span className="text-status-red text-xs font-semibold flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{t.warehouse.low}</span> : <span className="text-status-green text-xs">{t.warehouse.enough}</span>}</TableCell>
                           {canManage && <TableCell onClick={(e) => e.stopPropagation()}>
-                            <Button size="sm" variant="ghost" onClick={() => openEditProduct(p)}><Pencil className="h-3.5 w-3.5" /></Button>
+                            <div className="flex gap-1">
+                              <Button size="sm" variant="ghost" onClick={() => openEditProduct(p)}><Pencil className="h-3.5 w-3.5" /></Button>
+                              <Button size="sm" variant="ghost" onClick={() => deleteProduct(p)}><Trash2 className="h-3.5 w-3.5 text-status-red" /></Button>
+                            </div>
                           </TableCell>}
                         </TableRow>
                       );
@@ -621,7 +691,10 @@ export default function WarehousePage() {
                         <TableCell className="text-xs text-muted-foreground">{profiles[m.created_by] ?? "—"}</TableCell>
                         <TableCell className="text-sm font-mono">{m.order?.order_number ?? <span className="text-muted-foreground">{t.warehouse.common}</span>}</TableCell>
                         <TableCell className="text-xs italic text-muted-foreground max-w-[200px] truncate">{m.comment ?? "—"}</TableCell>
-                        {canManage && <TableCell><Button size="sm" variant="ghost" onClick={() => openEditMovement(m)}><Pencil className="h-3.5 w-3.5" /></Button></TableCell>}
+                        {canManage && <TableCell><div className="flex gap-1">
+                          <Button size="sm" variant="ghost" onClick={() => openEditMovement(m)}><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button size="sm" variant="ghost" onClick={() => deleteMovement(m)}><Trash2 className="h-3.5 w-3.5 text-status-red" /></Button>
+                        </div></TableCell>}
                       </TableRow>
                     ))}
                     {movements.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-6">{t.warehouse.noMov}</TableCell></TableRow>}
@@ -777,7 +850,7 @@ export default function WarehousePage() {
         <DialogContent>
           <DialogHeader><DialogTitle>{t.common.edit} — {editProd?.name}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>{t.warehouse.productName}</Label><Input value={epName} onChange={e => setEpName(e.target.value)} /></div>
+            <div><Label>{t.warehouse.productName}</Label><Input list="dl-product-names" value={epName} onChange={e => setEpName(e.target.value)} /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{t.warehouse.unit}</Label>
                 <Select value={epUnit} onValueChange={setEpUnit}>
@@ -789,9 +862,9 @@ export default function WarehousePage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{t.warehouse.minLimitField}</Label><Input type="number" value={epMin} onChange={e => setEpMin(e.target.value)} /></div>
-              <div><Label>{t.warehouse.phone}</Label><Input value={epPhone} onChange={e => setEpPhone(e.target.value)} /></div>
+              <div><Label>{t.warehouse.phone}</Label><Input list="dl-phones" value={epPhone} onChange={e => setEpPhone(e.target.value)} /></div>
             </div>
-            <div><Label>{(t.warehouse as any).source}</Label><Input value={epSource} onChange={e => setEpSource(e.target.value)} /></div>
+            <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={epSource} onChange={e => setEpSource(e.target.value)} /></div>
             <Button className="w-full" onClick={saveEditProduct}>{t.common.save}</Button>
           </div>
         </DialogContent>
@@ -804,8 +877,8 @@ export default function WarehousePage() {
           <div className="space-y-3">
             <div className="text-sm text-muted-foreground">{editMov?.product?.name} · {editMov && fmtDateTime(editMov.created_at)}</div>
             <div><Label>{t.warehouse.qty} *</Label><Input type="number" step="any" value={emQty} onChange={e => setEmQty(e.target.value)} /></div>
-            <div><Label>{editMov?.direction === "in" ? t.warehouse.cols.whoBrought : t.warehouse.cols.whoGot}</Label><Input value={emRecipient} onChange={e => setEmRecipient(e.target.value)} /></div>
-            <div><Label>{(t.warehouse as any).source}</Label><Input value={emSource} onChange={e => setEmSource(e.target.value)} /></div>
+            <div><Label>{editMov?.direction === "in" ? t.warehouse.cols.whoBrought : t.warehouse.cols.whoGot}</Label><Input list={editMov?.direction === "in" ? "dl-suppliers" : "dl-recipients"} value={emRecipient} onChange={e => setEmRecipient(e.target.value)} /></div>
+            <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={emSource} onChange={e => setEmSource(e.target.value)} /></div>
             <div><Label>{t.warehouse.cols.comment}</Label><Textarea value={emComment} onChange={e => setEmComment(e.target.value)} /></div>
             <Button className="w-full" onClick={saveEditMovement}>{t.common.save}</Button>
           </div>
