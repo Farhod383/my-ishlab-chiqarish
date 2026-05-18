@@ -32,7 +32,7 @@ export function AppSidebar() {
     { title: (t as any).nav.kassa ?? "Kassa", url: "/kassa", icon: Wallet, roles: ["cashier", "admin"] },
     { title: t.nav.chat, url: "/chat", icon: MessageSquare },
     { title: "Hisobot / Atchot", url: "/reports", icon: FileBarChart, roles: ["admin"] },
-    { title: t.nav.audit, url: "/audit", icon: History, roles: ["admin", "manager"] },
+    { title: t.nav.audit, url: "/audit", icon: History, roles: ["admin"] },
   ];
 
   const engineerAllowed = new Set(["/", "/orders", "/production", "/chat"]);
