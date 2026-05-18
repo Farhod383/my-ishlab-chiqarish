@@ -436,9 +436,9 @@ export default function WarehousePage() {
                       <div><Label>{t.warehouse.minLimitField}</Label><Input type="number" min={0} value={newMin} onChange={e => setNewMin(e.target.value)} placeholder={(t.warehouse as any).minLimitPh} /></div>
                       <div><Label>{t.warehouse.price}</Label><Input type="number" min={0} value={newPrice} onChange={e => setNewPrice(e.target.value)} placeholder="0" /></div>
                     </div>
-                    <div><Label>{t.warehouse.phone}</Label><Input value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+998..." /></div>
-                    <div><Label>{(t.warehouse as any).source}</Label><Input value={newSource} onChange={e => setNewSource(e.target.value)} placeholder={(t.warehouse as any).sourcePh} /></div>
-                    <div><Label>{(t.warehouse.cols as any).supplier}</Label><Input value={newSupplier} onChange={e => setNewSupplier(e.target.value)} placeholder={t.supply.bringerPh} /></div>
+                    <div><Label>{t.warehouse.phone}</Label><Input list="dl-phones" value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+998..." /></div>
+                    <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={newSource} onChange={e => setNewSource(e.target.value)} placeholder={(t.warehouse as any).sourcePh} /></div>
+                    <div><Label>{(t.warehouse.cols as any).supplier}</Label><Input list="dl-suppliers" value={newSupplier} onChange={e => setNewSupplier(e.target.value)} placeholder={t.supply.bringerPh} /></div>
                     <div><Label>{t.warehouse.image}</Label><Input type="file" accept="image/*" onChange={e => setNewImage(e.target.files?.[0] ?? null)} /></div>
                     <Button className="w-full" onClick={addProduct}>{t.common.save}</Button>
                   </div>
