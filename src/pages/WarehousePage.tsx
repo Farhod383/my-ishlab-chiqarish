@@ -332,9 +332,70 @@ export default function WarehousePage() {
     setEditMovOpen(false); setEditMov(null); load();
   };
 
+  const deleteProduct = async (p: any) => {
+    if (!window.confirm(`${t.common.delete ?? "O'chirish"}: ${p.name}?`)) return;
+    const { error } = await supabase.from("products").delete().eq("id", p.id);
+    if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: "Mahsulot o'chirildi", entity: "product",
+      details: `${p.name} (stock: ${p.stock_qty} ${p.unit})`,
+    });
+    toast.success(t.common.delete ?? "O'chirildi");
+    if (selectedProduct?.id === p.id) setSelectedProduct(null);
+    load();
+  };
+
+  const deleteMovement = async (m: any) => {
+    if (!window.confirm(`${t.common.delete ?? "O'chirish"}: ${m.product?.name ?? ""} ${m.direction === "in" ? "+" : "-"}${m.quantity}?`)) return;
+    // revert stock
+    if (m.product_id) {
+      const signed = m.direction === "in" ? -Number(m.quantity) : Number(m.quantity);
+      const prod = products.find(p => p.id === m.product_id);
+      const newStock = Number(prod?.stock_qty ?? 0) + signed;
+      await supabase.from("products").update({ stock_qty: newStock }).eq("id", m.product_id);
+      if (m.direction === "out" && m.order_id) {
+        const { data: parts } = await supabase.from("order_parts").select("id, actual_qty")
+          .eq("order_id", m.order_id).eq("product_id", m.product_id).limit(1);
+        if (parts && parts[0]) {
+          await supabase.from("order_parts").update({ actual_qty: Math.max(0, Number(parts[0].actual_qty) - Number(m.quantity)) }).eq("id", parts[0].id);
+        }
+      }
+    }
+    const { error } = await supabase.from("stock_movements").delete().eq("id", m.id);
+    if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: m.direction === "in" ? "Kirim o'chirildi" : "Chiqim o'chirildi",
+      entity: "stock_movement", order_id: m.order_id ?? null,
+      details: `${m.product?.name ?? "—"}: ${m.direction === "in" ? "+" : "-"}${m.quantity}${m.recipient_name ? `, ${m.recipient_name}` : ""}`,
+    });
+    toast.success(t.common.delete ?? "O'chirildi");
+    load();
+  };
+
   const productMovements = useMemo(
     () => selectedProduct ? movements.filter(m => m.product_id === selectedProduct.id) : [],
     [movements, selectedProduct]
+  );
+
+  const uniq = (arr: any[]) => Array.from(new Set(arr.map(x => (x ?? "").toString().trim()).filter(Boolean)));
+  const productNameOptions = useMemo(() => uniq(products.map(p => p.name)), [products]);
+  const supplierOptions = useMemo(
+    () => uniq([...movements.filter(m => m.direction === "in").map(m => m.recipient_name)]),
+    [movements]
+  );
+  const phoneOptions = useMemo(
+    () => uniq([...movements.map(m => m.phone), ...products.map(p => p.phone)]),
+    [movements, products]
+  );
+  const sourceOptions = useMemo(
+    () => uniq([...movements.map(m => m.source), ...products.map(p => p.source)]),
+    [movements, products]
+  );
+  const recipientOptions = useMemo(
+    () => uniq(movements.filter(m => m.direction === "out").map(m => m.recipient_name)),
+    [movements]
   );
 
   const fmtDateTime = (s: string) => new Date(s).toLocaleString();
