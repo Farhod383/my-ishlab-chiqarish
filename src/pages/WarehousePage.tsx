@@ -877,8 +877,8 @@ export default function WarehousePage() {
           <div className="space-y-3">
             <div className="text-sm text-muted-foreground">{editMov?.product?.name} · {editMov && fmtDateTime(editMov.created_at)}</div>
             <div><Label>{t.warehouse.qty} *</Label><Input type="number" step="any" value={emQty} onChange={e => setEmQty(e.target.value)} /></div>
-            <div><Label>{editMov?.direction === "in" ? t.warehouse.cols.whoBrought : t.warehouse.cols.whoGot}</Label><Input value={emRecipient} onChange={e => setEmRecipient(e.target.value)} /></div>
-            <div><Label>{(t.warehouse as any).source}</Label><Input value={emSource} onChange={e => setEmSource(e.target.value)} /></div>
+            <div><Label>{editMov?.direction === "in" ? t.warehouse.cols.whoBrought : t.warehouse.cols.whoGot}</Label><Input list={editMov?.direction === "in" ? "dl-suppliers" : "dl-recipients"} value={emRecipient} onChange={e => setEmRecipient(e.target.value)} /></div>
+            <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={emSource} onChange={e => setEmSource(e.target.value)} /></div>
             <div><Label>{t.warehouse.cols.comment}</Label><Textarea value={emComment} onChange={e => setEmComment(e.target.value)} /></div>
             <Button className="w-full" onClick={saveEditMovement}>{t.common.save}</Button>
           </div>
