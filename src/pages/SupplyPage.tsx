@@ -11,6 +11,7 @@ import { Truck, AlertTriangle, Plus } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
+import { fmtNum } from "@/lib/format";
 import { toast } from "sonner";
 
 export default function SupplyPage() {
@@ -31,7 +32,7 @@ export default function SupplyPage() {
   };
   useEffect(() => { load(); }, []);
 
-  const fmt = (n: number) => new Intl.NumberFormat("uz-UZ").format(Math.round(n));
+  const fmt = (n: number) => fmtNum(n);
 
   const receive = async () => {
     if (!pid || !qty || !supplier) { toast.error(t.warehouse.fillFields); return; }

@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useI18n } from "@/i18n/context";
 import { FileText, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { fmtNum } from "@/lib/format";
 
 interface Props {
   orderId: string;
@@ -51,7 +52,7 @@ export function OrderCostReport({ orderId, orderNumber, trigger, open, onOpenCha
   }, [isOpen, orderId]);
 
   const total = rows.reduce((s, r) => s + r.total, 0);
-  const fmt = (n: number) => new Intl.NumberFormat("uz-UZ").format(Math.round(n));
+  const fmt = (n: number) => fmtNum(n);
 
   const exportDocx = async () => {
     setExporting(true);

@@ -15,6 +15,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
+import { fmtNum } from "@/lib/format";
 
 const PAYMENT_TYPES = ["cash", "card", "transfer", "other"];
 const CURRENCIES = ["UZS", "USD", "EUR", "RUB", "CNY", "KZT", "TRY", "GBP", "AED", "INR", "JPY", "KRW", "CHF", "CAD", "AUD"];
@@ -75,7 +76,7 @@ export default function KassaPage() {
   useEffect(() => { load(); }, []);
 
   const canManage = hasRole(["cashier", "admin"]);
-  const fmt = (n: number) => new Intl.NumberFormat("uz-UZ").format(Math.round(n));
+  const fmt = (n: number) => fmtNum(n);
   const computeUzs = (amount: number, currency: string, rate: number) =>
     currency === "UZS" ? Number(amount) || 0 : (Number(amount) || 0) * (Number(rate) || 0);
 

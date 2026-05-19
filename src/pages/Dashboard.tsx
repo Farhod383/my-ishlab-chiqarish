@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { OrderCostReport } from "@/components/OrderCostReport";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n/context";
+import { fmtNum } from "@/lib/format";
 
 interface DashStats {
   total: number; active: number; delayed: number; today: number; exception: number;
@@ -138,7 +139,7 @@ export default function Dashboard() {
               {lowStock.map((p) => (
                 <div key={p.id} className="flex items-center justify-between text-sm p-2 rounded border border-status-red/30 bg-status-red/5">
                   <span className="truncate pr-2">{p.name}</span>
-                  <span className="font-mono text-status-red shrink-0">{p.stock_qty} / {p.min_limit} {p.unit}</span>
+                  <span className="font-mono text-status-red shrink-0">{fmtNum(p.stock_qty)} / {fmtNum(p.min_limit)} {p.unit}</span>
                 </div>
               ))}
             </CardContent>
