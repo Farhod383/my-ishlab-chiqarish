@@ -15,6 +15,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
+import { fmtNum } from "@/lib/format";
 
 const PAYMENT_TYPES = ["cash", "card", "transfer", "other"];
 const CURRENCIES = ["UZS", "USD", "EUR", "RUB", "CNY", "KZT", "TRY", "GBP", "AED", "INR", "JPY", "KRW", "CHF", "CAD", "AUD"];
