@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
+import { fmtNum } from "@/lib/format";
 import { toast } from "sonner";
 
 const UNITS = ["dona", "kg", "metr", "litr", "rulon", "komplekt"] as const;
