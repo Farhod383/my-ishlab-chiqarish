@@ -15,6 +15,7 @@ import {
   Package, Wrench, ClipboardList, MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
+import { fmtNum } from "@/lib/format";
 
 export default function OrderReport() {
   const { id } = useParams();
