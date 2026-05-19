@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { OrderCostReport } from "@/components/OrderCostReport";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n/context";
+import { fmtNum } from "@/lib/format";
 
 interface DashStats {
   total: number; active: number; delayed: number; today: number; exception: number;
