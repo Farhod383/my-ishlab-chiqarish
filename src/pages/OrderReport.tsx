@@ -44,8 +44,7 @@ export default function OrderReport() {
     })();
   }, [id]);
 
-  const fmtMoney = (n: number) =>
-    new Intl.NumberFormat("uz-UZ").format(Math.round(n));
+  const fmtMoney = (n: number) => fmtNum(n);
   const fmtDate = (d?: string | null) =>
     d ? new Date(d).toLocaleDateString("uz-UZ") : "—";
   const fmtDateTime = (d?: string | null) =>
