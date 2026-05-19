@@ -52,7 +52,7 @@ export function OrderCostReport({ orderId, orderNumber, trigger, open, onOpenCha
   }, [isOpen, orderId]);
 
   const total = rows.reduce((s, r) => s + r.total, 0);
-  const fmt = (n: number) => new Intl.NumberFormat("uz-UZ").format(Math.round(n));
+  const fmt = (n: number) => fmtNum(n);
 
   const exportDocx = async () => {
     setExporting(true);
