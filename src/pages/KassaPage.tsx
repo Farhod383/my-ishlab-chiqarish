@@ -75,7 +75,7 @@ export default function KassaPage() {
   useEffect(() => { load(); }, []);
 
   const canManage = hasRole(["cashier", "admin"]);
-  const fmt = (n: number) => new Intl.NumberFormat("uz-UZ").format(Math.round(n));
+  const fmt = (n: number) => fmtNum(n);
   const computeUzs = (amount: number, currency: string, rate: number) =>
     currency === "UZS" ? Number(amount) || 0 : (Number(amount) || 0) * (Number(rate) || 0);
 
