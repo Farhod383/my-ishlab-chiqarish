@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useI18n } from "@/i18n/context";
 import { FileText, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { fmtNum } from "@/lib/format";
 
 interface Props {
   orderId: string;
