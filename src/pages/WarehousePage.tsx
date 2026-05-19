@@ -104,7 +104,7 @@ export default function WarehousePage() {
 
   const canManage = hasRole(["warehouse", "admin"]);
   const canImport = hasRole(["warehouse", "supply", "admin"]);
-  const fmt = (n: number) => new Intl.NumberFormat("uz-UZ").format(Math.round(n));
+  const fmt = (n: number) => fmtNum(n);
 
   const release = async () => {
     if (!outProduct || !outQty || !outRecipient) { toast.error(t.warehouse.fillFields); return; }
