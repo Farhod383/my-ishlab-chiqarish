@@ -71,33 +71,42 @@ export type Database = {
           comment: string | null
           created_at: string
           created_by: string | null
+          currency: string
+          exchange_rate: number
           expense_date: string
           id: string
           reason: string
           recipient_id: string | null
           recipient_name: string | null
+          total_uzs: number
         }
         Insert: {
           amount?: number
           comment?: string | null
           created_at?: string
           created_by?: string | null
+          currency?: string
+          exchange_rate?: number
           expense_date?: string
           id?: string
           reason?: string
           recipient_id?: string | null
           recipient_name?: string | null
+          total_uzs?: number
         }
         Update: {
           amount?: number
           comment?: string | null
           created_at?: string
           created_by?: string | null
+          currency?: string
+          exchange_rate?: number
           expense_date?: string
           id?: string
           reason?: string
           recipient_id?: string | null
           recipient_name?: string | null
+          total_uzs?: number
         }
         Relationships: [
           {
@@ -115,33 +124,42 @@ export type Database = {
           comment: string | null
           created_at: string
           created_by: string | null
+          currency: string
+          exchange_rate: number
           id: string
           income_date: string
           payment_type: string | null
           receipt_url: string | null
           source: string
+          total_uzs: number
         }
         Insert: {
           amount?: number
           comment?: string | null
           created_at?: string
           created_by?: string | null
+          currency?: string
+          exchange_rate?: number
           id?: string
           income_date?: string
           payment_type?: string | null
           receipt_url?: string | null
           source?: string
+          total_uzs?: number
         }
         Update: {
           amount?: number
           comment?: string | null
           created_at?: string
           created_by?: string | null
+          currency?: string
+          exchange_rate?: number
           id?: string
           income_date?: string
           payment_type?: string | null
           receipt_url?: string | null
           source?: string
+          total_uzs?: number
         }
         Relationships: []
       }
