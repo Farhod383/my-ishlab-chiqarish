@@ -343,29 +343,21 @@ export default function KassaPage() {
       <div className="grid sm:grid-cols-3 gap-4">
         <Card><CardContent className="p-4 space-y-2">
           <div className="text-xs text-muted-foreground">{k.balance ?? "Balans"}</div>
-          {renderCurList(balByCur, "balance")}
-          <div className="pt-2 border-t">
-            <div className="text-[10px] text-muted-foreground uppercase">{k.totalUzs ?? "Umumiy (UZS)"}</div>
-            <div className={`text-lg font-bold font-mono ${balance < 0 ? "text-status-red" : "text-status-green"}`}>{fmt(balance)} {t.common.sum}</div>
-          </div>
+          <div className={`text-2xl font-bold font-mono ${balance < 0 ? "text-status-red" : "text-status-green"}`}>{fmt(balance)} <span className="text-xs text-muted-foreground font-sans">{t.common.sum}</span></div>
+          {renderForeign(balByCur, "balance")}
         </CardContent></Card>
         <Card><CardContent className="p-4 space-y-2">
           <div className="text-xs text-muted-foreground">{k.totalIncome ?? "Jami kirim"}</div>
-          {renderCurList(incByCur, "in")}
-          <div className="pt-2 border-t">
-            <div className="text-[10px] text-muted-foreground uppercase">{k.totalUzs ?? "Umumiy (UZS)"}</div>
-            <div className="text-lg font-bold font-mono text-status-green">{fmt(totalInc)} {t.common.sum}</div>
-          </div>
+          <div className="text-2xl font-bold font-mono text-status-green">{fmt(totalInc)} <span className="text-xs text-muted-foreground font-sans">{t.common.sum}</span></div>
+          {renderForeign(incByCur, "in")}
         </CardContent></Card>
         <Card><CardContent className="p-4 space-y-2">
           <div className="text-xs text-muted-foreground">{k.totalExpenses ?? "Jami chiqim"}</div>
-          {renderCurList(expByCur, "out")}
-          <div className="pt-2 border-t">
-            <div className="text-[10px] text-muted-foreground uppercase">{k.totalUzs ?? "Umumiy (UZS)"}</div>
-            <div className="text-lg font-bold font-mono text-status-red">{fmt(totalExp)} {t.common.sum}</div>
-          </div>
+          <div className="text-2xl font-bold font-mono text-status-red">{fmt(totalExp)} <span className="text-xs text-muted-foreground font-sans">{t.common.sum}</span></div>
+          {renderForeign(expByCur, "out")}
         </CardContent></Card>
       </div>
+
 
       <div className="flex gap-2 items-end flex-wrap">
         <div className="relative flex-1 min-w-[220px]">
