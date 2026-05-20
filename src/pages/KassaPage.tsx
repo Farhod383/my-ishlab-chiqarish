@@ -163,6 +163,38 @@ export default function KassaPage() {
   const totalInc = fInc.reduce((s, e) => s + Number(e.total_uzs || e.amount || 0), 0);
   const balance = totalInc - totalExp;
 
+  const sumByCurrency = (rows: any[]) => {
+    const m: Record<string, number> = {};
+    for (const r of rows) {
+      const c = r.currency || "UZS";
+      m[c] = (m[c] || 0) + (Number(r.amount) || 0);
+    }
+    return m;
+  };
+  const incByCur = useMemo(() => sumByCurrency(fInc), [fInc]);
+  const expByCur = useMemo(() => sumByCurrency(fExp), [fExp]);
+  const balByCur = useMemo(() => {
+    const m: Record<string, number> = { ...incByCur };
+    for (const [c, v] of Object.entries(expByCur)) m[c] = (m[c] || 0) - v;
+    return m;
+  }, [incByCur, expByCur]);
+
+  const CUR_SYMBOL: Record<string, string> = { UZS: "so'm", USD: "$", EUR: "€", RUB: "₽", CNY: "¥", KZT: "₸", TRY: "₺", GBP: "£", AED: "د.إ", INR: "₹", JPY: "¥", KRW: "₩", CHF: "Fr", CAD: "C$", AUD: "A$" };
+  const orderCur = (m: Record<string, number>) => Object.entries(m).filter(([, v]) => Math.abs(v) > 0.0001).sort(([a], [b]) => (a === "UZS" ? -1 : b === "UZS" ? 1 : a.localeCompare(b)));
+  const renderCurList = (m: Record<string, number>, tone: "balance" | "in" | "out") => {
+    const items = orderCur(m);
+    if (!items.length) return <div className="text-sm text-muted-foreground">—</div>;
+    return (
+      <div className="space-y-0.5">
+        {items.map(([c, v]) => (
+          <div key={c} className={`font-mono font-semibold ${tone === "in" ? "text-status-green" : tone === "out" ? "text-status-red" : v < 0 ? "text-status-red" : "text-status-green"} ${c === "UZS" ? "text-xl" : "text-sm"}`}>
+            {fmt(v)} <span className="text-xs text-muted-foreground font-sans">{CUR_SYMBOL[c] ?? c}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const saveExpense = async () => {
     if (!expForm.amount || !expForm.reason.trim()) { toast.error(k.fillFields ?? "Maydonlarni to'ldiring"); return; }
     if (expForm.currency !== "UZS" && (!expForm.exchange_rate || expForm.exchange_rate <= 0)) {
@@ -306,9 +338,30 @@ export default function KassaPage() {
       </div>
 
       <div className="grid sm:grid-cols-3 gap-4">
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{k.balance ?? "Balans"}</div><div className={`text-2xl font-bold font-mono mt-1 ${balance < 0 ? "text-status-red" : "text-status-green"}`}>{fmt(balance)} {t.common.sum}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{k.totalIncome ?? "Jami kirim"}</div><div className="text-2xl font-bold font-mono mt-1 text-status-green">{fmt(totalInc)} {t.common.sum}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{k.totalExpenses ?? "Jami chiqim"}</div><div className="text-2xl font-bold font-mono mt-1 text-status-red">{fmt(totalExp)} {t.common.sum}</div></CardContent></Card>
+        <Card><CardContent className="p-4 space-y-2">
+          <div className="text-xs text-muted-foreground">{k.balance ?? "Balans"}</div>
+          {renderCurList(balByCur, "balance")}
+          <div className="pt-2 border-t">
+            <div className="text-[10px] text-muted-foreground uppercase">{k.totalUzs ?? "Umumiy (UZS)"}</div>
+            <div className={`text-lg font-bold font-mono ${balance < 0 ? "text-status-red" : "text-status-green"}`}>{fmt(balance)} {t.common.sum}</div>
+          </div>
+        </CardContent></Card>
+        <Card><CardContent className="p-4 space-y-2">
+          <div className="text-xs text-muted-foreground">{k.totalIncome ?? "Jami kirim"}</div>
+          {renderCurList(incByCur, "in")}
+          <div className="pt-2 border-t">
+            <div className="text-[10px] text-muted-foreground uppercase">{k.totalUzs ?? "Umumiy (UZS)"}</div>
+            <div className="text-lg font-bold font-mono text-status-green">{fmt(totalInc)} {t.common.sum}</div>
+          </div>
+        </CardContent></Card>
+        <Card><CardContent className="p-4 space-y-2">
+          <div className="text-xs text-muted-foreground">{k.totalExpenses ?? "Jami chiqim"}</div>
+          {renderCurList(expByCur, "out")}
+          <div className="pt-2 border-t">
+            <div className="text-[10px] text-muted-foreground uppercase">{k.totalUzs ?? "Umumiy (UZS)"}</div>
+            <div className="text-lg font-bold font-mono text-status-red">{fmt(totalExp)} {t.common.sum}</div>
+          </div>
+        </CardContent></Card>
       </div>
 
       <div className="flex gap-2 items-end flex-wrap">
