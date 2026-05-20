@@ -163,6 +163,38 @@ export default function KassaPage() {
   const totalInc = fInc.reduce((s, e) => s + Number(e.total_uzs || e.amount || 0), 0);
   const balance = totalInc - totalExp;
 
+  const sumByCurrency = (rows: any[]) => {
+    const m: Record<string, number> = {};
+    for (const r of rows) {
+      const c = r.currency || "UZS";
+      m[c] = (m[c] || 0) + (Number(r.amount) || 0);
+    }
+    return m;
+  };
+  const incByCur = useMemo(() => sumByCurrency(fInc), [fInc]);
+  const expByCur = useMemo(() => sumByCurrency(fExp), [fExp]);
+  const balByCur = useMemo(() => {
+    const m: Record<string, number> = { ...incByCur };
+    for (const [c, v] of Object.entries(expByCur)) m[c] = (m[c] || 0) - v;
+    return m;
+  }, [incByCur, expByCur]);
+
+  const CUR_SYMBOL: Record<string, string> = { UZS: "so'm", USD: "$", EUR: "€", RUB: "₽", CNY: "¥", KZT: "₸", TRY: "₺", GBP: "£", AED: "د.إ", INR: "₹", JPY: "¥", KRW: "₩", CHF: "Fr", CAD: "C$", AUD: "A$" };
+  const orderCur = (m: Record<string, number>) => Object.entries(m).filter(([, v]) => Math.abs(v) > 0.0001).sort(([a], [b]) => (a === "UZS" ? -1 : b === "UZS" ? 1 : a.localeCompare(b)));
+  const renderCurList = (m: Record<string, number>, tone: "balance" | "in" | "out") => {
+    const items = orderCur(m);
+    if (!items.length) return <div className="text-sm text-muted-foreground">—</div>;
+    return (
+      <div className="space-y-0.5">
+        {items.map(([c, v]) => (
+          <div key={c} className={`font-mono font-semibold ${tone === "in" ? "text-status-green" : tone === "out" ? "text-status-red" : v < 0 ? "text-status-red" : "text-status-green"} ${c === "UZS" ? "text-xl" : "text-sm"}`}>
+            {fmt(v)} <span className="text-xs text-muted-foreground font-sans">{CUR_SYMBOL[c] ?? c}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const saveExpense = async () => {
     if (!expForm.amount || !expForm.reason.trim()) { toast.error(k.fillFields ?? "Maydonlarni to'ldiring"); return; }
     if (expForm.currency !== "UZS" && (!expForm.exchange_rate || expForm.exchange_rate <= 0)) {
