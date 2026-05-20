@@ -193,13 +193,15 @@ export default function KassaPage() {
     const idx = CURRENCIES.indexOf(code);
     return idx === -1 ? CURRENCIES.length : idx;
   };
-  const allCurList = (m: Record<string, number>) =>
-    Object.entries(m)
-      .filter(([, v]) => Math.abs(v) > 0.0001)
+  const allCurList = (m: Record<string, number>) => {
+    const supported = CURRENCIES.map((c) => [c, Number(m[c]) || 0] as [string, number]);
+    const extra = Object.entries(m)
+      .filter(([c]) => !CURRENCIES.includes(c))
       .sort(([a], [b]) => currencyRank(a) - currencyRank(b) || a.localeCompare(b));
+    return [...supported, ...extra];
+  };
   const renderCurrencies = (m: Record<string, number>, tone: "balance" | "in" | "out") => {
     const items = allCurList(m);
-    if (!items.length) return <div className="text-2xl font-bold font-mono text-muted-foreground">0 <span className="text-xs font-sans">{t.common.sum}</span></div>;
     return (
       <div className="space-y-1.5">
         {items.map(([c, v]) => {
