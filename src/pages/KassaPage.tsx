@@ -73,7 +73,15 @@ export default function KassaPage() {
     setAllEmployees(allEmp ?? []);
     setLoading(false);
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    const channel = supabase
+      .channel("kassa-currency-totals")
+      .on("postgres_changes", { event: "*", schema: "public", table: "cash_incomes" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "cash_expenses" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const canManage = hasRole(["cashier", "admin"]);
   const fmt = (n: number) => fmtNum(n);
@@ -159,20 +167,21 @@ export default function KassaPage() {
   const fExp = useMemo(() => expenses.filter(e => inRange(e.expense_date) && matchSearch(e, "expense")), [expenses, filterFrom, filterTo, searchQ]);
   const fInc = useMemo(() => incomes.filter(i => inRange(i.income_date) && matchSearch(i, "income")), [incomes, filterFrom, filterTo, searchQ]);
 
-  const totalExp = fExp.reduce((s, e) => s + Number(e.total_uzs || e.amount || 0), 0);
-  const totalInc = fInc.reduce((s, e) => s + Number(e.total_uzs || e.amount || 0), 0);
-  const balance = totalInc - totalExp;
-
+  const normalizeCurrency = (currency: unknown) => {
+    const code = String(currency ?? "UZS").trim().toUpperCase();
+    return code || "UZS";
+  };
   const sumByCurrency = (rows: any[]) => {
     const m: Record<string, number> = {};
     for (const r of rows) {
-      const c = r.currency || "UZS";
-      m[c] = (m[c] || 0) + (Number(r.amount) || 0);
+      const c = normalizeCurrency(r.currency);
+      const amount = Number(r.amount) || 0;
+      m[c] = (m[c] || 0) + amount;
     }
     return m;
   };
-  const incByCur = useMemo(() => sumByCurrency(fInc), [fInc]);
-  const expByCur = useMemo(() => sumByCurrency(fExp), [fExp]);
+  const incByCur = useMemo(() => sumByCurrency(incomes), [incomes]);
+  const expByCur = useMemo(() => sumByCurrency(expenses), [expenses]);
   const balByCur = useMemo(() => {
     const m: Record<string, number> = { ...incByCur };
     for (const [c, v] of Object.entries(expByCur)) m[c] = (m[c] || 0) - v;
@@ -180,20 +189,23 @@ export default function KassaPage() {
   }, [incByCur, expByCur]);
 
   const CUR_SYMBOL: Record<string, string> = { UZS: "so'm", USD: "$", EUR: "€", RUB: "₽", CNY: "¥", KZT: "₸", TRY: "₺", GBP: "£", AED: "د.إ", INR: "₹", JPY: "¥", KRW: "₩", CHF: "Fr", CAD: "C$", AUD: "A$" };
+  const currencyRank = (code: string) => {
+    const idx = CURRENCIES.indexOf(code);
+    return idx === -1 ? CURRENCIES.length : idx;
+  };
   const allCurList = (m: Record<string, number>) =>
     Object.entries(m)
       .filter(([, v]) => Math.abs(v) > 0.0001)
-      .sort(([a], [b]) => (a === "UZS" ? -1 : b === "UZS" ? 1 : a.localeCompare(b)));
+      .sort(([a], [b]) => currencyRank(a) - currencyRank(b) || a.localeCompare(b));
   const renderCurrencies = (m: Record<string, number>, tone: "balance" | "in" | "out") => {
     const items = allCurList(m);
     if (!items.length) return <div className="text-2xl font-bold font-mono text-muted-foreground">0 <span className="text-xs font-sans">{t.common.sum}</span></div>;
     return (
-      <div className="space-y-1">
-        {items.map(([c, v], idx) => {
+      <div className="space-y-1.5">
+        {items.map(([c, v]) => {
           const color = tone === "in" ? "text-status-green" : tone === "out" ? "text-status-red" : v < 0 ? "text-status-red" : "text-status-green";
-          const size = idx === 0 ? "text-2xl" : "text-base";
           return (
-            <div key={c} className={`${size} font-bold font-mono ${color}`}>
+            <div key={c} className={`text-xl font-bold font-mono leading-tight tabular-nums ${color}`}>
               {fmt(v)} <span className="text-xs text-muted-foreground font-sans">{CUR_SYMBOL[c] ?? c}</span>
             </div>
           );
