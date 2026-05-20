@@ -180,14 +180,17 @@ export default function KassaPage() {
   }, [incByCur, expByCur]);
 
   const CUR_SYMBOL: Record<string, string> = { UZS: "so'm", USD: "$", EUR: "€", RUB: "₽", CNY: "¥", KZT: "₸", TRY: "₺", GBP: "£", AED: "د.إ", INR: "₹", JPY: "¥", KRW: "₩", CHF: "Fr", CAD: "C$", AUD: "A$" };
-  const orderCur = (m: Record<string, number>) => Object.entries(m).filter(([, v]) => Math.abs(v) > 0.0001).sort(([a], [b]) => (a === "UZS" ? -1 : b === "UZS" ? 1 : a.localeCompare(b)));
-  const renderCurList = (m: Record<string, number>, tone: "balance" | "in" | "out") => {
-    const items = orderCur(m);
-    if (!items.length) return <div className="text-sm text-muted-foreground">—</div>;
+  const foreignList = (m: Record<string, number>) =>
+    Object.entries(m)
+      .filter(([c, v]) => c !== "UZS" && Math.abs(v) > 0.0001)
+      .sort(([a], [b]) => a.localeCompare(b));
+  const renderForeign = (m: Record<string, number>, tone: "balance" | "in" | "out") => {
+    const items = foreignList(m);
+    if (!items.length) return null;
     return (
-      <div className="space-y-0.5">
+      <div className="pt-2 border-t space-y-0.5">
         {items.map(([c, v]) => (
-          <div key={c} className={`font-mono font-semibold ${tone === "in" ? "text-status-green" : tone === "out" ? "text-status-red" : v < 0 ? "text-status-red" : "text-status-green"} ${c === "UZS" ? "text-xl" : "text-sm"}`}>
+          <div key={c} className={`text-sm font-mono font-semibold ${tone === "in" ? "text-status-green" : tone === "out" ? "text-status-red" : v < 0 ? "text-status-red" : "text-status-green"}`}>
             {fmt(v)} <span className="text-xs text-muted-foreground font-sans">{CUR_SYMBOL[c] ?? c}</span>
           </div>
         ))}
@@ -340,29 +343,21 @@ export default function KassaPage() {
       <div className="grid sm:grid-cols-3 gap-4">
         <Card><CardContent className="p-4 space-y-2">
           <div className="text-xs text-muted-foreground">{k.balance ?? "Balans"}</div>
-          {renderCurList(balByCur, "balance")}
-          <div className="pt-2 border-t">
-            <div className="text-[10px] text-muted-foreground uppercase">{k.totalUzs ?? "Umumiy (UZS)"}</div>
-            <div className={`text-lg font-bold font-mono ${balance < 0 ? "text-status-red" : "text-status-green"}`}>{fmt(balance)} {t.common.sum}</div>
-          </div>
+          <div className={`text-2xl font-bold font-mono ${balance < 0 ? "text-status-red" : "text-status-green"}`}>{fmt(balance)} <span className="text-xs text-muted-foreground font-sans">{t.common.sum}</span></div>
+          {renderForeign(balByCur, "balance")}
         </CardContent></Card>
         <Card><CardContent className="p-4 space-y-2">
           <div className="text-xs text-muted-foreground">{k.totalIncome ?? "Jami kirim"}</div>
-          {renderCurList(incByCur, "in")}
-          <div className="pt-2 border-t">
-            <div className="text-[10px] text-muted-foreground uppercase">{k.totalUzs ?? "Umumiy (UZS)"}</div>
-            <div className="text-lg font-bold font-mono text-status-green">{fmt(totalInc)} {t.common.sum}</div>
-          </div>
+          <div className="text-2xl font-bold font-mono text-status-green">{fmt(totalInc)} <span className="text-xs text-muted-foreground font-sans">{t.common.sum}</span></div>
+          {renderForeign(incByCur, "in")}
         </CardContent></Card>
         <Card><CardContent className="p-4 space-y-2">
           <div className="text-xs text-muted-foreground">{k.totalExpenses ?? "Jami chiqim"}</div>
-          {renderCurList(expByCur, "out")}
-          <div className="pt-2 border-t">
-            <div className="text-[10px] text-muted-foreground uppercase">{k.totalUzs ?? "Umumiy (UZS)"}</div>
-            <div className="text-lg font-bold font-mono text-status-red">{fmt(totalExp)} {t.common.sum}</div>
-          </div>
+          <div className="text-2xl font-bold font-mono text-status-red">{fmt(totalExp)} <span className="text-xs text-muted-foreground font-sans">{t.common.sum}</span></div>
+          {renderForeign(expByCur, "out")}
         </CardContent></Card>
       </div>
+
 
       <div className="flex gap-2 items-end flex-wrap">
         <div className="relative flex-1 min-w-[220px]">
