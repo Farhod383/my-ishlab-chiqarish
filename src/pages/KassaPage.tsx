@@ -348,20 +348,18 @@ export default function KassaPage() {
       <div className="grid sm:grid-cols-3 gap-4">
         <Card><CardContent className="p-4 space-y-2">
           <div className="text-xs text-muted-foreground">{k.balance ?? "Balans"}</div>
-          <div className={`text-2xl font-bold font-mono ${balance < 0 ? "text-status-red" : "text-status-green"}`}>{fmt(balance)} <span className="text-xs text-muted-foreground font-sans">{t.common.sum}</span></div>
-          {renderForeign(balByCur, "balance")}
+          {renderCurrencies(balByCur, "balance")}
         </CardContent></Card>
         <Card><CardContent className="p-4 space-y-2">
           <div className="text-xs text-muted-foreground">{k.totalIncome ?? "Jami kirim"}</div>
-          <div className="text-2xl font-bold font-mono text-status-green">{fmt(totalInc)} <span className="text-xs text-muted-foreground font-sans">{t.common.sum}</span></div>
-          {renderForeign(incByCur, "in")}
+          {renderCurrencies(incByCur, "in")}
         </CardContent></Card>
         <Card><CardContent className="p-4 space-y-2">
           <div className="text-xs text-muted-foreground">{k.totalExpenses ?? "Jami chiqim"}</div>
-          <div className="text-2xl font-bold font-mono text-status-red">{fmt(totalExp)} <span className="text-xs text-muted-foreground font-sans">{t.common.sum}</span></div>
-          {renderForeign(expByCur, "out")}
+          {renderCurrencies(expByCur, "out")}
         </CardContent></Card>
       </div>
+
 
 
       <div className="flex gap-2 items-end flex-wrap">
