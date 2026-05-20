@@ -180,23 +180,28 @@ export default function KassaPage() {
   }, [incByCur, expByCur]);
 
   const CUR_SYMBOL: Record<string, string> = { UZS: "so'm", USD: "$", EUR: "€", RUB: "₽", CNY: "¥", KZT: "₸", TRY: "₺", GBP: "£", AED: "د.إ", INR: "₹", JPY: "¥", KRW: "₩", CHF: "Fr", CAD: "C$", AUD: "A$" };
-  const foreignList = (m: Record<string, number>) =>
+  const allCurList = (m: Record<string, number>) =>
     Object.entries(m)
-      .filter(([c, v]) => c !== "UZS" && Math.abs(v) > 0.0001)
-      .sort(([a], [b]) => a.localeCompare(b));
-  const renderForeign = (m: Record<string, number>, tone: "balance" | "in" | "out") => {
-    const items = foreignList(m);
-    if (!items.length) return null;
+      .filter(([, v]) => Math.abs(v) > 0.0001)
+      .sort(([a], [b]) => (a === "UZS" ? -1 : b === "UZS" ? 1 : a.localeCompare(b)));
+  const renderCurrencies = (m: Record<string, number>, tone: "balance" | "in" | "out") => {
+    const items = allCurList(m);
+    if (!items.length) return <div className="text-2xl font-bold font-mono text-muted-foreground">0 <span className="text-xs font-sans">{t.common.sum}</span></div>;
     return (
-      <div className="pt-2 border-t space-y-0.5">
-        {items.map(([c, v]) => (
-          <div key={c} className={`text-sm font-mono font-semibold ${tone === "in" ? "text-status-green" : tone === "out" ? "text-status-red" : v < 0 ? "text-status-red" : "text-status-green"}`}>
-            {fmt(v)} <span className="text-xs text-muted-foreground font-sans">{CUR_SYMBOL[c] ?? c}</span>
-          </div>
-        ))}
+      <div className="space-y-1">
+        {items.map(([c, v], idx) => {
+          const color = tone === "in" ? "text-status-green" : tone === "out" ? "text-status-red" : v < 0 ? "text-status-red" : "text-status-green";
+          const size = idx === 0 ? "text-2xl" : "text-base";
+          return (
+            <div key={c} className={`${size} font-bold font-mono ${color}`}>
+              {fmt(v)} <span className="text-xs text-muted-foreground font-sans">{CUR_SYMBOL[c] ?? c}</span>
+            </div>
+          );
+        })}
       </div>
     );
   };
+
 
   const saveExpense = async () => {
     if (!expForm.amount || !expForm.reason.trim()) { toast.error(k.fillFields ?? "Maydonlarni to'ldiring"); return; }
