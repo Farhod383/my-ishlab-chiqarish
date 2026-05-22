@@ -154,12 +154,15 @@ export default function HRPage() {
                   <TableHead>{hr.phone ?? "Telefon"}</TableHead>
                   <TableHead>{hr.hireDate ?? "Ish boshlagan"}</TableHead>
                   <TableHead>{hr.status ?? "Holat"}</TableHead>
+                  <TableHead><span className="inline-flex items-center gap-1"><Wrench className="h-3.5 w-3.5" />Instrumentlar</span></TableHead>
                   {canManage && <TableHead></TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
-                {!loading && employees.map(e => (
+                {loading && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
+                {!loading && employees.map(e => {
+                  const held = heldMap[e.id] ?? [];
+                  return (
                   <TableRow key={e.id}>
                     <TableCell className="font-medium">{e.full_name}</TableCell>
                     <TableCell className="text-sm">{e.position}</TableCell>
@@ -171,14 +174,31 @@ export default function HRPage() {
                         {e.status === "active" ? (hr.active ?? "Faol") : (hr.inactive ?? "Nofaol")}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-xs">
+                      {held.length === 0
+                        ? <span className="text-muted-foreground">—</span>
+                        : (
+                          <div className="space-y-0.5">
+                            {held.map(h => (
+                              <div key={h.id} className="flex items-center gap-1">
+                                <Wrench className="h-3 w-3 text-primary" />
+                                <span>{h.name} ×{h.quantity}</span>
+                                <span className="text-muted-foreground">({new Date(h.issued_at).toLocaleDateString()})</span>
+                              </div>
+                            ))}
+                          </div>
+                        )
+                      }
+                    </TableCell>
                     {canManage && (
                       <TableCell>
                         <Button size="sm" variant="ghost" onClick={() => openEdit(e)}><Edit2 className="h-3 w-3" /></Button>
                       </TableCell>
                     )}
                   </TableRow>
-                ))}
-                {!loading && employees.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{hr.empty ?? "Xodimlar yo'q"}</TableCell></TableRow>}
+                  );
+                })}
+                {!loading && employees.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{hr.empty ?? "Xodimlar yo'q"}</TableCell></TableRow>}
               </TableBody>
             </Table>
           </div>
@@ -187,3 +207,4 @@ export default function HRPage() {
     </div>
   );
 }
+
