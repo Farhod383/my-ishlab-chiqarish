@@ -18,6 +18,7 @@ import { useI18n } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
 import { fmtNum } from "@/lib/format";
 import { toast } from "sonner";
+import InstrumentsTab from "@/components/InstrumentsTab";
 
 const UNITS = ["dona", "kg", "metr", "litr", "rulon", "komplekt"] as const;
 
