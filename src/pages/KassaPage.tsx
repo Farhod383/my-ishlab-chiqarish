@@ -195,11 +195,7 @@ export default function KassaPage() {
     return idx === -1 ? CURRENCIES.length : idx;
   };
   const allCurList = (m: Record<string, number>) => {
-    const supported = CURRENCIES.map((c) => [c, Number(m[c]) || 0] as [string, number]);
-    const extra = Object.entries(m)
-      .filter(([c]) => !CURRENCIES.includes(c))
-      .sort(([a], [b]) => currencyRank(a) - currencyRank(b) || a.localeCompare(b));
-    return [...supported, ...extra];
+    return CARD_CURRENCIES.map((c) => [c, Number(m[c]) || 0] as [string, number]);
   };
   const renderCurrencies = (m: Record<string, number>, tone: "balance" | "in" | "out") => {
     const items = allCurList(m);
