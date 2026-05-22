@@ -383,6 +383,102 @@ export type Database = {
         }
         Relationships: []
       }
+      instrument_assignments: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: string
+          instrument_id: string
+          issue_comment: string | null
+          issued_at: string
+          issued_by: string | null
+          quantity: number
+          return_comment: string | null
+          returned_at: string | null
+          returned_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: string
+          instrument_id: string
+          issue_comment?: string | null
+          issued_at?: string
+          issued_by?: string | null
+          quantity?: number
+          return_comment?: string | null
+          returned_at?: string | null
+          returned_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: string
+          instrument_id?: string
+          issue_comment?: string | null
+          issued_at?: string
+          issued_by?: string | null
+          quantity?: number
+          return_comment?: string | null
+          returned_at?: string | null
+          returned_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instrument_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instrument_assignments_instrument_id_fkey"
+            columns: ["instrument_id"]
+            isOneToOne: false
+            referencedRelation: "instruments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instruments: {
+        Row: {
+          category: string
+          comment: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          inventory_number: string | null
+          name: string
+          quantity: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inventory_number?: string | null
+          name: string
+          quantity?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inventory_number?: string | null
+          name?: string
+          quantity?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_files: {
         Row: {
           created_at: string

@@ -1,40 +1,57 @@
-This is a large multi-area request. To ship it safely without breaking existing flows, I'll do it in 3 phases. Please confirm or reorder priorities before I start.
+# Instrument Management System
 
-## Phase 1 — Critical fixes (highest impact, smallest risk)
+Add a complete factory tool/instrument tracking module integrated with Warehouse and HR.
 
-1. **Order 404 fix (#11)** — Audit `/orders/:id` route, ensure `OrderDetail` loads any valid UUID, fix broken links (likely caused by stale IDs or missing tab routes). Add tabs: Stages, Warehouse, History, Audit, Workers, OTK, Reports, Files.
-2. **OTK restructure (#4, #5, #6)**:
-   - OTK page → list of orders first; click opens vertical stage timeline
-   - Remove inline OTK textarea/checkbox/save from order list cards
-   - Stage start: require ≥1 worker (allow many via junction)
-   - Stage finish: require `qc_passed=true`, otherwise red warning "Sifat nazorati tasdiqlamagan"
-3. **Cashier edit permissions (#2)** — already mostly in place via RLS; verify edit buttons render for cashier on income/expense/employee rows.
-4. **Kassa search (#3)** — add search input with magnifier left of date filters; filter by recipient/source/amount/comment/type.
+## 1. Database (migration)
 
-## Phase 2 — Production & reporting
+New tables:
 
-5. **Multi-worker per stage (#6)** — new `stage_workers` table (stage_id, worker_id, worker_name). Keep existing `worker_id` for backward compat.
-6. **Production progress labels (#7)** — render stage names under each progress segment on ProductionBoard.
-7. **Audit log expansion (#8)** — log stage start/finish with worker names + durations; show columns: order#, stage, worker, start, end, duration.
-8. **Reports menu + Order Report (#9, #10)** — new `/reports` admin-only sidebar item; per-order report tab with stages/workers/durations/materials/OTK/dates; reuse existing `export-order-pdf` edge function.
+- **instruments** — name, category, inventory_number, quantity, status (active/repair/written_off), comment
+- **instrument_assignments** — instrument_id, employee_id, quantity, issued_at, returned_at (null = still held), issue_comment, return_comment, issued_by, returned_by
 
-## Phase 3 — Full i18n (#1)
+RLS: read for all authenticated; manage for `admin`, `warehouse`, `cashier`, `hr`.
 
-9. Add **RU** and **UZ-Cyrillic** translation files alongside existing `uz.ts`. Audit every page for hardcoded English strings, route them through `t.*`. This is the largest single task (~15 files, hundreds of strings) and best done last so earlier UI changes don't get re-translated.
+Triggers:
+- On INSERT into assignments → decrement `instruments.quantity`
+- On UPDATE setting `returned_at` → increment `instruments.quantity`
+
+Helper view/function: `employee_held_instruments(employee_id)` returning currently-held items.
+
+## 2. Warehouse page — new "Instrumentlar" tab
+
+Add third tab next to existing "Umumiy qoldiq" and "Harakatlar tarixi":
+
+- Search + table of instruments (name, category, inv #, qty, status)
+- Add / Edit / Delete dialogs (admin/warehouse/cashier)
+- Two action buttons: **Berish** (issue) and **Qaytarib olish** (return)
+  - Issue dialog: employee select, instrument select, quantity, date, comment
+  - Return dialog: employee select → filter instruments they hold → quantity, date, comment
+
+## 3. HR page integration
+
+In each employee row, add an expand/details button showing currently held instruments (name × qty, issue date). Also visible in employee edit dialog.
+
+## 4. Termination guard
+
+When changing employee status to `inactive` (or setting leave_date), check held instruments. If any exist → block save, show toast listing instruments. Otherwise proceed.
+
+## 5. Audit log
+
+Insert into `audit_log` on: instrument created/edited/deleted, issued, returned, termination blocked, terminated. Use existing `audit_log` table with entity='instrument'/'employee'.
+
+## 6. i18n
+
+Add Uzbek strings under `warehouse.instruments` and `hr.instruments` namespaces.
+
+## Files
+
+- `supabase/migrations/<new>.sql` — tables, RLS, triggers
+- `src/pages/WarehousePage.tsx` — add Instruments tab
+- `src/pages/HRPage.tsx` — held instruments display + termination guard
+- `src/i18n/uz.ts` — new strings
 
 ## Technical notes
 
-- New table: `stage_workers (id, stage_id, worker_id, worker_name, created_at)` with RLS for manager/admin/marketing.
-- Audit triggers: add inserts in stage start/finish handlers (frontend `logAudit` calls already exist — extend payload with worker + duration).
-- i18n: extend `I18nProvider` to support 3 locales with a switcher (already exists).
-- No data deletion. No user/role changes.
-
-## Question for you
-
-Phase 3 (full RU + UZ-Cyrillic translation) is the biggest chunk — roughly equal in effort to Phases 1+2 combined. Do you want me to:
-
-**A.** Do all 3 phases in one go (longer turnaround, single delivery)
-**B.** Ship Phase 1+2 first, then translations as a follow-up
-**C.** Start with translations only, then functional fixes
-
-I recommend **B** so you can test critical fixes immediately while I work on translations.
+- Realtime: subscribe to `instruments` and `instrument_assignments` on warehouse + HR pages
+- Quantity decrement uses SECURITY DEFINER trigger to bypass any future RLS concerns
+- Soft return (set `returned_at`) preserves history vs delete

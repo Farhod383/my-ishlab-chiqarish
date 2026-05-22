@@ -8,27 +8,45 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Users, Plus, Edit2 } from "lucide-react";
+import { Users, Plus, Edit2, Wrench, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
+import { logAudit } from "@/types/erp";
 import { toast } from "sonner";
 
 export default function HRPage() {
-  const { hasRole } = useAuth();
+  const { hasRole, user } = useAuth();
   const { t } = useI18n();
   const hr = (t as any).hr ?? {};
   const [employees, setEmployees] = useState<any[]>([]);
+  const [heldMap, setHeldMap] = useState<Record<string, { id: string; name: string; quantity: number; issued_at: string }[]>>({});
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ full_name: "", position: "", department: "", phone: "", hire_date: new Date().toISOString().slice(0, 10), leave_date: "", status: "active" });
 
   const load = async () => {
-    const { data } = await supabase.from("employees").select("*").order("full_name");
-    setEmployees(data ?? []);
+    const [eRes, aRes] = await Promise.all([
+      supabase.from("employees").select("*").order("full_name"),
+      supabase.from("instrument_assignments")
+        .select("id, employee_id, quantity, issued_at, instrument:instruments(name)")
+        .is("returned_at", null),
+    ]);
+    setEmployees(eRes.data ?? []);
+    const m: Record<string, any[]> = {};
+    (aRes.data ?? []).forEach((a: any) => {
+      (m[a.employee_id] ||= []).push({ id: a.id, name: a.instrument?.name ?? "?", quantity: a.quantity, issued_at: a.issued_at });
+    });
+    setHeldMap(m);
     setLoading(false);
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    const ch = supabase.channel("hr-instruments")
+      .on("postgres_changes", { event: "*", schema: "public", table: "instrument_assignments" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
 
   const canManage = hasRole(["hr", "admin", "cashier"]);
 
@@ -36,6 +54,22 @@ export default function HRPage() {
 
   const save = async () => {
     if (!form.full_name.trim()) { toast.error(hr.fillFields ?? "Maydonlarni to'ldiring"); return; }
+
+    // Termination guard: block status->inactive or setting leave_date if employee holds instruments
+    if (editId) {
+      const wasActive = employees.find(x => x.id === editId)?.status === "active";
+      const willBeTerminated = (form.status === "inactive" || !!form.leave_date) && wasActive;
+      if (willBeTerminated) {
+        const held = heldMap[editId] ?? [];
+        if (held.length > 0) {
+          const list = held.map(h => `• ${h.name} ×${h.quantity}`).join("\n");
+          toast.error("Xodimda topshirilmagan instrumentlar mavjud:\n" + list, { duration: 8000 });
+          await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Bo'shatish bloklandi", entity: "employee", details: `${form.full_name}: ${held.map(h => `${h.name} ×${h.quantity}`).join(", ")}` });
+          return;
+        }
+      }
+    }
+
     const payload: any = {
       full_name: form.full_name.trim(),
       position: form.position.trim(),
@@ -48,6 +82,9 @@ export default function HRPage() {
     if (editId) {
       const { error } = await supabase.from("employees").update(payload).eq("id", editId);
       if (error) { toast.error(error.message); return; }
+      if (payload.status === "inactive" || payload.leave_date) {
+        await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Xodim bo'shatildi", entity: "employee", details: payload.full_name });
+      }
     } else {
       const { error } = await supabase.from("employees").insert(payload);
       if (error) { toast.error(error.message); return; }
@@ -117,12 +154,15 @@ export default function HRPage() {
                   <TableHead>{hr.phone ?? "Telefon"}</TableHead>
                   <TableHead>{hr.hireDate ?? "Ish boshlagan"}</TableHead>
                   <TableHead>{hr.status ?? "Holat"}</TableHead>
+                  <TableHead><span className="inline-flex items-center gap-1"><Wrench className="h-3.5 w-3.5" />Instrumentlar</span></TableHead>
                   {canManage && <TableHead></TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
-                {!loading && employees.map(e => (
+                {loading && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
+                {!loading && employees.map(e => {
+                  const held = heldMap[e.id] ?? [];
+                  return (
                   <TableRow key={e.id}>
                     <TableCell className="font-medium">{e.full_name}</TableCell>
                     <TableCell className="text-sm">{e.position}</TableCell>
@@ -134,14 +174,31 @@ export default function HRPage() {
                         {e.status === "active" ? (hr.active ?? "Faol") : (hr.inactive ?? "Nofaol")}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-xs">
+                      {held.length === 0
+                        ? <span className="text-muted-foreground">—</span>
+                        : (
+                          <div className="space-y-0.5">
+                            {held.map(h => (
+                              <div key={h.id} className="flex items-center gap-1">
+                                <Wrench className="h-3 w-3 text-primary" />
+                                <span>{h.name} ×{h.quantity}</span>
+                                <span className="text-muted-foreground">({new Date(h.issued_at).toLocaleDateString()})</span>
+                              </div>
+                            ))}
+                          </div>
+                        )
+                      }
+                    </TableCell>
                     {canManage && (
                       <TableCell>
                         <Button size="sm" variant="ghost" onClick={() => openEdit(e)}><Edit2 className="h-3 w-3" /></Button>
                       </TableCell>
                     )}
                   </TableRow>
-                ))}
-                {!loading && employees.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{hr.empty ?? "Xodimlar yo'q"}</TableCell></TableRow>}
+                  );
+                })}
+                {!loading && employees.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{hr.empty ?? "Xodimlar yo'q"}</TableCell></TableRow>}
               </TableBody>
             </Table>
           </div>
@@ -150,3 +207,4 @@ export default function HRPage() {
     </div>
   );
 }
+
