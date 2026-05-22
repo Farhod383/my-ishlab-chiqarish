@@ -54,6 +54,22 @@ export default function HRPage() {
 
   const save = async () => {
     if (!form.full_name.trim()) { toast.error(hr.fillFields ?? "Maydonlarni to'ldiring"); return; }
+
+    // Termination guard: block status->inactive or setting leave_date if employee holds instruments
+    if (editId) {
+      const wasActive = employees.find(x => x.id === editId)?.status === "active";
+      const willBeTerminated = (form.status === "inactive" || !!form.leave_date) && wasActive;
+      if (willBeTerminated) {
+        const held = heldMap[editId] ?? [];
+        if (held.length > 0) {
+          const list = held.map(h => `• ${h.name} ×${h.quantity}`).join("\n");
+          toast.error("Xodimda topshirilmagan instrumentlar mavjud:\n" + list, { duration: 8000 });
+          await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Bo'shatish bloklandi", entity: "employee", details: `${form.full_name}: ${held.map(h => `${h.name} ×${h.quantity}`).join(", ")}` });
+          return;
+        }
+      }
+    }
+
     const payload: any = {
       full_name: form.full_name.trim(),
       position: form.position.trim(),
@@ -66,6 +82,9 @@ export default function HRPage() {
     if (editId) {
       const { error } = await supabase.from("employees").update(payload).eq("id", editId);
       if (error) { toast.error(error.message); return; }
+      if (payload.status === "inactive" || payload.leave_date) {
+        await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Xodim bo'shatildi", entity: "employee", details: payload.full_name });
+      }
     } else {
       const { error } = await supabase.from("employees").insert(payload);
       if (error) { toast.error(error.message); return; }
