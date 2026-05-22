@@ -602,7 +602,13 @@ export default function WarehousePage() {
         <TabsList>
           <TabsTrigger value="stock">{t.warehouse.tabs.stock}</TabsTrigger>
           <TabsTrigger value="history">{t.warehouse.tabs.history}</TabsTrigger>
+          <TabsTrigger value="instruments">Instrumentlar</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="instruments" className="mt-4">
+          <InstrumentsTab />
+        </TabsContent>
+
 
         <TabsContent value="stock" className="mt-4 space-y-3">
           <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={(t.warehouse as any).search} className="max-w-md" />
