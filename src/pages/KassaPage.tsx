@@ -18,6 +18,7 @@ import { logAudit } from "@/types/erp";
 import { fmtNum } from "@/lib/format";
 
 const PAYMENT_TYPES = ["cash", "card", "transfer", "other"];
+const CARD_CURRENCIES = ["UZS", "USD", "EUR", "CNY"];
 const CURRENCIES = ["UZS", "USD", "EUR", "RUB", "CNY", "KZT", "TRY", "GBP", "AED", "INR", "JPY", "KRW", "CHF", "CAD", "AUD"];
 
 type CurForm = { currency: string; exchange_rate: number };
@@ -194,11 +195,7 @@ export default function KassaPage() {
     return idx === -1 ? CURRENCIES.length : idx;
   };
   const allCurList = (m: Record<string, number>) => {
-    const supported = CURRENCIES.map((c) => [c, Number(m[c]) || 0] as [string, number]);
-    const extra = Object.entries(m)
-      .filter(([c]) => !CURRENCIES.includes(c))
-      .sort(([a], [b]) => currencyRank(a) - currencyRank(b) || a.localeCompare(b));
-    return [...supported, ...extra];
+    return CARD_CURRENCIES.map((c) => [c, Number(m[c]) || 0] as [string, number]);
   };
   const renderCurrencies = (m: Record<string, number>, tone: "balance" | "in" | "out") => {
     const items = allCurList(m);
