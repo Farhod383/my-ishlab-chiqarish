@@ -18,6 +18,7 @@ import { logAudit } from "@/types/erp";
 import { fmtNum } from "@/lib/format";
 
 const PAYMENT_TYPES = ["cash", "card", "transfer", "other"];
+const CARD_CURRENCIES = ["UZS", "USD", "EUR", "CNY"];
 const CURRENCIES = ["UZS", "USD", "EUR", "RUB", "CNY", "KZT", "TRY", "GBP", "AED", "INR", "JPY", "KRW", "CHF", "CAD", "AUD"];
 
 type CurForm = { currency: string; exchange_rate: number };
