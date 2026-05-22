@@ -14,21 +14,38 @@ import { useI18n } from "@/i18n/context";
 import { toast } from "sonner";
 
 export default function HRPage() {
-  const { hasRole } = useAuth();
+  const { hasRole, user } = useAuth();
   const { t } = useI18n();
   const hr = (t as any).hr ?? {};
   const [employees, setEmployees] = useState<any[]>([]);
+  const [heldMap, setHeldMap] = useState<Record<string, { id: string; name: string; quantity: number; issued_at: string }[]>>({});
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ full_name: "", position: "", department: "", phone: "", hire_date: new Date().toISOString().slice(0, 10), leave_date: "", status: "active" });
 
   const load = async () => {
-    const { data } = await supabase.from("employees").select("*").order("full_name");
-    setEmployees(data ?? []);
+    const [eRes, aRes] = await Promise.all([
+      supabase.from("employees").select("*").order("full_name"),
+      supabase.from("instrument_assignments")
+        .select("id, employee_id, quantity, issued_at, instrument:instruments(name)")
+        .is("returned_at", null),
+    ]);
+    setEmployees(eRes.data ?? []);
+    const m: Record<string, any[]> = {};
+    (aRes.data ?? []).forEach((a: any) => {
+      (m[a.employee_id] ||= []).push({ id: a.id, name: a.instrument?.name ?? "?", quantity: a.quantity, issued_at: a.issued_at });
+    });
+    setHeldMap(m);
     setLoading(false);
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    const ch = supabase.channel("hr-instruments")
+      .on("postgres_changes", { event: "*", schema: "public", table: "instrument_assignments" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
 
   const canManage = hasRole(["hr", "admin", "cashier"]);
 
