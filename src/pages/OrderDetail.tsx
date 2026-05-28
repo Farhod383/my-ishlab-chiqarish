@@ -58,8 +58,7 @@ export default function OrderDetail() {
   useEffect(() => { load(); }, [id]);
 
   const startStage = async (stage: StageRow) => {
-    const prev = stages.find((x) => x.stage_order === stage.stage_order - 1);
-    if (prev && prev.status !== "completed") { toast.error(t.orderDetail.prevError); return; }
+    // Parallel stages allowed: previous stage no longer required to be completed.
     if (!(stage as any).worker_name || !((stage as any).worker_name).trim()) {
       toast.error("Avval ishchi tayinlang"); return;
     }
