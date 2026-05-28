@@ -109,7 +109,10 @@ export default function WarehousePage() {
       setProfiles(map);
     }
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    supabase.from("locations").select("id, name").order("name").then(({ data }) => setLocations(data ?? []));
+  }, []);
 
   const canManage = hasRole(["warehouse", "admin"]);
   const canImport = hasRole(["warehouse", "supply", "admin"]);
