@@ -52,7 +52,6 @@ export default function ReturnsPage() {
       if (!up.error) image_url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
     }
     const emp = employees.find(e => e.id === form.returned_by_id);
-    const emp = employees.find(e => e.id === form.returned_by_id);
     const { error } = await supabase.from("returns").insert({
       product_id: form.product_id,
       quantity: form.quantity,
