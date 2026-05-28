@@ -152,6 +152,7 @@ export default function WarehousePage() {
       name: newName.trim(), unit: newUnit || "dona", last_price: priceN,
       min_limit: minN, phone: newPhone || null, image_url,
       source: newSource.trim() || null,
+      priority: newPriority, currency: newCurrency,
     } as any).select("id").single();
     if (error || !created) { toast.error(error?.message || "Error"); return; }
     if (qtyN > 0) {
