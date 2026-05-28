@@ -590,7 +590,21 @@ export default function WarehousePage() {
                       </Select>
                     </div>
                   </div>
-                  <div><Label>{t.supply.price}</Label><Input type="number" min={0} step={1} value={impPrice} onChange={e => setImpPrice(e.target.value)} placeholder="0" /></div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="col-span-2"><Label>{t.supply.price}</Label><Input type="number" min={0} step={1} value={impPrice} onChange={e => setImpPrice(e.target.value)} placeholder="0" /></div>
+                    <div><Label>Valyuta</Label>
+                      <Select value={impCurrency} onValueChange={setImpCurrency}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>{CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div><Label>Zavod / joylashuv</Label>
+                    <Select value={impLocation} onValueChange={setImpLocation}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{locations.map(l => <SelectItem key={l.id} value={l.name}>{l.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
                   {Number(impQty) > 0 && Number(impPrice) > 0 && (
                     <div className="text-sm bg-primary/5 border border-primary/20 rounded p-2 flex justify-between">
                       <span className="text-muted-foreground">{t.supply.totalValue}:</span>
