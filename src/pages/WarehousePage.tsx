@@ -452,6 +452,20 @@ export default function WarehousePage() {
                       <div><Label>{t.warehouse.minLimitField}</Label><Input type="number" min={0} value={newMin} onChange={e => setNewMin(e.target.value)} placeholder={(t.warehouse as any).minLimitPh} /></div>
                       <div><Label>{t.warehouse.price}</Label><Input type="number" min={0} value={newPrice} onChange={e => setNewPrice(e.target.value)} placeholder="0" /></div>
                     </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><Label>Muhimlik</Label>
+                        <Select value={newPriority} onValueChange={setNewPriority}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>{PRIORITY_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}><span className="inline-flex items-center gap-2"><span className={`inline-block h-2.5 w-2.5 rounded-full ${p.color}`} />{p.label}</span></SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div><Label>Valyuta</Label>
+                        <Select value={newCurrency} onValueChange={setNewCurrency}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>{CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                     <div><Label>{t.warehouse.phone}</Label><Input list="dl-phones" value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+998..." /></div>
                     <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={newSource} onChange={e => setNewSource(e.target.value)} placeholder={(t.warehouse as any).sourcePh} /></div>
                     <div><Label>{(t.warehouse.cols as any).supplier}</Label><Input list="dl-suppliers" value={newSupplier} onChange={e => setNewSupplier(e.target.value)} placeholder={t.supply.bringerPh} /></div>
