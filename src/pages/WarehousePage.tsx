@@ -663,7 +663,7 @@ export default function WarehousePage() {
                       const low = Number(p.stock_qty) <= Number(p.min_limit);
                       return (
                         <TableRow key={p.id} className={`cursor-pointer hover:bg-muted/40 ${low ? "bg-status-red/5" : ""}`} onClick={() => setSelectedProduct(p)}>
-                          <TableCell className="font-medium flex items-center gap-2"><Package className="h-4 w-4 text-muted-foreground" />{p.name}</TableCell>
+                          <TableCell className="font-medium flex items-center gap-2"><PriorityDot priority={p.priority} /><Package className="h-4 w-4 text-muted-foreground" />{p.name}{p.currency && p.currency !== "UZS" && <span className="text-[10px] font-mono bg-muted px-1 rounded">{p.currency}</span>}</TableCell>
                           <TableCell className="text-right font-mono">{p.stock_qty} {p.unit}</TableCell>
                           <TableCell className="text-right text-sm text-muted-foreground">{p.min_limit} {p.unit}</TableCell>
                           <TableCell className="text-right text-sm font-mono">{fmt(Number(p.last_price ?? 0))}</TableCell>
@@ -901,6 +901,20 @@ export default function WarehousePage() {
               <div><Label>{t.warehouse.phone}</Label><Input list="dl-phones" value={epPhone} onChange={e => setEpPhone(e.target.value)} /></div>
             </div>
             <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={epSource} onChange={e => setEpSource(e.target.value)} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Muhimlik</Label>
+                <Select value={epPriority} onValueChange={setEpPriority}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{PRIORITY_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}><span className="inline-flex items-center gap-2"><span className={`inline-block h-2.5 w-2.5 rounded-full ${p.color}`} />{p.label}</span></SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div><Label>Valyuta</Label>
+                <Select value={epCurrency} onValueChange={setEpCurrency}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
             <Button className="w-full" onClick={saveEditProduct}>{t.common.save}</Button>
           </div>
         </DialogContent>
