@@ -255,7 +255,9 @@ export default function WarehousePage() {
       recipient_name: impSupplier || null, created_by: user?.id,
       phone: impPhone || null, image_url: imgUrl,
       source: impSource.trim() || null,
-      comment: `${t.supply.title}${impSupplier ? `: ${impSupplier}` : ""}${priceN ? ` · ${fmt(priceN)} ${t.common.sum}/${t.common.pieces}` : ""}`,
+      location: impLocation || "Asosiy zavod",
+      currency: impCurrency || "UZS",
+      comment: `${t.supply.title}${impSupplier ? `: ${impSupplier}` : ""}${priceN ? ` · ${fmt(priceN)} ${impCurrency}/${t.common.pieces}` : ""} · ${impLocation}`,
     } as any);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
