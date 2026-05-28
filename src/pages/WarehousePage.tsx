@@ -273,6 +273,7 @@ export default function WarehousePage() {
     setEpName(p.name ?? ""); setEpUnit(p.unit ?? "dona");
     setEpPrice(String(p.last_price ?? "")); setEpMin(String(p.min_limit ?? ""));
     setEpPhone(p.phone ?? ""); setEpSource(p.source ?? "");
+    setEpPriority(p.priority ?? "green"); setEpCurrency(p.currency ?? "UZS");
     setEditProdOpen(true);
   };
   const saveEditProduct = async () => {
@@ -280,9 +281,10 @@ export default function WarehousePage() {
     const newVals = {
       name: epName.trim(), unit: epUnit, last_price: Number(epPrice) || 0,
       min_limit: Number(epMin) || 0, phone: epPhone || null, source: epSource.trim() || null,
+      priority: epPriority, currency: epCurrency,
     };
     const diffs: string[] = [];
-    (["name","unit","last_price","min_limit","phone","source"] as const).forEach(k => {
+    (["name","unit","last_price","min_limit","phone","source","priority","currency"] as const).forEach(k => {
       const oldV = (editProd as any)[k] ?? ""; const newV = (newVals as any)[k] ?? "";
       if (String(oldV) !== String(newV)) diffs.push(`${k}: ${oldV || "—"} → ${newV || "—"}`);
     });
