@@ -19,8 +19,10 @@ import { logAudit } from "@/types/erp";
 import { fmtNum } from "@/lib/format";
 import { toast } from "sonner";
 import InstrumentsTab from "@/components/InstrumentsTab";
+import { PriorityDot, PRIORITY_OPTIONS } from "@/components/PriorityDot";
 
 const UNITS = ["dona", "kg", "metr", "litr", "rulon", "komplekt"] as const;
+const CURRENCIES = ["UZS", "USD"] as const;
 
 export default function WarehousePage() {
   const { user, hasRole } = useAuth();
@@ -51,6 +53,8 @@ export default function WarehousePage() {
   const [newSource, setNewSource] = useState("");
   const [newSupplier, setNewSupplier] = useState("");
   const [newImage, setNewImage] = useState<File | null>(null);
+  const [newPriority, setNewPriority] = useState<string>("green");
+  const [newCurrency, setNewCurrency] = useState<string>("UZS");
 
   // Other output (no order)
   const [otherOpen, setOtherOpen] = useState(false);
@@ -71,13 +75,19 @@ export default function WarehousePage() {
   const [impPhone, setImpPhone] = useState("");
   const [impSource, setImpSource] = useState("");
   const [impImage, setImpImage] = useState<File | null>(null);
+  const [impLocation, setImpLocation] = useState<string>("Asosiy zavod");
+  const [impCurrency, setImpCurrency] = useState<string>("UZS");
+  const [locations, setLocations] = useState<{ id: string; name: string }[]>([]);
 
   // Edit product
+  const [editProdOpen, setEditProdOpen] = useState(false);
+  const [editProd, setEditProd] = useState<any | null>(null);
   const [editProdOpen, setEditProdOpen] = useState(false);
   const [editProd, setEditProd] = useState<any | null>(null);
   const [epName, setEpName] = useState(""); const [epUnit, setEpUnit] = useState("dona");
   const [epPrice, setEpPrice] = useState(""); const [epMin, setEpMin] = useState("");
   const [epPhone, setEpPhone] = useState(""); const [epSource, setEpSource] = useState("");
+  const [epPriority, setEpPriority] = useState("green"); const [epCurrency, setEpCurrency] = useState("UZS");
 
   // Edit movement
   const [editMovOpen, setEditMovOpen] = useState(false);
