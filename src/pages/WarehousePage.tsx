@@ -82,8 +82,6 @@ export default function WarehousePage() {
   // Edit product
   const [editProdOpen, setEditProdOpen] = useState(false);
   const [editProd, setEditProd] = useState<any | null>(null);
-  const [editProdOpen, setEditProdOpen] = useState(false);
-  const [editProd, setEditProd] = useState<any | null>(null);
   const [epName, setEpName] = useState(""); const [epUnit, setEpUnit] = useState("dona");
   const [epPrice, setEpPrice] = useState(""); const [epMin, setEpMin] = useState("");
   const [epPhone, setEpPhone] = useState(""); const [epSource, setEpSource] = useState("");
