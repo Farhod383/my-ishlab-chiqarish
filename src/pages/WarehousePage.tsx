@@ -19,8 +19,10 @@ import { logAudit } from "@/types/erp";
 import { fmtNum } from "@/lib/format";
 import { toast } from "sonner";
 import InstrumentsTab from "@/components/InstrumentsTab";
+import { PriorityDot, PRIORITY_OPTIONS } from "@/components/PriorityDot";
 
 const UNITS = ["dona", "kg", "metr", "litr", "rulon", "komplekt"] as const;
+const CURRENCIES = ["UZS", "USD"] as const;
 
 export default function WarehousePage() {
   const { user, hasRole } = useAuth();
@@ -51,6 +53,8 @@ export default function WarehousePage() {
   const [newSource, setNewSource] = useState("");
   const [newSupplier, setNewSupplier] = useState("");
   const [newImage, setNewImage] = useState<File | null>(null);
+  const [newPriority, setNewPriority] = useState<string>("green");
+  const [newCurrency, setNewCurrency] = useState<string>("UZS");
 
   // Other output (no order)
   const [otherOpen, setOtherOpen] = useState(false);
@@ -71,6 +75,9 @@ export default function WarehousePage() {
   const [impPhone, setImpPhone] = useState("");
   const [impSource, setImpSource] = useState("");
   const [impImage, setImpImage] = useState<File | null>(null);
+  const [impLocation, setImpLocation] = useState<string>("Asosiy zavod");
+  const [impCurrency, setImpCurrency] = useState<string>("UZS");
+  const [locations, setLocations] = useState<{ id: string; name: string }[]>([]);
 
   // Edit product
   const [editProdOpen, setEditProdOpen] = useState(false);
@@ -78,6 +85,7 @@ export default function WarehousePage() {
   const [epName, setEpName] = useState(""); const [epUnit, setEpUnit] = useState("dona");
   const [epPrice, setEpPrice] = useState(""); const [epMin, setEpMin] = useState("");
   const [epPhone, setEpPhone] = useState(""); const [epSource, setEpSource] = useState("");
+  const [epPriority, setEpPriority] = useState("green"); const [epCurrency, setEpCurrency] = useState("UZS");
 
   // Edit movement
   const [editMovOpen, setEditMovOpen] = useState(false);
@@ -101,7 +109,10 @@ export default function WarehousePage() {
       setProfiles(map);
     }
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    supabase.from("locations").select("id, name").order("name").then(({ data }) => setLocations(data ?? []));
+  }, []);
 
   const canManage = hasRole(["warehouse", "admin"]);
   const canImport = hasRole(["warehouse", "supply", "admin"]);
@@ -141,6 +152,7 @@ export default function WarehousePage() {
       name: newName.trim(), unit: newUnit || "dona", last_price: priceN,
       min_limit: minN, phone: newPhone || null, image_url,
       source: newSource.trim() || null,
+      priority: newPriority, currency: newCurrency,
     } as any).select("id").single();
     if (error || !created) { toast.error(error?.message || "Error"); return; }
     if (qtyN > 0) {
@@ -243,7 +255,9 @@ export default function WarehousePage() {
       recipient_name: impSupplier || null, created_by: user?.id,
       phone: impPhone || null, image_url: imgUrl,
       source: impSource.trim() || null,
-      comment: `${t.supply.title}${impSupplier ? `: ${impSupplier}` : ""}${priceN ? ` · ${fmt(priceN)} ${t.common.sum}/${t.common.pieces}` : ""}`,
+      location: impLocation || "Asosiy zavod",
+      currency: impCurrency || "UZS",
+      comment: `${t.supply.title}${impSupplier ? `: ${impSupplier}` : ""}${priceN ? ` · ${fmt(priceN)} ${impCurrency}/${t.common.pieces}` : ""} · ${impLocation}`,
     } as any);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
@@ -261,6 +275,7 @@ export default function WarehousePage() {
     setEpName(p.name ?? ""); setEpUnit(p.unit ?? "dona");
     setEpPrice(String(p.last_price ?? "")); setEpMin(String(p.min_limit ?? ""));
     setEpPhone(p.phone ?? ""); setEpSource(p.source ?? "");
+    setEpPriority(p.priority ?? "green"); setEpCurrency(p.currency ?? "UZS");
     setEditProdOpen(true);
   };
   const saveEditProduct = async () => {
@@ -268,9 +283,10 @@ export default function WarehousePage() {
     const newVals = {
       name: epName.trim(), unit: epUnit, last_price: Number(epPrice) || 0,
       min_limit: Number(epMin) || 0, phone: epPhone || null, source: epSource.trim() || null,
+      priority: epPriority, currency: epCurrency,
     };
     const diffs: string[] = [];
-    (["name","unit","last_price","min_limit","phone","source"] as const).forEach(k => {
+    (["name","unit","last_price","min_limit","phone","source","priority","currency"] as const).forEach(k => {
       const oldV = (editProd as any)[k] ?? ""; const newV = (newVals as any)[k] ?? "";
       if (String(oldV) !== String(newV)) diffs.push(`${k}: ${oldV || "—"} → ${newV || "—"}`);
     });
@@ -438,6 +454,20 @@ export default function WarehousePage() {
                       <div><Label>{t.warehouse.minLimitField}</Label><Input type="number" min={0} value={newMin} onChange={e => setNewMin(e.target.value)} placeholder={(t.warehouse as any).minLimitPh} /></div>
                       <div><Label>{t.warehouse.price}</Label><Input type="number" min={0} value={newPrice} onChange={e => setNewPrice(e.target.value)} placeholder="0" /></div>
                     </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><Label>Muhimlik</Label>
+                        <Select value={newPriority} onValueChange={setNewPriority}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>{PRIORITY_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}><span className="inline-flex items-center gap-2"><span className={`inline-block h-2.5 w-2.5 rounded-full ${p.color}`} />{p.label}</span></SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div><Label>Valyuta</Label>
+                        <Select value={newCurrency} onValueChange={setNewCurrency}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>{CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                     <div><Label>{t.warehouse.phone}</Label><Input list="dl-phones" value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+998..." /></div>
                     <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={newSource} onChange={e => setNewSource(e.target.value)} placeholder={(t.warehouse as any).sourcePh} /></div>
                     <div><Label>{(t.warehouse.cols as any).supplier}</Label><Input list="dl-suppliers" value={newSupplier} onChange={e => setNewSupplier(e.target.value)} placeholder={t.supply.bringerPh} /></div>
@@ -560,7 +590,21 @@ export default function WarehousePage() {
                       </Select>
                     </div>
                   </div>
-                  <div><Label>{t.supply.price}</Label><Input type="number" min={0} step={1} value={impPrice} onChange={e => setImpPrice(e.target.value)} placeholder="0" /></div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="col-span-2"><Label>{t.supply.price}</Label><Input type="number" min={0} step={1} value={impPrice} onChange={e => setImpPrice(e.target.value)} placeholder="0" /></div>
+                    <div><Label>Valyuta</Label>
+                      <Select value={impCurrency} onValueChange={setImpCurrency}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>{CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div><Label>Zavod / joylashuv</Label>
+                    <Select value={impLocation} onValueChange={setImpLocation}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{locations.map(l => <SelectItem key={l.id} value={l.name}>{l.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
                   {Number(impQty) > 0 && Number(impPrice) > 0 && (
                     <div className="text-sm bg-primary/5 border border-primary/20 rounded p-2 flex justify-between">
                       <span className="text-muted-foreground">{t.supply.totalValue}:</span>
@@ -635,7 +679,7 @@ export default function WarehousePage() {
                       const low = Number(p.stock_qty) <= Number(p.min_limit);
                       return (
                         <TableRow key={p.id} className={`cursor-pointer hover:bg-muted/40 ${low ? "bg-status-red/5" : ""}`} onClick={() => setSelectedProduct(p)}>
-                          <TableCell className="font-medium flex items-center gap-2"><Package className="h-4 w-4 text-muted-foreground" />{p.name}</TableCell>
+                          <TableCell className="font-medium flex items-center gap-2"><PriorityDot priority={p.priority} /><Package className="h-4 w-4 text-muted-foreground" />{p.name}{p.currency && p.currency !== "UZS" && <span className="text-[10px] font-mono bg-muted px-1 rounded">{p.currency}</span>}</TableCell>
                           <TableCell className="text-right font-mono">{p.stock_qty} {p.unit}</TableCell>
                           <TableCell className="text-right text-sm text-muted-foreground">{p.min_limit} {p.unit}</TableCell>
                           <TableCell className="text-right text-sm font-mono">{fmt(Number(p.last_price ?? 0))}</TableCell>
@@ -873,6 +917,20 @@ export default function WarehousePage() {
               <div><Label>{t.warehouse.phone}</Label><Input list="dl-phones" value={epPhone} onChange={e => setEpPhone(e.target.value)} /></div>
             </div>
             <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={epSource} onChange={e => setEpSource(e.target.value)} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Muhimlik</Label>
+                <Select value={epPriority} onValueChange={setEpPriority}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{PRIORITY_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}><span className="inline-flex items-center gap-2"><span className={`inline-block h-2.5 w-2.5 rounded-full ${p.color}`} />{p.label}</span></SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div><Label>Valyuta</Label>
+                <Select value={epCurrency} onValueChange={setEpCurrency}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
             <Button className="w-full" onClick={saveEditProduct}>{t.common.save}</Button>
           </div>
         </DialogContent>

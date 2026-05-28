@@ -383,6 +383,69 @@ export type Database = {
         }
         Relationships: []
       }
+      entity_audit: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_name: string | null
+          created_at: string
+          entity: string
+          entity_id: string | null
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          role: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          entity: string
+          entity_id?: string | null
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          role?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          entity?: string
+          entity_id?: string | null
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          role?: string | null
+        }
+        Relationships: []
+      }
+      form_history: {
+        Row: {
+          created_at: string
+          field_key: string
+          id: string
+          user_id: string | null
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          field_key: string
+          id?: string
+          user_id?: string | null
+          value: string
+        }
+        Update: {
+          created_at?: string
+          field_key?: string
+          id?: string
+          user_id?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       instrument_assignments: {
         Row: {
           created_at: string
@@ -476,6 +539,24 @@ export type Database = {
           quantity?: number
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      locations: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
         }
         Relationships: []
       }
@@ -699,36 +780,42 @@ export type Database = {
       products: {
         Row: {
           created_at: string
+          currency: string
           id: string
           image_url: string | null
           last_price: number
           min_limit: number
           name: string
           phone: string | null
+          priority: string
           source: string | null
           stock_qty: number
           unit: string
         }
         Insert: {
           created_at?: string
+          currency?: string
           id?: string
           image_url?: string | null
           last_price?: number
           min_limit?: number
           name: string
           phone?: string | null
+          priority?: string
           source?: string | null
           stock_qty?: number
           unit?: string
         }
         Update: {
           created_at?: string
+          currency?: string
           id?: string
           image_url?: string | null
           last_price?: number
           min_limit?: number
           name?: string
           phone?: string | null
+          priority?: string
           source?: string | null
           stock_qty?: number
           unit?: string
@@ -766,6 +853,8 @@ export type Database = {
           created_by: string | null
           id: string
           image_url: string | null
+          location: string
+          order_id: string | null
           product_id: string | null
           quantity: number
           reason: string | null
@@ -779,6 +868,8 @@ export type Database = {
           created_by?: string | null
           id?: string
           image_url?: string | null
+          location?: string
+          order_id?: string | null
           product_id?: string | null
           quantity?: number
           reason?: string | null
@@ -792,6 +883,8 @@ export type Database = {
           created_by?: string | null
           id?: string
           image_url?: string | null
+          location?: string
+          order_id?: string | null
           product_id?: string | null
           quantity?: number
           reason?: string | null
@@ -821,9 +914,11 @@ export type Database = {
           comment: string | null
           created_at: string
           created_by: string | null
+          currency: string
           direction: Database["public"]["Enums"]["movement_direction"]
           id: string
           image_url: string | null
+          location: string
           order_id: string | null
           phone: string | null
           product_id: string | null
@@ -838,9 +933,11 @@ export type Database = {
           comment?: string | null
           created_at?: string
           created_by?: string | null
+          currency?: string
           direction: Database["public"]["Enums"]["movement_direction"]
           id?: string
           image_url?: string | null
+          location?: string
           order_id?: string | null
           phone?: string | null
           product_id?: string | null
@@ -855,9 +952,11 @@ export type Database = {
           comment?: string | null
           created_at?: string
           created_by?: string | null
+          currency?: string
           direction?: Database["public"]["Enums"]["movement_direction"]
           id?: string
           image_url?: string | null
+          location?: string
           order_id?: string | null
           phone?: string | null
           product_id?: string | null

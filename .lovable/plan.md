@@ -1,57 +1,58 @@
-# Instrument Management System
+# Final Warehouse + HR + Instrument + Production Upgrade
 
-Add a complete factory tool/instrument tracking module integrated with Warehouse and HR.
+This is a large, multi-module change. I'll keep all existing data, the purple UI, current permissions, and deployment.
 
-## 1. Database (migration)
+## 1. Database changes (one migration)
+
+New columns (non-destructive, with safe defaults):
+- `products`: `priority` text default `'green'` (`green`/`yellow`/`red`), `currency` text default `'UZS'`
+- `stock_movements`: `location` text default `'Asosiy zavod'`, `currency` text default `'UZS'`, `unit_price_currency` text default `'UZS'`
+- `returns`: `order_id` uuid null, `location` text default `'Asosiy zavod'`
+- `cash_*`, `instruments`: untouched
 
 New tables:
+- `locations(id, name, created_at)` — seeded with `Asosiy zavod`, `Zavod51`
+- `form_history(id, field_key, value, user_id, created_at)` — for supplier/source/country/phone/recipient autocomplete; unique on (field_key,value)
+- `entity_audit(id, entity, entity_id, action, old_value jsonb, new_value jsonb, actor_id, actor_name, role, created_at)` — structured edit/delete log
 
-- **instruments** — name, category, inventory_number, quantity, status (active/repair/written_off), comment
-- **instrument_assignments** — instrument_id, employee_id, quantity, issued_at, returned_at (null = still held), issue_comment, return_comment, issued_by, returned_by
+GRANTs + RLS on all new tables (read all authenticated; manage limited per role).
 
-RLS: read for all authenticated; manage for `admin`, `warehouse`, `cashier`, `hr`.
+## 2. Shared components
 
-Triggers:
-- On INSERT into assignments → decrement `instruments.quantity`
-- On UPDATE setting `returned_at` → increment `instruments.quantity`
+- `ProductPicker.tsx` — searchable combobox (Command) used by all warehouse/instrument/order forms; shows `name — qty unit`.
+- `SmartAutocomplete.tsx` — text input with suggestions pulled from `form_history` (free-typed values still saved on submit).
+- `LocationSelect.tsx` — dropdown bound to `locations`.
+- `CurrencyToggle.tsx` — UZS/USD switch.
+- `PriorityDot.tsx` — green/yellow/red indicator.
+- `auditDiff.ts` — helper writing structured old→new entries to `entity_audit`.
 
-Helper view/function: `employee_held_instruments(employee_id)` returning currently-held items.
+## 3. Page updates
 
-## 2. Warehouse page — new "Instrumentlar" tab
+- **WarehousePage / SupplyPage / ReturnsPage / DefectsPage / InstrumentsTab**: use ProductPicker, SmartAutocomplete, LocationSelect, CurrencyToggle. Add edit/delete actions on every row with audit logging. Returns gets optional order link.
+- **Product create/edit**: priority + currency fields; priority dot in product list; per-location stock breakdown in detail.
+- **HRPage**: employee profile dialog with full instrument history (active + returned, with issuer, dates, comments). Termination guard already exists.
+- **ProductionBoard / OrderDetail**: remove the "only one stage running at a time" guard so Kesish/Payvandlash/Tayyorlash can run in parallel. Keep per-stage OTK, timing, worker, audit.
+- **AuditLog page + sidebar**: gate strictly to `admin` role (sidebar item hidden, route protected, direct URL blocked).
+- **Global edit/delete**: add Edit/Delete buttons across products, prixod, rasxod, vozvrat, brak, instruments, employees, stages, assignments, orders, kassa — each writes to `entity_audit` with old/new diff.
 
-Add third tab next to existing "Umumiy qoldiq" and "Harakatlar tarixi":
+## 4. Transliteration
 
-- Search + table of instruments (name, category, inv #, qty, status)
-- Add / Edit / Delete dialogs (admin/warehouse/cashier)
-- Two action buttons: **Berish** (issue) and **Qaytarib olish** (return)
-  - Issue dialog: employee select, instrument select, quantity, date, comment
-  - Return dialog: employee select → filter instruments they hold → quantity, date, comment
+- Add `src/lib/translit.ts` with Latin↔Cyrillic maps (uz-latin, uz-cyrl, ru).
+- HR table renders `full_name` through the active locale's transliterator. Stored value stays untouched.
 
-## 3. HR page integration
+## 5. UI
 
-In each employee row, add an expand/details button showing currently held instruments (name × qty, issue date). Also visible in employee edit dialog.
-
-## 4. Termination guard
-
-When changing employee status to `inactive` (or setting leave_date), check held instruments. If any exist → block save, show toast listing instruments. Otherwise proceed.
-
-## 5. Audit log
-
-Insert into `audit_log` on: instrument created/edited/deleted, issued, returned, termination blocked, terminated. Use existing `audit_log` table with entity='instrument'/'employee'.
-
-## 6. i18n
-
-Add Uzbek strings under `warehouse.instruments` and `hr.instruments` namespaces.
-
-## Files
-
-- `supabase/migrations/<new>.sql` — tables, RLS, triggers
-- `src/pages/WarehousePage.tsx` — add Instruments tab
-- `src/pages/HRPage.tsx` — held instruments display + termination guard
-- `src/i18n/uz.ts` — new strings
+- Keep purple tokens, spacing, layout. No visual overhaul — only new controls slot into existing dialogs/tables.
 
 ## Technical notes
 
-- Realtime: subscribe to `instruments` and `instrument_assignments` on warehouse + HR pages
-- Quantity decrement uses SECURITY DEFINER trigger to bypass any future RLS concerns
-- Soft return (set `returned_at`) preserves history vs delete
+- One migration file adds all columns/tables + GRANTs + RLS. No data loss.
+- `entity_audit` is additive; existing `audit_log` keeps working for legacy events.
+- All new selects fall back gracefully if `locations` is empty.
+- Parallel-stage change is a single guard removal; status transitions unchanged.
+
+## Scope acknowledgement
+
+This is ~12–15 files of edits plus 4–5 new components and one migration. I'll batch the work and verify build at the end.
+
+Approve to proceed, or tell me which sections to drop/prioritize (e.g. ship instruments + audit first, defer transliteration).

@@ -21,19 +21,22 @@ export default function ReturnsPage() {
   const [returns, setReturns] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ product_id: "", quantity: 1, returned_by_id: "", return_type: "worker_to_warehouse" as string, reason: "", comment: "", image: null as File | null });
+  const [form, setForm] = useState({ product_id: "", quantity: 1, returned_by_id: "", return_type: "worker_to_warehouse" as string, reason: "", comment: "", image: null as File | null, order_id: "" });
 
   const load = async () => {
-    const [{ data: ret }, { data: prod }, { data: emp }] = await Promise.all([
-      supabase.from("returns").select("*, product:products(name, unit), returned_by:employees(full_name)").order("created_at", { ascending: false }),
-      supabase.from("products").select("id, name, unit").order("name"),
+    const [{ data: ret }, { data: prod }, { data: emp }, { data: ord }] = await Promise.all([
+      supabase.from("returns").select("*, product:products(name, unit), returned_by:employees(full_name), order:orders(order_number)").order("created_at", { ascending: false }),
+      supabase.from("products").select("id, name, unit, stock_qty").order("name"),
       supabase.from("employees").select("id, full_name").eq("status", "active").order("full_name"),
+      supabase.from("orders").select("id, order_number, product_name").order("created_at", { ascending: false }).limit(200),
     ]);
     setReturns(ret ?? []);
     setProducts(prod ?? []);
     setEmployees(emp ?? []);
+    setOrders(ord ?? []);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
@@ -59,10 +62,11 @@ export default function ReturnsPage() {
       comment: form.comment.trim() || null,
       image_url,
       created_by: user?.id,
+      order_id: form.order_id || null,
     } as any);
     if (error) { toast.error(error.message); return; }
     toast.success(r.saved ?? "Saqlandi");
-    setForm({ product_id: "", quantity: 1, returned_by_id: "", return_type: "worker_to_warehouse", reason: "", comment: "", image: null });
+    setForm({ product_id: "", quantity: 1, returned_by_id: "", return_type: "worker_to_warehouse", reason: "", comment: "", image: null, order_id: "" });
     setOpen(false);
     load();
   };
@@ -83,7 +87,16 @@ export default function ReturnsPage() {
                 <div><Label>{r.product ?? "Mahsulot"}</Label>
                   <Select value={form.product_id} onValueChange={v => setForm({ ...form, product_id: v })}>
                     <SelectTrigger><SelectValue placeholder={r.selectProduct ?? "Tanlang"} /></SelectTrigger>
-                    <SelectContent>{products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                    <SelectContent>{products.map(p => <SelectItem key={p.id} value={p.id}>{p.name} ({p.stock_qty} {p.unit})</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Zakaz (ixtiyoriy)</Label>
+                  <Select value={form.order_id || "none"} onValueChange={v => setForm({ ...form, order_id: v === "none" ? "" : v })}>
+                    <SelectTrigger><SelectValue placeholder="Tanlash..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— Yo'q —</SelectItem>
+                      {orders.map(o => <SelectItem key={o.id} value={o.id}>{o.order_number} — {o.product_name}</SelectItem>)}
+                    </SelectContent>
                   </Select>
                 </div>
                 <div><Label>{r.qty ?? "Miqdor"}</Label><Input type="number" min={0.1} step={0.1} value={form.quantity} onChange={e => setForm({ ...form, quantity: Number(e.target.value) })} /></div>
