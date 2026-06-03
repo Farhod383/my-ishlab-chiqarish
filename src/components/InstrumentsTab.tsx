@@ -24,6 +24,8 @@ type Instrument = {
   quantity: number;
   status: string;
   comment: string | null;
+  price: number;
+  currency: string;
 };
 
 type Assignment = {
