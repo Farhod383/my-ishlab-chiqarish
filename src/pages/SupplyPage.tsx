@@ -96,8 +96,8 @@ export default function SupplyPage() {
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label>{t.supply.qty}</Label><Input type="number" min={0.1} step={0.1} value={qty || ""} onChange={e => setQty(Number(e.target.value))} /></div>
-                  <div><Label>{t.supply.price}</Label><Input type="number" min={0} step={1} value={price || ""} onChange={e => setPrice(Number(e.target.value))} placeholder="0" /></div>
+                  <div><Label>{t.supply.qty}</Label><NumberInput min={0.1} step={0.1} value={qty || ""} onChange={e => setQty(Number(e.target.value))} /></div>
+                  <div><Label>{t.supply.price}</Label><NumberInput min={0} step={1} value={price || ""} onChange={e => setPrice(Number(e.target.value))} placeholder="0" /></div>
                 </div>
                 {qty > 0 && price > 0 && (
                   <div className="text-sm bg-primary/5 border border-primary/20 rounded p-2 flex justify-between">
