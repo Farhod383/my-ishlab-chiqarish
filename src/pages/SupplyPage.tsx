@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import NumberInput from "@/components/NumberInput";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
