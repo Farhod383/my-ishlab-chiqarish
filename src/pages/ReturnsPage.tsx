@@ -86,10 +86,12 @@ export default function ReturnsPage() {
               <DialogHeader><DialogTitle>{r.add ?? "Vozvrat qo'shish"}</DialogTitle></DialogHeader>
               <div className="space-y-3">
                 <div><Label>{r.product ?? "Mahsulot"}</Label>
-                  <Select value={form.product_id} onValueChange={v => setForm({ ...form, product_id: v })}>
-                    <SelectTrigger><SelectValue placeholder={r.selectProduct ?? "Tanlang"} /></SelectTrigger>
-                    <SelectContent>{products.map(p => <SelectItem key={p.id} value={p.id}>{p.name} ({p.stock_qty} {p.unit})</SelectItem>)}</SelectContent>
-                  </Select>
+                  <ProductPicker
+                    products={products}
+                    value={form.product_id}
+                    onChange={v => setForm({ ...form, product_id: v })}
+                    placeholder={r.selectProduct ?? "Tanlang"}
+                  />
                 </div>
                 <div><Label>Zakaz (ixtiyoriy)</Label>
                   <Select value={form.order_id || "none"} onValueChange={v => setForm({ ...form, order_id: v === "none" ? "" : v })}>
