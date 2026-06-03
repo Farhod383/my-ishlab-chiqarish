@@ -13,6 +13,7 @@ import { RotateCcw, Plus } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { toast } from "sonner";
+import ProductPicker from "@/components/ProductPicker";
 
 export default function ReturnsPage() {
   const { user, hasRole } = useAuth();
