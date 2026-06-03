@@ -52,7 +52,7 @@ export default function EmployeesView() {
       supabase.from("employees").select("*").order("full_name"),
       supabase
         .from("instrument_assignments")
-        .select("*, instrument:instruments(name, inventory_number)")
+        .select("*, instrument:instruments(name, inventory_number, price, currency)")
         .order("issued_at", { ascending: false })
         .limit(1000),
     ]);
