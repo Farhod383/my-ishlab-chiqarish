@@ -13,6 +13,8 @@ import { Plus, Pencil, Trash2, Wrench, ArrowRightLeft, Undo2 } from "lucide-reac
 import { useAuth } from "@/auth/AuthContext";
 import { logAudit } from "@/types/erp";
 import { toast } from "sonner";
+import NumberInput from "@/components/NumberInput";
+import SearchableSelect from "@/components/SearchableSelect";
 
 type Instrument = {
   id: string;
@@ -204,19 +206,23 @@ export default function InstrumentsTab() {
                 <DialogHeader><DialogTitle>Instrument berish</DialogTitle></DialogHeader>
                 <div className="space-y-3">
                   <div><Label>Xodim *</Label>
-                    <Select value={issueForm.employee_id} onValueChange={v => setIssueForm({ ...issueForm, employee_id: v })}>
-                      <SelectTrigger><SelectValue placeholder="Tanlang" /></SelectTrigger>
-                      <SelectContent>{employees.map(e => <SelectItem key={e.id} value={e.id}>{e.full_name} {e.department && `(${e.department})`}</SelectItem>)}</SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      value={issueForm.employee_id}
+                      onChange={v => setIssueForm({ ...issueForm, employee_id: v })}
+                      placeholder="Xodim tanlang"
+                      options={employees.map(e => ({ value: e.id, label: e.full_name, hint: e.department }))}
+                    />
                   </div>
                   <div><Label>Instrument *</Label>
-                    <Select value={issueForm.instrument_id} onValueChange={v => setIssueForm({ ...issueForm, instrument_id: v })}>
-                      <SelectTrigger><SelectValue placeholder="Tanlang" /></SelectTrigger>
-                      <SelectContent>{instruments.filter(i => Number(i.quantity) > 0 && i.status === "active").map(i => <SelectItem key={i.id} value={i.id}>{i.name} (qoldiq: {i.quantity})</SelectItem>)}</SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      value={issueForm.instrument_id}
+                      onChange={v => setIssueForm({ ...issueForm, instrument_id: v })}
+                      placeholder="Instrument tanlang"
+                      options={instruments.filter(i => Number(i.quantity) > 0 && i.status === "active").map(i => ({ value: i.id, label: i.name, hint: `qoldiq: ${i.quantity}` }))}
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Miqdor *</Label><Input type="number" min={1} value={issueForm.quantity} onChange={e => setIssueForm({ ...issueForm, quantity: e.target.value })} /></div>
+                    <div><Label>Miqdor *</Label><NumberInput min={1} value={issueForm.quantity} onChange={e => setIssueForm({ ...issueForm, quantity: e.target.value })} /></div>
                     <div><Label>Sana</Label><Input type="date" value={issueForm.issued_at} onChange={e => setIssueForm({ ...issueForm, issued_at: e.target.value })} /></div>
                   </div>
                   <div><Label>Izoh</Label><Textarea value={issueForm.comment} onChange={e => setIssueForm({ ...issueForm, comment: e.target.value })} /></div>
@@ -231,22 +237,25 @@ export default function InstrumentsTab() {
                 <DialogHeader><DialogTitle>Instrument qaytarib olish</DialogTitle></DialogHeader>
                 <div className="space-y-3">
                   <div><Label>Xodim *</Label>
-                    <Select value={returnEmp} onValueChange={(v) => { setReturnEmp(v); setReturnAssignment(""); }}>
-                      <SelectTrigger><SelectValue placeholder="Tanlang" /></SelectTrigger>
-                      <SelectContent>
-                        {Object.keys(heldByEmp).map(empId => {
-                          const e = employees.find(x => x.id === empId) || assignments.find(a => a.employee_id === empId)?.employee;
-                          const name = (e as any)?.full_name ?? "?";
-                          return <SelectItem key={empId} value={empId}>{name} ({heldByEmp[empId].length})</SelectItem>;
-                        })}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      value={returnEmp}
+                      onChange={(v) => { setReturnEmp(v); setReturnAssignment(""); }}
+                      placeholder="Xodim tanlang"
+                      options={Object.keys(heldByEmp).map(empId => {
+                        const e = employees.find(x => x.id === empId) || assignments.find(a => a.employee_id === empId)?.employee;
+                        const name = (e as any)?.full_name ?? "?";
+                        return { value: empId, label: name, hint: `${heldByEmp[empId].length} ta` };
+                      })}
+                    />
                   </div>
                   <div><Label>Instrument *</Label>
-                    <Select value={returnAssignment} onValueChange={setReturnAssignment} disabled={!returnEmp}>
-                      <SelectTrigger><SelectValue placeholder={returnEmp ? "Tanlang" : "Avval xodimni tanlang"} /></SelectTrigger>
-                      <SelectContent>{empHeld.map(a => <SelectItem key={a.id} value={a.id}>{a.instrument?.name} ×{a.quantity} · {new Date(a.issued_at).toLocaleDateString()}</SelectItem>)}</SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      value={returnAssignment}
+                      onChange={setReturnAssignment}
+                      disabled={!returnEmp}
+                      placeholder={returnEmp ? "Tanlang" : "Avval xodimni tanlang"}
+                      options={empHeld.map(a => ({ value: a.id, label: `${a.instrument?.name} ×${a.quantity}`, hint: new Date(a.issued_at).toLocaleDateString() }))}
+                    />
                   </div>
                   <div><Label>Izoh</Label><Textarea value={returnComment} onChange={e => setReturnComment(e.target.value)} /></div>
                   <Button className="w-full" onClick={doReturn}>Saqlash</Button>
@@ -265,7 +274,7 @@ export default function InstrumentsTab() {
                     <div><Label>Inventar №</Label><Input value={iForm.inventory_number} onChange={e => setIForm({ ...iForm, inventory_number: e.target.value })} /></div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Miqdor *</Label><Input type="number" min={0} value={iForm.quantity} onChange={e => setIForm({ ...iForm, quantity: e.target.value })} disabled={!!iEditId} /></div>
+                    <div><Label>Miqdor *</Label><NumberInput min={0} value={iForm.quantity} onChange={e => setIForm({ ...iForm, quantity: e.target.value })} disabled={!!iEditId} /></div>
                     <div><Label>Holat</Label>
                       <Select value={iForm.status} onValueChange={v => setIForm({ ...iForm, status: v })}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
