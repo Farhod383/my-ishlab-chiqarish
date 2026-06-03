@@ -445,7 +445,7 @@ export default function WarehousePage() {
                   <div className="space-y-3">
                     <div><Label>{t.warehouse.productName} *</Label><Input list="dl-product-names" value={newName} onChange={e => setNewName(e.target.value)} /></div>
                     <div className="grid grid-cols-2 gap-3">
-                      <div><Label>{t.warehouse.qty} *</Label><Input type="number" inputMode="numeric" min={0} step="any" value={newQty} onChange={e => setNewQty(e.target.value.replace(/[^0-9.]/g, ""))} placeholder="0" /></div>
+                      <div><Label>{t.warehouse.qty} *</Label><NumberInput min={0} step="any" value={newQty} onChange={e => setNewQty(e.target.value.replace(/[^0-9.]/g, ""))} placeholder="0" /></div>
                       <div><Label>{t.warehouse.unit} *</Label>
                         <Select value={newUnit} onValueChange={setNewUnit}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
@@ -454,8 +454,8 @@ export default function WarehousePage() {
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <div><Label>{t.warehouse.minLimitField}</Label><Input type="number" min={0} value={newMin} onChange={e => setNewMin(e.target.value)} placeholder={(t.warehouse as any).minLimitPh} /></div>
-                      <div><Label>{t.warehouse.price}</Label><Input type="number" min={0} value={newPrice} onChange={e => setNewPrice(e.target.value)} placeholder="0" /></div>
+                      <div><Label>{t.warehouse.minLimitField}</Label><NumberInput min={0} value={newMin} onChange={e => setNewMin(e.target.value)} placeholder={(t.warehouse as any).minLimitPh} /></div>
+                      <div><Label>{t.warehouse.price}</Label><NumberInput min={0} value={newPrice} onChange={e => setNewPrice(e.target.value)} placeholder="0" /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div><Label>Muhimlik</Label>
@@ -486,17 +486,21 @@ export default function WarehousePage() {
                   <DialogHeader><DialogTitle>{t.warehouse.otherOutTitle}</DialogTitle></DialogHeader>
                   <div className="space-y-3">
                     <div><Label>{t.warehouse.cols.product}</Label>
-                      <Select value={otherProduct} onValueChange={setOtherProduct}>
-                        <SelectTrigger><SelectValue placeholder={t.supply.select} /></SelectTrigger>
-                        <SelectContent>{products.map(p => <SelectItem key={p.id} value={p.id}>{p.name} ({p.stock_qty} {p.unit})</SelectItem>)}</SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        value={otherProduct}
+                        onChange={setOtherProduct}
+                        placeholder={t.supply.select}
+                        options={products.map(p => ({ value: p.id, label: p.name, hint: `${p.stock_qty} ${p.unit}` }))}
+                      />
                     </div>
-                    <div><Label>{t.warehouse.qty}</Label><Input type="number" min={0.1} step={0.1} value={otherQty} onChange={e => setOtherQty(Number(e.target.value))} /></div>
+                    <div><Label>{t.warehouse.qty}</Label><NumberInput min={0.1} step={0.1} value={otherQty} onChange={e => setOtherQty(Number(e.target.value))} /></div>
                     <div><Label>{t.warehouse.takenBy}</Label>
-                      <Select value={otherRecipient} onValueChange={setOtherRecipient}>
-                        <SelectTrigger><SelectValue placeholder={t.warehouse.takenByPh} /></SelectTrigger>
-                        <SelectContent>{employees.map(e => <SelectItem key={e.id} value={e.full_name}>{e.full_name} {e.department && `(${e.department})`}</SelectItem>)}</SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        value={otherRecipient}
+                        onChange={setOtherRecipient}
+                        placeholder={t.warehouse.takenByPh}
+                        options={employees.map(e => ({ value: e.full_name, label: e.full_name, hint: e.department }))}
+                      />
                     </div>
                     <div><Label>{t.warehouse.reason} *</Label><Textarea value={otherReason} onChange={e => setOtherReason(e.target.value)} placeholder={t.warehouse.reasonPh} /></div>
                     <Button className="w-full" onClick={otherOut}>{t.warehouse.saveOut}</Button>
@@ -510,23 +514,29 @@ export default function WarehousePage() {
                   <DialogHeader><DialogTitle>{t.warehouse.releaseTitle}</DialogTitle></DialogHeader>
                   <div className="space-y-3">
                     <div><Label>{t.warehouse.cols.product}</Label>
-                      <Select value={outProduct} onValueChange={setOutProduct}>
-                        <SelectTrigger><SelectValue placeholder={t.supply.select} /></SelectTrigger>
-                        <SelectContent>{products.map(p => <SelectItem key={p.id} value={p.id}>{p.name} ({t.warehouse.cols.stock}: {p.stock_qty} {p.unit})</SelectItem>)}</SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        value={outProduct}
+                        onChange={setOutProduct}
+                        placeholder={t.supply.select}
+                        options={products.map(p => ({ value: p.id, label: p.name, hint: `${p.stock_qty} ${p.unit}` }))}
+                      />
                     </div>
                     <div><Label>{t.warehouse.forOrder}</Label>
-                      <Select value={outOrder} onValueChange={setOutOrder}>
-                        <SelectTrigger><SelectValue placeholder={t.warehouse.orderPh} /></SelectTrigger>
-                        <SelectContent>{orders.map(o => <SelectItem key={o.id} value={o.id}>{o.order_number} — {o.product_name}</SelectItem>)}</SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        value={outOrder}
+                        onChange={setOutOrder}
+                        placeholder={t.warehouse.orderPh}
+                        options={orders.map(o => ({ value: o.id, label: o.order_number, hint: o.product_name }))}
+                      />
                     </div>
-                    <div><Label>{t.warehouse.qty}</Label><Input type="number" min={0.1} step={0.1} value={outQty} onChange={e => setOutQty(Number(e.target.value))} /></div>
+                    <div><Label>{t.warehouse.qty}</Label><NumberInput min={0.1} step={0.1} value={outQty} onChange={e => setOutQty(Number(e.target.value))} /></div>
                     <div><Label>{t.warehouse.takenBy}</Label>
-                      <Select value={outRecipient} onValueChange={setOutRecipient}>
-                        <SelectTrigger><SelectValue placeholder={t.warehouse.takenByPh} /></SelectTrigger>
-                        <SelectContent>{employees.map(e => <SelectItem key={e.id} value={e.full_name}>{e.full_name} {e.department && `(${e.department})`}</SelectItem>)}</SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        value={outRecipient}
+                        onChange={setOutRecipient}
+                        placeholder={t.warehouse.takenByPh}
+                        options={employees.map(e => ({ value: e.full_name, label: e.full_name, hint: e.department }))}
+                      />
                     </div>
                     <div><Label>{t.warehouse.commentOpt}</Label><Textarea value={outComment} onChange={e => setOutComment(e.target.value)} /></div>
                     <Button className="w-full" onClick={release}>{t.warehouse.saveOut}</Button>
@@ -585,7 +595,7 @@ export default function WarehousePage() {
                     {impProductId && <p className="text-xs text-status-green mt-1">✓ Mavjud mahsulot — miqdor qo'shiladi</p>}
                   </div>
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="col-span-2"><Label>{t.supply.qty} *</Label><Input type="number" min={0.1} step={0.1} value={impQty} onChange={e => setImpQty(e.target.value)} placeholder={(t.warehouse as any).qtyPh} /></div>
+                    <div className="col-span-2"><Label>{t.supply.qty} *</Label><NumberInput min={0.1} step={0.1} value={impQty} onChange={e => setImpQty(e.target.value)} placeholder={(t.warehouse as any).qtyPh} /></div>
                     <div><Label>{t.warehouse.unit}</Label>
                       <Select value={impUnit} onValueChange={setImpUnit}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
@@ -594,7 +604,7 @@ export default function WarehousePage() {
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="col-span-2"><Label>{t.supply.price}</Label><Input type="number" min={0} step={1} value={impPrice} onChange={e => setImpPrice(e.target.value)} placeholder="0" /></div>
+                    <div className="col-span-2"><Label>{t.supply.price}</Label><NumberInput min={0} step={1} value={impPrice} onChange={e => setImpPrice(e.target.value)} placeholder="0" /></div>
                     <div><Label>Valyuta</Label>
                       <Select value={impCurrency} onValueChange={setImpCurrency}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
@@ -650,10 +660,15 @@ export default function WarehousePage() {
           <TabsTrigger value="stock">{t.warehouse.tabs.stock}</TabsTrigger>
           <TabsTrigger value="history">{t.warehouse.tabs.history}</TabsTrigger>
           <TabsTrigger value="instruments">Instrumentlar</TabsTrigger>
+          <TabsTrigger value="employees">Xodimlar</TabsTrigger>
         </TabsList>
 
         <TabsContent value="instruments" className="mt-4">
           <InstrumentsTab />
+        </TabsContent>
+
+        <TabsContent value="employees" className="mt-4">
+          <EmployeesView />
         </TabsContent>
 
 
@@ -720,6 +735,8 @@ export default function WarehousePage() {
                       <TableHead>{t.warehouse.cols.direction}</TableHead>
                       <TableHead>{t.warehouse.cols.product}</TableHead>
                       <TableHead className="text-right">{t.warehouse.cols.qty}</TableHead>
+                      <TableHead className="text-right">{t.warehouse.price}</TableHead>
+                      <TableHead>Zavod</TableHead>
                       <TableHead>{t.warehouse.cols.whoTook}</TableHead>
                       <TableHead>{(t.warehouse.cols as any).source}</TableHead>
                       <TableHead>{(t.warehouse.cols as any).addedBy}</TableHead>
@@ -741,6 +758,12 @@ export default function WarehousePage() {
                         <TableCell className={`text-right font-mono font-semibold ${m.direction==="out" ? "text-status-red" : "text-status-green"}`}>
                           {m.direction==="out"?"-":"+"}{m.quantity} {m.product?.unit}
                         </TableCell>
+                        <TableCell className="text-right text-xs font-mono">
+                          {Number(m.unit_price) > 0
+                            ? <>{fmt(Number(m.unit_price))} <span className="text-muted-foreground">{m.currency ?? "UZS"}</span></>
+                            : <span className="text-muted-foreground">—</span>}
+                        </TableCell>
+                        <TableCell className="text-xs">{m.location ?? "—"}</TableCell>
                         <TableCell className="text-sm">{m.recipient_name ?? <span className="text-muted-foreground">—</span>}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{m.source ?? "—"}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{profiles[m.created_by] ?? "—"}</TableCell>
@@ -752,7 +775,7 @@ export default function WarehousePage() {
                         </div></TableCell>}
                       </TableRow>
                     ))}
-                    {movements.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-6">{t.warehouse.noMov}</TableCell></TableRow>}
+                    {movements.length === 0 && <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-6">{t.warehouse.noMov}</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </div>
@@ -913,10 +936,10 @@ export default function WarehousePage() {
                   <SelectContent>{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div><Label>{t.warehouse.price}</Label><Input type="number" value={epPrice} onChange={e => setEpPrice(e.target.value)} /></div>
+              <div><Label>{t.warehouse.price}</Label><NumberInput value={epPrice} onChange={e => setEpPrice(e.target.value)} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>{t.warehouse.minLimitField}</Label><Input type="number" value={epMin} onChange={e => setEpMin(e.target.value)} /></div>
+              <div><Label>{t.warehouse.minLimitField}</Label><NumberInput value={epMin} onChange={e => setEpMin(e.target.value)} /></div>
               <div><Label>{t.warehouse.phone}</Label><Input list="dl-phones" value={epPhone} onChange={e => setEpPhone(e.target.value)} /></div>
             </div>
             <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={epSource} onChange={e => setEpSource(e.target.value)} /></div>
@@ -945,7 +968,7 @@ export default function WarehousePage() {
           <DialogHeader><DialogTitle>{t.common.edit} — {editMov?.direction === "in" ? t.warehouse.in : t.warehouse.out}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div className="text-sm text-muted-foreground">{editMov?.product?.name} · {editMov && fmtDateTime(editMov.created_at)}</div>
-            <div><Label>{t.warehouse.qty} *</Label><Input type="number" step="any" value={emQty} onChange={e => setEmQty(e.target.value)} /></div>
+            <div><Label>{t.warehouse.qty} *</Label><NumberInput step="any" value={emQty} onChange={e => setEmQty(e.target.value)} /></div>
             <div><Label>{editMov?.direction === "in" ? t.warehouse.cols.whoBrought : t.warehouse.cols.whoGot}</Label><Input list={editMov?.direction === "in" ? "dl-suppliers" : "dl-recipients"} value={emRecipient} onChange={e => setEmRecipient(e.target.value)} /></div>
             <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={emSource} onChange={e => setEmSource(e.target.value)} /></div>
             <div><Label>{t.warehouse.cols.comment}</Label><Textarea value={emComment} onChange={e => setEmComment(e.target.value)} /></div>
