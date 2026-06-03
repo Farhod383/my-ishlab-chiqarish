@@ -320,6 +320,7 @@ export default function InstrumentsTab() {
                   <TableHead>Inventar №</TableHead>
                   <TableHead className="text-right">Skladdagi qoldiq</TableHead>
                   <TableHead className="text-right">Berilgan</TableHead>
+                  <TableHead className="text-right">Narx</TableHead>
                   <TableHead>Holat</TableHead>
                   {canManage && <TableHead></TableHead>}
                 </TableRow>
