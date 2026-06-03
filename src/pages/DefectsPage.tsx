@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import NumberInput from "@/components/NumberInput";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -100,7 +101,7 @@ export default function DefectsPage() {
                   <SelectContent>{products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div><Label>{d.qty ?? "Miqdor"}</Label><Input type="number" min={0.1} step={0.1} value={form.quantity} onChange={e => setForm({ ...form, quantity: Number(e.target.value) })} /></div>
+              <div><Label>{d.qty ?? "Miqdor"}</Label><NumberInput min={0.1} step={0.1} value={form.quantity} onChange={e => setForm({ ...form, quantity: Number(e.target.value) })} /></div>
               <div><Label>{d.detectedBy ?? "Kim aniqladi"}</Label>
                 <Select value={form.detected_by_id} onValueChange={v => setForm({ ...form, detected_by_id: v })}>
                   <SelectTrigger><SelectValue placeholder={d.selectEmployee ?? "Xodim"} /></SelectTrigger>

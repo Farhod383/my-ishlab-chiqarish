@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import NumberInput from "@/components/NumberInput";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -102,7 +103,7 @@ export default function ReturnsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div><Label>{r.qty ?? "Miqdor"}</Label><Input type="number" min={0.1} step={0.1} value={form.quantity} onChange={e => setForm({ ...form, quantity: Number(e.target.value) })} /></div>
+                <div><Label>{r.qty ?? "Miqdor"}</Label><NumberInput min={0.1} step={0.1} value={form.quantity} onChange={e => setForm({ ...form, quantity: Number(e.target.value) })} /></div>
                 <div><Label>{r.returnedBy ?? "Kim qaytardi"}</Label>
                   <Select value={form.returned_by_id} onValueChange={v => setForm({ ...form, returned_by_id: v })}>
                     <SelectTrigger><SelectValue placeholder={r.selectEmployee ?? "Xodimni tanlang"} /></SelectTrigger>
