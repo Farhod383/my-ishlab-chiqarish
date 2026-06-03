@@ -13,6 +13,7 @@ import { RotateCcw, Plus } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { toast } from "sonner";
+import ProductPicker from "@/components/ProductPicker";
 
 export default function ReturnsPage() {
   const { user, hasRole } = useAuth();
@@ -85,10 +86,12 @@ export default function ReturnsPage() {
               <DialogHeader><DialogTitle>{r.add ?? "Vozvrat qo'shish"}</DialogTitle></DialogHeader>
               <div className="space-y-3">
                 <div><Label>{r.product ?? "Mahsulot"}</Label>
-                  <Select value={form.product_id} onValueChange={v => setForm({ ...form, product_id: v })}>
-                    <SelectTrigger><SelectValue placeholder={r.selectProduct ?? "Tanlang"} /></SelectTrigger>
-                    <SelectContent>{products.map(p => <SelectItem key={p.id} value={p.id}>{p.name} ({p.stock_qty} {p.unit})</SelectItem>)}</SelectContent>
-                  </Select>
+                  <ProductPicker
+                    products={products}
+                    value={form.product_id}
+                    onChange={v => setForm({ ...form, product_id: v })}
+                    placeholder={r.selectProduct ?? "Tanlang"}
+                  />
                 </div>
                 <div><Label>Zakaz (ixtiyoriy)</Label>
                   <Select value={form.order_id || "none"} onValueChange={v => setForm({ ...form, order_id: v === "none" ? "" : v })}>
@@ -136,11 +139,12 @@ export default function ReturnsPage() {
                   <TableHead className="text-right">{r.qty ?? "Miqdor"}</TableHead>
                   <TableHead>{r.returnedBy ?? "Kim qaytardi"}</TableHead>
                   <TableHead>{r.type ?? "Tur"}</TableHead>
+                  <TableHead>Zakaz</TableHead>
                   <TableHead>{r.reason ?? "Sabab"}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
+                {loading && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                 {!loading && returns.map(ret => (
                   <TableRow key={ret.id}>
                     <TableCell className="text-sm whitespace-nowrap">{new Date(ret.created_at).toLocaleString()}</TableCell>
@@ -152,10 +156,11 @@ export default function ReturnsPage() {
                         {ret.return_type === "worker_to_warehouse" ? (r.workerToWarehouse ?? "Ishchi→Sklad") : (r.warehouseToShop ?? "Sklad→Do'kon")}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-sm font-mono">{ret.order?.order_number ?? "—"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{ret.reason ?? "—"}</TableCell>
                   </TableRow>
                 ))}
-                {!loading && returns.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{r.empty ?? "Vozvratlar yo'q"}</TableCell></TableRow>}
+                {!loading && returns.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{r.empty ?? "Vozvratlar yo'q"}</TableCell></TableRow>}
               </TableBody>
             </Table>
           </div>

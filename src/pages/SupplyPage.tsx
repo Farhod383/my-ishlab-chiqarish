@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Truck, AlertTriangle, Plus } from "lucide-react";
@@ -13,6 +12,8 @@ import { useI18n } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
 import { fmtNum } from "@/lib/format";
 import { toast } from "sonner";
+import ProductPicker from "@/components/ProductPicker";
+import SmartAutocomplete, { rememberFormValue } from "@/components/SmartAutocomplete";
 
 export default function SupplyPage() {
   const { user, hasRole } = useAuth();
@@ -61,6 +62,10 @@ export default function SupplyPage() {
       action: "Mahsulot keltirildi", entity: "stock_movement",
       details: `${products.find(p=>p.id===pid)?.name}: +${qty} × ${fmt(price)} = ${fmt(qty * price)} ${t.common.sum}`,
     });
+    await Promise.all([
+      rememberFormValue("supplier", supplier, user?.id),
+      rememberFormValue("phone", phone, user?.id),
+    ]);
     toast.success(t.warehouse.inRecorded);
     setPid(""); setQty(0); setPrice(0); setSupplier(""); setPhone(""); setImage(null); setOpen(false);
     load();
@@ -82,10 +87,12 @@ export default function SupplyPage() {
               <DialogHeader><DialogTitle>{t.supply.receiveTitle}</DialogTitle></DialogHeader>
               <div className="space-y-3">
                 <div><Label>{t.supply.cols.product}</Label>
-                  <Select value={pid} onValueChange={setPid}>
-                    <SelectTrigger><SelectValue placeholder={t.supply.select} /></SelectTrigger>
-                    <SelectContent>{products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
-                  </Select>
+                  <ProductPicker
+                    products={products}
+                    value={pid}
+                    onChange={setPid}
+                    placeholder={t.supply.select}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>{t.supply.qty}</Label><Input type="number" min={0.1} step={0.1} value={qty || ""} onChange={e => setQty(Number(e.target.value))} /></div>
@@ -97,8 +104,8 @@ export default function SupplyPage() {
                     <span className="font-mono font-bold text-primary">{fmt(qty * price)} {t.common.sum}</span>
                   </div>
                 )}
-                <div><Label>{t.supply.bringer}</Label><Input value={supplier} onChange={e => setSupplier(e.target.value)} placeholder={t.supply.bringerPh} /></div>
-                <div><Label>{t.supply.phone}</Label><Input value={phone} onChange={e => setPhone(e.target.value)} placeholder={t.supply.phonePh} /></div>
+                <div><Label>{t.supply.bringer}</Label><SmartAutocomplete fieldKey="supplier" value={supplier} onChange={setSupplier} placeholder={t.supply.bringerPh} /></div>
+                <div><Label>{t.supply.phone}</Label><SmartAutocomplete fieldKey="phone" value={phone} onChange={setPhone} placeholder={t.supply.phonePh} /></div>
                 <div><Label>{t.supply.image}</Label><Input type="file" accept="image/*" onChange={e => setImage(e.target.files?.[0] ?? null)} /></div>
                 <Button className="w-full" onClick={receive}>{t.supply.saveIn}</Button>
               </div>
