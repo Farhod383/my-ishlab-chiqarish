@@ -83,10 +83,12 @@ export default function SupplyPage() {
               <DialogHeader><DialogTitle>{t.supply.receiveTitle}</DialogTitle></DialogHeader>
               <div className="space-y-3">
                 <div><Label>{t.supply.cols.product}</Label>
-                  <Select value={pid} onValueChange={setPid}>
-                    <SelectTrigger><SelectValue placeholder={t.supply.select} /></SelectTrigger>
-                    <SelectContent>{products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
-                  </Select>
+                  <ProductPicker
+                    products={products}
+                    value={pid}
+                    onChange={setPid}
+                    placeholder={t.supply.select}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>{t.supply.qty}</Label><Input type="number" min={0.1} step={0.1} value={qty || ""} onChange={e => setQty(Number(e.target.value))} /></div>
