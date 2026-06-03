@@ -288,6 +288,18 @@ export default function InstrumentsTab() {
                     </div>
                   </div>
                   {iEditId && <p className="text-xs text-muted-foreground">Miqdorni tahrirlash uchun berish/qaytarib olishdan foydalaning.</p>}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Narx</Label><NumberInput min={0} value={iForm.price} onChange={e => setIForm({ ...iForm, price: e.target.value })} /></div>
+                    <div><Label>Valyuta</Label>
+                      <Select value={iForm.currency} onValueChange={v => setIForm({ ...iForm, currency: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="UZS">UZS (so'm)</SelectItem>
+                          <SelectItem value="USD">USD ($)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                   <div><Label>Izoh</Label><Textarea value={iForm.comment} onChange={e => setIForm({ ...iForm, comment: e.target.value })} /></div>
                   <Button className="w-full" onClick={saveInstrument}>Saqlash</Button>
                 </div>
