@@ -6,7 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Users, Wrench, Eye } from "lucide-react";
+import { Users, Wrench, Eye, FileDown } from "lucide-react";
+import { useAuth } from "@/auth/AuthContext";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
 type Employee = {
   id: string;
@@ -28,7 +31,7 @@ type Assignment = {
   return_comment: string | null;
   issued_by: string | null;
   returned_by: string | null;
-  instrument?: { name: string; inventory_number: string | null } | null;
+  instrument?: { name: string; inventory_number: string | null; price: number | null; currency: string | null } | null;
 };
 
 /**
