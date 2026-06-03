@@ -239,3 +239,112 @@ export default function EmployeesView() {
     </div>
   );
 }
+
+const fmtMoney = (n: number) => Number(n || 0).toLocaleString("ru-RU");
+const fmtDT = (s?: string | null) => s ? new Date(s).toLocaleString("ru-RU") : "—";
+
+function exportEmployeePDF(
+  emp: Employee,
+  current: Assignment[],
+  history: Assignment[],
+  profiles: Record<string, string>,
+) {
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const W = doc.internal.pageSize.getWidth();
+  let y = 40;
+
+  doc.setFont("helvetica", "bold"); doc.setFontSize(16);
+  doc.text("Zavod - Xodim instrument hisoboti", W / 2, y, { align: "center" });
+  y += 20;
+  doc.setFontSize(12); doc.setTextColor(90, 70, 160);
+  doc.text(emp.full_name, W / 2, y, { align: "center" });
+  doc.setTextColor(0, 0, 0);
+  y += 14;
+  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(120, 120, 120);
+  doc.text(`Yaratilgan: ${new Date().toLocaleString("ru-RU")}`, W / 2, y, { align: "center" });
+  doc.setTextColor(0, 0, 0);
+  y += 14;
+
+  autoTable(doc, {
+    startY: y,
+    theme: "grid",
+    styles: { font: "helvetica", fontSize: 10, cellPadding: 4 },
+    headStyles: { fillColor: [120, 90, 200] },
+    head: [["Maydon", "Qiymat"]],
+    body: [
+      ["F.I.SH", emp.full_name],
+      ["Lavozim", emp.position || "—"],
+      ["Bo'lim", emp.department || "—"],
+      ["Telefon", emp.phone ?? "—"],
+      ["Holat", emp.status === "active" ? "Faol" : "Nofaol"],
+    ],
+    columnStyles: { 0: { cellWidth: 130, fontStyle: "bold", fillColor: [245, 240, 255] } },
+  });
+  y = (doc as any).lastAutoTable.finalY + 16;
+
+  doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+  doc.text(`Hozir berilgan (${current.length})`, 40, y); y += 6;
+  autoTable(doc, {
+    startY: y,
+    theme: "grid",
+    styles: { font: "helvetica", fontSize: 9, cellPadding: 3 },
+    headStyles: { fillColor: [120, 90, 200] },
+    head: [["Instrument", "Miqdor", "Narx", "Valyuta", "Berilgan sana"]],
+    body: current.length === 0
+      ? [["Yo'q", "", "", "", ""]]
+      : current.map(a => [
+          a.instrument?.name ?? "—",
+          String(a.quantity),
+          fmtMoney(Number(a.instrument?.price ?? 0)),
+          a.instrument?.currency ?? "—",
+          fmtDT(a.issued_at),
+        ]),
+    columnStyles: { 1: { halign: "right" }, 2: { halign: "right" } },
+  });
+  y = (doc as any).lastAutoTable.finalY + 16;
+
+  doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+  doc.text(`Tarixi (${history.length})`, 40, y); y += 6;
+  autoTable(doc, {
+    startY: y,
+    theme: "grid",
+    styles: { font: "helvetica", fontSize: 8, cellPadding: 3 },
+    headStyles: { fillColor: [120, 90, 200] },
+    head: [["Instrument", "Miqdor", "Berilgan", "Qaytarilgan", "Bergan", "Izoh"]],
+    body: history.length === 0
+      ? [["Yo'q", "", "", "", "", ""]]
+      : history.map(a => [
+          a.instrument?.name ?? "—",
+          String(a.quantity),
+          fmtDT(a.issued_at),
+          fmtDT(a.returned_at),
+          a.issued_by ? (profiles[a.issued_by] ?? "—") : "—",
+          a.return_comment ?? a.issue_comment ?? "—",
+        ]),
+    columnStyles: { 1: { halign: "right" } },
+  });
+  y = (doc as any).lastAutoTable.finalY + 16;
+
+  // Totals
+  const totals: Record<string, number> = {};
+  current.forEach(a => {
+    const cur = a.instrument?.currency ?? "UZS";
+    const price = Number(a.instrument?.price ?? 0);
+    totals[cur] = (totals[cur] ?? 0) + price * Number(a.quantity);
+  });
+  doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+  doc.text("Umumiy qiymat (hozir berilgan):", 40, y); y += 14;
+  doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+  const entries = Object.entries(totals);
+  if (entries.length === 0) {
+    doc.text("—", 40, y); y += 14;
+  } else {
+    entries.forEach(([cur, sum]) => {
+      const suffix = cur === "USD" ? "$" : cur === "UZS" ? "so'm" : cur;
+      doc.text(`${cur}: ${fmtMoney(sum)} ${suffix}`, 40, y);
+      y += 14;
+    });
+  }
+
+  doc.save(`${emp.full_name.replace(/\s+/g, "_")}-instrumentlar.pdf`);
+}
