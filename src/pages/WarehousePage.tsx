@@ -19,6 +19,9 @@ import { logAudit } from "@/types/erp";
 import { fmtNum } from "@/lib/format";
 import { toast } from "sonner";
 import InstrumentsTab from "@/components/InstrumentsTab";
+import EmployeesView from "@/components/EmployeesView";
+import NumberInput from "@/components/NumberInput";
+import SearchableSelect from "@/components/SearchableSelect";
 import { PriorityDot, PRIORITY_OPTIONS } from "@/components/PriorityDot";
 
 const UNITS = ["dona", "kg", "metr", "litr", "rulon", "komplekt"] as const;
