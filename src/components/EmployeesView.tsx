@@ -157,6 +157,14 @@ export default function EmployeesView() {
                 </DialogDescription>
               </DialogHeader>
 
+              {canExport && (
+                <div className="flex justify-end">
+                  <Button size="sm" variant="outline" onClick={() => exportEmployeePDF(active, empCurrent, empHistory, profiles)}>
+                    <FileDown className="h-4 w-4 mr-2" />PDF yuklab olish
+                  </Button>
+                </div>
+              )}
+
               <div className="space-y-4">
                 <div>
                   <h3 className="text-sm font-semibold flex items-center gap-2 mb-2"><Wrench className="h-4 w-4 text-status-green" />Hozir berilgan ({empCurrent.length})</h3>
@@ -165,6 +173,7 @@ export default function EmployeesView() {
                       <TableHeader><TableRow>
                         <TableHead>Instrument</TableHead>
                         <TableHead className="text-right">Miqdor</TableHead>
+                        <TableHead className="text-right">Narx</TableHead>
                         <TableHead>Berilgan sana</TableHead>
                         <TableHead>Bergan</TableHead>
                         <TableHead>Izoh</TableHead>
@@ -174,13 +183,14 @@ export default function EmployeesView() {
                           <TableRow key={a.id}>
                             <TableCell className="font-medium">{a.instrument?.name ?? "—"} {a.instrument?.inventory_number && <span className="text-xs text-muted-foreground">#{a.instrument.inventory_number}</span>}</TableCell>
                             <TableCell className="text-right font-mono">{a.quantity}</TableCell>
+                            <TableCell className="text-right font-mono text-sm">{Number(a.instrument?.price ?? 0) > 0 ? `${Number(a.instrument?.price).toLocaleString("ru-RU")} ${a.instrument?.currency ?? ""}` : "—"}</TableCell>
                             <TableCell className="text-xs whitespace-nowrap">{fmtDate(a.issued_at)}</TableCell>
                             <TableCell className="text-xs text-muted-foreground">{a.issued_by ? (profiles[a.issued_by] ?? "—") : "—"}</TableCell>
                             <TableCell className="text-xs italic text-muted-foreground max-w-[220px] truncate">{a.issue_comment ?? "—"}</TableCell>
                           </TableRow>
                         ))}
                         {empCurrent.length === 0 && (
-                          <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-4 text-sm">Hozir berilgan instrumentlar yo'q</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-4 text-sm">Hozir berilgan instrumentlar yo'q</TableCell></TableRow>
                         )}
                       </TableBody>
                     </Table>
@@ -194,6 +204,7 @@ export default function EmployeesView() {
                       <TableHeader><TableRow>
                         <TableHead>Instrument</TableHead>
                         <TableHead className="text-right">Miqdor</TableHead>
+                        <TableHead className="text-right">Narx</TableHead>
                         <TableHead>Berilgan</TableHead>
                         <TableHead>Qaytarilgan</TableHead>
                         <TableHead>Bergan</TableHead>
@@ -205,6 +216,7 @@ export default function EmployeesView() {
                           <TableRow key={a.id}>
                             <TableCell className="font-medium">{a.instrument?.name ?? "—"}</TableCell>
                             <TableCell className="text-right font-mono">{a.quantity}</TableCell>
+                            <TableCell className="text-right font-mono text-sm">{Number(a.instrument?.price ?? 0) > 0 ? `${Number(a.instrument?.price).toLocaleString("ru-RU")} ${a.instrument?.currency ?? ""}` : "—"}</TableCell>
                             <TableCell className="text-xs whitespace-nowrap">{fmtDate(a.issued_at)}</TableCell>
                             <TableCell className="text-xs whitespace-nowrap text-status-green">{fmtDate(a.returned_at)}</TableCell>
                             <TableCell className="text-xs text-muted-foreground">{a.issued_by ? (profiles[a.issued_by] ?? "—") : "—"}</TableCell>
@@ -213,7 +225,7 @@ export default function EmployeesView() {
                           </TableRow>
                         ))}
                         {empHistory.length === 0 && (
-                          <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-4 text-sm">Tarixiy yozuvlar yo'q</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-4 text-sm">Tarixiy yozuvlar yo'q</TableCell></TableRow>
                         )}
                       </TableBody>
                     </Table>
