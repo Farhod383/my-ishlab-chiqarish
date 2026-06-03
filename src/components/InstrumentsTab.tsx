@@ -59,7 +59,7 @@ export default function InstrumentsTab() {
   // add/edit instrument
   const [iOpen, setIOpen] = useState(false);
   const [iEditId, setIEditId] = useState<string | null>(null);
-  const [iForm, setIForm] = useState({ name: "", category: "", inventory_number: "", quantity: "1", status: "active", comment: "" });
+  const [iForm, setIForm] = useState({ name: "", category: "", inventory_number: "", quantity: "1", status: "active", comment: "", price: "0", currency: "UZS" });
 
   // issue
   const [issueOpen, setIssueOpen] = useState(false);
