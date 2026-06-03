@@ -62,6 +62,10 @@ export default function SupplyPage() {
       action: "Mahsulot keltirildi", entity: "stock_movement",
       details: `${products.find(p=>p.id===pid)?.name}: +${qty} × ${fmt(price)} = ${fmt(qty * price)} ${t.common.sum}`,
     });
+    await Promise.all([
+      rememberFormValue("supplier", supplier, user?.id),
+      rememberFormValue("phone", phone, user?.id),
+    ]);
     toast.success(t.warehouse.inRecorded);
     setPid(""); setQty(0); setPrice(0); setSupplier(""); setPhone(""); setImage(null); setOpen(false);
     load();
