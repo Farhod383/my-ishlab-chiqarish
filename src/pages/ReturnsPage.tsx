@@ -139,6 +139,7 @@ export default function ReturnsPage() {
                   <TableHead className="text-right">{r.qty ?? "Miqdor"}</TableHead>
                   <TableHead>{r.returnedBy ?? "Kim qaytardi"}</TableHead>
                   <TableHead>{r.type ?? "Tur"}</TableHead>
+                  <TableHead>Zakaz</TableHead>
                   <TableHead>{r.reason ?? "Sabab"}</TableHead>
                 </TableRow>
               </TableHeader>
