@@ -100,8 +100,8 @@ export default function SupplyPage() {
                     <span className="font-mono font-bold text-primary">{fmt(qty * price)} {t.common.sum}</span>
                   </div>
                 )}
-                <div><Label>{t.supply.bringer}</Label><Input value={supplier} onChange={e => setSupplier(e.target.value)} placeholder={t.supply.bringerPh} /></div>
-                <div><Label>{t.supply.phone}</Label><Input value={phone} onChange={e => setPhone(e.target.value)} placeholder={t.supply.phonePh} /></div>
+                <div><Label>{t.supply.bringer}</Label><SmartAutocomplete fieldKey="supplier" value={supplier} onChange={setSupplier} placeholder={t.supply.bringerPh} /></div>
+                <div><Label>{t.supply.phone}</Label><SmartAutocomplete fieldKey="phone" value={phone} onChange={setPhone} placeholder={t.supply.phonePh} /></div>
                 <div><Label>{t.supply.image}</Label><Input type="file" accept="image/*" onChange={e => setImage(e.target.files?.[0] ?? null)} /></div>
                 <Button className="w-full" onClick={receive}>{t.supply.saveIn}</Button>
               </div>
