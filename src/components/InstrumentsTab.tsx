@@ -126,6 +126,8 @@ export default function InstrumentsTab() {
       quantity: Number(iForm.quantity) || 0,
       status: iForm.status,
       comment: iForm.comment.trim() || null,
+      price: Number(iForm.price) || 0,
+      currency: iForm.currency || "UZS",
     };
     if (iEditId) {
       const { error } = await supabase.from("instruments").update(payload).eq("id", iEditId);
