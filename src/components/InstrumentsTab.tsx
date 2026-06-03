@@ -337,6 +337,7 @@ export default function InstrumentsTab() {
                       <TableCell className="text-sm font-mono">{it.inventory_number || "—"}</TableCell>
                       <TableCell className="text-right font-mono font-semibold">{it.quantity}</TableCell>
                       <TableCell className="text-right font-mono text-sm text-muted-foreground">{issued || "—"}</TableCell>
+                      <TableCell className="text-right font-mono text-sm">{Number(it.price) > 0 ? `${Number(it.price).toLocaleString("ru-RU")} ${it.currency}` : "—"}</TableCell>
                       <TableCell><Badge variant={it.status === "active" ? "default" : "secondary"}>{st?.l ?? it.status}</Badge></TableCell>
                       {canManage && (
                         <TableCell>
