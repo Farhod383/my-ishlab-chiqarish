@@ -144,7 +144,7 @@ export default function ReturnsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
+                {loading && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                 {!loading && returns.map(ret => (
                   <TableRow key={ret.id}>
                     <TableCell className="text-sm whitespace-nowrap">{new Date(ret.created_at).toLocaleString()}</TableCell>
@@ -156,10 +156,11 @@ export default function ReturnsPage() {
                         {ret.return_type === "worker_to_warehouse" ? (r.workerToWarehouse ?? "Ishchi→Sklad") : (r.warehouseToShop ?? "Sklad→Do'kon")}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-sm font-mono">{ret.order?.order_number ?? "—"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{ret.reason ?? "—"}</TableCell>
                   </TableRow>
                 ))}
-                {!loading && returns.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{r.empty ?? "Vozvratlar yo'q"}</TableCell></TableRow>}
+                {!loading && returns.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{r.empty ?? "Vozvratlar yo'q"}</TableCell></TableRow>}
               </TableBody>
             </Table>
           </div>
