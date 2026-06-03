@@ -104,7 +104,7 @@ export default function InstrumentsTab() {
     return m;
   }, [assignments]);
 
-  const resetIForm = () => setIForm({ name: "", category: "", inventory_number: "", quantity: "1", status: "active", comment: "" });
+  const resetIForm = () => setIForm({ name: "", category: "", inventory_number: "", quantity: "1", status: "active", comment: "", price: "0", currency: "UZS" });
 
   const openAdd = () => { setIEditId(null); resetIForm(); setIOpen(true); };
   const openEdit = (it: Instrument) => {
@@ -112,6 +112,7 @@ export default function InstrumentsTab() {
     setIForm({
       name: it.name, category: it.category ?? "", inventory_number: it.inventory_number ?? "",
       quantity: String(it.quantity), status: it.status, comment: it.comment ?? "",
+      price: String(it.price ?? 0), currency: it.currency ?? "UZS",
     });
     setIOpen(true);
   };
