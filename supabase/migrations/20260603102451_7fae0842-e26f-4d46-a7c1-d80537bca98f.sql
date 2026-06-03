@@ -1,0 +1,3 @@
+ALTER TABLE public.instruments
+  ADD COLUMN IF NOT EXISTS price numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS currency text NOT NULL DEFAULT 'UZS';

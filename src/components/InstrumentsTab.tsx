@@ -24,6 +24,8 @@ type Instrument = {
   quantity: number;
   status: string;
   comment: string | null;
+  price: number;
+  currency: string;
 };
 
 type Assignment = {
@@ -57,7 +59,7 @@ export default function InstrumentsTab() {
   // add/edit instrument
   const [iOpen, setIOpen] = useState(false);
   const [iEditId, setIEditId] = useState<string | null>(null);
-  const [iForm, setIForm] = useState({ name: "", category: "", inventory_number: "", quantity: "1", status: "active", comment: "" });
+  const [iForm, setIForm] = useState({ name: "", category: "", inventory_number: "", quantity: "1", status: "active", comment: "", price: "0", currency: "UZS" });
 
   // issue
   const [issueOpen, setIssueOpen] = useState(false);
@@ -102,7 +104,7 @@ export default function InstrumentsTab() {
     return m;
   }, [assignments]);
 
-  const resetIForm = () => setIForm({ name: "", category: "", inventory_number: "", quantity: "1", status: "active", comment: "" });
+  const resetIForm = () => setIForm({ name: "", category: "", inventory_number: "", quantity: "1", status: "active", comment: "", price: "0", currency: "UZS" });
 
   const openAdd = () => { setIEditId(null); resetIForm(); setIOpen(true); };
   const openEdit = (it: Instrument) => {
@@ -110,6 +112,7 @@ export default function InstrumentsTab() {
     setIForm({
       name: it.name, category: it.category ?? "", inventory_number: it.inventory_number ?? "",
       quantity: String(it.quantity), status: it.status, comment: it.comment ?? "",
+      price: String(it.price ?? 0), currency: it.currency ?? "UZS",
     });
     setIOpen(true);
   };
@@ -123,6 +126,8 @@ export default function InstrumentsTab() {
       quantity: Number(iForm.quantity) || 0,
       status: iForm.status,
       comment: iForm.comment.trim() || null,
+      price: Number(iForm.price) || 0,
+      currency: iForm.currency || "UZS",
     };
     if (iEditId) {
       const { error } = await supabase.from("instruments").update(payload).eq("id", iEditId);
@@ -283,6 +288,18 @@ export default function InstrumentsTab() {
                     </div>
                   </div>
                   {iEditId && <p className="text-xs text-muted-foreground">Miqdorni tahrirlash uchun berish/qaytarib olishdan foydalaning.</p>}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Narx</Label><NumberInput min={0} value={iForm.price} onChange={e => setIForm({ ...iForm, price: e.target.value })} /></div>
+                    <div><Label>Valyuta</Label>
+                      <Select value={iForm.currency} onValueChange={v => setIForm({ ...iForm, currency: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="UZS">UZS (so'm)</SelectItem>
+                          <SelectItem value="USD">USD ($)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                   <div><Label>Izoh</Label><Textarea value={iForm.comment} onChange={e => setIForm({ ...iForm, comment: e.target.value })} /></div>
                   <Button className="w-full" onClick={saveInstrument}>Saqlash</Button>
                 </div>
@@ -303,6 +320,7 @@ export default function InstrumentsTab() {
                   <TableHead>Inventar №</TableHead>
                   <TableHead className="text-right">Skladdagi qoldiq</TableHead>
                   <TableHead className="text-right">Berilgan</TableHead>
+                  <TableHead className="text-right">Narx</TableHead>
                   <TableHead>Holat</TableHead>
                   {canManage && <TableHead></TableHead>}
                 </TableRow>
@@ -319,6 +337,7 @@ export default function InstrumentsTab() {
                       <TableCell className="text-sm font-mono">{it.inventory_number || "—"}</TableCell>
                       <TableCell className="text-right font-mono font-semibold">{it.quantity}</TableCell>
                       <TableCell className="text-right font-mono text-sm text-muted-foreground">{issued || "—"}</TableCell>
+                      <TableCell className="text-right font-mono text-sm">{Number(it.price) > 0 ? `${Number(it.price).toLocaleString("ru-RU")} ${it.currency}` : "—"}</TableCell>
                       <TableCell><Badge variant={it.status === "active" ? "default" : "secondary"}>{st?.l ?? it.status}</Badge></TableCell>
                       {canManage && (
                         <TableCell>
@@ -332,7 +351,7 @@ export default function InstrumentsTab() {
                   );
                 })}
                 {filtered.length === 0 && (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Instrumentlar yo'q</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Instrumentlar yo'q</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>

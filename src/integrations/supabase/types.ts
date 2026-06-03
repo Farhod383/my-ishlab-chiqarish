@@ -509,9 +509,11 @@ export type Database = {
           comment: string | null
           created_at: string
           created_by: string | null
+          currency: string
           id: string
           inventory_number: string | null
           name: string
+          price: number
           quantity: number
           status: string
           updated_at: string
@@ -521,9 +523,11 @@ export type Database = {
           comment?: string | null
           created_at?: string
           created_by?: string | null
+          currency?: string
           id?: string
           inventory_number?: string | null
           name: string
+          price?: number
           quantity?: number
           status?: string
           updated_at?: string
@@ -533,9 +537,11 @@ export type Database = {
           comment?: string | null
           created_at?: string
           created_by?: string | null
+          currency?: string
           id?: string
           inventory_number?: string | null
           name?: string
+          price?: number
           quantity?: number
           status?: string
           updated_at?: string
