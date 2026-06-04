@@ -253,7 +253,7 @@ export default function KassaPage() {
     if (expEditId) {
       const { error } = await supabase.from("cash_expenses").update(payload).eq("id", expEditId);
       if (error) { toast.error(error.message); return; }
-      const summary = diffSummary(expOrig, payload, ["amount", "currency", "exchange_rate", "total_uzs", "reason", "recipient_name", "comment"]);
+      const summary = diffSummary(expOrig, payload, ["amount", "currency", "exchange_rate", "total_uzs", "reason", "recipient_name", "comment", "payment_type"]);
       await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: "kassa.expense.update", entity: "cash_expenses", details: summary || "no changes" });
     } else {
       const { error } = await supabase.from("cash_expenses").insert({ ...payload, created_by: user?.id });
