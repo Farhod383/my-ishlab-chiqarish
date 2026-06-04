@@ -154,9 +154,9 @@ export default function EmployeesView() {
           {active && (
             <>
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2"><Users className="h-5 w-5" />{active.full_name}</DialogTitle>
+                <DialogTitle className="flex items-center gap-2"><Users className="h-5 w-5" />{localize(active.full_name)}</DialogTitle>
                 <DialogDescription>
-                  {active.position} {active.department && `· ${active.department}`} {active.phone && `· ${active.phone}`}
+                  {localize(active.position)} {active.department && `· ${localize(active.department)}`} {active.phone && `· ${active.phone}`}
                 </DialogDescription>
               </DialogHeader>
 
