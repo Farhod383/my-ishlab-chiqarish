@@ -128,7 +128,7 @@ export const uz = {
     delayed: "Kechikayotgan",
     todayDeadline: "Bugun tugashi kerak",
     exception: "Istisno zakazlar",
-    recentOrders: "Oxirgi zakazlar",
+    recentOrders: "Barcha zakazlar",
     completedOrdersHint: "Tugatilgan zakazlar — hisobotni ochish uchun bosing",
     noCompleted: "Tugatilgan zakaz yo'q",
     noOrders: "Hozircha zakaz yo'q",
@@ -138,6 +138,9 @@ export const uz = {
     recentActivity: "Oxirgi harakatlar",
     deadline: "Muddat",
     finished: "Tugadi",
+    completedOrders: "Tugallangan zakazlar",
+    allOrders: "Barcha zakazlar",
+    progress: "Bajarildi",
   },
   orders: {
     title: "Zakazlar",
