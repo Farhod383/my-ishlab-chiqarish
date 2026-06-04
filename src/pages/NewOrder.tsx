@@ -149,6 +149,14 @@ export default function NewOrder() {
         entity: "order", order_id: order.id,
         details: `${orderNumber}, ${clientName || "—"}`,
       });
+      await notify({
+        type: "order_created",
+        title: `Yangi zakaz — ${orderNumber}`,
+        body: `${productName}${clientName ? ` · ${clientName}` : ""}`,
+        link: `/orders/${order.id}`,
+        entity: "order", entity_id: order.id,
+        sender_id: user?.id, sender_name: user?.email,
+      });
 
       toast.success(t.newOrder.created);
       nav(`/orders/${order.id}`);
