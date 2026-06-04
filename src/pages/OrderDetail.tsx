@@ -25,6 +25,7 @@ export default function OrderDetail() {
   const nav = useNavigate();
   const { user, hasRole } = useAuth();
   const { t } = useI18n();
+  const localize = useLocalize();
   const [order, setOrder] = useState<(OrderRow & { client?: any }) | null>(null);
   const [stages, setStages] = useState<StageRow[]>([]);
   const [parts, setParts] = useState<OrderPartRow[]>([]);
@@ -333,7 +334,7 @@ export default function OrderDetail() {
               {movements.map((m) => (
                 <div key={m.id} className="text-sm border-l-2 border-primary/40 pl-3 py-1">
                   <div><span className="font-medium">{m.product?.name}</span> — <span className="font-mono">{m.direction === "out" ? "-" : "+"}{m.quantity} {m.product?.unit}</span></div>
-                  <div className="text-xs text-muted-foreground">{t.orderDetail.receivedBy}: {m.recipient_name ?? "—"} · {new Date(m.created_at).toLocaleString()}</div>
+                  <div className="text-xs text-muted-foreground">{t.orderDetail.receivedBy}: {localize(m.recipient_name) || "—"} · {new Date(m.created_at).toLocaleString()}</div>
                   {m.comment && <div className="text-xs text-muted-foreground italic">"{m.comment}"</div>}
                 </div>
               ))}
@@ -347,7 +348,7 @@ export default function OrderDetail() {
             <CardContent className="space-y-2">
               {logs.map((l) => (
                 <div key={l.id} className="text-sm border-l-2 border-border pl-3 py-1">
-                  <div><span className="font-semibold">{l.action}</span> — <span className="text-muted-foreground">{l.actor_name ?? t.common.system}</span></div>
+                  <div><span className="font-semibold">{l.action}</span> — <span className="text-muted-foreground">{l.actor_name ? localize(l.actor_name) : t.common.system}</span></div>
                   {l.details && <div className="text-xs text-muted-foreground">{l.details}</div>}
                   <div className="text-[10px] text-muted-foreground">{new Date(l.created_at).toLocaleString()}</div>
                 </div>

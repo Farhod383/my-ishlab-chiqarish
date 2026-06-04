@@ -10,13 +10,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Users, Plus, Edit2, Wrench, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
-import { useI18n } from "@/i18n/context";
+import { useI18n, useLocalize } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
 import { toast } from "sonner";
 
 export default function HRPage() {
   const { hasRole, user } = useAuth();
   const { t } = useI18n();
+  const localize = useLocalize();
   const hr = (t as any).hr ?? {};
   const [employees, setEmployees] = useState<any[]>([]);
   const [heldMap, setHeldMap] = useState<Record<string, { id: string; name: string; quantity: number; issued_at: string }[]>>({});
@@ -164,7 +165,7 @@ export default function HRPage() {
                   const held = heldMap[e.id] ?? [];
                   return (
                   <TableRow key={e.id}>
-                    <TableCell className="font-medium">{e.full_name}</TableCell>
+                    <TableCell className="font-medium">{localize(e.full_name)}</TableCell>
                     <TableCell className="text-sm">{e.position}</TableCell>
                     <TableCell className="text-sm">{e.department}</TableCell>
                     <TableCell className="text-sm">{e.phone ?? "—"}</TableCell>

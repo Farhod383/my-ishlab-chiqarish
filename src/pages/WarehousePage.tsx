@@ -14,7 +14,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { AlertTriangle, Package, ArrowDownToLine, ArrowDownCircle, ArrowUpCircle, History, Plus, PackageMinus, Pencil, Check, ChevronsUpDown, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/AuthContext";
-import { useI18n } from "@/i18n/context";
+import { useI18n, useLocalize } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
 import { fmtNum } from "@/lib/format";
 import { toast } from "sonner";
@@ -30,6 +30,7 @@ const CURRENCIES = ["UZS", "USD"] as const;
 export default function WarehousePage() {
   const { user, hasRole } = useAuth();
   const { t } = useI18n();
+  const localize = useLocalize();
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [movements, setMovements] = useState<any[]>([]);
@@ -499,7 +500,7 @@ export default function WarehousePage() {
                         value={otherRecipient}
                         onChange={setOtherRecipient}
                         placeholder={t.warehouse.takenByPh}
-                        options={employees.map(e => ({ value: e.full_name, label: e.full_name, hint: e.department }))}
+                        options={employees.map(e => ({ value: e.full_name, label: localize(e.full_name), hint: e.department }))}
                       />
                     </div>
                     <div><Label>{t.warehouse.reason} *</Label><Textarea value={otherReason} onChange={e => setOtherReason(e.target.value)} placeholder={t.warehouse.reasonPh} /></div>
@@ -535,7 +536,7 @@ export default function WarehousePage() {
                         value={outRecipient}
                         onChange={setOutRecipient}
                         placeholder={t.warehouse.takenByPh}
-                        options={employees.map(e => ({ value: e.full_name, label: e.full_name, hint: e.department }))}
+                        options={employees.map(e => ({ value: e.full_name, label: localize(e.full_name), hint: e.department }))}
                       />
                     </div>
                     <div><Label>{t.warehouse.commentOpt}</Label><Textarea value={outComment} onChange={e => setOutComment(e.target.value)} /></div>
@@ -764,9 +765,9 @@ export default function WarehousePage() {
                             : <span className="text-muted-foreground">—</span>}
                         </TableCell>
                         <TableCell className="text-xs">{m.location ?? "—"}</TableCell>
-                        <TableCell className="text-sm">{m.recipient_name ?? <span className="text-muted-foreground">—</span>}</TableCell>
+                        <TableCell className="text-sm">{m.recipient_name ? localize(m.recipient_name) : <span className="text-muted-foreground">—</span>}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{m.source ?? "—"}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{profiles[m.created_by] ?? "—"}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{localize(profiles[m.created_by]) || "—"}</TableCell>
                         <TableCell className="text-sm font-mono">{m.order?.order_number ?? <span className="text-muted-foreground">{t.warehouse.common}</span>}</TableCell>
                         <TableCell className="text-xs italic text-muted-foreground max-w-[200px] truncate">{m.comment ?? "—"}</TableCell>
                         {canManage && <TableCell><div className="flex gap-1">
@@ -853,7 +854,7 @@ export default function WarehousePage() {
                         {productMovements.filter(m => m.direction === "in").map(m => (
                           <TableRow key={m.id}>
                             <TableCell className="text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</TableCell>
-                            <TableCell className="text-sm">{m.recipient_name ?? "—"}</TableCell>
+                            <TableCell className="text-sm">{localize(m.recipient_name) || "—"}</TableCell>
                             <TableCell className="text-right font-mono text-status-green font-semibold">+{m.quantity} {selectedProduct.unit}</TableCell>
                             <TableCell className="text-xs italic text-muted-foreground">{m.comment ?? "—"}</TableCell>
                           </TableRow>
@@ -880,7 +881,7 @@ export default function WarehousePage() {
                         {productMovements.filter(m => m.direction === "out").map(m => (
                           <TableRow key={m.id}>
                             <TableCell className="text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</TableCell>
-                            <TableCell className="text-sm">{m.recipient_name ?? "—"}</TableCell>
+                            <TableCell className="text-sm">{localize(m.recipient_name) || "—"}</TableCell>
                             <TableCell className="text-sm font-mono">{m.order?.order_number ?? <span className="text-muted-foreground">{t.warehouse.common}</span>}</TableCell>
                             <TableCell className="text-right font-mono text-status-red font-semibold">-{m.quantity} {selectedProduct.unit}</TableCell>
                             <TableCell className="text-xs italic text-muted-foreground">{m.comment ?? "—"}</TableCell>
@@ -909,7 +910,7 @@ export default function WarehousePage() {
                           </span>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {fmtDateTime(m.created_at)} · {m.direction==="out" ? t.warehouse.got : t.warehouse.brought}: {m.recipient_name ?? "—"}
+                          {fmtDateTime(m.created_at)} · {m.direction==="out" ? t.warehouse.got : t.warehouse.brought}: {localize(m.recipient_name) || "—"}
                           {m.order?.order_number && <> · {t.warehouse.cols.order}: <span className="font-mono">{m.order.order_number}</span></>}
                         </div>
                         {m.comment && <div className="text-xs italic text-muted-foreground mt-0.5">"{m.comment}"</div>}

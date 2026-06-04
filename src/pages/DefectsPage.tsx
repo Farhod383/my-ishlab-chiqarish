@@ -12,12 +12,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { AlertOctagon, Plus } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
-import { useI18n } from "@/i18n/context";
+import { useI18n, useLocalize } from "@/i18n/context";
 import { toast } from "sonner";
 
 export default function DefectsPage() {
   const { user, hasRole } = useAuth();
   const { t } = useI18n();
+  const localize = useLocalize();
   const d = (t as any).defects ?? {};
   const [defects, setDefects] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -105,7 +106,7 @@ export default function DefectsPage() {
               <div><Label>{d.detectedBy ?? "Kim aniqladi"}</Label>
                 <Select value={form.detected_by_id} onValueChange={v => setForm({ ...form, detected_by_id: v })}>
                   <SelectTrigger><SelectValue placeholder={d.selectEmployee ?? "Xodim"} /></SelectTrigger>
-                  <SelectContent>{employees.map(e => <SelectItem key={e.id} value={e.id}>{e.full_name}</SelectItem>)}</SelectContent>
+                  <SelectContent>{employees.map(e => <SelectItem key={e.id} value={e.id}>{localize(e.full_name)}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div><Label>{d.reason ?? "Sabab"}</Label><Input value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })} /></div>
@@ -150,7 +151,7 @@ export default function DefectsPage() {
                     <TableCell className="text-sm font-mono">{def.order?.order_number ?? "—"}</TableCell>
                     <TableCell className="text-sm font-medium">{def.product?.name ?? "—"}</TableCell>
                     <TableCell className="text-right font-mono">{def.quantity} {def.product?.unit ?? ""}</TableCell>
-                    <TableCell className="text-sm">{def.detected_by?.full_name ?? def.detected_by_name ?? "—"}</TableCell>
+                    <TableCell className="text-sm">{localize(def.detected_by?.full_name ?? def.detected_by_name) || "—"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{def.reason ?? "—"}</TableCell>
                     <TableCell>
                       {hasRole(["admin", "warehouse"]) ? (

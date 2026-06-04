@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, Wrench, ArrowRightLeft, Undo2 } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
+import { useLocalize } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
 import { toast } from "sonner";
 import NumberInput from "@/components/NumberInput";
@@ -49,6 +50,7 @@ const STATUSES = [
 
 export default function InstrumentsTab() {
   const { user, hasRole } = useAuth();
+  const localize = useLocalize();
   const canManage = hasRole(["warehouse", "admin", "cashier", "hr"]);
 
   const [instruments, setInstruments] = useState<Instrument[]>([]);
@@ -215,7 +217,7 @@ export default function InstrumentsTab() {
                       value={issueForm.employee_id}
                       onChange={v => setIssueForm({ ...issueForm, employee_id: v })}
                       placeholder="Xodim tanlang"
-                      options={employees.map(e => ({ value: e.id, label: e.full_name, hint: e.department }))}
+                      options={employees.map(e => ({ value: e.id, label: localize(e.full_name), hint: e.department }))}
                     />
                   </div>
                   <div><Label>Instrument *</Label>
@@ -249,7 +251,7 @@ export default function InstrumentsTab() {
                       options={Object.keys(heldByEmp).map(empId => {
                         const e = employees.find(x => x.id === empId) || assignments.find(a => a.employee_id === empId)?.employee;
                         const name = (e as any)?.full_name ?? "?";
-                        return { value: empId, label: name, hint: `${heldByEmp[empId].length} ta` };
+                        return { value: empId, label: localize(name), hint: `${heldByEmp[empId].length} ta` };
                       })}
                     />
                   </div>
@@ -376,7 +378,7 @@ export default function InstrumentsTab() {
               <TableBody>
                 {assignments.filter(a => !a.returned_at).map(a => (
                   <TableRow key={a.id}>
-                    <TableCell className="font-medium">{a.employee?.full_name ?? "—"}</TableCell>
+                    <TableCell className="font-medium">{localize(a.employee?.full_name) || "—"}</TableCell>
                     <TableCell>{a.instrument?.name ?? "—"}{a.instrument?.inventory_number && <span className="text-xs text-muted-foreground ml-1">№{a.instrument.inventory_number}</span>}</TableCell>
                     <TableCell className="text-right font-mono">{a.quantity}</TableCell>
                     <TableCell className="text-xs whitespace-nowrap">{new Date(a.issued_at).toLocaleDateString()}</TableCell>

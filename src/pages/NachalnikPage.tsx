@@ -3,11 +3,12 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
-import { useI18n } from "@/i18n/context";
+import { useI18n, useLocalize } from "@/i18n/context";
 import { ClipboardList } from "lucide-react";
 
 export default function NachalnikPage() {
   const { t } = useI18n();
+  const localize = useLocalize();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -57,7 +58,7 @@ export default function NachalnikPage() {
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="text-xs text-muted-foreground w-5">#{s.stage_order}</span>
                       <span className="font-medium truncate">{s.name}</span>
-                      {s.worker_name && <span className="text-xs text-muted-foreground">— {s.worker_name}</span>}
+                      {s.worker_name && <span className="text-xs text-muted-foreground">— {String(s.worker_name).split(",").map((n: string) => localize(n.trim())).join(", ")}</span>}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
                       {s.planned_start && <span>{s.planned_start} → {s.planned_end ?? "?"}</span>}

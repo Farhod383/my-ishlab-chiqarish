@@ -6,10 +6,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Search } from "lucide-react";
-import { useI18n } from "@/i18n/context";
+import { useI18n, useLocalize } from "@/i18n/context";
+import { searchNorm } from "@/lib/translit";
 
 export default function AuditLog() {
   const { t } = useI18n();
+  const localize = useLocalize();
   const [logs, setLogs] = useState<any[]>([]);
   const [roleMap, setRoleMap] = useState<Record<string, string[]>>({});
   const [q, setQ] = useState("");
@@ -41,7 +43,7 @@ export default function AuditLog() {
   const actions = useMemo(() => Array.from(new Set(logs.map(l => l.action))).sort(), [logs]);
 
   const filtered = useMemo(() => logs.filter(l => {
-    if (q && !(`${l.action} ${l.details ?? ""} ${l.actor_name ?? ""}`.toLowerCase().includes(q.toLowerCase()))) return false;
+    if (q && !(searchNorm(`${l.action} ${l.details ?? ""} ${l.actor_name ?? ""}`).includes(searchNorm(q)))) return false;
     if (userFilter !== "all" && l.actor_name !== userFilter) return false;
     if (actionFilter !== "all" && l.action !== actionFilter) return false;
     if (roleFilter !== "all") {
@@ -76,7 +78,7 @@ export default function AuditLog() {
           </div>
           <Select value={userFilter} onValueChange={setUserFilter}>
             <SelectTrigger><SelectValue placeholder={(t.audit as any).user} /></SelectTrigger>
-            <SelectContent><SelectItem value="all">{(t.audit as any).allUsers}</SelectItem>{users.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+            <SelectContent><SelectItem value="all">{(t.audit as any).allUsers}</SelectItem>{users.map(u => <SelectItem key={u} value={u}>{localize(u)}</SelectItem>)}</SelectContent>
           </Select>
           <Select value={roleFilter} onValueChange={setRoleFilter}>
             <SelectTrigger><SelectValue placeholder={(t.audit as any).role} /></SelectTrigger>
@@ -117,11 +119,11 @@ export default function AuditLog() {
                 {filtered.map(l => (
                   <TableRow key={l.id}>
                     <TableCell className="text-xs whitespace-nowrap">{new Date(l.created_at).toLocaleString()}</TableCell>
-                    <TableCell className="text-sm">{l.actor_name ?? t.common.system}</TableCell>
+                    <TableCell className="text-sm">{l.actor_name ? localize(l.actor_name) : t.common.system}</TableCell>
                     <TableCell className="text-xs"><Badge variant="secondary">{roleLabel(l.actor_id)}</Badge></TableCell>
                     <TableCell className="text-sm font-medium">{l.action}</TableCell>
                     <TableCell className="text-sm font-mono">{l.order?.order_number ?? "—"}</TableCell>
-                    <TableCell className="text-xs">{l.stage?.name ?? "—"}{l.stage?.worker_name ? ` · ${l.stage.worker_name}` : ""}</TableCell>
+                    <TableCell className="text-xs">{l.stage?.name ?? "—"}{l.stage?.worker_name ? ` · ${String(l.stage.worker_name).split(",").map((n: string) => localize(n.trim())).join(", ")}` : ""}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{l.details ?? "—"}</TableCell>
                   </TableRow>
                 ))}

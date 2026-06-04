@@ -12,13 +12,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { RotateCcw, Plus } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
-import { useI18n } from "@/i18n/context";
+import { useI18n, useLocalize } from "@/i18n/context";
 import { toast } from "sonner";
 import ProductPicker from "@/components/ProductPicker";
 
 export default function ReturnsPage() {
   const { user, hasRole } = useAuth();
   const { t } = useI18n();
+  const localize = useLocalize();
   const r = (t as any).returns ?? {};
   const [returns, setReturns] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -107,7 +108,7 @@ export default function ReturnsPage() {
                 <div><Label>{r.returnedBy ?? "Kim qaytardi"}</Label>
                   <Select value={form.returned_by_id} onValueChange={v => setForm({ ...form, returned_by_id: v })}>
                     <SelectTrigger><SelectValue placeholder={r.selectEmployee ?? "Xodimni tanlang"} /></SelectTrigger>
-                    <SelectContent>{employees.map(e => <SelectItem key={e.id} value={e.id}>{e.full_name}</SelectItem>)}</SelectContent>
+                    <SelectContent>{employees.map(e => <SelectItem key={e.id} value={e.id}>{localize(e.full_name)}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div><Label>{r.type ?? "Tur"}</Label>
@@ -151,7 +152,7 @@ export default function ReturnsPage() {
                     <TableCell className="text-sm whitespace-nowrap">{new Date(ret.created_at).toLocaleString()}</TableCell>
                     <TableCell className="text-sm font-medium">{ret.product?.name ?? "—"}</TableCell>
                     <TableCell className="text-right font-mono">{ret.quantity} {ret.product?.unit ?? ""}</TableCell>
-                    <TableCell className="text-sm">{ret.returned_by?.full_name ?? ret.returned_by_name ?? "—"}</TableCell>
+                    <TableCell className="text-sm">{localize(ret.returned_by?.full_name ?? ret.returned_by_name) || "—"}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-xs">
                         {ret.return_type === "worker_to_warehouse" ? (r.workerToWarehouse ?? "Ishchi→Sklad") : (r.warehouseToShop ?? "Sklad→Do'kon")}
