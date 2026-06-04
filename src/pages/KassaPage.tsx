@@ -17,7 +17,22 @@ import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
 import { fmtNum } from "@/lib/format";
 
-const PAYMENT_TYPES = ["cash", "card", "transfer", "other"];
+const PAYMENT_TYPES = ["cash", "corporate_card", "transfer", "other"] as const;
+type PaymentType = typeof PAYMENT_TYPES[number];
+
+// Locale-aware payment-type labels. Legacy `card` rows are surfaced under
+// `corporate_card` since that is what they always represented in practice.
+const PAYMENT_LABELS: Record<string, Record<string, string>> = {
+  uz:  { cash: "Naqd pul",   corporate_card: "Korporativ karta", transfer: "Bank o'tkazma", other: "Boshqa" },
+  uzc: { cash: "Нақд пул",   corporate_card: "Корпоратив карта", transfer: "Банк ўтказма",  other: "Бошқа" },
+  ru:  { cash: "Наличные",   corporate_card: "Корпоративная карта", transfer: "Банк. перевод", other: "Другое" },
+};
+const normalizePT = (pt: unknown): PaymentType => {
+  const v = String(pt ?? "cash");
+  if (v === "card") return "corporate_card";
+  return (PAYMENT_TYPES as readonly string[]).includes(v) ? (v as PaymentType) : "other";
+};
+
 const CARD_CURRENCIES = ["UZS", "USD", "EUR", "CNY"];
 const CURRENCIES = ["UZS", "USD", "EUR", "RUB", "CNY", "KZT", "TRY", "GBP", "AED", "INR", "JPY", "KRW", "CHF", "CAD", "AUD"];
 
