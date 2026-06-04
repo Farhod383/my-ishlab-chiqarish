@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { uz, ru, uzc, type Translations } from "./uz";
+import { localizeName } from "@/lib/translit";
+
 
 export type Locale = "uz" | "ru" | "uzc";
 
