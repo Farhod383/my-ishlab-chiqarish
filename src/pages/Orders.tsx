@@ -131,10 +131,10 @@ export default function Orders() {
                     <TableRow key={o.id} className="cursor-pointer hover:bg-muted/50" onClick={() => nav(`/orders/${o.id}`)}>
                       <TableCell><HealthDot color={orderHealth(o)} /></TableCell>
                       <TableCell className="font-mono text-sm">{o.order_number}</TableCell>
-                      <TableCell className="text-sm">{(o as any).client?.name ?? "—"}</TableCell>
+                      <TableCell className="text-sm">{localize((o as any).client?.name) || "—"}</TableCell>
                       <TableCell className="text-sm font-medium">
-                        <div>{o.product_name}</div>
-                        {(o as any).comment && <div className="text-xs text-muted-foreground italic truncate max-w-[180px]">"{(o as any).comment}"</div>}
+                        <div>{localize(o.product_name)}</div>
+                        {(o as any).comment && <div className="text-xs text-muted-foreground italic truncate max-w-[180px]">"{localize((o as any).comment)}"</div>}
                       </TableCell>
                       <TableCell className="text-right text-sm">{o.quantity}</TableCell>
                       <TableCell><PriorityBadge priority={o.priority} /></TableCell>
