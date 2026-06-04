@@ -284,7 +284,7 @@ export default function OrderDetail() {
                         {s.status === "in_progress" && hasRole(["manager", "admin", "marketing"]) && (
                           <Button size="sm" onClick={() => finishStage(s)}><CheckCircle2 className="h-3 w-3 mr-1" />{t.orderDetail.complete}</Button>
                         )}
-                        {hasRole(["manager", "admin"]) && (
+                        {s.status !== "pending" && hasRole(["manager", "admin"]) && (
                           <StageAssignDialog stage={s} onSaved={load} />
                         )}
                       </div>
