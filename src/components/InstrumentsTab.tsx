@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, Wrench, ArrowRightLeft, Undo2 } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
+import { useLocalize } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
 import { toast } from "sonner";
 import NumberInput from "@/components/NumberInput";
