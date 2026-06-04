@@ -43,6 +43,7 @@ type Assignment = {
 export default function EmployeesView() {
   const { hasRole } = useAuth();
   const canExport = hasRole(["admin", "hr", "warehouse", "cashier"]);
+  const localize = useLocalize();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [profiles, setProfiles] = useState<Record<string, string>>({});
