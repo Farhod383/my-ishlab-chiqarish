@@ -22,3 +22,20 @@ export function parseNum(s: string): number {
   const n = Number(cleaned);
   return Number.isFinite(n) ? n : 0;
 }
+
+// Currency symbol map (single source of truth across the app).
+export const CURRENCY_SYMBOL: Record<string, string> = {
+  UZS: "so'm", USD: "$", EUR: "€", RUB: "₽", CNY: "¥",
+  KZT: "₸", TRY: "₺", GBP: "£", AED: "د.إ", INR: "₹",
+  JPY: "¥", KRW: "₩", CHF: "Fr", CAD: "C$", AUD: "A$",
+};
+
+/**
+ * Format a money value with the proper currency symbol — never multiplies or
+ * adds zeros. 5900 USD → "5.900 $"; 4600000 UZS → "4.600.000 so'm".
+ */
+export function fmtMoney(amount: number | string | null | undefined, currency?: string | null): string {
+  const code = String(currency ?? "UZS").trim().toUpperCase() || "UZS";
+  const sym = CURRENCY_SYMBOL[code] ?? code;
+  return `${fmtNum(amount)} ${sym}`;
+}
