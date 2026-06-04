@@ -248,6 +248,7 @@ export default function KassaPage() {
       currency: expForm.currency,
       exchange_rate: rate,
       total_uzs,
+      payment_type: expForm.payment_type,
     };
     if (expEditId) {
       const { error } = await supabase.from("cash_expenses").update(payload).eq("id", expEditId);
