@@ -391,19 +391,45 @@ export default function KassaPage() {
         </div>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-4">
-        <Card><CardContent className="p-4 space-y-2">
-          <div className="text-xs text-muted-foreground">{k.balance ?? "Balans"}</div>
-          {renderCurrencies(balByCur, "balance")}
-        </CardContent></Card>
-        <Card><CardContent className="p-4 space-y-2">
-          <div className="text-xs text-muted-foreground">{k.totalIncome ?? "Jami kirim"}</div>
-          {renderCurrencies(incByCur, "in")}
-        </CardContent></Card>
-        <Card><CardContent className="p-4 space-y-2">
-          <div className="text-xs text-muted-foreground">{k.totalExpenses ?? "Jami chiqim"}</div>
-          {renderCurrencies(expByCur, "out")}
-        </CardContent></Card>
+      <div className="space-y-4">
+        <div className="grid sm:grid-cols-3 gap-4">
+          <Card><CardContent className="p-4 space-y-2">
+            <div className="text-xs text-muted-foreground">{k.balance ?? "Balans"}</div>
+            {renderCurrencies(balByCur, "balance")}
+          </CardContent></Card>
+          <Card><CardContent className="p-4 space-y-2">
+            <div className="text-xs text-muted-foreground">{k.totalIncome ?? "Jami kirim"}</div>
+            {renderCurrencies(incByCur, "in")}
+          </CardContent></Card>
+          <Card><CardContent className="p-4 space-y-2">
+            <div className="text-xs text-muted-foreground">{k.totalExpenses ?? "Jami chiqim"}</div>
+            {renderCurrencies(expByCur, "out")}
+          </CardContent></Card>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Card className="border-status-green/30"><CardContent className="p-4 space-y-3">
+            <div className="text-xs font-semibold uppercase tracking-wide text-status-green">
+              💵 {PAYMENT_LABELS[locale]?.cash ?? "Naqd pul"}
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div><div className="text-[10px] text-muted-foreground mb-1">{k.balance ?? "Balans"}</div>{renderCurrencies(cashBal, "balance")}</div>
+              <div><div className="text-[10px] text-muted-foreground mb-1">{k.income ?? "Kirim"}</div>{renderCurrencies(cashIn, "in")}</div>
+              <div><div className="text-[10px] text-muted-foreground mb-1">{k.expense ?? "Chiqim"}</div>{renderCurrencies(cashOut, "out")}</div>
+            </div>
+          </CardContent></Card>
+
+          <Card className="border-primary/30"><CardContent className="p-4 space-y-3">
+            <div className="text-xs font-semibold uppercase tracking-wide text-primary">
+              💳 {PAYMENT_LABELS[locale]?.corporate_card ?? "Korporativ karta"}
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div><div className="text-[10px] text-muted-foreground mb-1">{k.balance ?? "Balans"}</div>{renderCurrencies(cardBal, "balance")}</div>
+              <div><div className="text-[10px] text-muted-foreground mb-1">{k.income ?? "Kirim"}</div>{renderCurrencies(cardIn, "in")}</div>
+              <div><div className="text-[10px] text-muted-foreground mb-1">{k.expense ?? "Chiqim"}</div>{renderCurrencies(cardOut, "out")}</div>
+            </div>
+          </CardContent></Card>
+        </div>
       </div>
 
 
