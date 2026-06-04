@@ -278,6 +278,7 @@ export default function KassaPage() {
       comment: e.comment ?? "",
       currency: e.currency ?? "UZS",
       exchange_rate: Number(e.exchange_rate) || 1,
+      payment_type: normalizePT(e.payment_type),
     });
     setRecipientMode(e.recipient_id ? "employee" : "manual");
     setOpenExp(true);
