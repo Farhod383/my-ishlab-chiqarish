@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,18 +9,37 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { StatusBadge, PriorityBadge, HealthDot } from "@/components/StatusBadge";
 import { orderHealth, type OrderRow } from "@/types/erp";
 import { useAuth } from "@/auth/AuthContext";
-import { useI18n } from "@/i18n/context";
+import { useI18n, useLocalize } from "@/i18n/context";
 import { Plus, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { matchesAcrossScripts } from "@/lib/translit";
+
+type FilterKey = "all" | "active" | "exception" | "delayed" | "completed" | "today";
 
 export default function Orders() {
   const { hasRole } = useAuth();
   const { t } = useI18n();
+  const localize = useLocalize();
   const nav = useNavigate();
+  const [params, setParams] = useSearchParams();
   const [rows, setRows] = useState<(OrderRow & { client?: any })[]>([]);
-  const [filter, setFilter] = useState<"all" | "active" | "exception" | "delayed" | "completed">("all");
+  const initial = (params.get("filter") as FilterKey) || "all";
+  const [filter, setFilter] = useState<FilterKey>(initial);
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const f = (params.get("filter") as FilterKey) || "all";
+    setFilter(f);
+  }, [params]);
+
+  const onFilterChange = (v: string) => {
+    setFilter(v as FilterKey);
+    const next = new URLSearchParams(params);
+    if (v === "all") next.delete("filter"); else next.set("filter", v);
+    setParams(next, { replace: true });
+  };
+
 
   useEffect(() => {
     (async () => {
@@ -36,13 +55,18 @@ export default function Orders() {
 
   const today = new Date().toISOString().slice(0, 10);
   const filtered = rows.filter((o) => {
-    if (q && !o.order_number.toLowerCase().includes(q.toLowerCase()) && !o.product_name.toLowerCase().includes(q.toLowerCase())) return false;
+    if (q) {
+      const hay = [o.order_number, o.product_name, (o as any).client?.name].filter(Boolean).join(" ");
+      if (!matchesAcrossScripts(hay, q)) return false;
+    }
     if (filter === "active") return o.status === "in_progress" || o.status === "pending";
-    if (filter === "exception") return o.priority === "exception";
+    if (filter === "exception") return o.priority === "exception" && o.status !== "completed";
     if (filter === "delayed") return o.status === "delayed" || (o.status !== "completed" && o.deadline < today);
+    if (filter === "today") return o.deadline === today && o.status !== "completed";
     if (filter === "completed") return o.status === "completed";
     return true;
   });
+
 
   return (
     <div className="space-y-6">
@@ -59,10 +83,11 @@ export default function Orders() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <Tabs value={filter} onValueChange={(v) => setFilter(v as any)}>
+            <Tabs value={filter} onValueChange={onFilterChange}>
               <TabsList>
                 <TabsTrigger value="all">{t.orders.tabs.all}</TabsTrigger>
                 <TabsTrigger value="active">{t.orders.tabs.active}</TabsTrigger>
+                <TabsTrigger value="today">{t.dashboard.todayDeadline}</TabsTrigger>
                 <TabsTrigger value="exception">{t.orders.tabs.exception}</TabsTrigger>
                 <TabsTrigger value="delayed">{t.orders.tabs.delayed}</TabsTrigger>
                 <TabsTrigger value="completed">{t.orders.tabs.completed}</TabsTrigger>
@@ -106,10 +131,10 @@ export default function Orders() {
                     <TableRow key={o.id} className="cursor-pointer hover:bg-muted/50" onClick={() => nav(`/orders/${o.id}`)}>
                       <TableCell><HealthDot color={orderHealth(o)} /></TableCell>
                       <TableCell className="font-mono text-sm">{o.order_number}</TableCell>
-                      <TableCell className="text-sm">{(o as any).client?.name ?? "—"}</TableCell>
+                      <TableCell className="text-sm">{localize((o as any).client?.name) || "—"}</TableCell>
                       <TableCell className="text-sm font-medium">
-                        <div>{o.product_name}</div>
-                        {(o as any).comment && <div className="text-xs text-muted-foreground italic truncate max-w-[180px]">"{(o as any).comment}"</div>}
+                        <div>{localize(o.product_name)}</div>
+                        {(o as any).comment && <div className="text-xs text-muted-foreground italic truncate max-w-[180px]">"{localize((o as any).comment)}"</div>}
                       </TableCell>
                       <TableCell className="text-right text-sm">{o.quantity}</TableCell>
                       <TableCell><PriorityBadge priority={o.priority} /></TableCell>

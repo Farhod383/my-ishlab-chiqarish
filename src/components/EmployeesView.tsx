@@ -8,6 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Users, Wrench, Eye, FileDown } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
+import { useLocalize } from "@/i18n/context";
+import { matchesAcrossScripts } from "@/lib/translit";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -41,6 +43,7 @@ type Assignment = {
 export default function EmployeesView() {
   const { hasRole } = useAuth();
   const canExport = hasRole(["admin", "hr", "warehouse", "cashier"]);
+  const localize = useLocalize();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [profiles, setProfiles] = useState<Record<string, string>>({});
@@ -76,10 +79,10 @@ export default function EmployeesView() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
-  const q = search.trim().toLowerCase();
+  const q = search.trim();
   const filtered = useMemo(
     () => q ? employees.filter(e =>
-      [e.full_name, e.position, e.department, e.phone].some(v => (v ?? "").toString().toLowerCase().includes(q))
+      [e.full_name, e.position, e.department, e.phone].some(v => matchesAcrossScripts(String(v ?? ""), q))
     ) : employees,
     [employees, q]
   );
@@ -122,9 +125,9 @@ export default function EmployeesView() {
               <TableBody>
                 {filtered.map(e => (
                   <TableRow key={e.id} className="cursor-pointer hover:bg-muted/40" onClick={() => setActive(e)}>
-                    <TableCell className="font-medium">{e.full_name}</TableCell>
-                    <TableCell className="text-sm">{e.position || "—"}</TableCell>
-                    <TableCell className="text-sm">{e.department || "—"}</TableCell>
+                    <TableCell className="font-medium">{localize(e.full_name)}</TableCell>
+                    <TableCell className="text-sm">{localize(e.position) || "—"}</TableCell>
+                    <TableCell className="text-sm">{localize(e.department) || "—"}</TableCell>
                     <TableCell className="text-sm">{e.phone ?? "—"}</TableCell>
                     <TableCell>
                       <Badge variant={e.status === "active" ? "default" : "secondary"}>
@@ -151,9 +154,9 @@ export default function EmployeesView() {
           {active && (
             <>
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2"><Users className="h-5 w-5" />{active.full_name}</DialogTitle>
+                <DialogTitle className="flex items-center gap-2"><Users className="h-5 w-5" />{localize(active.full_name)}</DialogTitle>
                 <DialogDescription>
-                  {active.position} {active.department && `· ${active.department}`} {active.phone && `· ${active.phone}`}
+                  {localize(active.position)} {active.department && `· ${localize(active.department)}`} {active.phone && `· ${active.phone}`}
                 </DialogDescription>
               </DialogHeader>
 

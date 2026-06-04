@@ -44,12 +44,24 @@ export function cyrillicToLatin(s: string): string {
 const isCyr = (s: string) => /[А-Яа-яЁёҲҳҚқҒғЎў]/.test(s);
 const isLat = (s: string) => /[A-Za-z]/.test(s);
 
-/** Render a stored name in the target locale. lang: 'uz' (latin), 'uz-cyrl', 'ru'. */
+/** Render a stored name in the target locale. Accepts 'uz' (latin), 'uzc'/'uz-cyrl', 'ru'. */
 export function localizeName(name: string, lang: string): string {
   if (!name) return name;
-  if (lang === "uz-cyrl" || lang === "ru") {
+  if (lang === "uzc" || lang === "uz-cyrl" || lang === "ru") {
     return isCyr(name) ? name : latinToCyrillic(name);
   }
-  // default latin
   return isLat(name) ? name : cyrillicToLatin(name);
+}
+
+/** Normalize text to latin lowercase for cross-script search matching. */
+export function searchNorm(s: string): string {
+  if (!s) return "";
+  const lat = isCyr(s) ? cyrillicToLatin(s) : s;
+  return lat.toLowerCase().replace(/[''`ʼ]/g, "");
+}
+
+/** True if needle matches haystack across uz-latin / uz-cyrillic / russian writing. */
+export function matchesAcrossScripts(haystack: string, needle: string): boolean {
+  if (!needle) return true;
+  return searchNorm(haystack).includes(searchNorm(needle));
 }
