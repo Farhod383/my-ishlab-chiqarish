@@ -466,9 +466,9 @@ export default function KassaPage() {
                   <div><Label>{k.source ?? "Kimdan / Manba"}</Label><Input placeholder={k.sourcePlaceholder ?? "Mijoz, qarz qaytarish, ..."} value={incForm.source} onChange={e => setIncForm({ ...incForm, source: e.target.value })} /></div>
                   <div>
                     <Label>{k.paymentType ?? "To'lov turi"}</Label>
-                    <Select value={incForm.payment_type} onValueChange={v => setIncForm({ ...incForm, payment_type: v })}>
+                    <Select value={normalizePT(incForm.payment_type)} onValueChange={v => setIncForm({ ...incForm, payment_type: v })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>{PAYMENT_TYPES.map(p => <SelectItem key={p} value={p}>{(k.pt?.[p]) ?? p}</SelectItem>)}</SelectContent>
+                      <SelectContent>{PAYMENT_TYPES.map(p => <SelectItem key={p} value={p}>{ptLabel(p)}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div><Label>{k.comment ?? "Izoh"}</Label><Textarea value={incForm.comment} onChange={e => setIncForm({ ...incForm, comment: e.target.value })} /></div>
