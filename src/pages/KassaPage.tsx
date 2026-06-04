@@ -41,8 +41,9 @@ const defaultCur: CurForm = { currency: "UZS", exchange_rate: 1 };
 
 export default function KassaPage() {
   const { user, hasRole, profile } = useAuth() as any;
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const k = (t as any).kassa ?? {};
+  const ptLabel = (pt: unknown) => PAYMENT_LABELS[locale]?.[normalizePT(pt)] ?? PAYMENT_LABELS.uz[normalizePT(pt)];
   const [expenses, setExpenses] = useState<any[]>([]);
   const [incomes, setIncomes] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
