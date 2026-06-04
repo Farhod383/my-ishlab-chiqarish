@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,18 +9,37 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { StatusBadge, PriorityBadge, HealthDot } from "@/components/StatusBadge";
 import { orderHealth, type OrderRow } from "@/types/erp";
 import { useAuth } from "@/auth/AuthContext";
-import { useI18n } from "@/i18n/context";
+import { useI18n, useLocalize } from "@/i18n/context";
 import { Plus, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { matchesAcrossScripts } from "@/lib/translit";
+
+type FilterKey = "all" | "active" | "exception" | "delayed" | "completed" | "today";
 
 export default function Orders() {
   const { hasRole } = useAuth();
   const { t } = useI18n();
+  const localize = useLocalize();
   const nav = useNavigate();
+  const [params, setParams] = useSearchParams();
   const [rows, setRows] = useState<(OrderRow & { client?: any })[]>([]);
-  const [filter, setFilter] = useState<"all" | "active" | "exception" | "delayed" | "completed">("all");
+  const initial = (params.get("filter") as FilterKey) || "all";
+  const [filter, setFilter] = useState<FilterKey>(initial);
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const f = (params.get("filter") as FilterKey) || "all";
+    setFilter(f);
+  }, [params]);
+
+  const onFilterChange = (v: string) => {
+    setFilter(v as FilterKey);
+    const next = new URLSearchParams(params);
+    if (v === "all") next.delete("filter"); else next.set("filter", v);
+    setParams(next, { replace: true });
+  };
+
 
   useEffect(() => {
     (async () => {
