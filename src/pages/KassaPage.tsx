@@ -178,7 +178,7 @@ export default function KassaPage() {
     if (!s) return true;
     const hay = type === "income"
       ? `${row.source ?? ""} ${row.amount ?? ""} ${row.total_uzs ?? ""} ${row.comment ?? ""} ${row.payment_type ?? ""} ${row.currency ?? ""} kirim income`
-      : `${row.recipient_name ?? row.recipient?.full_name ?? ""} ${row.reason ?? ""} ${row.amount ?? ""} ${row.total_uzs ?? ""} ${row.comment ?? ""} ${row.currency ?? ""} chiqim expense`;
+      : `${row.recipient_name ?? row.recipient?.full_name ?? ""} ${row.reason ?? ""} ${row.amount ?? ""} ${row.total_uzs ?? ""} ${row.comment ?? ""} ${row.currency ?? ""} ${row.payment_type ?? ""} ${ptLabel(row.payment_type)} chiqim expense`;
     return hay.toLowerCase().includes(s);
   };
   const fExp = useMemo(() => expenses.filter(e => inRange(e.expense_date) && matchSearch(e, "expense")), [expenses, filterFrom, filterTo, searchQ]);
