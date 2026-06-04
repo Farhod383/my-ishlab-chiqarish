@@ -55,13 +55,18 @@ export default function Orders() {
 
   const today = new Date().toISOString().slice(0, 10);
   const filtered = rows.filter((o) => {
-    if (q && !o.order_number.toLowerCase().includes(q.toLowerCase()) && !o.product_name.toLowerCase().includes(q.toLowerCase())) return false;
+    if (q) {
+      const hay = [o.order_number, o.product_name, (o as any).client?.name].filter(Boolean).join(" ");
+      if (!matchesAcrossScripts(hay, q)) return false;
+    }
     if (filter === "active") return o.status === "in_progress" || o.status === "pending";
-    if (filter === "exception") return o.priority === "exception";
+    if (filter === "exception") return o.priority === "exception" && o.status !== "completed";
     if (filter === "delayed") return o.status === "delayed" || (o.status !== "completed" && o.deadline < today);
+    if (filter === "today") return o.deadline === today && o.status !== "completed";
     if (filter === "completed") return o.status === "completed";
     return true;
   });
+
 
   return (
     <div className="space-y-6">
