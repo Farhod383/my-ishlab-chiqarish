@@ -83,10 +83,11 @@ export default function Orders() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <Tabs value={filter} onValueChange={(v) => setFilter(v as any)}>
+            <Tabs value={filter} onValueChange={onFilterChange}>
               <TabsList>
                 <TabsTrigger value="all">{t.orders.tabs.all}</TabsTrigger>
                 <TabsTrigger value="active">{t.orders.tabs.active}</TabsTrigger>
+                <TabsTrigger value="today">{t.dashboard.todayDeadline}</TabsTrigger>
                 <TabsTrigger value="exception">{t.orders.tabs.exception}</TabsTrigger>
                 <TabsTrigger value="delayed">{t.orders.tabs.delayed}</TabsTrigger>
                 <TabsTrigger value="completed">{t.orders.tabs.completed}</TabsTrigger>
