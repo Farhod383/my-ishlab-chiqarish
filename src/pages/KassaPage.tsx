@@ -542,6 +542,13 @@ export default function KassaPage() {
                       <Input placeholder={k.recipientPlaceholder ?? "Yandex, Dostavka, ..."} value={expForm.recipient_manual} onChange={e => setExpForm({ ...expForm, recipient_manual: e.target.value })} />
                     )}
                   </div>
+                  <div>
+                    <Label>{k.paymentType ?? "To'lov turi"}</Label>
+                    <Select value={expForm.payment_type} onValueChange={(v: PaymentType) => setExpForm({ ...expForm, payment_type: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{PAYMENT_TYPES.map(p => <SelectItem key={p} value={p}>{ptLabel(p)}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
                   <div><Label>{k.comment ?? "Izoh"}</Label><Textarea value={expForm.comment} onChange={e => setExpForm({ ...expForm, comment: e.target.value })} /></div>
                   <Button className="w-full" onClick={saveExpense}>{t.common.save}</Button>
                 </div>
