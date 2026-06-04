@@ -17,6 +17,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { OrderCostReport } from "@/components/OrderCostReport";
+import MultiEmployeeSelect, { parseWorkerNames, joinWorkerNames } from "@/components/MultiEmployeeSelect";
+import { useLocalize } from "@/i18n/context";
 
 export default function OrderDetail() {
   const { id } = useParams();
