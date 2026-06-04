@@ -363,15 +363,16 @@ export default function OrderDetail() {
 
 function StageAssignDialog({ stage, onSaved }: { stage: any; onSaved: () => void }) {
   const [open, setOpen] = useState(false);
-  const [worker, setWorker] = useState(stage.worker_name ?? "");
+  const [workers, setWorkers] = useState<string[]>(parseWorkerNames(stage.worker_name));
   const [start, setStart] = useState(stage.planned_start ?? "");
   const [end, setEnd] = useState(stage.planned_end ?? "");
   const [handover, setHandover] = useState(stage.handover_comment ?? "");
   const { t } = useI18n();
   const { user } = useAuth();
   const save = async () => {
+    const workerStr = joinWorkerNames(workers);
     const { error } = await supabase.from("order_stages").update({
-      worker_name: worker.trim() || null,
+      worker_name: workerStr || null,
       planned_start: start || null,
       planned_end: end || null,
       handover_comment: handover.trim() || null,
@@ -381,7 +382,7 @@ function StageAssignDialog({ stage, onSaved }: { stage: any; onSaved: () => void
       actor_id: user?.id, actor_name: user?.email,
       action: "Bosqich tayinlandi", entity: "stage",
       order_id: stage.order_id, stage_id: stage.id,
-      details: `${stage.name}${worker ? ` → ${worker}` : ""}${handover ? ` · ${handover}` : ""}`,
+      details: `${stage.name}${workerStr ? ` · Ishchilar: ${workerStr}` : ""}${handover ? ` · ${handover}` : ""}`,
     });
     toast.success(t.orderDetail.saveAssign);
     setOpen(false);
@@ -395,7 +396,10 @@ function StageAssignDialog({ stage, onSaved }: { stage: any; onSaved: () => void
       <DialogContent>
         <DialogHeader><DialogTitle>{stage.name}</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <div><Label>{t.orderDetail.workerName}</Label><Input value={worker} onChange={(e) => setWorker(e.target.value)} /></div>
+          <div>
+            <Label>Ishchilar</Label>
+            <MultiEmployeeSelect value={workers} onChange={setWorkers} />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>{t.orderDetail.plannedStart}</Label><Input type="date" value={start} onChange={(e) => setStart(e.target.value)} /></div>
             <div><Label>{t.orderDetail.plannedEnd}</Label><Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></div>
@@ -405,5 +409,61 @@ function StageAssignDialog({ stage, onSaved }: { stage: any; onSaved: () => void
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function StageStartDialog({ stage, onStart }: { stage: any; onStart: (workers: string[]) => Promise<boolean> }) {
+  const [open, setOpen] = useState(false);
+  const [workers, setWorkers] = useState<string[]>(parseWorkerNames(stage.worker_name));
+  const [saving, setSaving] = useState(false);
+  const handleStart = async () => {
+    if (workers.length === 0) {
+      toast.error("Bosqichni boshlash uchun kamida 1 ta ishchi tayinlanishi kerak");
+      return;
+    }
+    setSaving(true);
+    const ok = await onStart(workers);
+    setSaving(false);
+    if (ok) setOpen(false);
+  };
+  return (
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (v) setWorkers(parseWorkerNames(stage.worker_name)); }}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline"><Play className="h-3 w-3 mr-1" />Boshlash</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Ishchi tayinlash — {stage.name}</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <Label>Ishchilar (kamida 1 ta)</Label>
+          <MultiEmployeeSelect value={workers} onChange={setWorkers} placeholder="🔍 Ishchi qidirish..." />
+          <Button onClick={handleStart} disabled={saving || workers.length === 0} className="w-full">
+            <Play className="h-4 w-4 mr-2" />Saqlash va boshlash
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function StageWorkersDisplay({ stage }: { stage: any }) {
+  const localize = useLocalize();
+  const workers = parseWorkerNames(stage.worker_name);
+  const hasMeta = workers.length > 0 || stage.planned_start || stage.planned_end || stage.handover_comment;
+  if (!hasMeta) return null;
+  return (
+    <div className="text-xs text-muted-foreground border rounded p-2 bg-muted/20 space-y-1">
+      {workers.length > 0 && (
+        <div>
+          <strong className="block text-foreground/80 mb-0.5">Ishchilar:</strong>
+          <ul className="list-disc list-inside space-y-0.5">
+            {workers.map((w, i) => <li key={i}>{localize(w)}</li>)}
+          </ul>
+        </div>
+      )}
+      {(stage.planned_start || stage.planned_end) && (
+        <div>{stage.planned_start ?? "—"} → {stage.planned_end ?? "—"}</div>
+      )}
+      {stage.handover_comment && <div className="italic">"{stage.handover_comment}"</div>}
+    </div>
   );
 }
