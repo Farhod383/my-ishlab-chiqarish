@@ -125,9 +125,9 @@ export default function EmployeesView() {
               <TableBody>
                 {filtered.map(e => (
                   <TableRow key={e.id} className="cursor-pointer hover:bg-muted/40" onClick={() => setActive(e)}>
-                    <TableCell className="font-medium">{e.full_name}</TableCell>
-                    <TableCell className="text-sm">{e.position || "—"}</TableCell>
-                    <TableCell className="text-sm">{e.department || "—"}</TableCell>
+                    <TableCell className="font-medium">{localize(e.full_name)}</TableCell>
+                    <TableCell className="text-sm">{localize(e.position) || "—"}</TableCell>
+                    <TableCell className="text-sm">{localize(e.department) || "—"}</TableCell>
                     <TableCell className="text-sm">{e.phone ?? "—"}</TableCell>
                     <TableCell>
                       <Badge variant={e.status === "active" ? "default" : "secondary"}>
