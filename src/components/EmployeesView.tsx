@@ -79,10 +79,10 @@ export default function EmployeesView() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
-  const q = search.trim().toLowerCase();
+  const q = search.trim();
   const filtered = useMemo(
     () => q ? employees.filter(e =>
-      [e.full_name, e.position, e.department, e.phone].some(v => (v ?? "").toString().toLowerCase().includes(q))
+      [e.full_name, e.position, e.department, e.phone].some(v => matchesAcrossScripts(String(v ?? ""), q))
     ) : employees,
     [employees, q]
   );
