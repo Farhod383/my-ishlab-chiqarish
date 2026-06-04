@@ -475,7 +475,7 @@ export default function KassaPage() {
 
         <TabsContent value="expense" className="space-y-3">
           {canManage && (
-            <Dialog open={openExp} onOpenChange={(o) => { setOpenExp(o); if (!o) { setExpEditId(null); setExpOrig(null); setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1 }); setRecipientMode("employee"); } }}>
+            <Dialog open={openExp} onOpenChange={(o) => { setOpenExp(o); if (!o) { setExpEditId(null); setExpOrig(null); setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash" }); setRecipientMode("employee"); } }}>
               <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{k.addExpense ?? "Xarajat qo'shish"}</Button></DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>{expEditId ? ((t as any).kassaExtra?.editExpense ?? "Xarajatni tahrirlash") : (k.addExpense ?? "Xarajat qo'shish")}</DialogTitle></DialogHeader>
