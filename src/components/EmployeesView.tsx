@@ -8,6 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Users, Wrench, Eye, FileDown } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
+import { useLocalize } from "@/i18n/context";
+import { matchesAcrossScripts } from "@/lib/translit";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
