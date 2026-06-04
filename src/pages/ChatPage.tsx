@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/auth/AuthContext";
-import { useI18n } from "@/i18n/context";
+import { useI18n, useLocalize } from "@/i18n/context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -192,11 +192,12 @@ export default function ChatPage() {
     setNewPartner("");
   };
 
+  const localize = useLocalize();
   const labelOf = (c: Conversation) => {
     if (c.is_global) return t.chat.global;
     if (c.title) return c.title;
     const other = c.participants?.find((p) => p.user_id !== user?.id);
-    return other?.profile?.full_name ?? other?.profile?.email ?? "Suhbat";
+    return localize(other?.profile?.full_name) || other?.profile?.email || "Suhbat";
   };
 
   const sortedConvs = useMemo(() => {
@@ -219,7 +220,7 @@ export default function ChatPage() {
                 <SelectTrigger><SelectValue placeholder={t.chat.select} /></SelectTrigger>
                 <SelectContent>
                   {profiles.filter((p) => p.id !== user?.id).map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.full_name || p.email} {p.department && `(${p.department})`}</SelectItem>
+                    <SelectItem key={p.id} value={p.id}>{localize(p.full_name) || p.email} {p.department && `(${p.department})`}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -262,7 +263,7 @@ export default function ChatPage() {
                   <div className={`max-w-[70%] rounded-lg px-3 py-2 text-sm ${mine ? "bg-primary text-primary-foreground" : "bg-card border"}`}>
                     {!mine && (
                       <div className="flex items-center gap-1.5 mb-0.5">
-                        <span className="text-[11px] font-semibold opacity-80">{m.sender_name ?? "—"}</span>
+                        <span className="text-[11px] font-semibold opacity-80">{localize(m.sender_name) || "—"}</span>
                         {role && <span className={`text-[9px] px-1 py-0.5 rounded ${mine ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"}`}>{role}</span>}
                       </div>
                     )}

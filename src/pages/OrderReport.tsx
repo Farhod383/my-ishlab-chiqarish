@@ -9,7 +9,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
-import { useI18n } from "@/i18n/context";
+import { useI18n, useLocalize } from "@/i18n/context";
 import {
   ArrowLeft, Download, FileText, FileType2, Loader2, Calendar, User,
   Package, Wrench, ClipboardList, MessageSquare,
@@ -20,6 +20,7 @@ import { fmtNum } from "@/lib/format";
 export default function OrderReport() {
   const { id } = useParams();
   const { t } = useI18n();
+  const localize = useLocalize();
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState<"docx" | "pdf" | null>(null);
   const [order, setOrder] = useState<any>(null);
@@ -297,7 +298,7 @@ export default function OrderReport() {
                 <TableRow key={s.id}>
                   <TableCell className="font-mono">{s.stage_order}</TableCell>
                   <TableCell className="font-medium">{s.name}</TableCell>
-                  <TableCell>{s.worker_name ?? "—"}</TableCell>
+                  <TableCell>{s.worker_name ? String(s.worker_name).split(",").map((n: string) => localize(n.trim())).join(", ") : "—"}</TableCell>
                   <TableCell className="text-xs whitespace-nowrap">{fmtDateTime(s.started_at)}</TableCell>
                   <TableCell className="text-xs whitespace-nowrap">{fmtDateTime(s.finished_at)}</TableCell>
                   <TableCell className="text-xs italic max-w-[260px]">
@@ -347,7 +348,7 @@ export default function OrderReport() {
                   </TableCell>
                   <TableCell className="text-right font-mono">{fmtMoney(r.price)}</TableCell>
                   <TableCell className="text-right font-mono font-semibold">{fmtMoney(r.total)}</TableCell>
-                  <TableCell className="text-sm">{r.recipient ?? "—"}</TableCell>
+                  <TableCell className="text-sm">{localize(r.recipient) || "—"}</TableCell>
                   <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                     {fmtDate(r.date)}
                   </TableCell>
@@ -393,7 +394,7 @@ export default function OrderReport() {
                     {s.name}{" "}
                     {s.worker_name && (
                       <span className="text-muted-foreground font-normal">
-                        — {s.worker_name}
+                        — {String(s.worker_name).split(",").map((n: string) => localize(n.trim())).join(", ")}
                       </span>
                     )}
                   </div>
