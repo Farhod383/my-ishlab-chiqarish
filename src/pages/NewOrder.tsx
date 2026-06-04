@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
+import { notify } from "@/lib/notify";
 
 interface StageDraft { name: string; norm_days: number; qc_required: boolean }
 
