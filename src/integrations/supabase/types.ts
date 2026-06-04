@@ -75,6 +75,7 @@ export type Database = {
           exchange_rate: number
           expense_date: string
           id: string
+          payment_type: string
           reason: string
           recipient_id: string | null
           recipient_name: string | null
@@ -89,6 +90,7 @@ export type Database = {
           exchange_rate?: number
           expense_date?: string
           id?: string
+          payment_type?: string
           reason?: string
           recipient_id?: string | null
           recipient_name?: string | null
@@ -103,6 +105,7 @@ export type Database = {
           exchange_rate?: number
           expense_date?: string
           id?: string
+          payment_type?: string
           reason?: string
           recipient_id?: string | null
           recipient_name?: string | null

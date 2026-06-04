@@ -17,7 +17,22 @@ import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
 import { fmtNum } from "@/lib/format";
 
-const PAYMENT_TYPES = ["cash", "card", "transfer", "other"];
+const PAYMENT_TYPES = ["cash", "corporate_card", "transfer", "other"] as const;
+type PaymentType = typeof PAYMENT_TYPES[number];
+
+// Locale-aware payment-type labels. Legacy `card` rows are surfaced under
+// `corporate_card` since that is what they always represented in practice.
+const PAYMENT_LABELS: Record<string, Record<string, string>> = {
+  uz:  { cash: "Naqd pul",   corporate_card: "Korporativ karta", transfer: "Bank o'tkazma", other: "Boshqa" },
+  uzc: { cash: "Нақд пул",   corporate_card: "Корпоратив карта", transfer: "Банк ўтказма",  other: "Бошқа" },
+  ru:  { cash: "Наличные",   corporate_card: "Корпоративная карта", transfer: "Банк. перевод", other: "Другое" },
+};
+const normalizePT = (pt: unknown): PaymentType => {
+  const v = String(pt ?? "cash");
+  if (v === "card") return "corporate_card";
+  return (PAYMENT_TYPES as readonly string[]).includes(v) ? (v as PaymentType) : "other";
+};
+
 const CARD_CURRENCIES = ["UZS", "USD", "EUR", "CNY"];
 const CURRENCIES = ["UZS", "USD", "EUR", "RUB", "CNY", "KZT", "TRY", "GBP", "AED", "INR", "JPY", "KRW", "CHF", "CAD", "AUD"];
 
@@ -26,8 +41,9 @@ const defaultCur: CurForm = { currency: "UZS", exchange_rate: 1 };
 
 export default function KassaPage() {
   const { user, hasRole, profile } = useAuth() as any;
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const k = (t as any).kassa ?? {};
+  const ptLabel = (pt: unknown) => PAYMENT_LABELS[locale]?.[normalizePT(pt)] ?? PAYMENT_LABELS.uz[normalizePT(pt)];
   const [expenses, setExpenses] = useState<any[]>([]);
   const [incomes, setIncomes] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
@@ -48,7 +64,7 @@ export default function KassaPage() {
   const [openExp, setOpenExp] = useState(false);
   const [expEditId, setExpEditId] = useState<string | null>(null);
   const [expOrig, setExpOrig] = useState<any>(null);
-  const [expForm, setExpForm] = useState({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1 });
+  const [expForm, setExpForm] = useState({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash" as PaymentType });
   const [recipientMode, setRecipientMode] = useState<"employee" | "manual">("employee");
 
   // income form
@@ -162,7 +178,7 @@ export default function KassaPage() {
     if (!s) return true;
     const hay = type === "income"
       ? `${row.source ?? ""} ${row.amount ?? ""} ${row.total_uzs ?? ""} ${row.comment ?? ""} ${row.payment_type ?? ""} ${row.currency ?? ""} kirim income`
-      : `${row.recipient_name ?? row.recipient?.full_name ?? ""} ${row.reason ?? ""} ${row.amount ?? ""} ${row.total_uzs ?? ""} ${row.comment ?? ""} ${row.currency ?? ""} chiqim expense`;
+      : `${row.recipient_name ?? row.recipient?.full_name ?? ""} ${row.reason ?? ""} ${row.amount ?? ""} ${row.total_uzs ?? ""} ${row.comment ?? ""} ${row.currency ?? ""} ${row.payment_type ?? ""} ${ptLabel(row.payment_type)} chiqim expense`;
     return hay.toLowerCase().includes(s);
   };
   const fExp = useMemo(() => expenses.filter(e => inRange(e.expense_date) && matchSearch(e, "expense")), [expenses, filterFrom, filterTo, searchQ]);
@@ -172,15 +188,16 @@ export default function KassaPage() {
     const code = String(currency ?? "UZS").trim().toUpperCase();
     return code || "UZS";
   };
-  const sumByCurrency = (rows: any[]) => {
+  const sumByCurrency = (rows: any[], filterPT?: (pt: PaymentType) => boolean) => {
     const m: Record<string, number> = {};
     for (const r of rows) {
+      if (filterPT && !filterPT(normalizePT(r.payment_type))) continue;
       const c = normalizeCurrency(r.currency);
-      const amount = Number(r.amount) || 0;
-      m[c] = (m[c] || 0) + amount;
+      m[c] = (m[c] || 0) + (Number(r.amount) || 0);
     }
     return m;
   };
+  // Overall (kept for back-compat — "total cash desk" view).
   const incByCur = useMemo(() => sumByCurrency(incomes), [incomes]);
   const expByCur = useMemo(() => sumByCurrency(expenses), [expenses]);
   const balByCur = useMemo(() => {
@@ -188,6 +205,22 @@ export default function KassaPage() {
     for (const [c, v] of Object.entries(expByCur)) m[c] = (m[c] || 0) - v;
     return m;
   }, [incByCur, expByCur]);
+  // Cash only (excludes corporate card and other electronic payments).
+  const cashIn   = useMemo(() => sumByCurrency(incomes,  pt => pt === "cash"), [incomes]);
+  const cashOut  = useMemo(() => sumByCurrency(expenses, pt => pt === "cash"), [expenses]);
+  const cashBal  = useMemo(() => {
+    const m: Record<string, number> = { ...cashIn };
+    for (const [c, v] of Object.entries(cashOut)) m[c] = (m[c] || 0) - v;
+    return m;
+  }, [cashIn, cashOut]);
+  // Corporate card only.
+  const cardIn   = useMemo(() => sumByCurrency(incomes,  pt => pt === "corporate_card"), [incomes]);
+  const cardOut  = useMemo(() => sumByCurrency(expenses, pt => pt === "corporate_card"), [expenses]);
+  const cardBal  = useMemo(() => {
+    const m: Record<string, number> = { ...cardIn };
+    for (const [c, v] of Object.entries(cardOut)) m[c] = (m[c] || 0) - v;
+    return m;
+  }, [cardIn, cardOut]);
 
   const CUR_SYMBOL: Record<string, string> = { UZS: "so'm", USD: "$", EUR: "€", RUB: "₽", CNY: "¥", KZT: "₸", TRY: "₺", GBP: "£", AED: "د.إ", INR: "₹", JPY: "¥", KRW: "₩", CHF: "Fr", CAD: "C$", AUD: "A$" };
   const currencyRank = (code: string) => {
@@ -232,11 +265,12 @@ export default function KassaPage() {
       currency: expForm.currency,
       exchange_rate: rate,
       total_uzs,
+      payment_type: expForm.payment_type,
     };
     if (expEditId) {
       const { error } = await supabase.from("cash_expenses").update(payload).eq("id", expEditId);
       if (error) { toast.error(error.message); return; }
-      const summary = diffSummary(expOrig, payload, ["amount", "currency", "exchange_rate", "total_uzs", "reason", "recipient_name", "comment"]);
+      const summary = diffSummary(expOrig, payload, ["amount", "currency", "exchange_rate", "total_uzs", "reason", "recipient_name", "comment", "payment_type"]);
       await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: "kassa.expense.update", entity: "cash_expenses", details: summary || "no changes" });
     } else {
       const { error } = await supabase.from("cash_expenses").insert({ ...payload, created_by: user?.id });
@@ -244,7 +278,7 @@ export default function KassaPage() {
       await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: "kassa.expense.create", entity: "cash_expenses", details: `${payload.amount} ${payload.currency} = ${fmt(total_uzs)} UZS · ${payload.reason}` });
     }
     toast.success(k.saved ?? "Saqlandi");
-    setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1 });
+    setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash" });
     setRecipientMode("employee");
     setExpEditId(null); setExpOrig(null);
     setOpenExp(false);
@@ -262,6 +296,7 @@ export default function KassaPage() {
       comment: e.comment ?? "",
       currency: e.currency ?? "UZS",
       exchange_rate: Number(e.exchange_rate) || 1,
+      payment_type: normalizePT(e.payment_type),
     });
     setRecipientMode(e.recipient_id ? "employee" : "manual");
     setOpenExp(true);
@@ -356,19 +391,45 @@ export default function KassaPage() {
         </div>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-4">
-        <Card><CardContent className="p-4 space-y-2">
-          <div className="text-xs text-muted-foreground">{k.balance ?? "Balans"}</div>
-          {renderCurrencies(balByCur, "balance")}
-        </CardContent></Card>
-        <Card><CardContent className="p-4 space-y-2">
-          <div className="text-xs text-muted-foreground">{k.totalIncome ?? "Jami kirim"}</div>
-          {renderCurrencies(incByCur, "in")}
-        </CardContent></Card>
-        <Card><CardContent className="p-4 space-y-2">
-          <div className="text-xs text-muted-foreground">{k.totalExpenses ?? "Jami chiqim"}</div>
-          {renderCurrencies(expByCur, "out")}
-        </CardContent></Card>
+      <div className="space-y-4">
+        <div className="grid sm:grid-cols-3 gap-4">
+          <Card><CardContent className="p-4 space-y-2">
+            <div className="text-xs text-muted-foreground">{k.balance ?? "Balans"}</div>
+            {renderCurrencies(balByCur, "balance")}
+          </CardContent></Card>
+          <Card><CardContent className="p-4 space-y-2">
+            <div className="text-xs text-muted-foreground">{k.totalIncome ?? "Jami kirim"}</div>
+            {renderCurrencies(incByCur, "in")}
+          </CardContent></Card>
+          <Card><CardContent className="p-4 space-y-2">
+            <div className="text-xs text-muted-foreground">{k.totalExpenses ?? "Jami chiqim"}</div>
+            {renderCurrencies(expByCur, "out")}
+          </CardContent></Card>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Card className="border-status-green/30"><CardContent className="p-4 space-y-3">
+            <div className="text-xs font-semibold uppercase tracking-wide text-status-green">
+              💵 {PAYMENT_LABELS[locale]?.cash ?? "Naqd pul"}
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div><div className="text-[10px] text-muted-foreground mb-1">{k.balance ?? "Balans"}</div>{renderCurrencies(cashBal, "balance")}</div>
+              <div><div className="text-[10px] text-muted-foreground mb-1">{k.income ?? "Kirim"}</div>{renderCurrencies(cashIn, "in")}</div>
+              <div><div className="text-[10px] text-muted-foreground mb-1">{k.expense ?? "Chiqim"}</div>{renderCurrencies(cashOut, "out")}</div>
+            </div>
+          </CardContent></Card>
+
+          <Card className="border-primary/30"><CardContent className="p-4 space-y-3">
+            <div className="text-xs font-semibold uppercase tracking-wide text-primary">
+              💳 {PAYMENT_LABELS[locale]?.corporate_card ?? "Korporativ karta"}
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div><div className="text-[10px] text-muted-foreground mb-1">{k.balance ?? "Balans"}</div>{renderCurrencies(cardBal, "balance")}</div>
+              <div><div className="text-[10px] text-muted-foreground mb-1">{k.income ?? "Kirim"}</div>{renderCurrencies(cardIn, "in")}</div>
+              <div><div className="text-[10px] text-muted-foreground mb-1">{k.expense ?? "Chiqim"}</div>{renderCurrencies(cardOut, "out")}</div>
+            </div>
+          </CardContent></Card>
+        </div>
       </div>
 
 
@@ -405,9 +466,9 @@ export default function KassaPage() {
                   <div><Label>{k.source ?? "Kimdan / Manba"}</Label><Input placeholder={k.sourcePlaceholder ?? "Mijoz, qarz qaytarish, ..."} value={incForm.source} onChange={e => setIncForm({ ...incForm, source: e.target.value })} /></div>
                   <div>
                     <Label>{k.paymentType ?? "To'lov turi"}</Label>
-                    <Select value={incForm.payment_type} onValueChange={v => setIncForm({ ...incForm, payment_type: v })}>
+                    <Select value={normalizePT(incForm.payment_type)} onValueChange={v => setIncForm({ ...incForm, payment_type: v })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>{PAYMENT_TYPES.map(p => <SelectItem key={p} value={p}>{(k.pt?.[p]) ?? p}</SelectItem>)}</SelectContent>
+                      <SelectContent>{PAYMENT_TYPES.map(p => <SelectItem key={p} value={p}>{ptLabel(p)}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div><Label>{k.comment ?? "Izoh"}</Label><Textarea value={incForm.comment} onChange={e => setIncForm({ ...incForm, comment: e.target.value })} /></div>
@@ -443,7 +504,7 @@ export default function KassaPage() {
                       <TableCell className="text-right text-xs font-mono">{(i.currency ?? "UZS") === "UZS" ? "—" : fmt(Number(i.exchange_rate ?? 1))}</TableCell>
                       <TableCell className="text-right font-mono text-status-green">{fmt(Number(i.total_uzs || i.amount))} {t.common.sum}</TableCell>
                       <TableCell className="text-sm">{i.source}</TableCell>
-                      <TableCell className="text-sm">{(k.pt?.[i.payment_type]) ?? i.payment_type ?? "—"}</TableCell>
+                      <TableCell className="text-sm">{ptLabel(i.payment_type)}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{i.comment ?? "—"}</TableCell>
                       <TableCell>{i.receipt_url ? <a href={i.receipt_url} target="_blank" rel="noreferrer" className="text-primary underline text-xs">{k.view ?? "Ko'rish"}</a> : "—"}</TableCell>
                       {canManage && <TableCell><Button size="sm" variant="ghost" onClick={() => openEditInc(i)}><Edit2 className="h-3 w-3" /></Button></TableCell>}
@@ -458,7 +519,7 @@ export default function KassaPage() {
 
         <TabsContent value="expense" className="space-y-3">
           {canManage && (
-            <Dialog open={openExp} onOpenChange={(o) => { setOpenExp(o); if (!o) { setExpEditId(null); setExpOrig(null); setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1 }); setRecipientMode("employee"); } }}>
+            <Dialog open={openExp} onOpenChange={(o) => { setOpenExp(o); if (!o) { setExpEditId(null); setExpOrig(null); setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash" }); setRecipientMode("employee"); } }}>
               <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{k.addExpense ?? "Xarajat qo'shish"}</Button></DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>{expEditId ? ((t as any).kassaExtra?.editExpense ?? "Xarajatni tahrirlash") : (k.addExpense ?? "Xarajat qo'shish")}</DialogTitle></DialogHeader>
@@ -481,6 +542,13 @@ export default function KassaPage() {
                       <Input placeholder={k.recipientPlaceholder ?? "Yandex, Dostavka, ..."} value={expForm.recipient_manual} onChange={e => setExpForm({ ...expForm, recipient_manual: e.target.value })} />
                     )}
                   </div>
+                  <div>
+                    <Label>{k.paymentType ?? "To'lov turi"}</Label>
+                    <Select value={expForm.payment_type} onValueChange={(v: PaymentType) => setExpForm({ ...expForm, payment_type: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{PAYMENT_TYPES.map(p => <SelectItem key={p} value={p}>{ptLabel(p)}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
                   <div><Label>{k.comment ?? "Izoh"}</Label><Textarea value={expForm.comment} onChange={e => setExpForm({ ...expForm, comment: e.target.value })} /></div>
                   <Button className="w-full" onClick={saveExpense}>{t.common.save}</Button>
                 </div>
@@ -498,12 +566,13 @@ export default function KassaPage() {
                   <TableHead className="text-right">{k.exchangeRate ?? "Kurs"}</TableHead>
                   <TableHead className="text-right">{k.totalUzs ?? "UZS jami"}</TableHead>
                   <TableHead>{k.reason ?? "Sabab"}</TableHead>
+                  <TableHead>{k.paymentType ?? "To'lov turi"}</TableHead>
                   <TableHead>{k.recipient ?? "Oluvchi"}</TableHead>
                   <TableHead>{k.comment ?? "Izoh"}</TableHead>
                   {canManage && <TableHead></TableHead>}
                 </TableRow></TableHeader>
                 <TableBody>
-                  {loading && <TableRow><TableCell colSpan={canManage ? 9 : 8} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
+                  {loading && <TableRow><TableCell colSpan={canManage ? 10 : 9} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                   {!loading && fExp.map(e => (
                     <TableRow key={e.id}>
                       <TableCell className="text-sm whitespace-nowrap">{new Date(e.expense_date).toLocaleString()}</TableCell>
@@ -512,12 +581,15 @@ export default function KassaPage() {
                       <TableCell className="text-right text-xs font-mono">{(e.currency ?? "UZS") === "UZS" ? "—" : fmt(Number(e.exchange_rate ?? 1))}</TableCell>
                       <TableCell className="text-right font-mono text-status-red">{fmt(Number(e.total_uzs || e.amount))} {t.common.sum}</TableCell>
                       <TableCell className="text-sm">{e.reason}</TableCell>
+                      <TableCell className="text-sm">
+                        <Badge variant={normalizePT(e.payment_type) === "corporate_card" ? "default" : "outline"}>{ptLabel(e.payment_type)}</Badge>
+                      </TableCell>
                       <TableCell className="text-sm">{e.recipient?.full_name ?? e.recipient_name ?? "—"}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{e.comment ?? "—"}</TableCell>
                       {canManage && <TableCell><Button size="sm" variant="ghost" onClick={() => openEditExp(e)}><Edit2 className="h-3 w-3" /></Button></TableCell>}
                     </TableRow>
                   ))}
-                  {!loading && fExp.length === 0 && <TableRow><TableCell colSpan={canManage ? 9 : 8} className="text-center text-muted-foreground py-8">{k.empty ?? "Xarajatlar yo'q"}</TableCell></TableRow>}
+                  {!loading && fExp.length === 0 && <TableRow><TableCell colSpan={canManage ? 10 : 9} className="text-center text-muted-foreground py-8">{k.empty ?? "Xarajatlar yo'q"}</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </div>

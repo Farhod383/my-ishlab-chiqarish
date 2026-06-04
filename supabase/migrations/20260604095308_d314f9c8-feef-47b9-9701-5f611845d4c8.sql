@@ -1,0 +1,1 @@
+ALTER TABLE public.cash_expenses ADD COLUMN IF NOT EXISTS payment_type text NOT NULL DEFAULT 'cash';
