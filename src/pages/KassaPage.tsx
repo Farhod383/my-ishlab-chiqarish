@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Wallet, Plus, ArrowDownCircle, ArrowUpCircle, Users, Edit2, Search } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
-import { useI18n } from "@/i18n/context";
+import { useI18n, useLocalize } from "@/i18n/context";
 import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
 import { fmtNum } from "@/lib/format";
@@ -42,6 +42,7 @@ const defaultCur: CurForm = { currency: "UZS", exchange_rate: 1 };
 export default function KassaPage() {
   const { user, hasRole, profile } = useAuth() as any;
   const { t, locale } = useI18n();
+  const localize = useLocalize();
   const k = (t as any).kassa ?? {};
   const ptLabel = (pt: unknown) => PAYMENT_LABELS[locale]?.[normalizePT(pt)] ?? PAYMENT_LABELS.uz[normalizePT(pt)];
   const [expenses, setExpenses] = useState<any[]>([]);
@@ -536,7 +537,7 @@ export default function KassaPage() {
                     {recipientMode === "employee" ? (
                       <Select value={expForm.recipient_id} onValueChange={v => setExpForm({ ...expForm, recipient_id: v })}>
                         <SelectTrigger><SelectValue placeholder={k.selectEmployee ?? "Xodimni tanlang"} /></SelectTrigger>
-                        <SelectContent>{employees.map(e => <SelectItem key={e.id} value={e.id}>{e.full_name} {e.department && `(${e.department})`}</SelectItem>)}</SelectContent>
+                        <SelectContent>{employees.map(e => <SelectItem key={e.id} value={e.id}>{localize(e.full_name)} {e.department && `(${e.department})`}</SelectItem>)}</SelectContent>
                       </Select>
                     ) : (
                       <Input placeholder={k.recipientPlaceholder ?? "Yandex, Dostavka, ..."} value={expForm.recipient_manual} onChange={e => setExpForm({ ...expForm, recipient_manual: e.target.value })} />
@@ -584,7 +585,7 @@ export default function KassaPage() {
                       <TableCell className="text-sm">
                         <Badge variant={normalizePT(e.payment_type) === "corporate_card" ? "default" : "outline"}>{ptLabel(e.payment_type)}</Badge>
                       </TableCell>
-                      <TableCell className="text-sm">{e.recipient?.full_name ?? e.recipient_name ?? "—"}</TableCell>
+                      <TableCell className="text-sm">{localize(e.recipient?.full_name ?? e.recipient_name) || "—"}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{e.comment ?? "—"}</TableCell>
                       {canManage && <TableCell><Button size="sm" variant="ghost" onClick={() => openEditExp(e)}><Edit2 className="h-3 w-3" /></Button></TableCell>}
                     </TableRow>
@@ -670,7 +671,7 @@ export default function KassaPage() {
                   {loading && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                   {!loading && filteredEmps.map(e => (
                     <TableRow key={e.id}>
-                      <TableCell className="font-medium">{e.full_name}</TableCell>
+                      <TableCell className="font-medium">{localize(e.full_name)}</TableCell>
                       <TableCell className="text-sm">{e.position}</TableCell>
                       <TableCell className="text-sm">{e.department}</TableCell>
                       <TableCell className="text-sm">{e.phone ?? "—"}</TableCell>
