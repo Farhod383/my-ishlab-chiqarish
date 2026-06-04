@@ -59,15 +59,27 @@ export default function OrderDetail() {
 
   useEffect(() => { load(); }, [id]);
 
-  const startStage = async (stage: StageRow) => {
+  const startStage = async (stage: StageRow, workers: string[]) => {
     // Parallel stages allowed: previous stage no longer required to be completed.
-    if (!(stage as any).worker_name || !((stage as any).worker_name).trim()) {
-      toast.error("Avval ishchi tayinlang"); return;
+    if (workers.length === 0) {
+      toast.error("Bosqichni boshlash uchun kamida 1 ta ishchi tayinlanishi kerak");
+      return false;
     }
-    await supabase.from("order_stages").update({ status: "in_progress", started_at: new Date().toISOString() }).eq("id", stage.id);
+    const workerStr = joinWorkerNames(workers);
+    await supabase.from("order_stages").update({
+      worker_name: workerStr,
+      status: "in_progress",
+      started_at: new Date().toISOString(),
+    } as any).eq("id", stage.id);
     if (order?.status === "pending") await supabase.from("orders").update({ status: "in_progress" }).eq("id", order.id);
-    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Bosqich boshlandi", entity: "stage", order_id: order!.id, stage_id: stage.id, details: `${stage.name} · ishchi: ${(stage as any).worker_name}` });
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: "Bosqich boshlandi", entity: "stage",
+      order_id: order!.id, stage_id: stage.id,
+      details: `${stage.name} · Ishchilar: ${workerStr}`,
+    });
     load();
+    return true;
   };
 
   const finishStage = async (stage: StageRow) => {
