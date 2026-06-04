@@ -21,6 +21,12 @@ const I18nContext = createContext<I18nContextType>({
 
 export const useI18n = () => useContext(I18nContext);
 
+/** Hook returning a memoized function that maps any stored name to the active UI locale. */
+export const useLocalize = () => {
+  const { locale } = useI18n();
+  return useMemo(() => (name?: string | null) => localizeName(name ?? "", locale), [locale]);
+};
+
 const LS_KEY = "erp_locale";
 
 export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
