@@ -566,6 +566,7 @@ export default function KassaPage() {
                   <TableHead className="text-right">{k.exchangeRate ?? "Kurs"}</TableHead>
                   <TableHead className="text-right">{k.totalUzs ?? "UZS jami"}</TableHead>
                   <TableHead>{k.reason ?? "Sabab"}</TableHead>
+                  <TableHead>{k.paymentType ?? "To'lov turi"}</TableHead>
                   <TableHead>{k.recipient ?? "Oluvchi"}</TableHead>
                   <TableHead>{k.comment ?? "Izoh"}</TableHead>
                   {canManage && <TableHead></TableHead>}
