@@ -572,7 +572,7 @@ export default function KassaPage() {
                   {canManage && <TableHead></TableHead>}
                 </TableRow></TableHeader>
                 <TableBody>
-                  {loading && <TableRow><TableCell colSpan={canManage ? 9 : 8} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
+                  {loading && <TableRow><TableCell colSpan={canManage ? 10 : 9} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                   {!loading && fExp.map(e => (
                     <TableRow key={e.id}>
                       <TableCell className="text-sm whitespace-nowrap">{new Date(e.expense_date).toLocaleString()}</TableCell>
@@ -581,12 +581,15 @@ export default function KassaPage() {
                       <TableCell className="text-right text-xs font-mono">{(e.currency ?? "UZS") === "UZS" ? "—" : fmt(Number(e.exchange_rate ?? 1))}</TableCell>
                       <TableCell className="text-right font-mono text-status-red">{fmt(Number(e.total_uzs || e.amount))} {t.common.sum}</TableCell>
                       <TableCell className="text-sm">{e.reason}</TableCell>
+                      <TableCell className="text-sm">
+                        <Badge variant={normalizePT(e.payment_type) === "corporate_card" ? "default" : "outline"}>{ptLabel(e.payment_type)}</Badge>
+                      </TableCell>
                       <TableCell className="text-sm">{e.recipient?.full_name ?? e.recipient_name ?? "—"}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{e.comment ?? "—"}</TableCell>
                       {canManage && <TableCell><Button size="sm" variant="ghost" onClick={() => openEditExp(e)}><Edit2 className="h-3 w-3" /></Button></TableCell>}
                     </TableRow>
                   ))}
-                  {!loading && fExp.length === 0 && <TableRow><TableCell colSpan={canManage ? 9 : 8} className="text-center text-muted-foreground py-8">{k.empty ?? "Xarajatlar yo'q"}</TableCell></TableRow>}
+                  {!loading && fExp.length === 0 && <TableRow><TableCell colSpan={canManage ? 10 : 9} className="text-center text-muted-foreground py-8">{k.empty ?? "Xarajatlar yo'q"}</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </div>
