@@ -448,9 +448,14 @@ function StageAssignDialog({ stage, onSaved }: { stage: any; onSaved: () => void
   );
 }
 
-function StageStartDialog({ stage, onStart }: { stage: any; onStart: (workers: string[]) => Promise<boolean> }) {
+function StageStartDialog({ stage, onStart }: { stage: any; onStart: (workers: string[], startedAtIso: string) => Promise<boolean> }) {
   const [open, setOpen] = useState(false);
   const [workers, setWorkers] = useState<string[]>(parseWorkerNames(stage.worker_name));
+  const [startedAt, setStartedAt] = useState<string>(() => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm for datetime-local
+  });
   const [saving, setSaving] = useState(false);
   const handleStart = async () => {
     if (workers.length === 0) {
@@ -458,7 +463,8 @@ function StageStartDialog({ stage, onStart }: { stage: any; onStart: (workers: s
       return;
     }
     setSaving(true);
-    const ok = await onStart(workers);
+    const iso = startedAt ? new Date(startedAt).toISOString() : new Date().toISOString();
+    const ok = await onStart(workers, iso);
     setSaving(false);
     if (ok) setOpen(false);
   };
@@ -470,8 +476,14 @@ function StageStartDialog({ stage, onStart }: { stage: any; onStart: (workers: s
       <DialogContent>
         <DialogHeader><DialogTitle>Ishchi tayinlash — {stage.name}</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <Label>Ishchilar (kamida 1 ta)</Label>
-          <MultiEmployeeSelect value={workers} onChange={setWorkers} placeholder="🔍 Ishchi qidirish..." />
+          <div>
+            <Label>Ishchilar (kamida 1 ta)</Label>
+            <MultiEmployeeSelect value={workers} onChange={setWorkers} placeholder="🔍 Ishchi qidirish..." />
+          </div>
+          <div>
+            <Label>Boshlanish sanasi</Label>
+            <Input type="datetime-local" value={startedAt} onChange={(e) => setStartedAt(e.target.value)} />
+          </div>
           <Button onClick={handleStart} disabled={saving || workers.length === 0} className="w-full">
             <Play className="h-4 w-4 mr-2" />Saqlash va boshlash
           </Button>
