@@ -281,9 +281,8 @@ export default function OrderDetail() {
         </TabsList>
 
         <TabsContent value="timeline" className="space-y-3 mt-4">
-          {stages.map((s, idx) => {
-            const prev = stages[idx - 1];
-            const canStart = !prev || prev.status === "completed";
+          {stages.map((s) => {
+            // Parallel execution: any pending stage may be started independently of the others.
             const color = otkColor(s);
             return (
               <Card key={s.id} className={s.status === "delayed" ? "border-status-red/50" : s.status === "in_progress" ? "border-status-blue/50" : ""}>
@@ -315,8 +314,8 @@ export default function OrderDetail() {
                     </div>
                     <div className="flex flex-col gap-2 shrink-0 min-w-[220px]">
                       <div className="flex gap-2 flex-wrap">
-                        {s.status === "pending" && canStart && hasRole(["manager", "admin", "marketing"]) && (
-                          <StageStartDialog stage={s} onStart={(workers) => startStage(s, workers)} />
+                        {s.status === "pending" && hasRole(["manager", "admin", "marketing"]) && (
+                          <StageStartDialog stage={s} onStart={(workers, startedAtIso) => startStage(s, workers, startedAtIso)} />
                         )}
                         {s.status === "in_progress" && hasRole(["manager", "admin", "marketing"]) && (
                           <Button size="sm" onClick={() => finishStage(s)}><CheckCircle2 className="h-3 w-3 mr-1" />{t.orderDetail.complete}</Button>
