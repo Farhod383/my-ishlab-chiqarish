@@ -399,13 +399,19 @@ export default function OrderDetail() {
 
 function StageAssignDialog({ stage, onSaved }: { stage: any; onSaved: () => void }) {
   const [open, setOpen] = useState(false);
-  const [workers, setWorkers] = useState<string[]>(parseWorkerNames(stage.worker_name));
+  const oldWorkers = parseWorkerNames(stage.worker_name);
+  const [workers, setWorkers] = useState<string[]>(oldWorkers);
   const [start, setStart] = useState(stage.planned_start ?? "");
   const [end, setEnd] = useState(stage.planned_end ?? "");
   const [handover, setHandover] = useState(stage.handover_comment ?? "");
   const { t } = useI18n();
   const { user } = useAuth();
   const save = async () => {
+    if (workers.length === 0) {
+      toast.error("Kamida 1 ta ishchi tanlanishi kerak");
+      return;
+    }
+    const prev = parseWorkerNames(stage.worker_name);
     const workerStr = joinWorkerNames(workers);
     const { error } = await supabase.from("order_stages").update({
       worker_name: workerStr || null,
@@ -414,34 +420,42 @@ function StageAssignDialog({ stage, onSaved }: { stage: any; onSaved: () => void
       handover_comment: handover.trim() || null,
     } as any).eq("id", stage.id);
     if (error) { toast.error(error.message); return; }
+    const changed = prev.join(",") !== workers.join(",");
+    const added = workers.filter((w) => !prev.includes(w));
+    const removed = prev.filter((w) => !workers.includes(w));
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: user?.email,
-      action: "Bosqich tayinlandi", entity: "stage",
+      action: changed ? "Ishchilar o'zgartirildi" : "Bosqich tayinlandi", entity: "stage",
       order_id: stage.order_id, stage_id: stage.id,
-      details: `${stage.name}${workerStr ? ` · Ishchilar: ${workerStr}` : ""}${handover ? ` · ${handover}` : ""}`,
+      details: `${stage.name} · Eski: ${prev.join(", ") || "—"} · Yangi: ${workers.join(", ") || "—"}${added.length ? ` · +${added.join(", ")}` : ""}${removed.length ? ` · -${removed.join(", ")}` : ""}${handover ? ` · ${handover}` : ""}`,
     });
-    toast.success(t.orderDetail.saveAssign);
+    toast.success("Ishchilar yangilandi");
     setOpen(false);
     onSaved();
   };
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (v) setWorkers(parseWorkerNames(stage.worker_name)); }}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="ghost" className="h-7 text-xs"><UserCog className="h-3 w-3 mr-1" />{t.orderDetail.assignWorker}</Button>
+        <Button size="sm" variant="outline" className="h-7 text-xs"><UserCog className="h-3 w-3 mr-1" />Ishchilarni o'zgartirish</Button>
       </DialogTrigger>
       <DialogContent>
-        <DialogHeader><DialogTitle>{stage.name}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Ishchilarni tahrirlash — {stage.name}</DialogTitle></DialogHeader>
         <div className="space-y-3">
+          {oldWorkers.length > 0 && (
+            <div className="text-xs text-muted-foreground border rounded p-2 bg-muted/30">
+              <strong>Hozirgi ishchilar:</strong> {oldWorkers.join(", ")}
+            </div>
+          )}
           <div>
-            <Label>Ishchilar</Label>
-            <MultiEmployeeSelect value={workers} onChange={setWorkers} />
+            <Label>Ishchilar (kamida 1 ta)</Label>
+            <MultiEmployeeSelect value={workers} onChange={setWorkers} placeholder="🔍 Ishchi qidirish..." />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>{t.orderDetail.plannedStart}</Label><Input type="date" value={start} onChange={(e) => setStart(e.target.value)} /></div>
             <div><Label>{t.orderDetail.plannedEnd}</Label><Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></div>
           </div>
           <div><Label>{t.orderDetail.handover}</Label><Textarea rows={3} value={handover} onChange={(e) => setHandover(e.target.value)} placeholder={t.orderDetail.handoverPh} /></div>
-          <Button onClick={save} className="w-full">{t.orderDetail.saveAssign}</Button>
+          <Button onClick={save} disabled={workers.length === 0} className="w-full">Saqlash</Button>
         </div>
       </DialogContent>
     </Dialog>
