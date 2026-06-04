@@ -13,6 +13,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
 import { toast } from "sonner";
+import { notify } from "@/lib/notify";
 
 type Filter = "all" | "red" | "yellow" | "green";
 
