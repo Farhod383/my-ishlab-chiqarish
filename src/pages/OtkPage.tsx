@@ -13,6 +13,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
 import { toast } from "sonner";
+import { notify } from "@/lib/notify";
 
 type Filter = "all" | "red" | "yellow" | "green";
 
@@ -78,6 +79,12 @@ export default function OtkPage() {
     return c;
   }, [stages]);
 
+  const ordersCounts = useMemo(() => {
+    const sets = { red: new Set<string>(), yellow: new Set<string>(), green: new Set<string>() };
+    stages.forEach((s) => { if (s.order?.id) sets[otkColor(s)].add(s.order.id); });
+    return { red: sets.red.size, yellow: sets.yellow.size, green: sets.green.size };
+  }, [stages]);
+
   const visibleOrders = orders.filter((o) => {
     if (filter !== "all" && o.worstColor !== filter) return false;
     if (q && !(`${o.order.order_number} ${o.order.product_name}`.toLowerCase().includes(q.toLowerCase()))) return false;
@@ -95,6 +102,15 @@ export default function OtkPage() {
       action: e.passed ? "OTK o'tdi" : (e.comment ? "OTK izoh" : "OTK saqlandi"),
       entity: "stage", order_id: s.order_id, stage_id: s.id,
       details: `${s.order?.order_number} → ${s.name}: ${e.comment || (e.passed ? "o'tdi" : "")}`,
+    });
+    // In-app + browser notification
+    await notify({
+      type: e.passed ? "otk_approved" : "otk_rejected",
+      title: e.passed ? `OTK tasdiqladi — ${s.order?.order_number}` : `OTK qaytarildi — ${s.order?.order_number}`,
+      body: `${s.name}${e.comment ? ` · ${e.comment}` : ""}`,
+      link: `/orders/${s.order_id}`,
+      entity: "stage", entity_id: s.id,
+      sender_id: user?.id, sender_name: user?.email,
     });
     toast.success(t.otk.save);
     load();
@@ -118,13 +134,15 @@ export default function OtkPage() {
                 <div className={`text-xs uppercase tracking-wide font-semibold ${c === "red" ? "text-status-red" : c === "yellow" ? "text-status-yellow" : "text-status-green"}`}>
                   {c === "red" ? t.otk.notChecked : c === "yellow" ? t.otk.commentOnly : t.otk.passed}
                 </div>
-                <div className="text-2xl font-bold mt-1">{counts[c]}</div>
+                <div className="text-2xl font-bold mt-1 leading-none">{counts[c]} <span className="text-xs text-muted-foreground font-normal">ta tekshiruv</span></div>
+                <div className="text-sm text-muted-foreground mt-1">{ordersCounts[c]} ta zakaz</div>
               </div>
               <div className={`h-10 w-10 rounded-full ${dotCls[c]}`} />
             </CardContent>
           </Card>
         ))}
       </div>
+
 
       {!openedOrder && (
         <Card>

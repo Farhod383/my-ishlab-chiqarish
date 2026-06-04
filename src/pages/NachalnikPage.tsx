@@ -28,6 +28,16 @@ export default function NachalnikPage() {
 
   useEffect(() => { load(); }, []);
 
+  // Realtime: any stage change (Admin or Nachalnik) refreshes the panel.
+  useEffect(() => {
+    const ch = supabase
+      .channel("nachalnik-stages")
+      .on("postgres_changes", { event: "*", schema: "public", table: "order_stages" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
+
   return (
     <div className="space-y-6">
       <div>

@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
+import { notify } from "@/lib/notify";
 
 interface StageDraft { name: string; norm_days: number; qc_required: boolean }
 
@@ -148,6 +149,14 @@ export default function NewOrder() {
         action: priority === "exception" ? "Istisno zakaz yaratildi" : "Zakaz yaratildi",
         entity: "order", order_id: order.id,
         details: `${orderNumber}, ${clientName || "—"}`,
+      });
+      await notify({
+        type: "order_created",
+        title: `Yangi zakaz — ${orderNumber}`,
+        body: `${productName}${clientName ? ` · ${clientName}` : ""}`,
+        link: `/orders/${order.id}`,
+        entity: "order", entity_id: order.id,
+        sender_id: user?.id, sender_name: user?.email,
       });
 
       toast.success(t.newOrder.created);

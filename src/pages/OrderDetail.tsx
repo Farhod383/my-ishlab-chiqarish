@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { OrderCostReport } from "@/components/OrderCostReport";
 import MultiEmployeeSelect, { parseWorkerNames, joinWorkerNames } from "@/components/MultiEmployeeSelect";
 import { useLocalize } from "@/i18n/context";
+import { notify } from "@/lib/notify";
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -60,7 +61,18 @@ export default function OrderDetail() {
 
   useEffect(() => { load(); }, [id]);
 
-  const startStage = async (stage: StageRow, workers: string[]) => {
+  // Realtime: keep Admin / Nachalnik in sync when either side changes a stage.
+  useEffect(() => {
+    if (!id) return;
+    const ch = supabase
+      .channel(`order-stages-${id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "order_stages", filter: `order_id=eq.${id}` }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `id=eq.${id}` }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [id]);
+
+  const startStage = async (stage: StageRow, workers: string[], startedAtIso: string) => {
     // Parallel stages allowed: previous stage no longer required to be completed.
     if (workers.length === 0) {
       toast.error("Bosqichni boshlash uchun kamida 1 ta ishchi tayinlanishi kerak");
@@ -70,14 +82,22 @@ export default function OrderDetail() {
     await supabase.from("order_stages").update({
       worker_name: workerStr,
       status: "in_progress",
-      started_at: new Date().toISOString(),
+      started_at: startedAtIso,
     } as any).eq("id", stage.id);
     if (order?.status === "pending") await supabase.from("orders").update({ status: "in_progress" }).eq("id", order.id);
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: user?.email,
       action: "Bosqich boshlandi", entity: "stage",
       order_id: order!.id, stage_id: stage.id,
-      details: `${stage.name} · Ishchilar: ${workerStr}`,
+      details: `${stage.name} · Ishchilar: ${workerStr} · ${new Date(startedAtIso).toLocaleString()}`,
+    });
+    await notify({
+      type: "stage_started",
+      title: `Bosqich boshlandi — ${order?.order_number}`,
+      body: `${stage.name} · ${workerStr}`,
+      link: `/orders/${order!.id}`,
+      entity: "stage", entity_id: stage.id,
+      sender_id: user?.id, sender_name: user?.email,
     });
     load();
     return true;
@@ -90,10 +110,26 @@ export default function OrderDetail() {
     const durationMin = startedTs ? Math.round((finishedTs - startedTs) / 60000) : 0;
     await supabase.from("order_stages").update({ status: "completed", finished_at: new Date(finishedTs).toISOString() }).eq("id", stage.id);
     await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Bosqich tugatildi", entity: "stage", order_id: order!.id, stage_id: stage.id, details: `${stage.name} · ishchi: ${(stage as any).worker_name ?? "—"} · davomiyligi: ${durationMin} daq.` });
+    await notify({
+      type: "stage_finished",
+      title: `Bosqich tugatildi — ${order?.order_number}`,
+      body: `${stage.name} · ${durationMin} daq.`,
+      link: `/orders/${order!.id}`,
+      entity: "stage", entity_id: stage.id,
+      sender_id: user?.id, sender_name: user?.email,
+    });
     const others = stages.filter((x) => x.id !== stage.id);
     if (others.every((x) => x.status === "completed")) {
       await supabase.from("orders").update({ status: "completed" }).eq("id", order!.id);
       await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Zakaz tugatildi", entity: "order", order_id: order!.id, details: order!.order_number });
+      await notify({
+        type: "order_completed",
+        title: `Zakaz tugatildi — ${order?.order_number}`,
+        body: order?.product_name ?? "",
+        link: `/orders/${order!.id}`,
+        entity: "order", entity_id: order!.id,
+        sender_id: user?.id, sender_name: user?.email,
+      });
     }
     load();
   };
@@ -245,9 +281,8 @@ export default function OrderDetail() {
         </TabsList>
 
         <TabsContent value="timeline" className="space-y-3 mt-4">
-          {stages.map((s, idx) => {
-            const prev = stages[idx - 1];
-            const canStart = !prev || prev.status === "completed";
+          {stages.map((s) => {
+            // Parallel execution: any pending stage may be started independently of the others.
             const color = otkColor(s);
             return (
               <Card key={s.id} className={s.status === "delayed" ? "border-status-red/50" : s.status === "in_progress" ? "border-status-blue/50" : ""}>
@@ -279,8 +314,8 @@ export default function OrderDetail() {
                     </div>
                     <div className="flex flex-col gap-2 shrink-0 min-w-[220px]">
                       <div className="flex gap-2 flex-wrap">
-                        {s.status === "pending" && canStart && hasRole(["manager", "admin", "marketing"]) && (
-                          <StageStartDialog stage={s} onStart={(workers) => startStage(s, workers)} />
+                        {s.status === "pending" && hasRole(["manager", "admin", "marketing"]) && (
+                          <StageStartDialog stage={s} onStart={(workers, startedAtIso) => startStage(s, workers, startedAtIso)} />
                         )}
                         {s.status === "in_progress" && hasRole(["manager", "admin", "marketing"]) && (
                           <Button size="sm" onClick={() => finishStage(s)}><CheckCircle2 className="h-3 w-3 mr-1" />{t.orderDetail.complete}</Button>
@@ -413,9 +448,14 @@ function StageAssignDialog({ stage, onSaved }: { stage: any; onSaved: () => void
   );
 }
 
-function StageStartDialog({ stage, onStart }: { stage: any; onStart: (workers: string[]) => Promise<boolean> }) {
+function StageStartDialog({ stage, onStart }: { stage: any; onStart: (workers: string[], startedAtIso: string) => Promise<boolean> }) {
   const [open, setOpen] = useState(false);
   const [workers, setWorkers] = useState<string[]>(parseWorkerNames(stage.worker_name));
+  const [startedAt, setStartedAt] = useState<string>(() => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm for datetime-local
+  });
   const [saving, setSaving] = useState(false);
   const handleStart = async () => {
     if (workers.length === 0) {
@@ -423,7 +463,8 @@ function StageStartDialog({ stage, onStart }: { stage: any; onStart: (workers: s
       return;
     }
     setSaving(true);
-    const ok = await onStart(workers);
+    const iso = startedAt ? new Date(startedAt).toISOString() : new Date().toISOString();
+    const ok = await onStart(workers, iso);
     setSaving(false);
     if (ok) setOpen(false);
   };
@@ -435,8 +476,14 @@ function StageStartDialog({ stage, onStart }: { stage: any; onStart: (workers: s
       <DialogContent>
         <DialogHeader><DialogTitle>Ishchi tayinlash — {stage.name}</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <Label>Ishchilar (kamida 1 ta)</Label>
-          <MultiEmployeeSelect value={workers} onChange={setWorkers} placeholder="🔍 Ishchi qidirish..." />
+          <div>
+            <Label>Ishchilar (kamida 1 ta)</Label>
+            <MultiEmployeeSelect value={workers} onChange={setWorkers} placeholder="🔍 Ishchi qidirish..." />
+          </div>
+          <div>
+            <Label>Boshlanish sanasi</Label>
+            <Input type="datetime-local" value={startedAt} onChange={(e) => setStartedAt(e.target.value)} />
+          </div>
           <Button onClick={handleStart} disabled={saving || workers.length === 0} className="w-full">
             <Play className="h-4 w-4 mr-2" />Saqlash va boshlash
           </Button>

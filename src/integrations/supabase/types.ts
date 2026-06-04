@@ -569,6 +569,51 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          entity: string | null
+          entity_id: string | null
+          id: string
+          link: string | null
+          read_at: string | null
+          recipient_id: string | null
+          sender_id: string | null
+          sender_name: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          entity?: string | null
+          entity_id?: string | null
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          recipient_id?: string | null
+          sender_id?: string | null
+          sender_name?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          entity?: string | null
+          entity_id?: string | null
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          recipient_id?: string | null
+          sender_id?: string | null
+          sender_name?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       order_files: {
         Row: {
           created_at: string
