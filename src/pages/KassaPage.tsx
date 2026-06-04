@@ -188,15 +188,16 @@ export default function KassaPage() {
     const code = String(currency ?? "UZS").trim().toUpperCase();
     return code || "UZS";
   };
-  const sumByCurrency = (rows: any[]) => {
+  const sumByCurrency = (rows: any[], filterPT?: (pt: PaymentType) => boolean) => {
     const m: Record<string, number> = {};
     for (const r of rows) {
+      if (filterPT && !filterPT(normalizePT(r.payment_type))) continue;
       const c = normalizeCurrency(r.currency);
-      const amount = Number(r.amount) || 0;
-      m[c] = (m[c] || 0) + amount;
+      m[c] = (m[c] || 0) + (Number(r.amount) || 0);
     }
     return m;
   };
+  // Overall (kept for back-compat — "total cash desk" view).
   const incByCur = useMemo(() => sumByCurrency(incomes), [incomes]);
   const expByCur = useMemo(() => sumByCurrency(expenses), [expenses]);
   const balByCur = useMemo(() => {
@@ -204,6 +205,22 @@ export default function KassaPage() {
     for (const [c, v] of Object.entries(expByCur)) m[c] = (m[c] || 0) - v;
     return m;
   }, [incByCur, expByCur]);
+  // Cash only (excludes corporate card and other electronic payments).
+  const cashIn   = useMemo(() => sumByCurrency(incomes,  pt => pt === "cash"), [incomes]);
+  const cashOut  = useMemo(() => sumByCurrency(expenses, pt => pt === "cash"), [expenses]);
+  const cashBal  = useMemo(() => {
+    const m: Record<string, number> = { ...cashIn };
+    for (const [c, v] of Object.entries(cashOut)) m[c] = (m[c] || 0) - v;
+    return m;
+  }, [cashIn, cashOut]);
+  // Corporate card only.
+  const cardIn   = useMemo(() => sumByCurrency(incomes,  pt => pt === "corporate_card"), [incomes]);
+  const cardOut  = useMemo(() => sumByCurrency(expenses, pt => pt === "corporate_card"), [expenses]);
+  const cardBal  = useMemo(() => {
+    const m: Record<string, number> = { ...cardIn };
+    for (const [c, v] of Object.entries(cardOut)) m[c] = (m[c] || 0) - v;
+    return m;
+  }, [cardIn, cardOut]);
 
   const CUR_SYMBOL: Record<string, string> = { UZS: "so'm", USD: "$", EUR: "€", RUB: "₽", CNY: "¥", KZT: "₸", TRY: "₺", GBP: "£", AED: "د.إ", INR: "₹", JPY: "¥", KRW: "₩", CHF: "Fr", CAD: "C$", AUD: "A$" };
   const currencyRank = (code: string) => {
