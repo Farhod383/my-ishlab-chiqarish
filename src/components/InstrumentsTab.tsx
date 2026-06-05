@@ -87,9 +87,14 @@ export default function InstrumentsTab() {
     setInstruments((inst.data as any) ?? []);
     setAssignments((asg.data as any) ?? []);
     setEmployees(emp.data ?? []);
-    // Seed category history from existing instruments (idempotent upsert)
-    const cats = Array.from(new Set(((inst.data as any[]) ?? []).map(i => (i.category ?? "").trim()).filter(Boolean)));
-    cats.forEach(c => { rememberFormValue("instrument_category", c); });
+    // Seed history from existing instruments (idempotent upsert)
+    const seen = new Set<string>();
+    ((inst.data as any[]) ?? []).forEach(i => {
+      const cat = (i.category ?? "").trim();
+      if (cat) rememberFormValue("instrument_category", cat);
+      const name = (i.name ?? "").trim();
+      if (name) { rememberFormValue("instrument_name", name); seen.add(name.toLowerCase()); }
+    });
   };
 
   useEffect(() => {
