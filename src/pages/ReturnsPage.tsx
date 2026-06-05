@@ -97,13 +97,12 @@ export default function ReturnsPage() {
                   />
                 </div>
                 <div><Label>Zakaz (ixtiyoriy)</Label>
-                  <Select value={form.order_id || "none"} onValueChange={v => setForm({ ...form, order_id: v === "none" ? "" : v })}>
-                    <SelectTrigger><SelectValue placeholder="Tanlash..." /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">— Yo'q —</SelectItem>
-                      {orders.map(o => <SelectItem key={o.id} value={o.id}>{o.order_number} — {o.product_name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={form.order_id}
+                    onChange={v => setForm({ ...form, order_id: v })}
+                    placeholder="— Yo'q —"
+                    options={orders.map(o => ({ value: o.id, label: o.product_name, hint: o.order_number }))}
+                  />
                 </div>
                 <div><Label>{r.qty ?? "Miqdor"}</Label><NumberInput min={0.1} step={0.1} value={form.quantity} onChange={e => setForm({ ...form, quantity: Number(e.target.value) })} /></div>
                 <div><Label>{r.returnedBy ?? "Kim qaytardi"}</Label>
