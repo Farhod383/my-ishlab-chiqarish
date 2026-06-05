@@ -145,6 +145,7 @@ export default function InstrumentsTab() {
       if (error) { toast.error(error.message); return; }
       await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Instrument qo'shildi", entity: "instrument", details: `${payload.name} ×${payload.quantity}` });
     }
+    if (payload.category) await rememberFormValue("instrument_category", payload.category, user?.id);
     toast.success("Saqlandi");
     setIOpen(false); resetIForm(); setIEditId(null);
   };
