@@ -98,6 +98,12 @@ export default function EditOrder() {
     }
     setBusy(true);
     try {
+      const { data: dup } = await supabase.from("orders").select("id").eq("order_number", orderNumber).neq("id", id!).maybeSingle();
+      if (dup) {
+        toast.error(t.newOrder.duplicateOrderNumber);
+        setBusy(false);
+        return;
+      }
       let imgUrl = existingImageUrl;
       if (productImage) imgUrl = await uploadFile(productImage, "product-images");
 
@@ -163,7 +169,12 @@ export default function EditOrder() {
       toast.success(t.editOrder?.saved ?? "Zakaz yangilandi");
       nav(`/orders/${id}`);
     } catch (e: any) {
-      toast.error(`${t.newOrder.error}: ${e.message}`);
+      const msg = e?.message || "";
+      if (msg.includes("duplicate key") || msg.includes("orders_order_number_key")) {
+        toast.error(t.newOrder.duplicateOrderNumber);
+      } else {
+        toast.error(t.newOrder.error);
+      }
     } finally {
       setBusy(false);
     }

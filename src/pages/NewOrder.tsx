@@ -82,6 +82,12 @@ export default function NewOrder() {
     }
     setBusy(true);
     try {
+      const { data: dup } = await supabase.from("orders").select("id").eq("order_number", orderNumber).maybeSingle();
+      if (dup) {
+        toast.error(t.newOrder.duplicateOrderNumber);
+        setBusy(false);
+        return;
+      }
       let imgUrl: string | null = null;
       const uploadedFileUrls: { file_url: string; file_name: string }[] = [];
       for (const f of tzFiles) {
@@ -162,7 +168,12 @@ export default function NewOrder() {
       toast.success(t.newOrder.created);
       nav(`/orders/${order.id}`);
     } catch (e: any) {
-      toast.error(`${t.newOrder.error}: ${e.message}`);
+      const msg = e?.message || "";
+      if (msg.includes("duplicate key") || msg.includes("orders_order_number_key")) {
+        toast.error(t.newOrder.duplicateOrderNumber);
+      } else {
+        toast.error(t.newOrder.error);
+      }
     } finally {
       setBusy(false);
     }
