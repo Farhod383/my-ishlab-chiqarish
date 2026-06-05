@@ -95,12 +95,10 @@ export default function Orders() {
                 <TabsTrigger value="completed">{t.orders.tabs.completed}</TabsTrigger>
               </TabsList>
             </Tabs>
-            <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input className="pl-8 w-64" placeholder={t.common.search} value={q} onChange={(e) => setQ(e.target.value)} />
-            </div>
+            <PartSearchBox rows={rows} value={q} onChange={setQ} placeholder={t.common.search} />
           </div>
         </CardHeader>
+
         <CardContent>
           <div className="border rounded-md overflow-x-auto">
             <Table>
