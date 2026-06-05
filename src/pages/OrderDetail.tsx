@@ -127,9 +127,11 @@ export default function OrderDetail() {
       entity: "stage", entity_id: stage.id,
       sender_id: user?.id, sender_name: user?.email,
     });
-    const others = stages.filter((x) => x.id !== stage.id);
-    if (others.every((x) => x.status === "completed")) {
-      await supabase.from("orders").update({ status: "completed" }).eq("id", order!.id);
+    // Re-fetch fresh stage state, then evaluate completion (all completed + OTK approved where required).
+    const { data: fresh } = await supabase.from("order_stages").select("status, qc_required, qc_passed").eq("order_id", order!.id);
+    const allDone = (fresh ?? []).length > 0 && (fresh ?? []).every((x: any) => x.status === "completed" && (!x.qc_required || x.qc_passed === true));
+    if (allDone) {
+      await supabase.from("orders").update({ status: "completed" }).eq("id", order!.id).neq("status", "completed");
       await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Zakaz tugatildi", entity: "order", order_id: order!.id, details: order!.order_number });
       await notify({
         type: "order_completed",
