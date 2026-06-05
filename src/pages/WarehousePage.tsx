@@ -544,7 +544,7 @@ export default function WarehousePage() {
                         value={outOrder}
                         onChange={setOutOrder}
                         placeholder={t.warehouse.orderPh}
-                        options={orders.map(o => ({ value: o.id, label: o.order_number, hint: o.product_name }))}
+                        options={orders.map(o => ({ value: o.id, label: o.product_name, hint: o.order_number }))}
                       />
                     </div>
                     <div><Label>{t.warehouse.qty}</Label><NumberInput min={0.1} step={0.1} value={outQty} onChange={e => setOutQty(Number(e.target.value))} /></div>

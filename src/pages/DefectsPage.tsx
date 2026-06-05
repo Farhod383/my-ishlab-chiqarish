@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import SearchableSelect from "@/components/SearchableSelect";
 import NumberInput from "@/components/NumberInput";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
