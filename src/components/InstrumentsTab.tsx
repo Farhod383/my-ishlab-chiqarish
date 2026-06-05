@@ -286,7 +286,7 @@ export default function InstrumentsTab() {
               <DialogContent>
                 <DialogHeader><DialogTitle>{iEditId ? "Tahrirlash" : "Yangi instrument"}</DialogTitle></DialogHeader>
                 <div className="space-y-3">
-                  <div><Label>Nomi *</Label><Input value={iForm.name} onChange={e => setIForm({ ...iForm, name: e.target.value })} placeholder="Masalan: Perforator" /></div>
+                  <div><Label>Nomi *</Label><SmartAutocomplete fieldKey="instrument_name" value={iForm.name} onChange={v => setIForm({ ...iForm, name: v })} placeholder="Masalan: Perforator" /></div>
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label>Kategoriya</Label><SmartAutocomplete fieldKey="instrument_category" value={iForm.category} onChange={v => setIForm({ ...iForm, category: v })} placeholder="Elektr / Qo'l asbobi / Payvandlash" /></div>
                     <div><Label>Inventar №</Label><Input value={iForm.inventory_number} onChange={e => setIForm({ ...iForm, inventory_number: e.target.value })} /></div>
