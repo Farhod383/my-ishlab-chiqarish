@@ -168,7 +168,12 @@ export default function NewOrder() {
       toast.success(t.newOrder.created);
       nav(`/orders/${order.id}`);
     } catch (e: any) {
-      toast.error(`${t.newOrder.error}: ${e.message}`);
+      const msg = e?.message || "";
+      if (msg.includes("duplicate key") || msg.includes("orders_order_number_key")) {
+        toast.error(t.newOrder.duplicateOrderNumber);
+      } else {
+        toast.error(t.newOrder.error);
+      }
     } finally {
       setBusy(false);
     }
