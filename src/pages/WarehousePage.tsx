@@ -17,6 +17,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
 import { fmtNum } from "@/lib/format";
+import { matchesAcrossScripts } from "@/lib/translit";
 import { toast } from "sonner";
 import InstrumentsTab from "@/components/InstrumentsTab";
 import EmployeesView from "@/components/EmployeesView";
