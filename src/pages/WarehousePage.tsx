@@ -1002,3 +1002,61 @@ export default function WarehousePage() {
     </div>
   );
 }
+
+function ProductSearchBox({ movements, value, onChange, placeholder }: {
+  movements: any[]; value: string; onChange: (v: string) => void; placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const allNames = useMemo(() => {
+    const set = new Set<string>();
+    movements.forEach((m: any) => {
+      const n = (m.product?.name ?? "").trim();
+      const o = (m.order?.product_name ?? "").trim();
+      if (n) set.add(n);
+      if (o) set.add(o);
+    });
+    return Array.from(set);
+  }, [movements]);
+
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  const q = value.trim().toLowerCase();
+  const suggestions = q
+    ? allNames.filter(n => matchesAcrossScripts(n, q)).slice(0, 8)
+    : [];
+
+  return (
+    <div ref={ref} className="relative">
+      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+      <Input
+        className="pl-8 w-72"
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => { onChange(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+      />
+      {open && suggestions.length > 0 && (
+        <div className="absolute z-50 mt-1 w-full bg-popover border rounded-md shadow-md max-h-64 overflow-auto">
+          {suggestions.map(s => (
+            <button
+              key={s}
+              type="button"
+              className="block w-full text-left px-3 py-1.5 text-sm hover:bg-accent"
+              onMouseDown={(e) => { e.preventDefault(); onChange(s); setOpen(false); }}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
