@@ -20,6 +20,7 @@ import { OrderCostReport } from "@/components/OrderCostReport";
 import MultiEmployeeSelect, { parseWorkerNames, joinWorkerNames } from "@/components/MultiEmployeeSelect";
 import { useLocalize } from "@/i18n/context";
 import { notify } from "@/lib/notify";
+import { recalcOrderStatus } from "@/lib/orderStatus";
 
 export default function OrderDetail() {
   const { id } = useParams();
