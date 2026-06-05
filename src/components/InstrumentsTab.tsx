@@ -87,6 +87,9 @@ export default function InstrumentsTab() {
     setInstruments((inst.data as any) ?? []);
     setAssignments((asg.data as any) ?? []);
     setEmployees(emp.data ?? []);
+    // Seed category history from existing instruments (idempotent upsert)
+    const cats = Array.from(new Set(((inst.data as any[]) ?? []).map(i => (i.category ?? "").trim()).filter(Boolean)));
+    cats.forEach(c => { rememberFormValue("instrument_category", c); });
   };
 
   useEffect(() => {
