@@ -87,9 +87,14 @@ export default function InstrumentsTab() {
     setInstruments((inst.data as any) ?? []);
     setAssignments((asg.data as any) ?? []);
     setEmployees(emp.data ?? []);
-    // Seed category history from existing instruments (idempotent upsert)
-    const cats = Array.from(new Set(((inst.data as any[]) ?? []).map(i => (i.category ?? "").trim()).filter(Boolean)));
-    cats.forEach(c => { rememberFormValue("instrument_category", c); });
+    // Seed history from existing instruments (idempotent upsert)
+    const seen = new Set<string>();
+    ((inst.data as any[]) ?? []).forEach(i => {
+      const cat = (i.category ?? "").trim();
+      if (cat) rememberFormValue("instrument_category", cat);
+      const name = (i.name ?? "").trim();
+      if (name) { rememberFormValue("instrument_name", name); seen.add(name.toLowerCase()); }
+    });
   };
 
   useEffect(() => {
@@ -146,6 +151,7 @@ export default function InstrumentsTab() {
       await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Instrument qo'shildi", entity: "instrument", details: `${payload.name} ×${payload.quantity}` });
     }
     if (payload.category) await rememberFormValue("instrument_category", payload.category, user?.id);
+    if (payload.name) await rememberFormValue("instrument_name", payload.name, user?.id);
     toast.success("Saqlandi");
     setIOpen(false); resetIForm(); setIEditId(null);
   };
@@ -280,7 +286,7 @@ export default function InstrumentsTab() {
               <DialogContent>
                 <DialogHeader><DialogTitle>{iEditId ? "Tahrirlash" : "Yangi instrument"}</DialogTitle></DialogHeader>
                 <div className="space-y-3">
-                  <div><Label>Nomi *</Label><Input value={iForm.name} onChange={e => setIForm({ ...iForm, name: e.target.value })} placeholder="Masalan: Perforator" /></div>
+                  <div><Label>Nomi *</Label><SmartAutocomplete fieldKey="instrument_name" value={iForm.name} onChange={v => setIForm({ ...iForm, name: v })} placeholder="Masalan: Perforator" /></div>
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label>Kategoriya</Label><SmartAutocomplete fieldKey="instrument_category" value={iForm.category} onChange={v => setIForm({ ...iForm, category: v })} placeholder="Elektr / Qo'l asbobi / Payvandlash" /></div>
                     <div><Label>Inventar №</Label><Input value={iForm.inventory_number} onChange={e => setIForm({ ...iForm, inventory_number: e.target.value })} /></div>
