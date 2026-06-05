@@ -82,6 +82,12 @@ export default function NewOrder() {
     }
     setBusy(true);
     try {
+      const { data: dup } = await supabase.from("orders").select("id").eq("order_number", orderNumber).maybeSingle();
+      if (dup) {
+        toast.error(t.newOrder.duplicateOrderNumber);
+        setBusy(false);
+        return;
+      }
       let imgUrl: string | null = null;
       const uploadedFileUrls: { file_url: string; file_name: string }[] = [];
       for (const f of tzFiles) {

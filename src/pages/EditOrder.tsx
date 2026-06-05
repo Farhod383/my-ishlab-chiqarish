@@ -98,6 +98,12 @@ export default function EditOrder() {
     }
     setBusy(true);
     try {
+      const { data: dup } = await supabase.from("orders").select("id").eq("order_number", orderNumber).neq("id", id!).maybeSingle();
+      if (dup) {
+        toast.error(t.newOrder.duplicateOrderNumber);
+        setBusy(false);
+        return;
+      }
       let imgUrl = existingImageUrl;
       if (productImage) imgUrl = await uploadFile(productImage, "product-images");
 
