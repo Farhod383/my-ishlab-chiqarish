@@ -769,7 +769,7 @@ export default function WarehousePage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {movements.map(m => (
+                    {filteredMovements.map((m: any) => (
                       <TableRow key={m.id}>
                         <TableCell className="text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</TableCell>
                         <TableCell>
@@ -798,7 +798,7 @@ export default function WarehousePage() {
                         </div></TableCell>}
                       </TableRow>
                     ))}
-                    {movements.length === 0 && <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-6">{t.warehouse.noMov}</TableCell></TableRow>}
+                    {filteredMovements.length === 0 && <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-6">{t.warehouse.noMov}</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </div>
