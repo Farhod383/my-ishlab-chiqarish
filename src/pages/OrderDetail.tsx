@@ -58,6 +58,14 @@ export default function OrderDetail() {
     (s.data ?? []).forEach((st: any) => { map[st.id] = st.otk_comment ?? ""; });
     setOtkEdit(map);
     setLoading(false);
+    // Auto-fix order status if all stages already completed (incl. required OTK).
+    if (o.data && (o.data as any).status !== "completed") {
+      const changed = await recalcOrderStatus(id, (o.data as any).status);
+      if (changed) {
+        const { data: o2 } = await supabase.from("orders").select("*, client:clients(*)").eq("id", id).maybeSingle();
+        if (o2) setOrder(o2 as any);
+      }
+    }
   };
 
   useEffect(() => { load(); }, [id]);
