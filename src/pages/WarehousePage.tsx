@@ -741,8 +741,13 @@ export default function WarehousePage() {
         <TabsContent value="history" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">{t.warehouse.historyTitle}</CardTitle>
-              <CardDescription>{t.warehouse.historyDesc}</CardDescription>
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <CardTitle className="text-base">{t.warehouse.historyTitle}</CardTitle>
+                  <CardDescription>{t.warehouse.historyDesc}</CardDescription>
+                </div>
+                <ProductSearchBox movements={movements} value={historySearch} onChange={setHistorySearch} placeholder={t.common.search} />
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <div className="border-t overflow-x-auto">
