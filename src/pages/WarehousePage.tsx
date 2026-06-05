@@ -425,6 +425,21 @@ export default function WarehousePage() {
   const fmtDateTime = (s: string) => new Date(s).toLocaleString();
   const lowStock = products.filter(p => Number(p.stock_qty) <= Number(p.min_limit));
 
+  const filteredMovements = useMemo(() => {
+    const q = historySearch.trim().toLowerCase();
+    if (!q) return movements;
+    return movements.filter((m: any) => {
+      const hay = [
+        m.product?.name,
+        m.order?.product_name,
+        m.comment,
+        m.recipient_name,
+        m.source,
+      ].filter(Boolean).join(" ");
+      return matchesAcrossScripts(hay, q);
+    });
+  }, [movements, historySearch]);
+
   return (
     <div className="space-y-6">
       {/* Autocomplete datalists */}
