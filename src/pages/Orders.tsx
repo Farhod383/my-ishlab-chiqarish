@@ -13,6 +13,7 @@ import { useI18n, useLocalize } from "@/i18n/context";
 import { Plus, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { matchesAcrossScripts } from "@/lib/translit";
+import { recalcOrdersBatch } from "@/lib/orderStatus";
 
 type FilterKey = "all" | "active" | "exception" | "delayed" | "completed" | "today";
 
@@ -45,10 +46,16 @@ export default function Orders() {
     (async () => {
       const { data } = await supabase
         .from("orders")
-        .select("*, client:clients(name), order_stages(stage_order, started_at), order_parts(part_name)")
+        .select("*, client:clients(name), order_stages(stage_order, started_at, status, qc_required, qc_passed), order_parts(part_name)")
         .order("priority", { ascending: false })
         .order("queue_position");
-      setRows((data as any) ?? []);
+      const list = (data as any[]) ?? [];
+      // Auto-fix any orders whose stages are all completed (with OTK where required) but status != completed.
+      const fixed = await recalcOrdersBatch(list);
+      if (fixed.size > 0) {
+        for (const r of list) if (fixed.has(r.id)) r.status = "completed";
+      }
+      setRows(list as any);
       setLoading(false);
     })();
   }, []);
