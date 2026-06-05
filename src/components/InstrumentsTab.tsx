@@ -16,6 +16,7 @@ import { logAudit } from "@/types/erp";
 import { toast } from "sonner";
 import NumberInput from "@/components/NumberInput";
 import SearchableSelect from "@/components/SearchableSelect";
+import SmartAutocomplete, { rememberFormValue } from "@/components/SmartAutocomplete";
 
 type Instrument = {
   id: string;
