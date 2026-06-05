@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import SearchableSelect from "@/components/SearchableSelect";
 import NumberInput from "@/components/NumberInput";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -91,10 +92,12 @@ export default function DefectsPage() {
             <DialogHeader><DialogTitle>{d.add ?? "Brak qo'shish"}</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div><Label>{d.order ?? "Zakaz"}</Label>
-                <Select value={form.order_id} onValueChange={v => setForm({ ...form, order_id: v })}>
-                  <SelectTrigger><SelectValue placeholder={d.selectOrder ?? "Tanlang (ixtiyoriy)"} /></SelectTrigger>
-                  <SelectContent>{orders.map(o => <SelectItem key={o.id} value={o.id}>{o.order_number} — {o.product_name}</SelectItem>)}</SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={form.order_id}
+                  onChange={v => setForm({ ...form, order_id: v })}
+                  placeholder={d.selectOrder ?? "Tanlang (ixtiyoriy)"}
+                  options={orders.map(o => ({ value: o.id, label: o.product_name, hint: o.order_number }))}
+                />
               </div>
               <div><Label>{d.product ?? "Mahsulot"}</Label>
                 <Select value={form.product_id} onValueChange={v => setForm({ ...form, product_id: v })}>
