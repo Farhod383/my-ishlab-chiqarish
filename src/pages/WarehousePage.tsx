@@ -39,6 +39,7 @@ export default function WarehousePage() {
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [search, setSearch] = useState("");
+  const [historySearch, setHistorySearch] = useState("");
 
   // Output states
   const [outProduct, setOutProduct] = useState("");
