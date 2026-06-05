@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -45,7 +45,7 @@ export default function Orders() {
     (async () => {
       const { data } = await supabase
         .from("orders")
-        .select("*, client:clients(name), order_stages(stage_order, started_at)")
+        .select("*, client:clients(name), order_stages(stage_order, started_at), order_parts(part_name)")
         .order("priority", { ascending: false })
         .order("queue_position");
       setRows((data as any) ?? []);
@@ -56,9 +56,11 @@ export default function Orders() {
   const today = new Date().toISOString().slice(0, 10);
   const filtered = rows.filter((o) => {
     if (q) {
-      const hay = [o.order_number, o.product_name, (o as any).client?.name].filter(Boolean).join(" ");
+      const parts = ((o as any).order_parts ?? []).map((p: any) => p.part_name).join(" ");
+      const hay = [o.order_number, o.product_name, (o as any).client?.name, parts].filter(Boolean).join(" ");
       if (!matchesAcrossScripts(hay, q)) return false;
     }
+
     if (filter === "active") return o.status === "in_progress" || o.status === "pending";
     if (filter === "exception") return o.priority === "exception" && o.status !== "completed";
     if (filter === "delayed") return o.status === "delayed" || (o.status !== "completed" && o.deadline < today);
@@ -93,12 +95,10 @@ export default function Orders() {
                 <TabsTrigger value="completed">{t.orders.tabs.completed}</TabsTrigger>
               </TabsList>
             </Tabs>
-            <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input className="pl-8 w-64" placeholder={t.common.search} value={q} onChange={(e) => setQ(e.target.value)} />
-            </div>
+            <PartSearchBox rows={rows} value={q} onChange={setQ} placeholder={t.common.search} />
           </div>
         </CardHeader>
+
         <CardContent>
           <div className="border rounded-md overflow-x-auto">
             <Table>
@@ -160,3 +160,63 @@ export default function Orders() {
     </div>
   );
 }
+
+function PartSearchBox({ rows, value, onChange, placeholder }: {
+  rows: any[]; value: string; onChange: (v: string) => void; placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const allParts = useMemo(() => {
+    const set = new Set<string>();
+    rows.forEach(o => {
+      (o.order_parts ?? []).forEach((p: any) => {
+        const n = (p.part_name ?? "").trim();
+        if (n) set.add(n);
+      });
+      if (o.product_name) set.add(String(o.product_name).trim());
+    });
+    return Array.from(set);
+  }, [rows]);
+
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  const q = value.trim().toLowerCase();
+  const suggestions = q
+    ? allParts.filter(n => matchesAcrossScripts(n, q)).slice(0, 8)
+    : [];
+
+  return (
+    <div ref={ref} className="relative">
+      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+      <Input
+        className="pl-8 w-72"
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => { onChange(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+      />
+      {open && suggestions.length > 0 && (
+        <div className="absolute z-50 mt-1 w-full bg-popover border rounded-md shadow-md max-h-64 overflow-auto">
+          {suggestions.map(s => (
+            <button
+              key={s}
+              type="button"
+              className="block w-full text-left px-3 py-1.5 text-sm hover:bg-accent"
+              onMouseDown={(e) => { e.preventDefault(); onChange(s); setOpen(false); }}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
