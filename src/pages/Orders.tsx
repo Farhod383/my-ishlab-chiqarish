@@ -45,7 +45,7 @@ export default function Orders() {
     (async () => {
       const { data } = await supabase
         .from("orders")
-        .select("*, client:clients(name), order_stages(stage_order, started_at)")
+        .select("*, client:clients(name), order_stages(stage_order, started_at), order_parts(part_name)")
         .order("priority", { ascending: false })
         .order("queue_position");
       setRows((data as any) ?? []);
@@ -56,9 +56,11 @@ export default function Orders() {
   const today = new Date().toISOString().slice(0, 10);
   const filtered = rows.filter((o) => {
     if (q) {
-      const hay = [o.order_number, o.product_name, (o as any).client?.name].filter(Boolean).join(" ");
+      const parts = ((o as any).order_parts ?? []).map((p: any) => p.part_name).join(" ");
+      const hay = [o.order_number, o.product_name, (o as any).client?.name, parts].filter(Boolean).join(" ");
       if (!matchesAcrossScripts(hay, q)) return false;
     }
+
     if (filter === "active") return o.status === "in_progress" || o.status === "pending";
     if (filter === "exception") return o.priority === "exception" && o.status !== "completed";
     if (filter === "delayed") return o.status === "delayed" || (o.status !== "completed" && o.deadline < today);
