@@ -16,6 +16,7 @@ import { logAudit } from "@/types/erp";
 import { toast } from "sonner";
 import NumberInput from "@/components/NumberInput";
 import SearchableSelect from "@/components/SearchableSelect";
+import SmartAutocomplete, { rememberFormValue } from "@/components/SmartAutocomplete";
 
 type Instrument = {
   id: string;
@@ -86,6 +87,9 @@ export default function InstrumentsTab() {
     setInstruments((inst.data as any) ?? []);
     setAssignments((asg.data as any) ?? []);
     setEmployees(emp.data ?? []);
+    // Seed category history from existing instruments (idempotent upsert)
+    const cats = Array.from(new Set(((inst.data as any[]) ?? []).map(i => (i.category ?? "").trim()).filter(Boolean)));
+    cats.forEach(c => { rememberFormValue("instrument_category", c); });
   };
 
   useEffect(() => {
@@ -141,6 +145,7 @@ export default function InstrumentsTab() {
       if (error) { toast.error(error.message); return; }
       await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Instrument qo'shildi", entity: "instrument", details: `${payload.name} ×${payload.quantity}` });
     }
+    if (payload.category) await rememberFormValue("instrument_category", payload.category, user?.id);
     toast.success("Saqlandi");
     setIOpen(false); resetIForm(); setIEditId(null);
   };
@@ -277,7 +282,7 @@ export default function InstrumentsTab() {
                 <div className="space-y-3">
                   <div><Label>Nomi *</Label><Input value={iForm.name} onChange={e => setIForm({ ...iForm, name: e.target.value })} placeholder="Masalan: Perforator" /></div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Kategoriya</Label><Input value={iForm.category} onChange={e => setIForm({ ...iForm, category: e.target.value })} placeholder="Elektr / Qo'l asbobi" /></div>
+                    <div><Label>Kategoriya</Label><SmartAutocomplete fieldKey="instrument_category" value={iForm.category} onChange={v => setIForm({ ...iForm, category: v })} placeholder="Elektr / Qo'l asbobi / Payvandlash" /></div>
                     <div><Label>Inventar №</Label><Input value={iForm.inventory_number} onChange={e => setIForm({ ...iForm, inventory_number: e.target.value })} /></div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
