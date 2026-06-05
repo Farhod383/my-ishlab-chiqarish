@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,12 +11,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { AlertTriangle, Package, ArrowDownToLine, ArrowDownCircle, ArrowUpCircle, History, Plus, PackageMinus, Pencil, Check, ChevronsUpDown, Trash2 } from "lucide-react";
+import { AlertTriangle, Package, ArrowDownToLine, ArrowDownCircle, ArrowUpCircle, History, Plus, PackageMinus, Pencil, Check, ChevronsUpDown, Trash2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
 import { fmtNum } from "@/lib/format";
+import { matchesAcrossScripts } from "@/lib/translit";
 import { toast } from "sonner";
 import InstrumentsTab from "@/components/InstrumentsTab";
 import EmployeesView from "@/components/EmployeesView";
@@ -38,6 +39,7 @@ export default function WarehousePage() {
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [search, setSearch] = useState("");
+  const [historySearch, setHistorySearch] = useState("");
 
   // Output states
   const [outProduct, setOutProduct] = useState("");
@@ -423,6 +425,21 @@ export default function WarehousePage() {
   const fmtDateTime = (s: string) => new Date(s).toLocaleString();
   const lowStock = products.filter(p => Number(p.stock_qty) <= Number(p.min_limit));
 
+  const filteredMovements = useMemo(() => {
+    const q = historySearch.trim().toLowerCase();
+    if (!q) return movements;
+    return movements.filter((m: any) => {
+      const hay = [
+        m.product?.name,
+        m.order?.product_name,
+        m.comment,
+        m.recipient_name,
+        m.source,
+      ].filter(Boolean).join(" ");
+      return matchesAcrossScripts(hay, q);
+    });
+  }, [movements, historySearch]);
+
   return (
     <div className="space-y-6">
       {/* Autocomplete datalists */}
@@ -724,8 +741,13 @@ export default function WarehousePage() {
         <TabsContent value="history" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">{t.warehouse.historyTitle}</CardTitle>
-              <CardDescription>{t.warehouse.historyDesc}</CardDescription>
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <CardTitle className="text-base">{t.warehouse.historyTitle}</CardTitle>
+                  <CardDescription>{t.warehouse.historyDesc}</CardDescription>
+                </div>
+                <ProductSearchBox movements={movements} value={historySearch} onChange={setHistorySearch} placeholder={t.common.search} />
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <div className="border-t overflow-x-auto">
@@ -747,7 +769,7 @@ export default function WarehousePage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {movements.map(m => (
+                    {filteredMovements.map((m: any) => (
                       <TableRow key={m.id}>
                         <TableCell className="text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</TableCell>
                         <TableCell>
@@ -776,7 +798,7 @@ export default function WarehousePage() {
                         </div></TableCell>}
                       </TableRow>
                     ))}
-                    {movements.length === 0 && <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-6">{t.warehouse.noMov}</TableCell></TableRow>}
+                    {filteredMovements.length === 0 && <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-6">{t.warehouse.noMov}</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </div>
@@ -977,6 +999,64 @@ export default function WarehousePage() {
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function ProductSearchBox({ movements, value, onChange, placeholder }: {
+  movements: any[]; value: string; onChange: (v: string) => void; placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const allNames = useMemo(() => {
+    const set = new Set<string>();
+    movements.forEach((m: any) => {
+      const n = (m.product?.name ?? "").trim();
+      const o = (m.order?.product_name ?? "").trim();
+      if (n) set.add(n);
+      if (o) set.add(o);
+    });
+    return Array.from(set);
+  }, [movements]);
+
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  const q = value.trim().toLowerCase();
+  const suggestions = q
+    ? allNames.filter(n => matchesAcrossScripts(n, q)).slice(0, 8)
+    : [];
+
+  return (
+    <div ref={ref} className="relative">
+      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+      <Input
+        className="pl-8 w-72"
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => { onChange(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+      />
+      {open && suggestions.length > 0 && (
+        <div className="absolute z-50 mt-1 w-full bg-popover border rounded-md shadow-md max-h-64 overflow-auto">
+          {suggestions.map(s => (
+            <button
+              key={s}
+              type="button"
+              className="block w-full text-left px-3 py-1.5 text-sm hover:bg-accent"
+              onMouseDown={(e) => { e.preventDefault(); onChange(s); setOpen(false); }}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
