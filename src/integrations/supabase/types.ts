@@ -290,6 +290,8 @@ export type Database = {
           detected_by_name: string | null
           id: string
           image_url: string | null
+          instrument_id: string | null
+          item_type: string
           order_id: string | null
           product_id: string | null
           quantity: number
@@ -305,6 +307,8 @@ export type Database = {
           detected_by_name?: string | null
           id?: string
           image_url?: string | null
+          instrument_id?: string | null
+          item_type?: string
           order_id?: string | null
           product_id?: string | null
           quantity?: number
@@ -320,6 +324,8 @@ export type Database = {
           detected_by_name?: string | null
           id?: string
           image_url?: string | null
+          instrument_id?: string | null
+          item_type?: string
           order_id?: string | null
           product_id?: string | null
           quantity?: number
