@@ -116,7 +116,7 @@ export default function OtkPage() {
     load();
   };
 
-  const canEdit = hasRole(["admin", "manager", "marketing", "otk"]);
+  const canEdit = hasRole(["admin", "otk"]);
   const openedOrder = openOrderId ? orders.find((o) => o.order.id === openOrderId) : null;
 
   return (
