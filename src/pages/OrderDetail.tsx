@@ -325,10 +325,10 @@ export default function OrderDetail() {
                     </div>
                     <div className="flex flex-col gap-2 shrink-0 min-w-[220px]">
                       <div className="flex gap-2 flex-wrap">
-                        {s.status === "pending" && hasRole(["manager", "admin", "marketing"]) && (
+                        {s.status === "pending" && hasRole(["manager", "admin"]) && (
                           <StageStartDialog stage={s} onStart={(workers, startedAtIso) => startStage(s, workers, startedAtIso)} />
                         )}
-                        {s.status === "in_progress" && hasRole(["manager", "admin", "marketing"]) && (
+                        {s.status === "in_progress" && hasRole(["manager", "admin"]) && (
                           <Button size="sm" onClick={() => finishStage(s)}><CheckCircle2 className="h-3 w-3 mr-1" />{t.orderDetail.complete}</Button>
                         )}
                         {s.status !== "pending" && hasRole(["manager", "admin"]) && (
