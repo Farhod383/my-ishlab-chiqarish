@@ -66,8 +66,9 @@ export default function KassaPage() {
   const [openExp, setOpenExp] = useState(false);
   const [expEditId, setExpEditId] = useState<string | null>(null);
   const [expOrig, setExpOrig] = useState<any>(null);
-  const [expForm, setExpForm] = useState({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash" as PaymentType });
+  const [expForm, setExpForm] = useState({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash" as PaymentType, salary_kind: "" as "" | SalaryKind });
   const [recipientMode, setRecipientMode] = useState<"employee" | "manual">("employee");
+  const [empDetailId, setEmpDetailId] = useState<string | null>(null);
 
   // income form
   const [openInc, setOpenInc] = useState(false);
