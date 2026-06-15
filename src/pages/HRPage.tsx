@@ -164,7 +164,11 @@ export default function HRPage() {
                 {!loading && employees.map(e => {
                   const held = heldMap[e.id] ?? [];
                   return (
-                  <TableRow key={e.id}>
+                  <TableRow
+                    key={e.id}
+                    className={canManage ? "cursor-pointer hover:bg-muted/40" : undefined}
+                    onClick={canManage ? () => openEdit(e) : undefined}
+                  >
                     <TableCell className="font-medium">{localize(e.full_name)}</TableCell>
                     <TableCell className="text-sm">{e.position}</TableCell>
                     <TableCell className="text-sm">{e.department}</TableCell>
@@ -192,7 +196,7 @@ export default function HRPage() {
                       }
                     </TableCell>
                     {canManage && (
-                      <TableCell>
+                      <TableCell onClick={(ev) => ev.stopPropagation()}>
                         <Button size="sm" variant="ghost" onClick={() => openEdit(e)}><Edit2 className="h-3 w-3" /></Button>
                       </TableCell>
                     )}
