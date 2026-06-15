@@ -15,6 +15,8 @@ import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
 import { notify } from "@/lib/notify";
+import { listTemplates, loadTemplate, type OrderTemplate } from "@/lib/orderTemplates";
+import { LayoutTemplate } from "lucide-react";
 
 interface StageDraft { name: string; norm_days: number; qc_required: boolean }
 
@@ -37,6 +39,9 @@ export default function NewOrder() {
   const [parts, setParts] = useState<{ product_id: string; norm_qty: number }[]>([]);
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false);
+  const [templates, setTemplates] = useState<OrderTemplate[]>([]);
+  const [selectedTplId, setSelectedTplId] = useState<string>("");
+  const [tplSuggest, setTplSuggest] = useState<OrderTemplate | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -55,8 +60,44 @@ export default function NewOrder() {
         }
       }
       setActiveQueueDays(sum);
+      try { setTemplates(await listTemplates()); } catch { /* noop */ }
     })();
   }, []);
+
+  const applyTemplate = async (tplId: string, opts?: { qty?: number }) => {
+    if (!tplId) return;
+    try {
+      const { template, stages: tStages, parts: tParts } = await loadTemplate(tplId);
+      if (!template) { toast.error("Shablon topilmadi"); return; }
+      const qty = opts?.qty ?? (quantity || template.default_quantity || 1);
+      if (!productName) setProductName(template.product_name);
+      setQuantity(qty);
+      setStages(
+        tStages.length
+          ? tStages.map(s => ({ name: s.name, norm_days: Number(s.norm_days) || 1, qc_required: !!s.qc_required }))
+          : [{ name: "", norm_days: 1, qc_required: false }],
+      );
+      setParts(
+        tParts
+          .filter(p => p.product_id)
+          .map(p => ({ product_id: p.product_id as string, norm_qty: Number(p.qty_per_unit) * qty })),
+      );
+      setSelectedTplId(tplId);
+      toast.success(`Shablon yuklandi: ${template.name}`);
+    } catch (e: any) {
+      toast.error(e?.message || "Shablonni yuklashda xatolik");
+    }
+  };
+
+  // Smart suggestion: when product name matches a template (or its product), offer to apply it.
+  useEffect(() => {
+    const q = productName.trim().toLowerCase();
+    if (!q || q.length < 2 || selectedTplId) { setTplSuggest(null); return; }
+    const match = templates.find(t =>
+      t.product_name.toLowerCase().includes(q) || t.name.toLowerCase().includes(q),
+    );
+    setTplSuggest(match ?? null);
+  }, [productName, templates, selectedTplId]);
 
   const addStage = () => setStages([...stages, { name: "", norm_days: 1, qc_required: false }]);
   const updateStage = (i: number, patch: Partial<StageDraft>) => setStages(stages.map((s, idx) => idx === i ? { ...s, ...patch } : s));
