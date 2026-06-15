@@ -552,6 +552,18 @@ export default function KassaPage() {
                       <Input placeholder={k.recipientPlaceholder ?? "Yandex, Dostavka, ..."} value={expForm.recipient_manual} onChange={e => setExpForm({ ...expForm, recipient_manual: e.target.value })} />
                     )}
                   </div>
+                  {recipientMode === "employee" && (
+                    <div>
+                      <Label>To'lov turi (xodim uchun)</Label>
+                      <Select value={expForm.salary_kind || "none"} onValueChange={(v) => setExpForm({ ...expForm, salary_kind: (v === "none" ? "" : v) as any })}>
+                        <SelectTrigger><SelectValue placeholder="Tanlanmagan" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">— Tanlanmagan —</SelectItem>
+                          {SALARY_KINDS.map((sk) => <SelectItem key={sk} value={sk}>{SALARY_KIND_LABELS[sk]}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <div>
                     <Label>{k.paymentType ?? "To'lov turi"}</Label>
                     <Select value={expForm.payment_type} onValueChange={(v: PaymentType) => setExpForm({ ...expForm, payment_type: v })}>
