@@ -344,7 +344,11 @@ export default function InstrumentsTab() {
                     .reduce((s, a) => s + Number(a.quantity), 0);
                   const st = STATUSES.find(s => s.v === it.status);
                   return (
-                    <TableRow key={it.id}>
+                    <TableRow
+                      key={it.id}
+                      className={canManage ? "cursor-pointer hover:bg-muted/40" : undefined}
+                      onClick={canManage ? () => openEdit(it) : undefined}
+                    >
                       <TableCell className="font-medium flex items-center gap-2"><Wrench className="h-4 w-4 text-muted-foreground" />{it.name}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{it.category || "—"}</TableCell>
                       <TableCell className="text-sm font-mono">{it.inventory_number || "—"}</TableCell>
@@ -353,7 +357,7 @@ export default function InstrumentsTab() {
                       <TableCell className="text-right font-mono text-sm">{Number(it.price) > 0 ? `${Number(it.price).toLocaleString("ru-RU")} ${it.currency}` : "—"}</TableCell>
                       <TableCell><Badge variant={it.status === "active" ? "default" : "secondary"}>{st?.l ?? it.status}</Badge></TableCell>
                       {canManage && (
-                        <TableCell>
+                        <TableCell onClick={(ev) => ev.stopPropagation()}>
                           <div className="flex gap-1">
                             <Button size="sm" variant="ghost" onClick={() => openEdit(it)}><Pencil className="h-3.5 w-3.5" /></Button>
                             <Button size="sm" variant="ghost" onClick={() => deleteInstrument(it)}><Trash2 className="h-3.5 w-3.5 text-status-red" /></Button>
