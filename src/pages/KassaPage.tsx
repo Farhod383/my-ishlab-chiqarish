@@ -691,8 +691,8 @@ export default function KassaPage() {
                 <TableBody>
                   {loading && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                   {!loading && filteredEmps.map(e => (
-                    <TableRow key={e.id}>
-                      <TableCell className="font-medium">{localize(e.full_name)}</TableCell>
+                    <TableRow key={e.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setEmpDetailId(e.id)}>
+                      <TableCell className="font-medium text-primary underline-offset-2 hover:underline">{localize(e.full_name)}</TableCell>
                       <TableCell className="text-sm">{e.position}</TableCell>
                       <TableCell className="text-sm">{e.department}</TableCell>
                       <TableCell className="text-sm">{e.phone ?? "—"}</TableCell>
@@ -704,7 +704,7 @@ export default function KassaPage() {
                         </Badge>
                       </TableCell>
                       {canManage && (
-                        <TableCell className="whitespace-nowrap">
+                        <TableCell className="whitespace-nowrap" onClick={(ev) => ev.stopPropagation()}>
                           <Button size="sm" variant="ghost" onClick={() => openEditEmp(e)}><Edit2 className="h-3 w-3" /></Button>
                           <Button size="sm" variant="ghost" onClick={() => toggleEmpStatus(e)}>{e.status === "active" ? (k.deactivate ?? "O'chirish") : (k.activate ?? "Faollash")}</Button>
                         </TableCell>
@@ -718,6 +718,12 @@ export default function KassaPage() {
           </CardContent></Card>
         </TabsContent>
       </Tabs>
+
+      <EmployeeDetailDialog
+        employee={allEmployees.find((e) => e.id === empDetailId) ?? null}
+        open={!!empDetailId}
+        onOpenChange={(o) => { if (!o) setEmpDetailId(null); }}
+      />
     </div>
   );
 }
