@@ -1,4 +1,4 @@
-import { LayoutDashboard, ClipboardList, Factory, Warehouse, ShieldCheck, LogOut, MessageSquare, History, UserCog, Users, Wallet, RotateCcw, AlertOctagon, FileBarChart } from "lucide-react";
+import { LayoutDashboard, ClipboardList, Factory, Warehouse, ShieldCheck, LogOut, MessageSquare, History, UserCog, Users, Wallet, RotateCcw, AlertOctagon, FileBarChart, LayoutTemplate } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -22,6 +22,7 @@ export function AppSidebar() {
   const allItems: Item[] = [
     { title: t.nav.dashboard, url: "/", icon: LayoutDashboard },
     { title: t.nav.orders, url: "/orders", icon: ClipboardList },
+    { title: "Shablonlar", url: "/templates", icon: LayoutTemplate },
     { title: t.nav.production, url: "/production", icon: Factory },
     { title: t.nav.nachalnik, url: "/nachalnik", icon: UserCog, roles: ["manager", "admin"] },
     { title: t.nav.otk, url: "/otk", icon: ShieldCheck },

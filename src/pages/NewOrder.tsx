@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,11 +15,14 @@ import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
 import { notify } from "@/lib/notify";
+import { listTemplates, loadTemplate, type OrderTemplate } from "@/lib/orderTemplates";
+import { LayoutTemplate } from "lucide-react";
 
 interface StageDraft { name: string; norm_days: number; qc_required: boolean }
 
 export default function NewOrder() {
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { t } = useI18n();
   const [orderNumber, setOrderNumber] = useState("");
@@ -37,6 +40,34 @@ export default function NewOrder() {
   const [parts, setParts] = useState<{ product_id: string; norm_qty: number }[]>([]);
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false);
+  const [templates, setTemplates] = useState<OrderTemplate[]>([]);
+  const [selectedTplId, setSelectedTplId] = useState<string>("");
+  const [tplSuggest, setTplSuggest] = useState<OrderTemplate | null>(null);
+
+  const applyTemplate = async (tplId: string, opts?: { qty?: number }) => {
+    if (!tplId) return;
+    try {
+      const { template, stages: tStages, parts: tParts } = await loadTemplate(tplId);
+      if (!template) { toast.error("Shablon topilmadi"); return; }
+      const qty = opts?.qty ?? (quantity || template.default_quantity || 1);
+      if (!productName) setProductName(template.product_name);
+      setQuantity(qty);
+      setStages(
+        tStages.length
+          ? tStages.map(s => ({ name: s.name, norm_days: Number(s.norm_days) || 1, qc_required: !!s.qc_required }))
+          : [{ name: "", norm_days: 1, qc_required: false }],
+      );
+      setParts(
+        tParts
+          .filter(p => p.product_id)
+          .map(p => ({ product_id: p.product_id as string, norm_qty: Number(p.qty_per_unit) * qty })),
+      );
+      setSelectedTplId(tplId);
+      toast.success(`Shablon yuklandi: ${template.name}`);
+    } catch (e: any) {
+      toast.error(e?.message || "Shablonni yuklashda xatolik");
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -55,8 +86,27 @@ export default function NewOrder() {
         }
       }
       setActiveQueueDays(sum);
+      try {
+        const tpls = await listTemplates();
+        setTemplates(tpls);
+        const fromQuery = searchParams.get("tpl");
+        if (fromQuery && tpls.some((t) => t.id === fromQuery)) {
+          await applyTemplate(fromQuery);
+        }
+      } catch { /* noop */ }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Smart suggestion: when product name matches a template (or its product), offer to apply it.
+  useEffect(() => {
+    const q = productName.trim().toLowerCase();
+    if (!q || q.length < 2 || selectedTplId) { setTplSuggest(null); return; }
+    const match = templates.find(t =>
+      t.product_name.toLowerCase().includes(q) || t.name.toLowerCase().includes(q),
+    );
+    setTplSuggest(match ?? null);
+  }, [productName, templates, selectedTplId]);
 
   const addStage = () => setStages([...stages, { name: "", norm_days: 1, qc_required: false }]);
   const updateStage = (i: number, patch: Partial<StageDraft>) => setStages(stages.map((s, idx) => idx === i ? { ...s, ...patch } : s));
@@ -185,6 +235,40 @@ export default function NewOrder() {
         <Button variant="ghost" size="sm" onClick={() => nav(-1)}><ArrowLeft className="h-4 w-4 mr-1" /> {t.common.back}</Button>
         <h1 className="text-2xl font-bold">{t.newOrder.title}</h1>
       </div>
+
+      {templates.length > 0 && (
+        <Card>
+          <CardContent className="p-4 flex flex-col sm:flex-row sm:items-end gap-3">
+            <div className="flex-1">
+              <Label className="flex items-center gap-2"><LayoutTemplate className="h-4 w-4" /> Shablondan yaratish</Label>
+              <Select value={selectedTplId} onValueChange={(v) => applyTemplate(v)}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Shablonni tanlang (ixtiyoriy)" /></SelectTrigger>
+                <SelectContent>
+                  {templates.map((tp) => (
+                    <SelectItem key={tp.id} value={tp.id}>{tp.name} — {tp.product_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">Bosqichlar va materiallar avtomatik to'ldiriladi. Miqdor o'zgartirilsa, materiallar qayta hisoblanadi.</p>
+            </div>
+            {selectedTplId && (
+              <Button variant="ghost" size="sm" onClick={() => { setSelectedTplId(""); }}>Bekor qilish</Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {tplSuggest && !selectedTplId && (
+        <Card className="border-primary/40 bg-primary/5">
+          <CardContent className="p-3 flex items-center justify-between gap-3 text-sm">
+            <span>Ushbu mahsulot uchun mavjud shablon: <b>{tplSuggest.name}</b>. Ishlatilsinmi?</span>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => applyTemplate(tplSuggest.id)}>Ha, ishlatish</Button>
+              <Button size="sm" variant="ghost" onClick={() => setTplSuggest(null)}>Yo'q</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader><CardTitle className="text-base">{t.newOrder.main}</CardTitle></CardHeader>
