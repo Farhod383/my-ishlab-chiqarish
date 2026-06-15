@@ -147,7 +147,7 @@ export default function EmployeeDetailDialog({ employee, open, onOpenChange }: P
                   {loading && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">Yuklanmoqda…</TableCell></TableRow>}
                   {!loading && filtered.map((p) => {
                     const kind = ((SALARY_KINDS as readonly string[]).includes(p.salary_kind) ? p.salary_kind : "other") as SalaryKind;
-                    const creator = (p.profiles?.full_name) || (p._creator?.full_name) || (p._creator?.email) || "—";
+                    const creator = (p._creator?.full_name) || (p._creator?.email) || "—";
                     return (
                       <TableRow key={p.id}>
                         <TableCell className="text-sm whitespace-nowrap">{new Date(p.expense_date).toLocaleString()}</TableCell>
