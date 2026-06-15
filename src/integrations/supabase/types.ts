@@ -79,6 +79,7 @@ export type Database = {
           reason: string
           recipient_id: string | null
           recipient_name: string | null
+          salary_kind: string | null
           total_uzs: number
         }
         Insert: {
@@ -94,6 +95,7 @@ export type Database = {
           reason?: string
           recipient_id?: string | null
           recipient_name?: string | null
+          salary_kind?: string | null
           total_uzs?: number
         }
         Update: {
@@ -109,6 +111,7 @@ export type Database = {
           reason?: string
           recipient_id?: string | null
           recipient_name?: string | null
+          salary_kind?: string | null
           total_uzs?: number
         }
         Relationships: [

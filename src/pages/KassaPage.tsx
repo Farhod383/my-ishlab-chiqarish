@@ -16,6 +16,7 @@ import { useI18n, useLocalize } from "@/i18n/context";
 import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
 import { fmtNum } from "@/lib/format";
+import EmployeeDetailDialog, { SALARY_KINDS, SALARY_KIND_LABELS, type SalaryKind } from "@/components/kassa/EmployeeDetailDialog";
 
 const PAYMENT_TYPES = ["cash", "corporate_card", "transfer", "other"] as const;
 type PaymentType = typeof PAYMENT_TYPES[number];
@@ -65,8 +66,9 @@ export default function KassaPage() {
   const [openExp, setOpenExp] = useState(false);
   const [expEditId, setExpEditId] = useState<string | null>(null);
   const [expOrig, setExpOrig] = useState<any>(null);
-  const [expForm, setExpForm] = useState({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash" as PaymentType });
+  const [expForm, setExpForm] = useState({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash" as PaymentType, salary_kind: "" as "" | SalaryKind });
   const [recipientMode, setRecipientMode] = useState<"employee" | "manual">("employee");
+  const [empDetailId, setEmpDetailId] = useState<string | null>(null);
 
   // income form
   const [openInc, setOpenInc] = useState(false);
@@ -198,25 +200,25 @@ export default function KassaPage() {
     }
     return m;
   };
-  // Overall (kept for back-compat — "total cash desk" view).
-  const incByCur = useMemo(() => sumByCurrency(incomes), [incomes]);
-  const expByCur = useMemo(() => sumByCurrency(expenses), [expenses]);
+  // Period-scoped totals — respect the date-range + search filter shown below.
+  const incByCur = useMemo(() => sumByCurrency(fInc), [fInc]);
+  const expByCur = useMemo(() => sumByCurrency(fExp), [fExp]);
   const balByCur = useMemo(() => {
     const m: Record<string, number> = { ...incByCur };
     for (const [c, v] of Object.entries(expByCur)) m[c] = (m[c] || 0) - v;
     return m;
   }, [incByCur, expByCur]);
   // Cash only (excludes corporate card and other electronic payments).
-  const cashIn   = useMemo(() => sumByCurrency(incomes,  pt => pt === "cash"), [incomes]);
-  const cashOut  = useMemo(() => sumByCurrency(expenses, pt => pt === "cash"), [expenses]);
+  const cashIn   = useMemo(() => sumByCurrency(fInc,  pt => pt === "cash"), [fInc]);
+  const cashOut  = useMemo(() => sumByCurrency(fExp, pt => pt === "cash"), [fExp]);
   const cashBal  = useMemo(() => {
     const m: Record<string, number> = { ...cashIn };
     for (const [c, v] of Object.entries(cashOut)) m[c] = (m[c] || 0) - v;
     return m;
   }, [cashIn, cashOut]);
   // Corporate card only.
-  const cardIn   = useMemo(() => sumByCurrency(incomes,  pt => pt === "corporate_card"), [incomes]);
-  const cardOut  = useMemo(() => sumByCurrency(expenses, pt => pt === "corporate_card"), [expenses]);
+  const cardIn   = useMemo(() => sumByCurrency(fInc,  pt => pt === "corporate_card"), [fInc]);
+  const cardOut  = useMemo(() => sumByCurrency(fExp, pt => pt === "corporate_card"), [fExp]);
   const cardBal  = useMemo(() => {
     const m: Record<string, number> = { ...cardIn };
     for (const [c, v] of Object.entries(cardOut)) m[c] = (m[c] || 0) - v;
@@ -267,6 +269,7 @@ export default function KassaPage() {
       exchange_rate: rate,
       total_uzs,
       payment_type: expForm.payment_type,
+      salary_kind: recipientMode === "employee" && expForm.salary_kind ? expForm.salary_kind : null,
     };
     if (expEditId) {
       const { error } = await supabase.from("cash_expenses").update(payload).eq("id", expEditId);
@@ -279,7 +282,7 @@ export default function KassaPage() {
       await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: "kassa.expense.create", entity: "cash_expenses", details: `${payload.amount} ${payload.currency} = ${fmt(total_uzs)} UZS · ${payload.reason}` });
     }
     toast.success(k.saved ?? "Saqlandi");
-    setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash" });
+    setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash", salary_kind: "" });
     setRecipientMode("employee");
     setExpEditId(null); setExpOrig(null);
     setOpenExp(false);
@@ -298,6 +301,7 @@ export default function KassaPage() {
       currency: e.currency ?? "UZS",
       exchange_rate: Number(e.exchange_rate) || 1,
       payment_type: normalizePT(e.payment_type),
+      salary_kind: (e.salary_kind ?? "") as any,
     });
     setRecipientMode(e.recipient_id ? "employee" : "manual");
     setOpenExp(true);
@@ -393,6 +397,11 @@ export default function KassaPage() {
       </div>
 
       <div className="space-y-4">
+        <div className="text-xs text-muted-foreground">
+          {filterFrom || filterTo
+            ? `Tanlangan davr: ${filterFrom || "…"} → ${filterTo || "…"}`
+            : "Barcha davr ko'rsatilmoqda — sana oralig'ini tanlang"}
+        </div>
         <div className="grid sm:grid-cols-3 gap-4">
           <Card><CardContent className="p-4 space-y-2">
             <div className="text-xs text-muted-foreground">{k.balance ?? "Balans"}</div>
@@ -520,7 +529,7 @@ export default function KassaPage() {
 
         <TabsContent value="expense" className="space-y-3">
           {canManage && (
-            <Dialog open={openExp} onOpenChange={(o) => { setOpenExp(o); if (!o) { setExpEditId(null); setExpOrig(null); setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash" }); setRecipientMode("employee"); } }}>
+            <Dialog open={openExp} onOpenChange={(o) => { setOpenExp(o); if (!o) { setExpEditId(null); setExpOrig(null); setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash", salary_kind: "" }); setRecipientMode("employee"); } }}>
               <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{k.addExpense ?? "Xarajat qo'shish"}</Button></DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>{expEditId ? ((t as any).kassaExtra?.editExpense ?? "Xarajatni tahrirlash") : (k.addExpense ?? "Xarajat qo'shish")}</DialogTitle></DialogHeader>
@@ -543,6 +552,18 @@ export default function KassaPage() {
                       <Input placeholder={k.recipientPlaceholder ?? "Yandex, Dostavka, ..."} value={expForm.recipient_manual} onChange={e => setExpForm({ ...expForm, recipient_manual: e.target.value })} />
                     )}
                   </div>
+                  {recipientMode === "employee" && (
+                    <div>
+                      <Label>To'lov turi (xodim uchun)</Label>
+                      <Select value={expForm.salary_kind || "none"} onValueChange={(v) => setExpForm({ ...expForm, salary_kind: (v === "none" ? "" : v) as any })}>
+                        <SelectTrigger><SelectValue placeholder="Tanlanmagan" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">— Tanlanmagan —</SelectItem>
+                          {SALARY_KINDS.map((sk) => <SelectItem key={sk} value={sk}>{SALARY_KIND_LABELS[sk]}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <div>
                     <Label>{k.paymentType ?? "To'lov turi"}</Label>
                     <Select value={expForm.payment_type} onValueChange={(v: PaymentType) => setExpForm({ ...expForm, payment_type: v })}>
@@ -670,8 +691,8 @@ export default function KassaPage() {
                 <TableBody>
                   {loading && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                   {!loading && filteredEmps.map(e => (
-                    <TableRow key={e.id}>
-                      <TableCell className="font-medium">{localize(e.full_name)}</TableCell>
+                    <TableRow key={e.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setEmpDetailId(e.id)}>
+                      <TableCell className="font-medium text-primary underline-offset-2 hover:underline">{localize(e.full_name)}</TableCell>
                       <TableCell className="text-sm">{e.position}</TableCell>
                       <TableCell className="text-sm">{e.department}</TableCell>
                       <TableCell className="text-sm">{e.phone ?? "—"}</TableCell>
@@ -683,7 +704,7 @@ export default function KassaPage() {
                         </Badge>
                       </TableCell>
                       {canManage && (
-                        <TableCell className="whitespace-nowrap">
+                        <TableCell className="whitespace-nowrap" onClick={(ev) => ev.stopPropagation()}>
                           <Button size="sm" variant="ghost" onClick={() => openEditEmp(e)}><Edit2 className="h-3 w-3" /></Button>
                           <Button size="sm" variant="ghost" onClick={() => toggleEmpStatus(e)}>{e.status === "active" ? (k.deactivate ?? "O'chirish") : (k.activate ?? "Faollash")}</Button>
                         </TableCell>
@@ -697,6 +718,12 @@ export default function KassaPage() {
           </CardContent></Card>
         </TabsContent>
       </Tabs>
+
+      <EmployeeDetailDialog
+        employee={allEmployees.find((e) => e.id === empDetailId) ?? null}
+        open={!!empDetailId}
+        onOpenChange={(o) => { if (!o) setEmpDetailId(null); }}
+      />
     </div>
   );
 }
