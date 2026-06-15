@@ -20,10 +20,11 @@ export default function NachalnikPage() {
       .neq("status", "completed")
       .neq("status", "cancelled")
       .order("queue_position");
-    setOrders(((data as any) ?? []).map((o: any) => ({
+    const raw = ((data as any) ?? []).map((o: any) => ({
       ...o,
       stages: (o.stages ?? []).sort((a: any, b: any) => a.stage_order - b.stage_order),
-    })));
+    }));
+    setOrders(sortOrdersByStatusAndDate(raw));
     setLoading(false);
   };
 
