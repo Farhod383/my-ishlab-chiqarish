@@ -269,6 +269,7 @@ export default function KassaPage() {
       exchange_rate: rate,
       total_uzs,
       payment_type: expForm.payment_type,
+      salary_kind: recipientMode === "employee" && expForm.salary_kind ? expForm.salary_kind : null,
     };
     if (expEditId) {
       const { error } = await supabase.from("cash_expenses").update(payload).eq("id", expEditId);
