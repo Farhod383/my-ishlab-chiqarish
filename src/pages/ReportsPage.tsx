@@ -25,7 +25,7 @@ export default function ReportsPage() {
     (async () => {
       const { data } = await supabase
         .from("orders")
-        .select("*, client:clients(name), order_stages(stage_order, status, worker_name, started_at, finished_at)")
+        .select("*, client:clients(name), order_stages(stage_order, status, worker_name, started_at, finished_at, qc_required, qc_passed)")
         .order("created_at", { ascending: false });
       setOrders(data ?? []);
     })();
