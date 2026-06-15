@@ -44,7 +44,7 @@ export default function EmployeeDetailDialog({ employee, open, onOpenChange }: P
       const [{ data: pays }, { data: asg }] = await Promise.all([
         supabase
           .from("cash_expenses")
-          .select("id, amount, currency, total_uzs, expense_date, payment_type, salary_kind, reason, comment, created_by, profiles:profiles!cash_expenses_created_by_fkey(full_name)")
+          .select("id, amount, currency, total_uzs, expense_date, payment_type, salary_kind, reason, comment, created_by")
           .eq("recipient_id", employee.id)
           .order("expense_date", { ascending: false }),
         supabase
