@@ -397,6 +397,11 @@ export default function KassaPage() {
       </div>
 
       <div className="space-y-4">
+        <div className="text-xs text-muted-foreground">
+          {filterFrom || filterTo
+            ? `Tanlangan davr: ${filterFrom || "…"} → ${filterTo || "…"}`
+            : "Barcha davr ko'rsatilmoqda — sana oralig'ini tanlang"}
+        </div>
         <div className="grid sm:grid-cols-3 gap-4">
           <Card><CardContent className="p-4 space-y-2">
             <div className="text-xs text-muted-foreground">{k.balance ?? "Balans"}</div>
