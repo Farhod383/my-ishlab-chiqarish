@@ -281,7 +281,7 @@ export default function KassaPage() {
       await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: "kassa.expense.create", entity: "cash_expenses", details: `${payload.amount} ${payload.currency} = ${fmt(total_uzs)} UZS · ${payload.reason}` });
     }
     toast.success(k.saved ?? "Saqlandi");
-    setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash" });
+    setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash", salary_kind: "" });
     setRecipientMode("employee");
     setExpEditId(null); setExpOrig(null);
     setOpenExp(false);
@@ -300,6 +300,7 @@ export default function KassaPage() {
       currency: e.currency ?? "UZS",
       exchange_rate: Number(e.exchange_rate) || 1,
       payment_type: normalizePT(e.payment_type),
+      salary_kind: (e.salary_kind ?? "") as any,
     });
     setRecipientMode(e.recipient_id ? "employee" : "manual");
     setOpenExp(true);
@@ -522,7 +523,7 @@ export default function KassaPage() {
 
         <TabsContent value="expense" className="space-y-3">
           {canManage && (
-            <Dialog open={openExp} onOpenChange={(o) => { setOpenExp(o); if (!o) { setExpEditId(null); setExpOrig(null); setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash" }); setRecipientMode("employee"); } }}>
+            <Dialog open={openExp} onOpenChange={(o) => { setOpenExp(o); if (!o) { setExpEditId(null); setExpOrig(null); setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash", salary_kind: "" }); setRecipientMode("employee"); } }}>
               <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{k.addExpense ?? "Xarajat qo'shish"}</Button></DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>{expEditId ? ((t as any).kassaExtra?.editExpense ?? "Xarajatni tahrirlash") : (k.addExpense ?? "Xarajat qo'shish")}</DialogTitle></DialogHeader>
