@@ -54,15 +54,13 @@ export default function EmployeeDetailDialog({ employee, open, onOpenChange }: P
           .order("issued_at", { ascending: false }),
       ]);
       if (!mounted) return;
-      // Fallback: profiles join may fail if FK absent — load creator names separately.
-      let paysData = pays ?? [];
-      if (paysData.length && !paysData[0]?.profiles) {
-        const ids = Array.from(new Set(paysData.map((p: any) => p.created_by).filter(Boolean)));
-        if (ids.length) {
-          const { data: profs } = await supabase.from("profiles").select("id, full_name, email").in("id", ids);
-          const map = new Map((profs ?? []).map((p: any) => [p.id, p]));
-          paysData = paysData.map((p: any) => ({ ...p, _creator: map.get(p.created_by) }));
-        }
+      // Resolve creator names via profiles.
+      let paysData: any[] = pays ?? [];
+      const ids = Array.from(new Set(paysData.map((p: any) => p.created_by).filter(Boolean)));
+      if (ids.length) {
+        const { data: profs } = await supabase.from("profiles").select("id, full_name, email").in("id", ids);
+        const map = new Map((profs ?? []).map((p: any) => [p.id, p]));
+        paysData = paysData.map((p: any) => ({ ...p, _creator: map.get(p.created_by) }));
       }
       setPayments(paysData);
       setAssignments(asg ?? []);
