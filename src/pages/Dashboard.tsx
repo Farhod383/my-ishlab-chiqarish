@@ -13,6 +13,7 @@ import { ClipboardList, Activity, AlertTriangle, AlertOctagon, Package, History,
 import { Skeleton } from "@/components/ui/skeleton";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { fmtNum } from "@/lib/format";
+import { sortOrdersByStatusAndDate } from "@/lib/orderStatus";
 import { matchesAcrossScripts } from "@/lib/translit";
 
 type FilterKey = "all" | "active" | "delayed" | "today" | "exception" | "completed";
