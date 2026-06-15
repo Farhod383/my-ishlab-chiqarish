@@ -61,7 +61,14 @@ export default function NewOrder() {
         }
       }
       setActiveQueueDays(sum);
-      try { setTemplates(await listTemplates()); } catch { /* noop */ }
+      try {
+        const tpls = await listTemplates();
+        setTemplates(tpls);
+        const fromQuery = searchParams.get("tpl");
+        if (fromQuery && tpls.some((t) => t.id === fromQuery)) {
+          await applyTemplate(fromQuery);
+        }
+      } catch { /* noop */ }
     })();
   }, []);
 
