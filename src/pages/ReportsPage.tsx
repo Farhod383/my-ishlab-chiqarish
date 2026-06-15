@@ -31,13 +31,14 @@ export default function ReportsPage() {
     })();
   }, []);
 
-  const filtered = useMemo(() => orders.filter((o) => {
+  const filteredRaw = useMemo(() => orders.filter((o) => {
     if (filter !== "all" && o.status !== filter) return false;
     if (q && !`${o.order_number} ${o.product_name} ${o.client?.name ?? ""}`.toLowerCase().includes(q.toLowerCase())) return false;
     if (from && new Date(o.order_date) < new Date(from)) return false;
     if (to && new Date(o.order_date) > new Date(to)) return false;
     return true;
   }), [orders, filter, q, from, to]);
+  const filtered = filter === "all" ? sortOrdersByStatusAndDate(filteredRaw) : filteredRaw;
 
   const totals = useMemo(() => ({
     total: orders.length,
