@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ type Filter = "all" | "completed" | "in_progress" | "delayed";
 
 export default function ReportsPage() {
   const { t } = useI18n();
+  const nav = useNavigate();
   const [orders, setOrders] = useState<any[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
@@ -114,7 +115,7 @@ export default function ReportsPage() {
                   const firstStart = stages.find((s:any) => s.started_at)?.started_at;
                   const lastFin = stages.filter((s:any) => s.finished_at).slice(-1)[0]?.finished_at;
                   return (
-                    <TableRow key={o.id}>
+                    <TableRow key={o.id} className="cursor-pointer hover:bg-muted/50" onClick={() => nav(`/orders/${o.id}/report`)}>
                       <TableCell className="font-mono text-sm">{o.order_number}</TableCell>
                       <TableCell className="text-sm">{o.product_name}</TableCell>
                       <TableCell className="text-sm">{o.client?.name ?? "—"}</TableCell>
@@ -123,7 +124,7 @@ export default function ReportsPage() {
                       <TableCell className="text-xs whitespace-nowrap">{o.order_date}</TableCell>
                       <TableCell className="text-xs whitespace-nowrap">{o.deadline}</TableCell>
                       <TableCell className="text-xs whitespace-nowrap">{fmtDur(firstStart, lastFin)}</TableCell>
-                      <TableCell className="whitespace-nowrap">
+                      <TableCell className="whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <Button asChild size="sm" variant="ghost"><Link to={`/orders/${o.id}/report`}><ExternalLink className="h-3 w-3 mr-1" />{r.open}</Link></Button>
                       </TableCell>
                     </TableRow>
