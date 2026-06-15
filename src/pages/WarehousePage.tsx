@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureOnline } from "@/components/OnlineGuard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -126,6 +127,14 @@ export default function WarehousePage() {
 
   const release = async () => {
     if (!outProduct || !outQty || !outRecipient) { toast.error(t.warehouse.fillFields); return; }
+    if (!ensureOnline((m) => toast.error(m))) return;
+    const prod = products.find(p => p.id === outProduct);
+    const avail = Number(prod?.stock_qty ?? 0);
+    if (Number(outQty) > avail) {
+      await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Sklad chiqimi BLOKLANDI", entity: "stock_movement", details: `${prod?.name}: so'ralgan ${outQty}, mavjud ${avail}` });
+      toast.error(`Yetarli qoldiq mavjud emas (mavjud: ${avail})`);
+      return;
+    }
     const { error } = await supabase.from("stock_movements").insert({
       product_id: outProduct, order_id: outOrder || null, direction: "out",
       quantity: outQty, recipient_name: outRecipient, comment: outComment, created_by: user?.id, taken_by: user?.id,
@@ -191,6 +200,14 @@ export default function WarehousePage() {
 
   const otherOut = async () => {
     if (!otherProduct || !otherQty || !otherRecipient || !otherReason.trim()) { toast.error(t.warehouse.fillFields); return; }
+    if (!ensureOnline((m) => toast.error(m))) return;
+    const prod = products.find(p => p.id === otherProduct);
+    const avail = Number(prod?.stock_qty ?? 0);
+    if (Number(otherQty) > avail) {
+      await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Sklad chiqimi (boshqa) BLOKLANDI", entity: "stock_movement", details: `${prod?.name}: so'ralgan ${otherQty}, mavjud ${avail}` });
+      toast.error(`Yetarli qoldiq mavjud emas (mavjud: ${avail})`);
+      return;
+    }
     const { error } = await supabase.from("stock_movements").insert({
       product_id: otherProduct, order_id: null, direction: "out",
       quantity: otherQty, recipient_name: otherRecipient, reason: otherReason,

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureOnline } from "@/components/OnlineGuard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -252,8 +253,20 @@ export default function KassaPage() {
 
   const saveExpense = async () => {
     if (!expForm.amount || !expForm.reason.trim()) { toast.error(k.fillFields ?? "Maydonlarni to'ldiring"); return; }
+    if (!ensureOnline((m) => toast.error(m))) return;
     if (expForm.currency !== "UZS" && (!expForm.exchange_rate || expForm.exchange_rate <= 0)) {
       toast.error(k.enterRate ?? "Valyuta kursini kiriting"); return;
+    }
+    // Client-side balance guard (server trigger is the source of truth).
+    const pt = expForm.payment_type || "cash";
+    const cur = expForm.currency;
+    const totalIn = incomes.filter((x: any) => x.currency === cur && (x.payment_type || "cash") === pt).reduce((s: number, x: any) => s + Number(x.amount || 0), 0);
+    const totalOut = expenses.filter((x: any) => x.currency === cur && (x.payment_type || "cash") === pt && x.id !== expEditId).reduce((s: number, x: any) => s + Number(x.amount || 0), 0);
+    const avail = totalIn - totalOut;
+    if (Number(expForm.amount) > avail) {
+      await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: "kassa.expense.BLOCKED", entity: "cash_expenses", details: `${expForm.amount} ${cur} (${pt}) — mavjud ${avail}` });
+      toast.error(`Mablag' yetarli emas (mavjud: ${fmt(avail)} ${cur})`);
+      return;
     }
     const emp = recipientMode === "employee" ? employees.find(e => e.id === expForm.recipient_id) : null;
     const recipientName = recipientMode === "employee" ? (emp?.full_name ?? null) : (expForm.recipient_manual.trim() || null);
