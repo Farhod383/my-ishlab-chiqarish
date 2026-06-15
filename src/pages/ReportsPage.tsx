@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FileBarChart, Search, ExternalLink, Download } from "lucide-react";
 import { useI18n } from "@/i18n/context";
+import { sortOrdersByStatusAndDate } from "@/lib/orderStatus";
 
 type Filter = "all" | "completed" | "in_progress" | "delayed";
 
@@ -24,19 +25,20 @@ export default function ReportsPage() {
     (async () => {
       const { data } = await supabase
         .from("orders")
-        .select("*, client:clients(name), order_stages(stage_order, status, worker_name, started_at, finished_at)")
+        .select("*, client:clients(name), order_stages(stage_order, status, worker_name, started_at, finished_at, qc_required, qc_passed)")
         .order("created_at", { ascending: false });
       setOrders(data ?? []);
     })();
   }, []);
 
-  const filtered = useMemo(() => orders.filter((o) => {
+  const filteredRaw = useMemo(() => orders.filter((o) => {
     if (filter !== "all" && o.status !== filter) return false;
     if (q && !`${o.order_number} ${o.product_name} ${o.client?.name ?? ""}`.toLowerCase().includes(q.toLowerCase())) return false;
     if (from && new Date(o.order_date) < new Date(from)) return false;
     if (to && new Date(o.order_date) > new Date(to)) return false;
     return true;
   }), [orders, filter, q, from, to]);
+  const filtered = filter === "all" ? sortOrdersByStatusAndDate(filteredRaw) : filteredRaw;
 
   const totals = useMemo(() => ({
     total: orders.length,

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import { useI18n, useLocalize } from "@/i18n/context";
+import { sortOrdersByStatusAndDate } from "@/lib/orderStatus";
 import { ClipboardList } from "lucide-react";
 
 export default function NachalnikPage() {
@@ -19,10 +20,11 @@ export default function NachalnikPage() {
       .neq("status", "completed")
       .neq("status", "cancelled")
       .order("queue_position");
-    setOrders(((data as any) ?? []).map((o: any) => ({
+    const raw = ((data as any) ?? []).map((o: any) => ({
       ...o,
       stages: (o.stages ?? []).sort((a: any, b: any) => a.stage_order - b.stage_order),
-    })));
+    }));
+    setOrders(sortOrdersByStatusAndDate(raw));
     setLoading(false);
   };
 

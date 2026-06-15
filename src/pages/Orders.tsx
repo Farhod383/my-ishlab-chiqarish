@@ -13,7 +13,7 @@ import { useI18n, useLocalize } from "@/i18n/context";
 import { Plus, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { matchesAcrossScripts } from "@/lib/translit";
-import { recalcOrdersBatch } from "@/lib/orderStatus";
+import { recalcOrdersBatch, sortOrdersByStatusAndDate } from "@/lib/orderStatus";
 
 type FilterKey = "all" | "active" | "exception" | "delayed" | "completed" | "today";
 
@@ -61,7 +61,7 @@ export default function Orders() {
   }, []);
 
   const today = new Date().toISOString().slice(0, 10);
-  const filtered = rows.filter((o) => {
+  const filteredRaw = rows.filter((o) => {
     if (q) {
       const parts = ((o as any).order_parts ?? []).map((p: any) => p.part_name).join(" ");
       const hay = [o.order_number, o.product_name, (o as any).client?.name, parts].filter(Boolean).join(" ");
@@ -75,6 +75,7 @@ export default function Orders() {
     if (filter === "completed") return o.status === "completed";
     return true;
   });
+  const filtered = filter === "all" ? sortOrdersByStatusAndDate(filteredRaw) : filteredRaw;
 
 
   return (
