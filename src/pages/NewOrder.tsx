@@ -44,6 +44,31 @@ export default function NewOrder() {
   const [selectedTplId, setSelectedTplId] = useState<string>("");
   const [tplSuggest, setTplSuggest] = useState<OrderTemplate | null>(null);
 
+  const applyTemplate = async (tplId: string, opts?: { qty?: number }) => {
+    if (!tplId) return;
+    try {
+      const { template, stages: tStages, parts: tParts } = await loadTemplate(tplId);
+      if (!template) { toast.error("Shablon topilmadi"); return; }
+      const qty = opts?.qty ?? (quantity || template.default_quantity || 1);
+      if (!productName) setProductName(template.product_name);
+      setQuantity(qty);
+      setStages(
+        tStages.length
+          ? tStages.map(s => ({ name: s.name, norm_days: Number(s.norm_days) || 1, qc_required: !!s.qc_required }))
+          : [{ name: "", norm_days: 1, qc_required: false }],
+      );
+      setParts(
+        tParts
+          .filter(p => p.product_id)
+          .map(p => ({ product_id: p.product_id as string, norm_qty: Number(p.qty_per_unit) * qty })),
+      );
+      setSelectedTplId(tplId);
+      toast.success(`Shablon yuklandi: ${template.name}`);
+    } catch (e: any) {
+      toast.error(e?.message || "Shablonni yuklashda xatolik");
+    }
+  };
+
   useEffect(() => {
     (async () => {
       const [{ data: p }, { count }, { data: activeOrders }] = await Promise.all([
@@ -70,32 +95,8 @@ export default function NewOrder() {
         }
       } catch { /* noop */ }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const applyTemplate = async (tplId: string, opts?: { qty?: number }) => {
-    if (!tplId) return;
-    try {
-      const { template, stages: tStages, parts: tParts } = await loadTemplate(tplId);
-      if (!template) { toast.error("Shablon topilmadi"); return; }
-      const qty = opts?.qty ?? (quantity || template.default_quantity || 1);
-      if (!productName) setProductName(template.product_name);
-      setQuantity(qty);
-      setStages(
-        tStages.length
-          ? tStages.map(s => ({ name: s.name, norm_days: Number(s.norm_days) || 1, qc_required: !!s.qc_required }))
-          : [{ name: "", norm_days: 1, qc_required: false }],
-      );
-      setParts(
-        tParts
-          .filter(p => p.product_id)
-          .map(p => ({ product_id: p.product_id as string, norm_qty: Number(p.qty_per_unit) * qty })),
-      );
-      setSelectedTplId(tplId);
-      toast.success(`Shablon yuklandi: ${template.name}`);
-    } catch (e: any) {
-      toast.error(e?.message || "Shablonni yuklashda xatolik");
-    }
-  };
 
   // Smart suggestion: when product name matches a template (or its product), offer to apply it.
   useEffect(() => {
