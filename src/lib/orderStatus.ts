@@ -1,5 +1,46 @@
 import { supabase } from "@/integrations/supabase/client";
 
+const STATUS_RANK: Record<string, number> = {
+  in_progress: 1,
+  pending: 2,
+  delayed: 4,
+  completed: 5,
+  cancelled: 6,
+};
+
+function isEffectiveOtk(order: any): boolean {
+  if (order.status !== "in_progress") return false;
+  const stages = order.order_stages ?? order.stages ?? [];
+  if (!stages.length) return false;
+  const allCompleted = stages.every((s: any) => s.status === "completed");
+  const hasPendingQC = stages.some((s: any) => s.qc_required && !s.qc_passed);
+  return allCompleted && hasPendingQC;
+}
+
+function orderStartDate(order: any): string | null {
+  const stages = (order.order_stages ?? order.stages ?? []).slice().sort((a: any, b: any) => a.stage_order - b.stage_order);
+  return stages[0]?.started_at ?? null;
+}
+
+export function orderStatusRank(order: any): number {
+  if (isEffectiveOtk(order)) return 3;
+  return STATUS_RANK[order.status] ?? 0;
+}
+
+export function sortOrdersByStatusAndDate(orders: any[]): any[] {
+  return [...orders].sort((a, b) => {
+    const rankA = orderStatusRank(a);
+    const rankB = orderStatusRank(b);
+    if (rankA !== rankB) return rankA - rankB;
+    const startA = orderStartDate(a);
+    const startB = orderStartDate(b);
+    if (startA && startB) return startB.localeCompare(startA);
+    if (startA) return -1;
+    if (startB) return 1;
+    return 0;
+  });
+}
+
 /**
  * Check if all stages of an order are completed (and OTK-approved where required).
  * If so and order.status !== 'completed', auto-update.
