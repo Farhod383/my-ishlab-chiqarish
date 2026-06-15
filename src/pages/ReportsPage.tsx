@@ -15,6 +15,7 @@ type Filter = "all" | "completed" | "in_progress" | "delayed";
 
 export default function ReportsPage() {
   const { t } = useI18n();
+  const nav = useNavigate();
   const [orders, setOrders] = useState<any[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
