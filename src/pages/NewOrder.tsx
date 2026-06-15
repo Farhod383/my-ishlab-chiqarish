@@ -227,6 +227,40 @@ export default function NewOrder() {
         <h1 className="text-2xl font-bold">{t.newOrder.title}</h1>
       </div>
 
+      {templates.length > 0 && (
+        <Card>
+          <CardContent className="p-4 flex flex-col sm:flex-row sm:items-end gap-3">
+            <div className="flex-1">
+              <Label className="flex items-center gap-2"><LayoutTemplate className="h-4 w-4" /> Shablondan yaratish</Label>
+              <Select value={selectedTplId} onValueChange={(v) => applyTemplate(v)}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Shablonni tanlang (ixtiyoriy)" /></SelectTrigger>
+                <SelectContent>
+                  {templates.map((tp) => (
+                    <SelectItem key={tp.id} value={tp.id}>{tp.name} — {tp.product_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">Bosqichlar va materiallar avtomatik to'ldiriladi. Miqdor o'zgartirilsa, materiallar qayta hisoblanadi.</p>
+            </div>
+            {selectedTplId && (
+              <Button variant="ghost" size="sm" onClick={() => { setSelectedTplId(""); }}>Bekor qilish</Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {tplSuggest && !selectedTplId && (
+        <Card className="border-primary/40 bg-primary/5">
+          <CardContent className="p-3 flex items-center justify-between gap-3 text-sm">
+            <span>Ushbu mahsulot uchun mavjud shablon: <b>{tplSuggest.name}</b>. Ishlatilsinmi?</span>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => applyTemplate(tplSuggest.id)}>Ha, ishlatish</Button>
+              <Button size="sm" variant="ghost" onClick={() => setTplSuggest(null)}>Yo'q</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader><CardTitle className="text-base">{t.newOrder.main}</CardTitle></CardHeader>
         <CardContent className="space-y-4">
