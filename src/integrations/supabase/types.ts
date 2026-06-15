@@ -772,6 +772,122 @@ export type Database = {
           },
         ]
       }
+      order_template_parts: {
+        Row: {
+          created_at: string
+          id: string
+          part_name: string
+          product_id: string | null
+          qty_per_unit: number
+          template_id: string
+          unit: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          part_name: string
+          product_id?: string | null
+          qty_per_unit?: number
+          template_id: string
+          unit?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          part_name?: string
+          product_id?: string | null
+          qty_per_unit?: number
+          template_id?: string
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_template_parts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_template_parts_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "order_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_template_stages: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          norm_days: number
+          qc_required: boolean
+          stage_order: number
+          template_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          norm_days?: number
+          qc_required?: boolean
+          stage_order: number
+          template_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          norm_days?: number
+          qc_required?: boolean
+          stage_order?: number
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_template_stages_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "order_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          default_quantity: number
+          id: string
+          name: string
+          notes: string | null
+          product_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          default_quantity?: number
+          id?: string
+          name: string
+          notes?: string | null
+          product_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          default_quantity?: number
+          id?: string
+          name?: string
+          notes?: string | null
+          product_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           client_id: string | null
