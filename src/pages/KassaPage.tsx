@@ -200,25 +200,25 @@ export default function KassaPage() {
     }
     return m;
   };
-  // Overall (kept for back-compat — "total cash desk" view).
-  const incByCur = useMemo(() => sumByCurrency(incomes), [incomes]);
-  const expByCur = useMemo(() => sumByCurrency(expenses), [expenses]);
+  // Period-scoped totals — respect the date-range + search filter shown below.
+  const incByCur = useMemo(() => sumByCurrency(fInc), [fInc]);
+  const expByCur = useMemo(() => sumByCurrency(fExp), [fExp]);
   const balByCur = useMemo(() => {
     const m: Record<string, number> = { ...incByCur };
     for (const [c, v] of Object.entries(expByCur)) m[c] = (m[c] || 0) - v;
     return m;
   }, [incByCur, expByCur]);
   // Cash only (excludes corporate card and other electronic payments).
-  const cashIn   = useMemo(() => sumByCurrency(incomes,  pt => pt === "cash"), [incomes]);
-  const cashOut  = useMemo(() => sumByCurrency(expenses, pt => pt === "cash"), [expenses]);
+  const cashIn   = useMemo(() => sumByCurrency(fInc,  pt => pt === "cash"), [fInc]);
+  const cashOut  = useMemo(() => sumByCurrency(fExp, pt => pt === "cash"), [fExp]);
   const cashBal  = useMemo(() => {
     const m: Record<string, number> = { ...cashIn };
     for (const [c, v] of Object.entries(cashOut)) m[c] = (m[c] || 0) - v;
     return m;
   }, [cashIn, cashOut]);
   // Corporate card only.
-  const cardIn   = useMemo(() => sumByCurrency(incomes,  pt => pt === "corporate_card"), [incomes]);
-  const cardOut  = useMemo(() => sumByCurrency(expenses, pt => pt === "corporate_card"), [expenses]);
+  const cardIn   = useMemo(() => sumByCurrency(fInc,  pt => pt === "corporate_card"), [fInc]);
+  const cardOut  = useMemo(() => sumByCurrency(fExp, pt => pt === "corporate_card"), [fExp]);
   const cardBal  = useMemo(() => {
     const m: Record<string, number> = { ...cardIn };
     for (const [c, v] of Object.entries(cardOut)) m[c] = (m[c] || 0) - v;
