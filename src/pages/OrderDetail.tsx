@@ -9,8 +9,7 @@ import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { logAudit, type OrderRow, type StageRow, type OrderPartRow, type AuditLogRow } from "@/types/erp";
-import { ArrowLeft, CheckCircle2, Play, FileText, Image as ImageIcon, AlertTriangle, ShieldCheck, Loader2, ClipboardList, Receipt, UserCog, MessageCircle, Download, Trash2, Upload, Pencil, LayoutTemplate } from "lucide-react";
-import { saveOrderAsTemplate } from "@/lib/orderTemplates";
+import { ArrowLeft, CheckCircle2, Play, FileText, Image as ImageIcon, AlertTriangle, ShieldCheck, Loader2, ClipboardList, Receipt, UserCog, MessageCircle, Download, Trash2, Upload, Pencil } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -204,9 +203,6 @@ export default function OrderDetail() {
                 <Pencil className="h-4 w-4 mr-2" /> {t.common.edit}
               </Link>
             </Button>
-          )}
-          {hasRole(["admin", "marketing"]) && (
-            <SaveAsTemplateButton orderId={order.id} defaultName={order.product_name} />
           )}
           <Button variant="outline" asChild>
             <Link to={`/orders/${order.id}/report`}>
@@ -412,42 +408,6 @@ export default function OrderDetail() {
   );
 }
 
-function SaveAsTemplateButton({ orderId, defaultName }: { orderId: string; defaultName: string }) {
-  const { user } = useAuth();
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState(defaultName ?? "");
-  const [busy, setBusy] = useState(false);
-  useEffect(() => { setName(defaultName ?? ""); }, [defaultName]);
-  const save = async () => {
-    if (!name.trim()) { toast.error("Shablon nomini kiriting"); return; }
-    setBusy(true);
-    try {
-      await saveOrderAsTemplate(orderId, name.trim(), user?.id);
-      toast.success("Shablon saqlandi");
-      setOpen(false);
-    } catch (e: any) {
-      toast.error(e?.message || "Saqlashda xatolik");
-    } finally { setBusy(false); }
-  };
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline"><LayoutTemplate className="h-4 w-4 mr-2" /> Shablon sifatida saqlash</Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader><DialogTitle>Shablon sifatida saqlash</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <div>
-            <Label>Shablon nomi</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Masalan: Pojarniy mashina" />
-          </div>
-          <p className="text-xs text-muted-foreground">Hozirgi zakazning bosqichlari va materiallari shablonga ko'chiriladi. Zakazga keyingi o'zgarishlar shablonga ta'sir qilmaydi.</p>
-          <Button className="w-full" onClick={save} disabled={busy}>{busy ? "Saqlanmoqda..." : "Saqlash"}</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 function StageAssignDialog({ stage, onSaved }: { stage: any; onSaved: () => void }) {
   const [open, setOpen] = useState(false);
