@@ -69,7 +69,7 @@ export default function Dashboard() {
 
   const today = new Date().toISOString().slice(0, 10);
 
-  const filtered = useMemo(() => orders.filter((o) => {
+  const filteredRaw = useMemo(() => orders.filter((o) => {
     if (filter === "active") { if (!(o.status === "in_progress" || o.status === "pending")) return false; }
     else if (filter === "delayed") { if (!(o.status === "delayed" || (o.status !== "completed" && o.deadline < today))) return false; }
     else if (filter === "today") { if (!(o.deadline === today && o.status !== "completed")) return false; }
@@ -79,6 +79,7 @@ export default function Dashboard() {
     const hay = [o.order_number, o.product_name, (o as any).client?.name].filter(Boolean).join(" ");
     return matchesAcrossScripts(hay, q);
   }), [orders, filter, q, today]);
+  const filtered = filter === "all" ? sortOrdersByStatusAndDate(filteredRaw) : filteredRaw;
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
