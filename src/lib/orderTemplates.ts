@@ -1,18 +1,21 @@
 import { supabase } from "@/integrations/supabase/client";
 
+/**
+ * Every existing order can be used as a template — no separate template records.
+ * These helpers expose past orders as "templates" and copy their stages/parts
+ * into a new order draft. Source orders remain unchanged.
+ */
+
 export type OrderTemplate = {
-  id: string;
-  name: string;
+  id: string;                 // source order id
+  name: string;               // display name (order_number — product_name)
+  order_number: string;
   product_name: string;
   default_quantity: number;
-  notes: string | null;
   created_at: string;
-  updated_at: string;
 };
 
 export type TemplateStage = {
-  id?: string;
-  template_id?: string;
   stage_order: number;
   name: string;
   norm_days: number;
@@ -20,85 +23,58 @@ export type TemplateStage = {
 };
 
 export type TemplatePart = {
-  id?: string;
-  template_id?: string;
   product_id: string | null;
   part_name: string;
   unit: string;
-  qty_per_unit: number;
+  qty_per_unit: number; // normalised against source order quantity
 };
 
-export async function listTemplates() {
+/** Recent orders usable as templates. */
+export async function listTemplates(limit = 200): Promise<OrderTemplate[]> {
   const { data, error } = await supabase
-    .from("order_templates" as any)
-    .select("*")
-    .order("name");
+    .from("orders")
+    .select("id, order_number, product_name, quantity, created_at")
+    .order("created_at", { ascending: false })
+    .limit(limit);
   if (error) throw error;
-  return (data ?? []) as unknown as OrderTemplate[];
+  return (data ?? []).map((o: any) => ({
+    id: o.id,
+    name: `${o.order_number} — ${o.product_name}`,
+    order_number: o.order_number,
+    product_name: o.product_name,
+    default_quantity: Number(o.quantity) || 1,
+    created_at: o.created_at,
+  }));
 }
 
-export async function loadTemplate(id: string) {
-  const [tpl, stages, parts] = await Promise.all([
-    supabase.from("order_templates" as any).select("*").eq("id", id).maybeSingle(),
-    supabase.from("order_template_stages" as any).select("*").eq("template_id", id).order("stage_order"),
-    supabase.from("order_template_parts" as any).select("*").eq("template_id", id),
-  ]);
-  return {
-    template: (tpl.data as any) as OrderTemplate | null,
-    stages: ((stages.data as any) ?? []) as TemplateStage[],
-    parts: ((parts.data as any) ?? []) as TemplatePart[],
-  };
-}
-
-/** Snapshot an existing order's stages + parts into a new reusable template. */
-export async function saveOrderAsTemplate(orderId: string, name: string, userId: string | undefined) {
-  const { data: order, error: oErr } = await supabase
-    .from("orders").select("product_name, quantity").eq("id", orderId).maybeSingle();
-  if (oErr || !order) throw oErr ?? new Error("Order topilmadi");
-
-  const [{ data: stages }, { data: parts }] = await Promise.all([
+/** Load a source order's stages + parts to copy into a new order. */
+export async function loadTemplate(orderId: string) {
+  const [o, stages, parts] = await Promise.all([
+    supabase.from("orders").select("id, order_number, product_name, quantity, created_at").eq("id", orderId).maybeSingle(),
     supabase.from("order_stages").select("name, stage_order, norm_days, qc_required").eq("order_id", orderId).order("stage_order"),
     supabase.from("order_parts").select("product_id, part_name, unit, norm_qty").eq("order_id", orderId),
   ]);
-
-  const { data: tpl, error: tErr } = await (supabase.from as any)("order_templates")
-    .insert({
-      name: name.trim(),
-      product_name: order.product_name,
-      default_quantity: order.quantity ?? 1,
-      created_by: userId ?? null,
-    })
-    .select().single();
-  if (tErr) throw tErr;
-
-  const qty = Number(order.quantity || 1) || 1;
-  if (stages && stages.length) {
-    await (supabase.from as any)("order_template_stages").insert(
-      stages.map((s: any, i: number) => ({
-        template_id: tpl.id,
-        stage_order: s.stage_order ?? i + 1,
-        name: s.name,
-        norm_days: s.norm_days ?? 1,
-        qc_required: !!s.qc_required,
-      })),
-    );
-  }
-  if (parts && parts.length) {
-    await (supabase.from as any)("order_template_parts").insert(
-      parts.map((p: any) => ({
-        template_id: tpl.id,
-        product_id: p.product_id,
-        part_name: p.part_name ?? "",
-        unit: p.unit ?? "dona",
-        // store per-unit quantity (independent of the source order's quantity)
-        qty_per_unit: qty > 0 ? Number(p.norm_qty || 0) / qty : Number(p.norm_qty || 0),
-      })),
-    );
-  }
-  return tpl.id as string;
-}
-
-export async function deleteTemplate(id: string) {
-  const { error } = await (supabase.from as any)("order_templates").delete().eq("id", id);
-  if (error) throw error;
+  const src = o.data as any;
+  const template: OrderTemplate | null = src ? {
+    id: src.id,
+    name: `${src.order_number} — ${src.product_name}`,
+    order_number: src.order_number,
+    product_name: src.product_name,
+    default_quantity: Number(src.quantity) || 1,
+    created_at: src.created_at,
+  } : null;
+  const srcQty = Number(src?.quantity || 1) || 1;
+  const tStages: TemplateStage[] = (stages.data ?? []).map((s: any, i: number) => ({
+    stage_order: s.stage_order ?? i + 1,
+    name: s.name,
+    norm_days: Number(s.norm_days) || 1,
+    qc_required: !!s.qc_required,
+  }));
+  const tParts: TemplatePart[] = (parts.data ?? []).map((p: any) => ({
+    product_id: p.product_id,
+    part_name: p.part_name ?? "",
+    unit: p.unit ?? "dona",
+    qty_per_unit: srcQty > 0 ? Number(p.norm_qty || 0) / srcQty : Number(p.norm_qty || 0),
+  }));
+  return { template, stages: tStages, parts: tParts };
 }

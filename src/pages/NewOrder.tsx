@@ -16,7 +16,8 @@ import { useI18n } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
 import { notify } from "@/lib/notify";
 import { listTemplates, loadTemplate, type OrderTemplate } from "@/lib/orderTemplates";
-import { LayoutTemplate } from "lucide-react";
+import SearchableSelect from "@/components/SearchableSelect";
+import { ClipboardList as TplIcon } from "lucide-react";
 
 interface StageDraft { name: string; norm_days: number; qc_required: boolean }
 
@@ -63,7 +64,7 @@ export default function NewOrder() {
           .map(p => ({ product_id: p.product_id as string, norm_qty: Number(p.qty_per_unit) * qty })),
       );
       setSelectedTplId(tplId);
-      toast.success(`Shablon yuklandi: ${template.name}`);
+      toast.success(`Workflow ko'chirildi: ${template.order_number}`);
     } catch (e: any) {
       toast.error(e?.message || "Shablonni yuklashda xatolik");
     }
@@ -240,16 +241,18 @@ export default function NewOrder() {
         <Card>
           <CardContent className="p-4 flex flex-col sm:flex-row sm:items-end gap-3">
             <div className="flex-1">
-              <Label className="flex items-center gap-2"><LayoutTemplate className="h-4 w-4" /> Shablondan yaratish</Label>
-              <Select value={selectedTplId} onValueChange={(v) => applyTemplate(v)}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Shablonni tanlang (ixtiyoriy)" /></SelectTrigger>
-                <SelectContent>
-                  {templates.map((tp) => (
-                    <SelectItem key={tp.id} value={tp.id}>{tp.name} — {tp.product_name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground mt-1">Bosqichlar va materiallar avtomatik to'ldiriladi. Miqdor o'zgartirilsa, materiallar qayta hisoblanadi.</p>
+              <Label className="flex items-center gap-2"><TplIcon className="h-4 w-4" /> Avvalgi zakazdan nusxa ko'chirish</Label>
+              <div className="mt-1">
+                <SearchableSelect
+                  options={templates.map((tp) => ({ value: tp.id, label: tp.name }))}
+                  value={selectedTplId}
+                  onChange={(v) => applyTemplate(v)}
+                  placeholder="Avvalgi zakazni tanlang (ixtiyoriy)"
+                  searchPlaceholder="🔍 Zakaz raqami yoki mahsulot nomi..."
+                  emptyText="Zakaz topilmadi"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Tanlangan zakazning bosqichlari va materiallari nusxalanadi. Yangi zakaz mustaqil bo'lib qoladi — keyingi o'zgarishlar manba zakazga ta'sir qilmaydi.</p>
             </div>
             {selectedTplId && (
               <Button variant="ghost" size="sm" onClick={() => { setSelectedTplId(""); }}>Bekor qilish</Button>
@@ -261,9 +264,9 @@ export default function NewOrder() {
       {tplSuggest && !selectedTplId && (
         <Card className="border-primary/40 bg-primary/5">
           <CardContent className="p-3 flex items-center justify-between gap-3 text-sm">
-            <span>Ushbu mahsulot uchun mavjud shablon: <b>{tplSuggest.name}</b>. Ishlatilsinmi?</span>
+            <span>O'xshash avvalgi zakaz topildi: <b>{tplSuggest.order_number}</b> — {tplSuggest.product_name}. Workflow ko'chirilsinmi?</span>
             <div className="flex gap-2">
-              <Button size="sm" onClick={() => applyTemplate(tplSuggest.id)}>Ha, ishlatish</Button>
+              <Button size="sm" onClick={() => applyTemplate(tplSuggest.id)}>Ha, ko'chirish</Button>
               <Button size="sm" variant="ghost" onClick={() => setTplSuggest(null)}>Yo'q</Button>
             </div>
           </CardContent>

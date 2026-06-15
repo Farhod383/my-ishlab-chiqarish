@@ -27,7 +27,7 @@ import DefectsPage from "./pages/DefectsPage";
 import AuditLog from "./pages/AuditLog";
 import ReportsPage from "./pages/ReportsPage";
 import NotFound from "./pages/NotFound";
-import TemplatesPage from "./pages/TemplatesPage";
+
 
 const queryClient = new QueryClient();
 
@@ -63,7 +63,7 @@ const App = () => (
                       <Route path="/defects" element={<DefectsPage />} />
                       <Route path="/audit" element={<ProtectedRoute roles={["admin"]}><AuditLog /></ProtectedRoute>} />
                       <Route path="/reports" element={<ProtectedRoute roles={["admin"]}><ReportsPage /></ProtectedRoute>} />
-                      <Route path="/templates" element={<TemplatesPage />} />
+                      
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Layout>
