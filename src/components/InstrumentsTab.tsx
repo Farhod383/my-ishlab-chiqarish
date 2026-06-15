@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import NumberInput from "@/components/NumberInput";
 import SearchableSelect from "@/components/SearchableSelect";
 import SmartAutocomplete, { rememberFormValue } from "@/components/SmartAutocomplete";
+import { ensureOnline } from "@/components/OnlineGuard";
 
 type Instrument = {
   id: string;
@@ -169,9 +170,13 @@ export default function InstrumentsTab() {
   const doIssue = async () => {
     const qty = Number(issueForm.quantity);
     if (!issueForm.employee_id || !issueForm.instrument_id || !qty) { toast.error("Maydonlarni to'ldiring"); return; }
+    if (!ensureOnline((m) => toast.error(m))) return;
     const inst = instruments.find(i => i.id === issueForm.instrument_id);
     if (!inst) return;
-    if (qty > Number(inst.quantity)) { toast.error(`Skladda yetarli emas (${inst.quantity})`); return; }
+    if (qty > Number(inst.quantity)) {
+      await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Instrument berish BLOKLANDI", entity: "instrument_assignment", details: `${inst.name}: so'ralgan ${qty}, mavjud ${inst.quantity}` });
+      toast.error(`Skladda yetarli emas (${inst.quantity})`); return;
+    }
     const emp = employees.find(e => e.id === issueForm.employee_id);
     const { error } = await supabase.from("instrument_assignments").insert({
       instrument_id: issueForm.instrument_id,
