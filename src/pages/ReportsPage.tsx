@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FileBarChart, Search, ExternalLink, Download } from "lucide-react";
 import { useI18n } from "@/i18n/context";
+import { sortOrdersByStatusAndDate } from "@/lib/orderStatus";
 
 type Filter = "all" | "completed" | "in_progress" | "delayed";
 
