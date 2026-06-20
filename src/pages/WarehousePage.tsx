@@ -122,7 +122,53 @@ export default function WarehousePage() {
   }, []);
 
   const canManage = hasRole(["warehouse", "admin"]);
-  const canImport = hasRole(["warehouse", "supply", "admin"]);
+  const canImport = hasRole(["warehouse", "admin"]);
+  // Anyone authenticated can create a purchase request
+  const canRequest = !!user;
+  const userRoles = (useAuth() as any).roles as string[] | undefined;
+  const primaryRole = (userRoles && userRoles[0]) || "";
+
+  // Purchase request (Buyurtma berish) state
+  const [prOpen, setPrOpen] = useState(false);
+  const [prPid, setPrPid] = useState("");
+  const [prPname, setPrPname] = useState("");
+  const [prQty, setPrQty] = useState<number>(0);
+  const [prUnit, setPrUnit] = useState("dona");
+  const [prDate, setPrDate] = useState("");
+  const [prComment, setPrComment] = useState("");
+  const [prOrderId, setPrOrderId] = useState<string>("");
+
+  const submitPurchaseRequest = async () => {
+    const name = prPname.trim();
+    if (!name || !prQty) { toast.error("Mahsulot va miqdorni kiriting"); return; }
+    if (!(await ensureOnline())) return;
+    const { error } = await supabase.from("order_supply_requests").insert({
+      order_id: prOrderId || null,
+      product_id: prPid || null,
+      product_name: name,
+      quantity: prQty,
+      unit: prUnit || null,
+      required_date: prDate || null,
+      comment: prComment || null,
+      created_by: user?.id ?? null,
+      department: primaryRole || null,
+      source: "warehouse",
+    } as any);
+    if (error) { toast.error(error.message); return; }
+    const { notify } = await import("@/lib/notify");
+    await notify({
+      type: "info",
+      title: `Yangi ta'minot so'rovi${prOrderId ? "" : " (umumiy)"}`,
+      body: `${name} · ${prQty} ${prUnit ?? ""}${prDate ? ` · kerak: ${prDate}` : ""}`,
+      link: `/supply`,
+      entity: "supply_request",
+      sender_id: user?.id,
+      sender_name: user?.email,
+    });
+    toast.success("So'rov yuborildi");
+    setPrPid(""); setPrPname(""); setPrQty(0); setPrUnit("dona"); setPrDate(""); setPrComment(""); setPrOrderId("");
+    setPrOpen(false);
+  };
   const fmt = (n: number) => fmtNum(n);
 
   const release = async () => {
