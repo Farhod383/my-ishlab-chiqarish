@@ -31,6 +31,8 @@ const statusCls: Record<string, string> = {
 };
 
 export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
+  const { roles } = useAuth() as any;
+  const primaryRole = (Array.isArray(roles) && roles[0]) || "";
   const { user, hasRole } = useAuth();
   const canAdd = !!user; // any authenticated user can create a purchase request
   const canDelete = hasRole(["supply", "admin", "warehouse"]);
