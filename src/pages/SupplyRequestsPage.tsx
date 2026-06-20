@@ -40,6 +40,8 @@ export default function SupplyRequestsPage() {
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
   const [edit, setEdit] = useState<Record<string, { status: Status; supply_comment: string; dirty: boolean }>>({});
 
+  const [profiles, setProfiles] = useState<Record<string, { full_name: string | null; email: string | null }>>({});
+
   const load = async () => {
     setLoading(true);
     const { data } = await supabase
@@ -52,11 +54,20 @@ export default function SupplyRequestsPage() {
       map[r.id] = { status: r.status as Status, supply_comment: r.supply_comment ?? "", dirty: false };
     });
     setEdit(map);
+    const ids = Array.from(new Set((data ?? []).map((r: any) => r.created_by).filter(Boolean)));
+    if (ids.length) {
+      const { data: profs } = await supabase.from("profiles").select("id,full_name,email").in("id", ids as string[]);
+      const pm: any = {};
+      (profs ?? []).forEach((p: any) => { pm[p.id] = { full_name: p.full_name, email: p.email }; });
+      setProfiles(pm);
+    } else {
+      setProfiles({});
+    }
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
 
-  // Realtime updates so Nachalnik additions appear instantly
+  // Realtime updates so additions appear instantly
   useEffect(() => {
     const ch = supabase
       .channel("supply-requests-list")
@@ -65,12 +76,17 @@ export default function SupplyRequestsPage() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
+  const GENERAL_KEY = "__general__";
+
   const orders = useMemo(() => {
-    const map = new Map<string, { order: any; items: any[]; counts: Record<Status, number>; worst: Status }>();
+    const map = new Map<string, { order: any; key: string; items: any[]; counts: Record<Status, number>; worst: Status }>();
     rows.forEach((r) => {
-      if (!r.order) return;
-      const k = r.order.id;
-      if (!map.has(k)) map.set(k, { order: r.order, items: [], counts: { pending: 0, in_progress: 0, fulfilled: 0 }, worst: "fulfilled" });
+      const k = r.order?.id ?? GENERAL_KEY;
+      if (!map.has(k)) map.set(k, {
+        order: r.order ?? { id: GENERAL_KEY, order_number: "—", product_name: "Umumiy so'rovlar (zakazsiz)" },
+        key: k,
+        items: [], counts: { pending: 0, in_progress: 0, fulfilled: 0 }, worst: "fulfilled",
+      });
       const e = map.get(k)!;
       e.items.push(r);
       e.counts[r.status as Status]++;
