@@ -161,16 +161,18 @@ export default function HRPage() {
                   <div><Label>{hr.hireDate ?? "Ish boshlagan sana"}</Label><Input type="date" value={form.hire_date} onChange={e => setForm({ ...form, hire_date: e.target.value })} /></div>
                   <div><Label>{hr.leaveDate ?? "Ketgan sana"}</Label><Input type="date" value={form.leave_date} onChange={e => setForm({ ...form, leave_date: e.target.value })} /></div>
                 </div>
-                <div>
-                  <Label>{hr.status ?? "Holat"}</Label>
-                  <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">{hr.active ?? "Faol"}</SelectItem>
-                      <SelectItem value="inactive">{hr.inactive ?? "Nofaol"}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {canDeactivate && (
+                  <div>
+                    <Label>{hr.status ?? "Holat"}</Label>
+                    <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">{hr.active ?? "Faol"}</SelectItem>
+                        <SelectItem value="inactive">{hr.inactive ?? "Ishdan bo'shagan"}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <Button className="w-full" onClick={save}>{t.common.save}</Button>
               </div>
             </DialogContent>
