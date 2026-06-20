@@ -777,13 +777,15 @@ export type Database = {
           comment: string | null
           created_at: string
           created_by: string | null
+          department: string | null
           fulfilled_at: string | null
           id: string
-          order_id: string
+          order_id: string | null
           product_id: string | null
           product_name: string
           quantity: number
           required_date: string | null
+          source: string | null
           status: string
           supply_comment: string | null
           unit: string | null
@@ -793,13 +795,15 @@ export type Database = {
           comment?: string | null
           created_at?: string
           created_by?: string | null
+          department?: string | null
           fulfilled_at?: string | null
           id?: string
-          order_id: string
+          order_id?: string | null
           product_id?: string | null
           product_name: string
           quantity?: number
           required_date?: string | null
+          source?: string | null
           status?: string
           supply_comment?: string | null
           unit?: string | null
@@ -809,13 +813,15 @@ export type Database = {
           comment?: string | null
           created_at?: string
           created_by?: string | null
+          department?: string | null
           fulfilled_at?: string | null
           id?: string
-          order_id?: string
+          order_id?: string | null
           product_id?: string | null
           product_name?: string
           quantity?: number
           required_date?: string | null
+          source?: string | null
           status?: string
           supply_comment?: string | null
           unit?: string | null
