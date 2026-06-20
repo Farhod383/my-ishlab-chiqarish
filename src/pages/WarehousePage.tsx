@@ -714,6 +714,67 @@ export default function WarehousePage() {
               </DialogContent>
             </Dialog>
           )}
+          {canRequest && (
+            <Dialog open={prOpen} onOpenChange={setPrOpen}>
+              <DialogTrigger asChild>
+                <Button variant="default"><Plus className="h-4 w-4 mr-2" />Buyurtma berish</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Ta'minotga buyurtma berish</DialogTitle>
+                  <DialogDescription>So'rov Ta'minot bo'limiga yuboriladi</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-3">
+                  <div>
+                    <Label>Mahsulot (omborda bor)</Label>
+                    <SearchableSelect
+                      value={prPid}
+                      onChange={(v) => {
+                        setPrPid(v);
+                        const p = products.find((x) => x.id === v);
+                        if (p) { setPrPname(p.name); if (p.unit) setPrUnit(p.unit); }
+                      }}
+                      placeholder="Tanlang yoki pastda yozing"
+                      options={products.map((p) => ({ value: p.id, label: p.name, hint: `${p.stock_qty} ${p.unit}` }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Yoki mahsulot nomini yozing *</Label>
+                    <Input value={prPname} onChange={(e) => setPrPname(e.target.value)} placeholder="Masalan: Kraska 201" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Miqdor *</Label><NumberInput min={0.01} step={0.01} value={prQty || ""} onChange={(e) => setPrQty(Number(e.target.value))} /></div>
+                    <div><Label>O'lchov</Label>
+                      <Select value={prUnit} onValueChange={setPrUnit}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>{UNITS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Kerak bo'ladigan sana</Label>
+                    <Input type="date" value={prDate} onChange={(e) => setPrDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>Bog'liq zakaz (ixtiyoriy)</Label>
+                    <SearchableSelect
+                      value={prOrderId}
+                      onChange={setPrOrderId}
+                      placeholder="Zakaz tanlang..."
+                      options={orders.map((o) => ({ value: o.id, label: o.product_name, hint: o.order_number }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Izoh</Label>
+                    <Textarea rows={2} value={prComment} onChange={(e) => setPrComment(e.target.value)} />
+                  </div>
+                  <Button className="w-full" onClick={submitPurchaseRequest}>
+                    <Plus className="h-4 w-4 mr-2" />Yuborish
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </div>
 
