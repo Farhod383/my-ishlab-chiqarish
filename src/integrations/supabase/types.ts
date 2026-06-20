@@ -772,6 +772,72 @@ export type Database = {
           },
         ]
       }
+      order_supply_requests: {
+        Row: {
+          comment: string | null
+          created_at: string
+          created_by: string | null
+          fulfilled_at: string | null
+          id: string
+          order_id: string
+          product_id: string | null
+          product_name: string
+          quantity: number
+          required_date: string | null
+          status: string
+          supply_comment: string | null
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          fulfilled_at?: string | null
+          id?: string
+          order_id: string
+          product_id?: string | null
+          product_name: string
+          quantity?: number
+          required_date?: string | null
+          status?: string
+          supply_comment?: string | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          fulfilled_at?: string | null
+          id?: string
+          order_id?: string
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          required_date?: string | null
+          status?: string
+          supply_comment?: string | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_supply_requests_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_supply_requests_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_template_parts: {
         Row: {
           created_at: string
