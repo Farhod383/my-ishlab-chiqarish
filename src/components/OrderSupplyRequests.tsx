@@ -76,6 +76,8 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
       required_date: date || null,
       comment: comment || null,
       created_by: user?.id ?? null,
+      department: primaryRole || null,
+      source: "order",
     } as any);
     if (error) { toast.error(error.message); return; }
     await notify({
