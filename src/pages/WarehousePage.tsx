@@ -30,7 +30,7 @@ const UNITS = ["dona", "kg", "metr", "litr", "rulon", "komplekt"] as const;
 const CURRENCIES = ["UZS", "USD"] as const;
 
 export default function WarehousePage() {
-  const { user, hasRole } = useAuth();
+  const { user, hasRole, roles } = useAuth() as any;
   const { t } = useI18n();
   const localize = useLocalize();
   const [products, setProducts] = useState<any[]>([]);
