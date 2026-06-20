@@ -30,7 +30,7 @@ const UNITS = ["dona", "kg", "metr", "litr", "rulon", "komplekt"] as const;
 const CURRENCIES = ["UZS", "USD"] as const;
 
 export default function WarehousePage() {
-  const { user, hasRole } = useAuth();
+  const { user, hasRole, roles } = useAuth() as any;
   const { t } = useI18n();
   const localize = useLocalize();
   const [products, setProducts] = useState<any[]>([]);
@@ -122,7 +122,53 @@ export default function WarehousePage() {
   }, []);
 
   const canManage = hasRole(["warehouse", "admin"]);
-  const canImport = hasRole(["warehouse", "supply", "admin"]);
+  const canImport = hasRole(["warehouse", "admin"]);
+  // Anyone authenticated can create a purchase request
+  const canRequest = !!user;
+  const userRoles = (roles as string[] | undefined) ?? [];
+  const primaryRole = userRoles[0] || "";
+
+  // Purchase request (Buyurtma berish) state
+  const [prOpen, setPrOpen] = useState(false);
+  const [prPid, setPrPid] = useState("");
+  const [prPname, setPrPname] = useState("");
+  const [prQty, setPrQty] = useState<number>(0);
+  const [prUnit, setPrUnit] = useState("dona");
+  const [prDate, setPrDate] = useState("");
+  const [prComment, setPrComment] = useState("");
+  const [prOrderId, setPrOrderId] = useState<string>("");
+
+  const submitPurchaseRequest = async () => {
+    const name = prPname.trim();
+    if (!name || !prQty) { toast.error("Mahsulot va miqdorni kiriting"); return; }
+    if (!(await ensureOnline())) return;
+    const { error } = await supabase.from("order_supply_requests").insert({
+      order_id: prOrderId || null,
+      product_id: prPid || null,
+      product_name: name,
+      quantity: prQty,
+      unit: prUnit || null,
+      required_date: prDate || null,
+      comment: prComment || null,
+      created_by: user?.id ?? null,
+      department: primaryRole || null,
+      source: "warehouse",
+    } as any);
+    if (error) { toast.error(error.message); return; }
+    const { notify } = await import("@/lib/notify");
+    await notify({
+      type: "info",
+      title: `Yangi ta'minot so'rovi${prOrderId ? "" : " (umumiy)"}`,
+      body: `${name} · ${prQty} ${prUnit ?? ""}${prDate ? ` · kerak: ${prDate}` : ""}`,
+      link: `/supply`,
+      entity: "supply_request",
+      sender_id: user?.id,
+      sender_name: user?.email,
+    });
+    toast.success("So'rov yuborildi");
+    setPrPid(""); setPrPname(""); setPrQty(0); setPrUnit("dona"); setPrDate(""); setPrComment(""); setPrOrderId("");
+    setPrOpen(false);
+  };
   const fmt = (n: number) => fmtNum(n);
 
   const release = async () => {
@@ -664,6 +710,67 @@ export default function WarehousePage() {
                   <div><Label>{t.supply.phone}</Label><Input list="dl-phones" value={impPhone} onChange={e => setImpPhone(e.target.value)} placeholder={t.supply.phonePh} /></div>
                   <div><Label>{t.supply.image}</Label><Input type="file" accept="image/*" onChange={e => setImpImage(e.target.files?.[0] ?? null)} /></div>
                   <Button className="w-full" onClick={doImport}>{t.supply.saveIn}</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+          {canRequest && (
+            <Dialog open={prOpen} onOpenChange={setPrOpen}>
+              <DialogTrigger asChild>
+                <Button variant="default"><Plus className="h-4 w-4 mr-2" />Buyurtma berish</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Ta'minotga buyurtma berish</DialogTitle>
+                  <DialogDescription>So'rov Ta'minot bo'limiga yuboriladi</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-3">
+                  <div>
+                    <Label>Mahsulot (omborda bor)</Label>
+                    <SearchableSelect
+                      value={prPid}
+                      onChange={(v) => {
+                        setPrPid(v);
+                        const p = products.find((x) => x.id === v);
+                        if (p) { setPrPname(p.name); if (p.unit) setPrUnit(p.unit); }
+                      }}
+                      placeholder="Tanlang yoki pastda yozing"
+                      options={products.map((p) => ({ value: p.id, label: p.name, hint: `${p.stock_qty} ${p.unit}` }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Yoki mahsulot nomini yozing *</Label>
+                    <Input value={prPname} onChange={(e) => setPrPname(e.target.value)} placeholder="Masalan: Kraska 201" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Miqdor *</Label><NumberInput min={0.01} step={0.01} value={prQty || ""} onChange={(e) => setPrQty(Number(e.target.value))} /></div>
+                    <div><Label>O'lchov</Label>
+                      <Select value={prUnit} onValueChange={setPrUnit}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>{UNITS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Kerak bo'ladigan sana</Label>
+                    <Input type="date" value={prDate} onChange={(e) => setPrDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>Bog'liq zakaz (ixtiyoriy)</Label>
+                    <SearchableSelect
+                      value={prOrderId}
+                      onChange={setPrOrderId}
+                      placeholder="Zakaz tanlang..."
+                      options={orders.map((o) => ({ value: o.id, label: o.product_name, hint: o.order_number }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Izoh</Label>
+                    <Textarea rows={2} value={prComment} onChange={(e) => setPrComment(e.target.value)} />
+                  </div>
+                  <Button className="w-full" onClick={submitPurchaseRequest}>
+                    <Plus className="h-4 w-4 mr-2" />Yuborish
+                  </Button>
                 </div>
               </DialogContent>
             </Dialog>

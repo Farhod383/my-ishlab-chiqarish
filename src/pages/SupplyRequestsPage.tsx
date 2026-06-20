@@ -40,6 +40,8 @@ export default function SupplyRequestsPage() {
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
   const [edit, setEdit] = useState<Record<string, { status: Status; supply_comment: string; dirty: boolean }>>({});
 
+  const [profiles, setProfiles] = useState<Record<string, { full_name: string | null; email: string | null }>>({});
+
   const load = async () => {
     setLoading(true);
     const { data } = await supabase
@@ -52,11 +54,20 @@ export default function SupplyRequestsPage() {
       map[r.id] = { status: r.status as Status, supply_comment: r.supply_comment ?? "", dirty: false };
     });
     setEdit(map);
+    const ids = Array.from(new Set((data ?? []).map((r: any) => r.created_by).filter(Boolean)));
+    if (ids.length) {
+      const { data: profs } = await supabase.from("profiles").select("id,full_name,email").in("id", ids as string[]);
+      const pm: any = {};
+      (profs ?? []).forEach((p: any) => { pm[p.id] = { full_name: p.full_name, email: p.email }; });
+      setProfiles(pm);
+    } else {
+      setProfiles({});
+    }
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
 
-  // Realtime updates so Nachalnik additions appear instantly
+  // Realtime updates so additions appear instantly
   useEffect(() => {
     const ch = supabase
       .channel("supply-requests-list")
@@ -65,12 +76,17 @@ export default function SupplyRequestsPage() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
+  const GENERAL_KEY = "__general__";
+
   const orders = useMemo(() => {
-    const map = new Map<string, { order: any; items: any[]; counts: Record<Status, number>; worst: Status }>();
+    const map = new Map<string, { order: any; key: string; items: any[]; counts: Record<Status, number>; worst: Status }>();
     rows.forEach((r) => {
-      if (!r.order) return;
-      const k = r.order.id;
-      if (!map.has(k)) map.set(k, { order: r.order, items: [], counts: { pending: 0, in_progress: 0, fulfilled: 0 }, worst: "fulfilled" });
+      const k = r.order?.id ?? GENERAL_KEY;
+      if (!map.has(k)) map.set(k, {
+        order: r.order ?? { id: GENERAL_KEY, order_number: "—", product_name: "Umumiy so'rovlar (zakazsiz)" },
+        key: k,
+        items: [], counts: { pending: 0, in_progress: 0, fulfilled: 0 }, worst: "fulfilled",
+      });
       const e = map.get(k)!;
       e.items.push(r);
       e.counts[r.status as Status]++;
@@ -92,7 +108,7 @@ export default function SupplyRequestsPage() {
 
   const visible = orders.filter((o) => {
     if (filter !== "all" && o.worst !== filter) return false;
-    if (q && !(`${o.order.order_number} ${o.order.product_name}`.toLowerCase().includes(q.toLowerCase()))) return false;
+    if (q && !(`${o.order.order_number ?? ""} ${o.order.product_name ?? ""}`.toLowerCase().includes(q.toLowerCase()))) return false;
     return true;
   });
 
@@ -106,7 +122,14 @@ export default function SupplyRequestsPage() {
     load();
   };
 
-  const openedOrder = openOrderId ? orders.find((o) => o.order.id === openOrderId) : null;
+  const requesterName = (uid?: string | null) => {
+    if (!uid) return "—";
+    const p = profiles[uid];
+    return p?.full_name || p?.email || "—";
+  };
+
+  const openedOrder = openOrderId ? orders.find((o) => o.key === openOrderId) : null;
+  const isGeneralOpen = openedOrder?.key === GENERAL_KEY;
 
   if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
@@ -155,10 +178,10 @@ export default function SupplyRequestsPage() {
             {visible.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">So'rovlar mavjud emas</p>}
             {visible.map((o) => (
               <Card
-                key={o.order.id}
+                key={o.key}
                 className="cursor-pointer hover:bg-muted/30 border-l-4"
                 style={{ borderLeftColor: o.worst === "pending" ? "hsl(var(--status-red))" : o.worst === "in_progress" ? "hsl(var(--status-yellow))" : "hsl(var(--status-green))" }}
-                onClick={() => setOpenOrderId(o.order.id)}
+                onClick={() => setOpenOrderId(o.key)}
               >
                 <CardContent className="p-3 flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex items-center gap-3 min-w-0">
@@ -188,9 +211,13 @@ export default function SupplyRequestsPage() {
               <Button variant="ghost" size="sm" onClick={() => setOpenOrderId(null)}>
                 <ChevronLeft className="h-4 w-4 mr-1" /> Ro'yxatga qaytish
               </Button>
-              <Link to={`/orders/${openedOrder.order.id}`} className="text-sm text-primary hover:underline flex items-center gap-1 font-mono">
-                {openedOrder.order.order_number} · {openedOrder.order.product_name} <ExternalLink className="h-3 w-3" />
-              </Link>
+              {isGeneralOpen ? (
+                <span className="text-sm text-muted-foreground font-medium">Umumiy so'rovlar (zakazsiz)</span>
+              ) : (
+                <Link to={`/orders/${openedOrder.order.id}`} className="text-sm text-primary hover:underline flex items-center gap-1 font-mono">
+                  {openedOrder.order.order_number} · {openedOrder.order.product_name} <ExternalLink className="h-3 w-3" />
+                </Link>
+              )}
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -208,6 +235,10 @@ export default function SupplyRequestsPage() {
                           <div className="text-xs text-muted-foreground">
                             Miqdor: <span className="font-mono">{item.quantity} {item.unit ?? ""}</span>
                             {item.required_date && <> · Kerak: <span className="font-mono">{item.required_date}</span></>}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            So'rovchi: <span className="font-medium text-foreground">{requesterName(item.created_by)}</span>
+                            {item.department && <> · Bo'lim: <span className="uppercase">{item.department}</span></>}
                           </div>
                         </div>
                       </div>

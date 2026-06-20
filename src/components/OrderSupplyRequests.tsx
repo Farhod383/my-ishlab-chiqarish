@@ -31,8 +31,10 @@ const statusCls: Record<string, string> = {
 };
 
 export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
+  const { roles } = useAuth() as any;
+  const primaryRole = (Array.isArray(roles) && roles[0]) || "";
   const { user, hasRole } = useAuth();
-  const canAdd = hasRole(["manager", "admin", "marketing"]);
+  const canAdd = !!user; // any authenticated user can create a purchase request
   const canDelete = hasRole(["supply", "admin", "warehouse"]);
   const [items, setItems] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -74,6 +76,8 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
       required_date: date || null,
       comment: comment || null,
       created_by: user?.id ?? null,
+      department: primaryRole || null,
+      source: "order",
     } as any);
     if (error) { toast.error(error.message); return; }
     await notify({
