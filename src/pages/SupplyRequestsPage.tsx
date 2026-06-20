@@ -108,7 +108,7 @@ export default function SupplyRequestsPage() {
 
   const visible = orders.filter((o) => {
     if (filter !== "all" && o.worst !== filter) return false;
-    if (q && !(`${o.order.order_number} ${o.order.product_name}`.toLowerCase().includes(q.toLowerCase()))) return false;
+    if (q && !(`${o.order.order_number ?? ""} ${o.order.product_name ?? ""}`.toLowerCase().includes(q.toLowerCase()))) return false;
     return true;
   });
 
@@ -122,7 +122,14 @@ export default function SupplyRequestsPage() {
     load();
   };
 
-  const openedOrder = openOrderId ? orders.find((o) => o.order.id === openOrderId) : null;
+  const requesterName = (uid?: string | null) => {
+    if (!uid) return "—";
+    const p = profiles[uid];
+    return p?.full_name || p?.email || "—";
+  };
+
+  const openedOrder = openOrderId ? orders.find((o) => o.key === openOrderId) : null;
+  const isGeneralOpen = openedOrder?.key === GENERAL_KEY;
 
   if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
