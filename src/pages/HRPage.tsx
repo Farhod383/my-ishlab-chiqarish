@@ -51,6 +51,13 @@ export default function HRPage() {
   }, []);
 
   const canManage = hasRole(["hr", "admin", "cashier"]);
+  // Only Admin and Cashier may deactivate / soft-delete employees.
+  const canDeactivate = hasRole(["admin", "cashier"]);
+  const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "all">("active");
+  const filteredEmployees = useMemo(
+    () => statusFilter === "all" ? employees : employees.filter(e => (e.status ?? "active") === statusFilter),
+    [employees, statusFilter]
+  );
 
   const resetForm = () => setForm({ full_name: "", position: "", department: "", phone: "", hire_date: new Date().toISOString().slice(0, 10), leave_date: "", status: "active" });
 
