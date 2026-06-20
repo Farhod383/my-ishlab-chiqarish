@@ -236,6 +236,10 @@ export default function SupplyRequestsPage() {
                             Miqdor: <span className="font-mono">{item.quantity} {item.unit ?? ""}</span>
                             {item.required_date && <> · Kerak: <span className="font-mono">{item.required_date}</span></>}
                           </div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            So'rovchi: <span className="font-medium text-foreground">{requesterName(item.created_by)}</span>
+                            {item.department && <> · Bo'lim: <span className="uppercase">{item.department}</span></>}
+                          </div>
                         </div>
                       </div>
                       <div className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-semibold ${statusCls[color]}`}>
