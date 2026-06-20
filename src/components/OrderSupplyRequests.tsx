@@ -33,7 +33,7 @@ const statusCls: Record<string, string> = {
 export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
   const { user, hasRole } = useAuth();
   const canAdd = hasRole(["manager", "admin", "marketing"]);
-  const canDelete = hasRole(["manager", "admin"]);
+  const canDelete = hasRole(["supply", "admin", "warehouse"]);
   const [items, setItems] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
