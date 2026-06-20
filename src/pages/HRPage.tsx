@@ -111,6 +111,33 @@ export default function HRPage() {
     setAddOpen(true);
   };
 
+  const toggleActive = async (emp: any) => {
+    if (!canDeactivate) { toast.error("Faqat Admin yoki Kassir bo'shata oladi"); return; }
+    const goingInactive = (emp.status ?? "active") === "active";
+    if (goingInactive) {
+      const held = heldMap[emp.id] ?? [];
+      if (held.length > 0) {
+        toast.error("Xodimda topshirilmagan instrumentlar mavjud:\n" + held.map(h => `• ${h.name} ×${h.quantity}`).join("\n"), { duration: 8000 });
+        return;
+      }
+      if (!confirm(`${emp.full_name} — ishdan bo'shatilsinmi? Tarix saqlanadi.`)) return;
+    } else {
+      if (!confirm(`${emp.full_name} — qaytadan faollashtirilsinmi?`)) return;
+    }
+    const { error } = await supabase.from("employees").update({
+      status: goingInactive ? "inactive" : "active",
+      leave_date: goingInactive ? new Date().toISOString().slice(0, 10) : null,
+    }).eq("id", emp.id);
+    if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: goingInactive ? "Xodim bo'shatildi" : "Xodim qayta faollashtirildi",
+      entity: "employee", details: emp.full_name,
+    });
+    toast.success(goingInactive ? "Xodim bo'shatildi" : "Xodim faollashtirildi");
+    load();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
