@@ -22,18 +22,17 @@ export function AppSidebar() {
   const allItems: Item[] = [
     { title: t.nav.dashboard, url: "/", icon: LayoutDashboard },
     { title: t.nav.orders, url: "/orders", icon: ClipboardList },
-    
     { title: t.nav.production, url: "/production", icon: Factory },
     { title: t.nav.nachalnik, url: "/nachalnik", icon: UserCog, roles: ["manager", "admin"] },
     { title: t.nav.otk, url: "/otk", icon: ShieldCheck },
     { title: t.nav.warehouse, url: "/warehouse", icon: Warehouse },
-    { title: "Ta'minot", url: "/supply", icon: Truck },
-    { title: (t as any).nav.returns ?? "Vozvrat", url: "/returns", icon: RotateCcw, roles: ["warehouse", "admin"] },
-    { title: (t as any).nav.defects ?? "Brak", url: "/defects", icon: AlertOctagon },
-    { title: (t as any).nav.hr ?? "Xodimlar", url: "/hr", icon: Users, roles: ["hr", "admin", "cashier"] },
-    { title: (t as any).nav.kassa ?? "Kassa", url: "/kassa", icon: Wallet, roles: ["cashier", "admin"] },
+    { title: t.nav.supply, url: "/supply", icon: Truck },
+    { title: t.nav.returns, url: "/returns", icon: RotateCcw, roles: ["warehouse", "admin"] },
+    { title: t.nav.defects, url: "/defects", icon: AlertOctagon },
+    { title: t.nav.hr, url: "/hr", icon: Users, roles: ["hr", "admin", "cashier"] },
+    { title: t.nav.kassa, url: "/kassa", icon: Wallet, roles: ["cashier", "admin"] },
     { title: t.nav.chat, url: "/chat", icon: MessageSquare },
-    { title: "Hisobot / Atchot", url: "/reports", icon: FileBarChart, roles: ["admin"] },
+    { title: t.nav.reports, url: "/reports", icon: FileBarChart, roles: ["admin"] },
     { title: t.nav.audit, url: "/audit", icon: History, roles: ["admin"] },
   ];
 
