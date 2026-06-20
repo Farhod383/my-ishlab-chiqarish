@@ -178,10 +178,10 @@ export default function SupplyRequestsPage() {
             {visible.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">So'rovlar mavjud emas</p>}
             {visible.map((o) => (
               <Card
-                key={o.order.id}
+                key={o.key}
                 className="cursor-pointer hover:bg-muted/30 border-l-4"
                 style={{ borderLeftColor: o.worst === "pending" ? "hsl(var(--status-red))" : o.worst === "in_progress" ? "hsl(var(--status-yellow))" : "hsl(var(--status-green))" }}
-                onClick={() => setOpenOrderId(o.order.id)}
+                onClick={() => setOpenOrderId(o.key)}
               >
                 <CardContent className="p-3 flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex items-center gap-3 min-w-0">
@@ -211,9 +211,13 @@ export default function SupplyRequestsPage() {
               <Button variant="ghost" size="sm" onClick={() => setOpenOrderId(null)}>
                 <ChevronLeft className="h-4 w-4 mr-1" /> Ro'yxatga qaytish
               </Button>
-              <Link to={`/orders/${openedOrder.order.id}`} className="text-sm text-primary hover:underline flex items-center gap-1 font-mono">
-                {openedOrder.order.order_number} · {openedOrder.order.product_name} <ExternalLink className="h-3 w-3" />
-              </Link>
+              {isGeneralOpen ? (
+                <span className="text-sm text-muted-foreground font-medium">Umumiy so'rovlar (zakazsiz)</span>
+              ) : (
+                <Link to={`/orders/${openedOrder.order.id}`} className="text-sm text-primary hover:underline flex items-center gap-1 font-mono">
+                  {openedOrder.order.order_number} · {openedOrder.order.product_name} <ExternalLink className="h-3 w-3" />
+                </Link>
+              )}
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
