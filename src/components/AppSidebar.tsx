@@ -27,7 +27,7 @@ export function AppSidebar() {
     { title: t.nav.nachalnik, url: "/nachalnik", icon: UserCog, roles: ["manager", "admin"] },
     { title: t.nav.otk, url: "/otk", icon: ShieldCheck },
     { title: t.nav.warehouse, url: "/warehouse", icon: Warehouse },
-    { title: "Ta'minot", url: "/supply", icon: Truck, roles: ["supply", "admin", "manager", "marketing"] },
+    { title: "Ta'minot", url: "/supply", icon: Truck },
     { title: (t as any).nav.returns ?? "Vozvrat", url: "/returns", icon: RotateCcw, roles: ["warehouse", "admin"] },
     { title: (t as any).nav.defects ?? "Brak", url: "/defects", icon: AlertOctagon },
     { title: (t as any).nav.hr ?? "Xodimlar", url: "/hr", icon: Users, roles: ["hr", "admin", "cashier"] },

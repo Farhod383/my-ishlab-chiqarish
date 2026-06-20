@@ -32,7 +32,7 @@ const dotCls: Record<Status, string> = {
 
 export default function SupplyRequestsPage() {
   const { hasRole } = useAuth();
-  const canEdit = hasRole(["supply", "admin", "manager", "marketing"]);
+  const canEdit = hasRole(["supply", "admin", "warehouse"]);
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
