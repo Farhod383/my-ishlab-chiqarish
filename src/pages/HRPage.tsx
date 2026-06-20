@@ -159,7 +159,7 @@ export default function HRPage() {
                 <div><Label>{hr.phone ?? "Telefon"}</Label><Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+998..." /></div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>{hr.hireDate ?? "Ish boshlagan sana"}</Label><Input type="date" value={form.hire_date} onChange={e => setForm({ ...form, hire_date: e.target.value })} /></div>
-                  <div><Label>{hr.leaveDate ?? "Ketgan sana"}</Label><Input type="date" value={form.leave_date} onChange={e => setForm({ ...form, leave_date: e.target.value })} /></div>
+                  {canDeactivate && <div><Label>{hr.leaveDate ?? "Ketgan sana"}</Label><Input type="date" value={form.leave_date} onChange={e => setForm({ ...form, leave_date: e.target.value })} /></div>}
                 </div>
                 {canDeactivate && (
                   <div>
