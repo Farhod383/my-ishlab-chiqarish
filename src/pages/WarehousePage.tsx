@@ -125,8 +125,8 @@ export default function WarehousePage() {
   const canImport = hasRole(["warehouse", "admin"]);
   // Anyone authenticated can create a purchase request
   const canRequest = !!user;
-  const userRoles = (useAuth() as any).roles as string[] | undefined;
-  const primaryRole = (userRoles && userRoles[0]) || "";
+  const userRoles = (roles as string[] | undefined) ?? [];
+  const primaryRole = userRoles[0] || "";
 
   // Purchase request (Buyurtma berish) state
   const [prOpen, setPrOpen] = useState(false);
