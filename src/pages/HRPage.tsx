@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Users, Plus, Edit2, Wrench, AlertTriangle } from "lucide-react";
+import { Users, Plus, Edit2, Wrench, AlertTriangle, UserX, UserCheck } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
@@ -50,6 +51,13 @@ export default function HRPage() {
   }, []);
 
   const canManage = hasRole(["hr", "admin", "cashier"]);
+  // Only Admin and Cashier may deactivate / soft-delete employees.
+  const canDeactivate = hasRole(["admin", "cashier"]);
+  const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "all">("active");
+  const filteredEmployees = useMemo(
+    () => statusFilter === "all" ? employees : employees.filter(e => (e.status ?? "active") === statusFilter),
+    [employees, statusFilter]
+  );
 
   const resetForm = () => setForm({ full_name: "", position: "", department: "", phone: "", hire_date: new Date().toISOString().slice(0, 10), leave_date: "", status: "active" });
 
@@ -103,6 +111,33 @@ export default function HRPage() {
     setAddOpen(true);
   };
 
+  const toggleActive = async (emp: any) => {
+    if (!canDeactivate) { toast.error("Faqat Admin yoki Kassir bo'shata oladi"); return; }
+    const goingInactive = (emp.status ?? "active") === "active";
+    if (goingInactive) {
+      const held = heldMap[emp.id] ?? [];
+      if (held.length > 0) {
+        toast.error("Xodimda topshirilmagan instrumentlar mavjud:\n" + held.map(h => `• ${h.name} ×${h.quantity}`).join("\n"), { duration: 8000 });
+        return;
+      }
+      if (!confirm(`${emp.full_name} — ishdan bo'shatilsinmi? Tarix saqlanadi.`)) return;
+    } else {
+      if (!confirm(`${emp.full_name} — qaytadan faollashtirilsinmi?`)) return;
+    }
+    const { error } = await supabase.from("employees").update({
+      status: goingInactive ? "inactive" : "active",
+      leave_date: goingInactive ? new Date().toISOString().slice(0, 10) : null,
+    }).eq("id", emp.id);
+    if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: goingInactive ? "Xodim bo'shatildi" : "Xodim qayta faollashtirildi",
+      entity: "employee", details: emp.full_name,
+    });
+    toast.success(goingInactive ? "Xodim bo'shatildi" : "Xodim faollashtirildi");
+    load();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -124,18 +159,20 @@ export default function HRPage() {
                 <div><Label>{hr.phone ?? "Telefon"}</Label><Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+998..." /></div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>{hr.hireDate ?? "Ish boshlagan sana"}</Label><Input type="date" value={form.hire_date} onChange={e => setForm({ ...form, hire_date: e.target.value })} /></div>
-                  <div><Label>{hr.leaveDate ?? "Ketgan sana"}</Label><Input type="date" value={form.leave_date} onChange={e => setForm({ ...form, leave_date: e.target.value })} /></div>
+                  {canDeactivate && <div><Label>{hr.leaveDate ?? "Ketgan sana"}</Label><Input type="date" value={form.leave_date} onChange={e => setForm({ ...form, leave_date: e.target.value })} /></div>}
                 </div>
-                <div>
-                  <Label>{hr.status ?? "Holat"}</Label>
-                  <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">{hr.active ?? "Faol"}</SelectItem>
-                      <SelectItem value="inactive">{hr.inactive ?? "Nofaol"}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {canDeactivate && (
+                  <div>
+                    <Label>{hr.status ?? "Holat"}</Label>
+                    <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">{hr.active ?? "Faol"}</SelectItem>
+                        <SelectItem value="inactive">{hr.inactive ?? "Ishdan bo'shagan"}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <Button className="w-full" onClick={save}>{t.common.save}</Button>
               </div>
             </DialogContent>
@@ -145,6 +182,16 @@ export default function HRPage() {
 
       <Card>
         <CardContent className="p-0">
+          <div className="flex items-center justify-between p-3 border-b">
+            <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+              <TabsList>
+                <TabsTrigger value="active">{hr.active ?? "Faol"}</TabsTrigger>
+                <TabsTrigger value="inactive">{hr.inactive ?? "Nofaol"}</TabsTrigger>
+                <TabsTrigger value="all">{hr.all ?? "Hammasi"}</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <span className="text-xs text-muted-foreground">{filteredEmployees.length} / {employees.length}</span>
+          </div>
           <div className="border rounded-md overflow-x-auto">
             <Table>
               <TableHeader>
@@ -161,8 +208,9 @@ export default function HRPage() {
               </TableHeader>
               <TableBody>
                 {loading && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
-                {!loading && employees.map(e => {
+                {!loading && filteredEmployees.map(e => {
                   const held = heldMap[e.id] ?? [];
+                  const isActive = (e.status ?? "active") === "active";
                   return (
                   <TableRow
                     key={e.id}
@@ -175,8 +223,8 @@ export default function HRPage() {
                     <TableCell className="text-sm">{e.phone ?? "—"}</TableCell>
                     <TableCell className="text-sm">{e.hire_date}</TableCell>
                     <TableCell>
-                      <Badge variant={e.status === "active" ? "default" : "secondary"}>
-                        {e.status === "active" ? (hr.active ?? "Faol") : (hr.inactive ?? "Nofaol")}
+                      <Badge variant={isActive ? "default" : "secondary"}>
+                        {isActive ? (hr.active ?? "Faol") : (hr.inactive ?? "Ishdan bo'shagan")}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-xs">
@@ -197,13 +245,28 @@ export default function HRPage() {
                     </TableCell>
                     {canManage && (
                       <TableCell onClick={(ev) => ev.stopPropagation()}>
-                        <Button size="sm" variant="ghost" onClick={() => openEdit(e)}><Edit2 className="h-3 w-3" /></Button>
+                        <div className="flex items-center gap-1">
+                          <Button size="sm" variant="ghost" onClick={() => openEdit(e)} title={hr.edit ?? "Tahrirlash"}>
+                            <Edit2 className="h-3 w-3" />
+                          </Button>
+                          {canDeactivate && (
+                            isActive ? (
+                              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => toggleActive(e)} title="Ishdan bo'shatish">
+                                <UserX className="h-3.5 w-3.5" />
+                              </Button>
+                            ) : (
+                              <Button size="sm" variant="ghost" className="text-green-600 hover:text-green-700" onClick={() => toggleActive(e)} title="Qayta faollashtirish">
+                                <UserCheck className="h-3.5 w-3.5" />
+                              </Button>
+                            )
+                          )}
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>
                   );
                 })}
-                {!loading && employees.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{hr.empty ?? "Xodimlar yo'q"}</TableCell></TableRow>}
+                {!loading && filteredEmployees.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{hr.empty ?? "Xodimlar yo'q"}</TableCell></TableRow>}
               </TableBody>
             </Table>
           </div>
