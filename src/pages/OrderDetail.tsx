@@ -21,6 +21,7 @@ import MultiEmployeeSelect, { parseWorkerNames, joinWorkerNames } from "@/compon
 import { useLocalize } from "@/i18n/context";
 import { notify } from "@/lib/notify";
 import { recalcOrderStatus } from "@/lib/orderStatus";
+import OrderSupplyRequests from "@/components/OrderSupplyRequests";
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -344,7 +345,8 @@ export default function OrderDetail() {
           })}
         </TabsContent>
 
-        <TabsContent value="warehouse" className="mt-4">
+        <TabsContent value="warehouse" className="mt-4 space-y-4">
+          <OrderSupplyRequests orderId={order.id} orderNumber={order.order_number} />
           <Card>
             <CardHeader><CardTitle className="text-base">{t.orderDetail.partsTitle}</CardTitle></CardHeader>
             <CardContent className="space-y-2">
