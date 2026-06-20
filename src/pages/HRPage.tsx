@@ -180,6 +180,16 @@ export default function HRPage() {
 
       <Card>
         <CardContent className="p-0">
+          <div className="flex items-center justify-between p-3 border-b">
+            <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+              <TabsList>
+                <TabsTrigger value="active">{hr.active ?? "Faol"}</TabsTrigger>
+                <TabsTrigger value="inactive">{hr.inactive ?? "Nofaol"}</TabsTrigger>
+                <TabsTrigger value="all">{hr.all ?? "Hammasi"}</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <span className="text-xs text-muted-foreground">{filteredEmployees.length} / {employees.length}</span>
+          </div>
           <div className="border rounded-md overflow-x-auto">
             <Table>
               <TableHeader>
@@ -196,8 +206,9 @@ export default function HRPage() {
               </TableHeader>
               <TableBody>
                 {loading && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
-                {!loading && employees.map(e => {
+                {!loading && filteredEmployees.map(e => {
                   const held = heldMap[e.id] ?? [];
+                  const isActive = (e.status ?? "active") === "active";
                   return (
                   <TableRow
                     key={e.id}
@@ -210,8 +221,8 @@ export default function HRPage() {
                     <TableCell className="text-sm">{e.phone ?? "—"}</TableCell>
                     <TableCell className="text-sm">{e.hire_date}</TableCell>
                     <TableCell>
-                      <Badge variant={e.status === "active" ? "default" : "secondary"}>
-                        {e.status === "active" ? (hr.active ?? "Faol") : (hr.inactive ?? "Nofaol")}
+                      <Badge variant={isActive ? "default" : "secondary"}>
+                        {isActive ? (hr.active ?? "Faol") : (hr.inactive ?? "Ishdan bo'shagan")}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-xs">
@@ -232,13 +243,28 @@ export default function HRPage() {
                     </TableCell>
                     {canManage && (
                       <TableCell onClick={(ev) => ev.stopPropagation()}>
-                        <Button size="sm" variant="ghost" onClick={() => openEdit(e)}><Edit2 className="h-3 w-3" /></Button>
+                        <div className="flex items-center gap-1">
+                          <Button size="sm" variant="ghost" onClick={() => openEdit(e)} title={hr.edit ?? "Tahrirlash"}>
+                            <Edit2 className="h-3 w-3" />
+                          </Button>
+                          {canDeactivate && (
+                            isActive ? (
+                              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => toggleActive(e)} title="Ishdan bo'shatish">
+                                <UserX className="h-3.5 w-3.5" />
+                              </Button>
+                            ) : (
+                              <Button size="sm" variant="ghost" className="text-green-600 hover:text-green-700" onClick={() => toggleActive(e)} title="Qayta faollashtirish">
+                                <UserCheck className="h-3.5 w-3.5" />
+                              </Button>
+                            )
+                          )}
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>
                   );
                 })}
-                {!loading && employees.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{hr.empty ?? "Xodimlar yo'q"}</TableCell></TableRow>}
+                {!loading && filteredEmployees.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{hr.empty ?? "Xodimlar yo'q"}</TableCell></TableRow>}
               </TableBody>
             </Table>
           </div>
