@@ -1136,7 +1136,32 @@ export default function WarehousePage() {
                 </Select>
               </div>
             </div>
+            <div className="border-t pt-3 mt-1 space-y-2">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Qoldiqni tuzatish</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Joriy qoldiq</Label>
+                  <Input value={`${editProd?.stock_qty ?? 0} ${editProd?.unit ?? ""}`} disabled />
+                </div>
+                <div>
+                  <Label>Yangi qoldiq</Label>
+                  <NumberInput step="any" value={epStock} onChange={e => setEpStock(e.target.value)} />
+                </div>
+              </div>
+              {epStock !== "" && Number(epStock) !== Number(editProd?.stock_qty ?? 0) && (
+                <>
+                  <div className={`text-sm font-mono font-semibold ${Number(epStock) > Number(editProd?.stock_qty ?? 0) ? "text-status-green" : "text-status-red"}`}>
+                    {Number(editProd?.stock_qty ?? 0)} → {Number(epStock)} ({Number(epStock) - Number(editProd?.stock_qty ?? 0) > 0 ? "+" : ""}{Number(epStock) - Number(editProd?.stock_qty ?? 0)} {editProd?.unit ?? ""})
+                  </div>
+                  <div>
+                    <Label>Tuzatish sababi (audit log uchun)</Label>
+                    <Input value={epStockReason} onChange={e => setEpStockReason(e.target.value)} placeholder="Masalan: inventarizatsiya, yo'qotish..." />
+                  </div>
+                </>
+              )}
+            </div>
             <Button className="w-full" onClick={saveEditProduct}>{t.common.save}</Button>
+
           </div>
         </DialogContent>
       </Dialog>
