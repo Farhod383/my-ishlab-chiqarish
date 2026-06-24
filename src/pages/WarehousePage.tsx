@@ -93,6 +93,8 @@ export default function WarehousePage() {
   const [epPrice, setEpPrice] = useState(""); const [epMin, setEpMin] = useState("");
   const [epPhone, setEpPhone] = useState(""); const [epSource, setEpSource] = useState("");
   const [epPriority, setEpPriority] = useState("green"); const [epCurrency, setEpCurrency] = useState("UZS");
+  const [epStock, setEpStock] = useState(""); const [epStockReason, setEpStockReason] = useState("");
+
 
   // Edit movement
   const [editMovOpen, setEditMovOpen] = useState(false);
