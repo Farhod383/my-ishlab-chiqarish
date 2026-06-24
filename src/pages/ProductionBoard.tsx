@@ -76,11 +76,22 @@ export default function ProductionBoard() {
                     <HealthDot color={orderHealth(o)} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Link to={`/orders/${o.id}`} className="font-semibold hover:underline">{o.order_number}</Link>
-                      <span className="text-sm text-muted-foreground">· {o.product_name}</span>
-                      <PriorityBadge priority={o.priority} />
-                      <StatusBadge status={o.status as any} />
+                    <div className="flex items-start justify-between gap-2 flex-wrap">
+                      <div className="min-w-0">
+                        <div className="text-lg sm:text-xl font-bold text-foreground leading-tight truncate" title={o.product_name}>
+                          {o.product_name}
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                          <Link to={`/orders/${o.id}`} className="text-xs font-mono font-medium text-muted-foreground hover:text-primary hover:underline">
+                            #{o.order_number}
+                          </Link>
+                          <PriorityBadge priority={o.priority} />
+                          <StatusBadge status={o.status as any} />
+                        </div>
+                      </div>
+                      <span className="inline-flex items-center gap-1 rounded-md border-2 border-primary/40 bg-primary/10 px-2.5 py-1 text-sm font-bold text-primary shrink-0">
+                        {completed} / {total} {t.production.currentStage ? "bosqich" : "stage"}
+                      </span>
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
                       {o.client?.name ?? "—"} · {o.quantity} {t.common.pieces} · {t.dashboard.deadline}: {o.deadline}
