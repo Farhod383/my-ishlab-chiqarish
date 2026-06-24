@@ -39,6 +39,7 @@ export default function SupplyRequestsPage() {
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
   const [edit, setEdit] = useState<Record<string, { status: Status; supply_comment: string; dirty: boolean }>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [savingStatus, setSavingStatus] = useState<Record<string, boolean>>({});
 
   const [profiles, setProfiles] = useState<Record<string, { full_name: string | null; email: string | null }>>({});
 
@@ -109,13 +110,36 @@ export default function SupplyRequestsPage() {
     return true;
   });
 
-  const save = async (item: any) => {
+  const saveComment = async (item: any) => {
     const e = edit[item.id];
-    const patch: any = { status: e.status, supply_comment: e.supply_comment || null };
-    if (e.status === "fulfilled") patch.fulfilled_at = new Date().toISOString();
-    const { error } = await supabase.from("order_supply_requests").update(patch).eq("id", item.id);
+    const { error } = await supabase
+      .from("order_supply_requests")
+      .update({ supply_comment: e.supply_comment || null })
+      .eq("id", item.id);
     if (error) { toast.error(error.message); return; }
-    toast.success(e.status === "fulfilled" ? "Ta'minlandi — omborga kirim qilindi" : "Saqlandi");
+    toast.success("Izoh saqlandi");
+    load();
+  };
+
+  const markStatus = async (item: any, status: Status) => {
+    const current = normalizeStatus(item.status);
+    if (current === status || savingStatus[item.id]) return;
+
+    setSavingStatus((prev) => ({ ...prev, [item.id]: true }));
+    const patch: any = { status };
+    if (status === "fulfilled") patch.fulfilled_at = new Date().toISOString();
+
+    const { error } = await supabase.from("order_supply_requests").update(patch).eq("id", item.id);
+    setSavingStatus((prev) => ({ ...prev, [item.id]: false }));
+
+    if (error) { toast.error(error.message); return; }
+
+    setRows((prev) => prev.map((r) => r.id === item.id ? { ...r, ...patch } : r));
+    setEdit((prev) => ({
+      ...prev,
+      [item.id]: { ...(prev[item.id] ?? { supply_comment: item.supply_comment ?? "", dirty: false }), status, dirty: false },
+    }));
+    toast.success(status === "fulfilled" ? "Ta'minlandi — omborga kirim qilindi" : "Kutilmoqda holatiga qaytarildi");
     load();
   };
 
@@ -131,23 +155,23 @@ export default function SupplyRequestsPage() {
   if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><Truck className="h-6 w-6" /> Ta'minot — Kerakli mahsulotlar</h1>
-        <p className="text-sm text-muted-foreground">Ta'minot so'rovlari ro'yxati</p>
+        <h1 className="text-xl font-bold tracking-tight flex items-center gap-2"><Truck className="h-5 w-5" /> Ta'minot — Kerakli mahsulotlar</h1>
+        <p className="text-xs text-muted-foreground">Ta'minot so'rovlari ro'yxati</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2">
         {(["pending", "fulfilled"] as const).map((s) => (
           <Card key={s} className={`cursor-pointer ${filter === s ? "ring-2 ring-primary" : ""}`} onClick={() => setFilter(filter === s ? "all" : s)}>
-            <CardContent className="p-3 flex items-center justify-between">
+            <CardContent className="p-2 flex items-center justify-between">
               <div>
-                <div className={`text-xs uppercase tracking-wide font-semibold ${s === "pending" ? "text-status-red" : "text-status-green"}`}>
+                <div className={`text-[10px] uppercase tracking-wide font-semibold ${s === "pending" ? "text-status-red" : "text-status-green"}`}>
                   {statusLabel[s]}
                 </div>
-                <div className="text-xl font-bold mt-0.5 leading-none">{counts[s]} <span className="text-xs text-muted-foreground font-normal">ta so'rov</span></div>
+                <div className="text-lg font-bold leading-none">{counts[s]} <span className="text-[10px] text-muted-foreground font-normal">ta so'rov</span></div>
               </div>
-              <div className={`h-8 w-8 rounded-full ${dotCls[s]}`} />
+              <div className={`h-5 w-5 rounded-full ${dotCls[s]}`} />
             </CardContent>
           </Card>
         ))}
@@ -155,22 +179,22 @@ export default function SupplyRequestsPage() {
 
       {!openedOrder && (
         <Card>
-          <CardHeader className="py-3">
-            <div className="flex items-center justify-between flex-wrap gap-3">
+          <CardHeader className="py-2 px-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-                <TabsList>
-                  <TabsTrigger value="all">Hammasi</TabsTrigger>
-                  <TabsTrigger value="pending">🔴 Kutilmoqda</TabsTrigger>
-                  <TabsTrigger value="fulfilled">🟢 Ta'minlandi</TabsTrigger>
+                <TabsList className="h-8">
+                  <TabsTrigger className="h-7 text-xs" value="all">Hammasi</TabsTrigger>
+                  <TabsTrigger className="h-7 text-xs" value="pending">🔴 Kutilmoqda</TabsTrigger>
+                  <TabsTrigger className="h-7 text-xs" value="fulfilled">🟢 Ta'minlandi</TabsTrigger>
                 </TabsList>
               </Tabs>
               <div className="relative">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input className="pl-8 w-64" placeholder="Qidiruv..." value={q} onChange={(e) => setQ(e.target.value)} />
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input className="pl-7 h-8 w-56 text-xs" placeholder="Qidiruv..." value={q} onChange={(e) => setQ(e.target.value)} />
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-1.5 px-3 pb-3">
             {visible.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">So'rovlar mavjud emas</p>}
             {visible.map((o) => (
               <Card
@@ -179,17 +203,17 @@ export default function SupplyRequestsPage() {
                 style={{ borderLeftColor: o.worst === "pending" ? "hsl(var(--status-red))" : "hsl(var(--status-green))" }}
                 onClick={() => setOpenOrderId(o.key)}
               >
-                <CardContent className="p-2.5 flex items-center justify-between gap-3 flex-wrap">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${dotCls[o.worst]}`} />
+                <CardContent className="p-1.5 flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className={`h-2 w-2 rounded-full shrink-0 ${dotCls[o.worst]}`} />
                     <div className="min-w-0">
-                      <div className="font-mono font-semibold text-primary text-xs">{o.order.order_number}</div>
-                      <div className="text-sm font-medium truncate">{o.order.product_name}</div>
+                      <div className="font-mono font-semibold text-primary text-[11px] leading-tight">{o.order.order_number}</div>
+                      <div className="text-xs font-medium truncate leading-tight">{o.order.product_name}</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    {o.counts.pending > 0 && <Badge variant="outline" className={statusCls.pending}>🔴 {o.counts.pending}</Badge>}
-                    {o.counts.fulfilled > 0 && <Badge variant="outline" className={statusCls.fulfilled}>🟢 {o.counts.fulfilled}</Badge>}
+                  <div className="flex items-center gap-1.5 text-[11px]">
+                    {o.counts.pending > 0 && <Badge variant="outline" className={`px-1.5 py-0 text-[10px] ${statusCls.pending}`}>🔴 {o.counts.pending}</Badge>}
+                    {o.counts.fulfilled > 0 && <Badge variant="outline" className={`px-1.5 py-0 text-[10px] ${statusCls.fulfilled}`}>🟢 {o.counts.fulfilled}</Badge>}
                     <span className="text-muted-foreground">{o.items.length} ta</span>
                   </div>
                 </CardContent>
@@ -201,34 +225,34 @@ export default function SupplyRequestsPage() {
 
       {openedOrder && (
         <Card>
-          <CardHeader className="py-3">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <Button variant="ghost" size="sm" onClick={() => setOpenOrderId(null)}>
-                <ChevronLeft className="h-4 w-4 mr-1" /> Ro'yxatga qaytish
+          <CardHeader className="py-2 px-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setOpenOrderId(null)}>
+                <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Ro'yxatga qaytish
               </Button>
               {isGeneralOpen ? (
-                <span className="text-sm text-muted-foreground font-medium">Umumiy so'rovlar (zakazsiz)</span>
+                <span className="text-xs text-muted-foreground font-medium">Umumiy so'rovlar (zakazsiz)</span>
               ) : (
-                <Link to={`/orders/${openedOrder.order.id}`} className="text-sm text-primary hover:underline flex items-center gap-1 font-mono">
+                <Link to={`/orders/${openedOrder.order.id}`} className="text-xs text-primary hover:underline flex items-center gap-1 font-mono">
                   {openedOrder.order.order_number} · {openedOrder.order.product_name} <ExternalLink className="h-3 w-3" />
                 </Link>
               )}
             </div>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-1.5 px-3 pb-3">
             {openedOrder.items.map((item: any) => {
               const e = edit[item.id] ?? { status: normalizeStatus(item.status), supply_comment: "", dirty: false };
-              const color = e.status;
-              const isExpanded = !!expanded[item.id] || !!item.supply_comment || e.supply_comment.length > 0;
+              const color = normalizeStatus(item.status);
+              const isExpanded = !!expanded[item.id];
               return (
                 <Card key={item.id} className="border-l-4" style={{ borderLeftColor: color === "pending" ? "hsl(var(--status-red))" : "hsl(var(--status-green))" }}>
-                  <CardContent className="p-2.5 space-y-1.5">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <Package className="h-4 w-4 text-primary shrink-0" />
+                  <CardContent className="p-1.5 space-y-1">
+                    <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                      <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                        <Package className="h-3.5 w-3.5 text-primary shrink-0" />
                         <div className="min-w-0 flex-1">
-                          <div className="font-semibold text-sm truncate">{item.product_name}</div>
-                          <div className="text-[11px] text-muted-foreground flex flex-wrap gap-x-2">
+                          <div className="font-semibold text-xs truncate leading-tight">{item.product_name}</div>
+                          <div className="text-[10px] text-muted-foreground flex flex-wrap gap-x-1.5 leading-tight">
                             <span className="font-mono">{item.quantity} {item.unit ?? ""}</span>
                             {item.required_date && <span>· {item.required_date}</span>}
                             <span>· {requesterName(item.created_by)}</span>
@@ -236,63 +260,68 @@ export default function SupplyRequestsPage() {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1.5 flex-wrap">
+                      <div className="flex items-center gap-1 flex-wrap">
                         {canEdit ? (
                           (["pending", "fulfilled"] as Status[]).map((s) => (
                             <Button
                               key={s}
                               size="sm"
-                              className="h-7 px-2 text-xs"
-                              variant={e.status === s ? "default" : "outline"}
-                              onClick={() => setEdit({ ...edit, [item.id]: { ...e, status: s, dirty: true } })}
+                              className="h-6 px-1.5 text-[11px]"
+                              variant={color === s ? "default" : "outline"}
+                              disabled={!!savingStatus[item.id]}
+                              onClick={() => markStatus(item, s)}
                             >
-                              {s === "fulfilled" && <Check className="h-3 w-3 mr-1" />}
+                              {savingStatus[item.id] && color !== s ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : s === "fulfilled" && <Check className="h-3 w-3 mr-1" />}
                               {statusLabel[s]}
                             </Button>
                           ))
                         ) : (
-                          <div className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${statusCls[color]}`}>
+                          <div className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0 text-[10px] font-semibold ${statusCls[color]}`}>
                             <span className={`h-1.5 w-1.5 rounded-full ${dotCls[color]}`} />
                             {statusLabel[color]}
                           </div>
                         )}
                       </div>
                     </div>
-                    {item.comment && (
-                      <div className="text-[11px] text-muted-foreground border-l-2 border-primary/40 pl-2 italic">
-                        Nachalnik: {item.comment}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-5 px-1.5 text-[10px] text-muted-foreground"
+                        onClick={() => setExpanded({ ...expanded, [item.id]: !isExpanded })}
+                      >
+                        <MessageSquare className="h-3 w-3 mr-1" /> {isExpanded ? "Yopish" : "Izoh / Batafsil"}
+                      </Button>
+                      {!isExpanded && item.supply_comment && (
+                        <span className="text-[10px] text-muted-foreground truncate max-w-sm">Ta'minot: {item.supply_comment}</span>
+                      )}
+                    </div>
+                    {isExpanded && (
+                      <div className="space-y-1">
+                        {item.comment && (
+                          <div className="text-[10px] text-muted-foreground border-l-2 border-primary/40 pl-1.5 italic">
+                            So'rov izohi: {item.comment}
+                          </div>
+                        )}
+                        {canEdit ? (
+                          <div className="flex items-center gap-1.5">
+                            <Textarea
+                              rows={1}
+                              className="min-h-7 text-xs flex-1 py-1"
+                              placeholder="Ta'minot izohi..."
+                              value={e.supply_comment}
+                              onChange={(ev) => setEdit({ ...edit, [item.id]: { ...e, supply_comment: ev.target.value, dirty: true } })}
+                            />
+                            {e.dirty && (
+                              <Button size="sm" className="h-7 px-2 text-xs" onClick={() => saveComment(item)}>
+                                <Save className="h-3 w-3 mr-1" /> Saqlash
+                              </Button>
+                            )}
+                          </div>
+                        ) : item.supply_comment ? (
+                          <div className="text-[10px] text-muted-foreground">Ta'minot: {item.supply_comment}</div>
+                        ) : null}
                       </div>
-                    )}
-                    {canEdit && (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {!isExpanded && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-6 px-1.5 text-[11px] text-muted-foreground"
-                            onClick={() => setExpanded({ ...expanded, [item.id]: true })}
-                          >
-                            <MessageSquare className="h-3 w-3 mr-1" /> Izoh
-                          </Button>
-                        )}
-                        {isExpanded && (
-                          <Textarea
-                            rows={2}
-                            className="text-xs flex-1"
-                            placeholder="Ta'minot izohi..."
-                            value={e.supply_comment}
-                            onChange={(ev) => setEdit({ ...edit, [item.id]: { ...e, supply_comment: ev.target.value, dirty: true } })}
-                          />
-                        )}
-                        {e.dirty && (
-                          <Button size="sm" className="h-7 px-2 text-xs" onClick={() => save(item)}>
-                            <Save className="h-3 w-3 mr-1" /> Saqlash
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                    {!canEdit && item.supply_comment && (
-                      <div className="text-[11px] text-muted-foreground">Ta'minot: {item.supply_comment}</div>
                     )}
                   </CardContent>
                 </Card>
