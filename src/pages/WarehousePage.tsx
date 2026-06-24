@@ -93,6 +93,8 @@ export default function WarehousePage() {
   const [epPrice, setEpPrice] = useState(""); const [epMin, setEpMin] = useState("");
   const [epPhone, setEpPhone] = useState(""); const [epSource, setEpSource] = useState("");
   const [epPriority, setEpPriority] = useState("green"); const [epCurrency, setEpCurrency] = useState("UZS");
+  const [epStock, setEpStock] = useState(""); const [epStockReason, setEpStockReason] = useState("");
+
 
   // Edit movement
   const [editMovOpen, setEditMovOpen] = useState(false);
@@ -345,6 +347,7 @@ export default function WarehousePage() {
     setEpPrice(String(p.last_price ?? "")); setEpMin(String(p.min_limit ?? ""));
     setEpPhone(p.phone ?? ""); setEpSource(p.source ?? "");
     setEpPriority(p.priority ?? "green"); setEpCurrency(p.currency ?? "UZS");
+    setEpStock(String(p.stock_qty ?? 0)); setEpStockReason("");
     setEditProdOpen(true);
   };
   const saveEditProduct = async () => {
@@ -361,6 +364,30 @@ export default function WarehousePage() {
     });
     const { error } = await supabase.from("products").update(newVals).eq("id", editProd.id);
     if (error) { toast.error(error.message); return; }
+
+    // Stock adjustment
+    const oldStock = Number(editProd.stock_qty ?? 0);
+    const newStock = Number(epStock);
+    if (!Number.isNaN(newStock) && newStock !== oldStock) {
+      const delta = newStock - oldStock;
+      await supabase.from("products").update({ stock_qty: newStock }).eq("id", editProd.id);
+      await supabase.from("stock_movements").insert({
+        product_id: editProd.id,
+        direction: delta > 0 ? "in" : "out",
+        quantity: Math.abs(delta),
+        recipient_name: "Qoldiq tuzatish",
+        source: "Qo'lda tuzatish",
+        comment: `Qoldiq tuzatish: ${oldStock} → ${newStock} (${delta > 0 ? "+" : ""}${delta} ${editProd.unit ?? ""})${epStockReason ? ` · ${epStockReason}` : ""}`,
+        created_by: user?.id,
+      } as any);
+      await logAudit(supabase, {
+        actor_id: user?.id, actor_name: user?.email,
+        action: "Qoldiq tuzatildi", entity: "product",
+        details: `${editProd.name}: ${oldStock} → ${newStock} (${delta > 0 ? "+" : ""}${delta} ${editProd.unit ?? ""})${epStockReason ? ` · ${epStockReason}` : ""}`,
+      });
+      diffs.push(`qoldiq: ${oldStock} → ${newStock}`);
+    }
+
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: user?.email,
       action: "Mahsulot tahrirlandi", entity: "product",
@@ -369,6 +396,7 @@ export default function WarehousePage() {
     toast.success(t.common.save);
     setEditProdOpen(false); setEditProd(null); load();
   };
+
 
   const openEditMovement = (m: any) => {
     setEditMov(m);
@@ -465,6 +493,19 @@ export default function WarehousePage() {
     () => selectedProduct ? movements.filter(m => m.product_id === selectedProduct.id) : [],
     [movements, selectedProduct]
   );
+
+  const productStats = useMemo(() => {
+    const ins = productMovements.filter(m => m.direction === "in");
+    const outs = productMovements.filter(m => m.direction === "out");
+    const sum = (arr: any[]) => arr.reduce((a, b) => a + Number(b.quantity || 0), 0);
+    return {
+      totalIn: sum(ins),
+      totalOut: sum(outs),
+      lastIn: ins[0]?.created_at ?? null,
+      lastOut: outs[0]?.created_at ?? null,
+    };
+  }, [productMovements]);
+
 
   const uniq = (arr: any[]) => Array.from(new Set(arr.map(x => (x ?? "").toString().trim()).filter(Boolean)));
   const productNameOptions = useMemo(() => uniq(products.map(p => p.name)), [products]);
@@ -984,6 +1025,27 @@ export default function WarehousePage() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+                <div className="border rounded-md p-2 bg-status-green/5">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Jami kirim</div>
+                  <div className="text-base font-bold font-mono text-status-green">+{fmt(productStats.totalIn)} <span className="text-[10px] font-normal text-muted-foreground">{selectedProduct.unit}</span></div>
+                </div>
+                <div className="border rounded-md p-2 bg-status-red/5">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Jami chiqim</div>
+                  <div className="text-base font-bold font-mono text-status-red">−{fmt(productStats.totalOut)} <span className="text-[10px] font-normal text-muted-foreground">{selectedProduct.unit}</span></div>
+                </div>
+                <div className="border rounded-md p-2">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Oxirgi kirim</div>
+                  <div className="text-xs font-medium">{productStats.lastIn ? fmtDateTime(productStats.lastIn) : "—"}</div>
+                </div>
+                <div className="border rounded-md p-2">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Oxirgi chiqim</div>
+                  <div className="text-xs font-medium">{productStats.lastOut ? fmtDateTime(productStats.lastOut) : "—"}</div>
+                </div>
+              </div>
+
+
+
               <Tabs defaultValue="in" className="mt-2">
                 <TabsList>
                   <TabsTrigger value="in"><ArrowUpCircle className="h-3.5 w-3.5 mr-1" />{t.warehouse.inHistory}</TabsTrigger>
@@ -996,24 +1058,31 @@ export default function WarehousePage() {
                     <Table>
                       <TableHeader><TableRow>
                         <TableHead>{t.warehouse.cols.datetime}</TableHead>
-                        <TableHead>{t.warehouse.cols.whoBrought}</TableHead>
+                        <TableHead>Kim kiritdi</TableHead>
+                        <TableHead>Yetkazib beruvchi</TableHead>
                         <TableHead className="text-right">{t.warehouse.cols.qty}</TableHead>
+                        <TableHead className="text-right">{t.warehouse.price}</TableHead>
+                        <TableHead>{(t.warehouse.cols as any).source}</TableHead>
                         <TableHead>{t.warehouse.cols.comment}</TableHead>
                       </TableRow></TableHeader>
                       <TableBody>
                         {productMovements.filter(m => m.direction === "in").map(m => (
                           <TableRow key={m.id}>
                             <TableCell className="text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground">{localize(profiles[m.created_by]) || "—"}</TableCell>
                             <TableCell className="text-sm">{localize(m.recipient_name) || "—"}</TableCell>
                             <TableCell className="text-right font-mono text-status-green font-semibold">+{m.quantity} {selectedProduct.unit}</TableCell>
+                            <TableCell className="text-right text-xs font-mono">{Number(m.unit_price) > 0 ? `${fmt(Number(m.unit_price))} ${m.currency ?? "UZS"}` : "—"}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground">{m.source ?? "—"}</TableCell>
                             <TableCell className="text-xs italic text-muted-foreground">{m.comment ?? "—"}</TableCell>
                           </TableRow>
                         ))}
                         {productMovements.filter(m => m.direction === "in").length === 0 && (
-                          <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-4 text-sm">{t.warehouse.noIn}</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-4 text-sm">{t.warehouse.noIn}</TableCell></TableRow>
                         )}
                       </TableBody>
                     </Table>
+
                   </div>
                 </TabsContent>
 
@@ -1108,7 +1177,32 @@ export default function WarehousePage() {
                 </Select>
               </div>
             </div>
+            <div className="border-t pt-3 mt-1 space-y-2">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Qoldiqni tuzatish</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Joriy qoldiq</Label>
+                  <Input value={`${editProd?.stock_qty ?? 0} ${editProd?.unit ?? ""}`} disabled />
+                </div>
+                <div>
+                  <Label>Yangi qoldiq</Label>
+                  <NumberInput step="any" value={epStock} onChange={e => setEpStock(e.target.value)} />
+                </div>
+              </div>
+              {epStock !== "" && Number(epStock) !== Number(editProd?.stock_qty ?? 0) && (
+                <>
+                  <div className={`text-sm font-mono font-semibold ${Number(epStock) > Number(editProd?.stock_qty ?? 0) ? "text-status-green" : "text-status-red"}`}>
+                    {Number(editProd?.stock_qty ?? 0)} → {Number(epStock)} ({Number(epStock) - Number(editProd?.stock_qty ?? 0) > 0 ? "+" : ""}{Number(epStock) - Number(editProd?.stock_qty ?? 0)} {editProd?.unit ?? ""})
+                  </div>
+                  <div>
+                    <Label>Tuzatish sababi (audit log uchun)</Label>
+                    <Input value={epStockReason} onChange={e => setEpStockReason(e.target.value)} placeholder="Masalan: inventarizatsiya, yo'qotish..." />
+                  </div>
+                </>
+              )}
+            </div>
             <Button className="w-full" onClick={saveEditProduct}>{t.common.save}</Button>
+
           </div>
         </DialogContent>
       </Dialog>
