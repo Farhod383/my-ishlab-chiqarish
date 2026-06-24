@@ -1025,6 +1025,27 @@ export default function WarehousePage() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+                <div className="border rounded-md p-2 bg-status-green/5">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Jami kirim</div>
+                  <div className="text-base font-bold font-mono text-status-green">+{fmt(productStats.totalIn)} <span className="text-[10px] font-normal text-muted-foreground">{selectedProduct.unit}</span></div>
+                </div>
+                <div className="border rounded-md p-2 bg-status-red/5">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Jami chiqim</div>
+                  <div className="text-base font-bold font-mono text-status-red">−{fmt(productStats.totalOut)} <span className="text-[10px] font-normal text-muted-foreground">{selectedProduct.unit}</span></div>
+                </div>
+                <div className="border rounded-md p-2">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Oxirgi kirim</div>
+                  <div className="text-xs font-medium">{productStats.lastIn ? fmtDateTime(productStats.lastIn) : "—"}</div>
+                </div>
+                <div className="border rounded-md p-2">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Oxirgi chiqim</div>
+                  <div className="text-xs font-medium">{productStats.lastOut ? fmtDateTime(productStats.lastOut) : "—"}</div>
+                </div>
+              </div>
+
+
+
               <Tabs defaultValue="in" className="mt-2">
                 <TabsList>
                   <TabsTrigger value="in"><ArrowUpCircle className="h-3.5 w-3.5 mr-1" />{t.warehouse.inHistory}</TabsTrigger>
