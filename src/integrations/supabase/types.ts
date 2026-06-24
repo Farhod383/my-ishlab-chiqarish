@@ -1177,6 +1177,7 @@ export type Database = {
           reason: string | null
           recipient_name: string | null
           source: string | null
+          supply_request_id: string | null
           taken_by: string | null
           unit_price: number
         }
@@ -1196,6 +1197,7 @@ export type Database = {
           reason?: string | null
           recipient_name?: string | null
           source?: string | null
+          supply_request_id?: string | null
           taken_by?: string | null
           unit_price?: number
         }
@@ -1215,6 +1217,7 @@ export type Database = {
           reason?: string | null
           recipient_name?: string | null
           source?: string | null
+          supply_request_id?: string | null
           taken_by?: string | null
           unit_price?: number
         }
@@ -1231,6 +1234,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_supply_request_id_fkey"
+            columns: ["supply_request_id"]
+            isOneToOne: false
+            referencedRelation: "order_supply_requests"
             referencedColumns: ["id"]
           },
         ]
