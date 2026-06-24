@@ -102,12 +102,12 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-base flex items-center gap-2"><Package className="h-4 w-4" /> Kerakli mahsulotlar</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3">
+        <CardTitle className="text-sm flex items-center gap-2"><Package className="h-4 w-4" /> Kerakli mahsulotlar</CardTitle>
         {canAdd && (
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
             <DialogTrigger asChild>
-              <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Qo'shish</Button>
+              <Button size="sm" className="h-7 px-2 text-xs"><Plus className="h-3.5 w-3.5 mr-1" /> Qo'shish</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Ta'minot so'rovi qo'shish</DialogTitle></DialogHeader>
@@ -138,25 +138,25 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
           </Dialog>
         )}
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-1.5 px-3 pb-3">
         {items.length === 0 && <p className="text-sm text-muted-foreground">So'rovlar yo'q</p>}
         {items.map((it) => (
-          <div key={it.id} className="flex items-start justify-between gap-2 p-3 rounded border">
+          <div key={it.id} className="flex items-center justify-between gap-2 p-1.5 rounded border">
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-medium text-sm">{it.product_name}</span>
-                <Badge variant="outline" className={statusCls[it.status] ?? ""}>{statusLabel[it.status] ?? it.status}</Badge>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="font-medium text-xs truncate">{it.product_name}</span>
+                <Badge variant="outline" className={`px-1.5 py-0 text-[10px] ${statusCls[it.status] ?? ""}`}>{statusLabel[it.status] ?? it.status}</Badge>
               </div>
-              <div className="text-xs text-muted-foreground mt-1">
+              <div className="text-[10px] text-muted-foreground leading-tight">
                 <span className="font-mono">{it.quantity} {it.unit ?? ""}</span>
                 {it.required_date && <> · kerak: <span className="font-mono">{it.required_date}</span></>}
               </div>
-              {it.comment && <div className="text-xs text-muted-foreground italic mt-1">"{it.comment}"</div>}
-              {it.supply_comment && <div className="text-xs text-primary mt-1">Ta'minot: {it.supply_comment}</div>}
+              {it.comment && <div className="text-[10px] text-muted-foreground italic truncate">"{it.comment}"</div>}
+              {it.supply_comment && <div className="text-[10px] text-primary truncate">Ta'minot: {it.supply_comment}</div>}
             </div>
             {canDelete && (
-              <Button size="sm" variant="ghost" onClick={() => remove(it.id)}>
-                <Trash2 className="h-4 w-4 text-destructive" />
+              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => remove(it.id)}>
+                <Trash2 className="h-3.5 w-3.5 text-destructive" />
               </Button>
             )}
           </div>
