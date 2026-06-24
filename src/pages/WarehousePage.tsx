@@ -494,6 +494,19 @@ export default function WarehousePage() {
     [movements, selectedProduct]
   );
 
+  const productStats = useMemo(() => {
+    const ins = productMovements.filter(m => m.direction === "in");
+    const outs = productMovements.filter(m => m.direction === "out");
+    const sum = (arr: any[]) => arr.reduce((a, b) => a + Number(b.quantity || 0), 0);
+    return {
+      totalIn: sum(ins),
+      totalOut: sum(outs),
+      lastIn: ins[0]?.created_at ?? null,
+      lastOut: outs[0]?.created_at ?? null,
+    };
+  }, [productMovements]);
+
+
   const uniq = (arr: any[]) => Array.from(new Set(arr.map(x => (x ?? "").toString().trim()).filter(Boolean)));
   const productNameOptions = useMemo(() => uniq(products.map(p => p.name)), [products]);
   const supplierOptions = useMemo(
