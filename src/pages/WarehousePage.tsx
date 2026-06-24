@@ -347,6 +347,7 @@ export default function WarehousePage() {
     setEpPrice(String(p.last_price ?? "")); setEpMin(String(p.min_limit ?? ""));
     setEpPhone(p.phone ?? ""); setEpSource(p.source ?? "");
     setEpPriority(p.priority ?? "green"); setEpCurrency(p.currency ?? "UZS");
+    setEpStock(String(p.stock_qty ?? 0)); setEpStockReason("");
     setEditProdOpen(true);
   };
   const saveEditProduct = async () => {
@@ -363,6 +364,30 @@ export default function WarehousePage() {
     });
     const { error } = await supabase.from("products").update(newVals).eq("id", editProd.id);
     if (error) { toast.error(error.message); return; }
+
+    // Stock adjustment
+    const oldStock = Number(editProd.stock_qty ?? 0);
+    const newStock = Number(epStock);
+    if (!Number.isNaN(newStock) && newStock !== oldStock) {
+      const delta = newStock - oldStock;
+      await supabase.from("products").update({ stock_qty: newStock }).eq("id", editProd.id);
+      await supabase.from("stock_movements").insert({
+        product_id: editProd.id,
+        direction: delta > 0 ? "in" : "out",
+        quantity: Math.abs(delta),
+        recipient_name: "Qoldiq tuzatish",
+        source: "Qo'lda tuzatish",
+        comment: `Qoldiq tuzatish: ${oldStock} → ${newStock} (${delta > 0 ? "+" : ""}${delta} ${editProd.unit ?? ""})${epStockReason ? ` · ${epStockReason}` : ""}`,
+        created_by: user?.id,
+      } as any);
+      await logAudit(supabase, {
+        actor_id: user?.id, actor_name: user?.email,
+        action: "Qoldiq tuzatildi", entity: "product",
+        details: `${editProd.name}: ${oldStock} → ${newStock} (${delta > 0 ? "+" : ""}${delta} ${editProd.unit ?? ""})${epStockReason ? ` · ${epStockReason}` : ""}`,
+      });
+      diffs.push(`qoldiq: ${oldStock} → ${newStock}`);
+    }
+
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: user?.email,
       action: "Mahsulot tahrirlandi", entity: "product",
@@ -371,6 +396,7 @@ export default function WarehousePage() {
     toast.success(t.common.save);
     setEditProdOpen(false); setEditProd(null); load();
   };
+
 
   const openEditMovement = (m: any) => {
     setEditMov(m);
