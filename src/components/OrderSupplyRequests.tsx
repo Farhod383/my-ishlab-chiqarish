@@ -21,12 +21,10 @@ interface Props {
 
 const statusLabel: Record<string, string> = {
   pending: "Kutilmoqda",
-  in_progress: "Jarayonda",
   fulfilled: "Ta'minlandi",
 };
 const statusCls: Record<string, string> = {
   pending: "text-status-red border-status-red/30 bg-status-red/10",
-  in_progress: "text-status-yellow border-status-yellow/30 bg-status-yellow/10",
   fulfilled: "text-status-green border-status-green/30 bg-status-green/10",
 };
 
