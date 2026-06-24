@@ -1058,24 +1058,31 @@ export default function WarehousePage() {
                     <Table>
                       <TableHeader><TableRow>
                         <TableHead>{t.warehouse.cols.datetime}</TableHead>
-                        <TableHead>{t.warehouse.cols.whoBrought}</TableHead>
+                        <TableHead>Kim kiritdi</TableHead>
+                        <TableHead>Yetkazib beruvchi</TableHead>
                         <TableHead className="text-right">{t.warehouse.cols.qty}</TableHead>
+                        <TableHead className="text-right">{t.warehouse.price}</TableHead>
+                        <TableHead>{(t.warehouse.cols as any).source}</TableHead>
                         <TableHead>{t.warehouse.cols.comment}</TableHead>
                       </TableRow></TableHeader>
                       <TableBody>
                         {productMovements.filter(m => m.direction === "in").map(m => (
                           <TableRow key={m.id}>
                             <TableCell className="text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground">{localize(profiles[m.created_by]) || "—"}</TableCell>
                             <TableCell className="text-sm">{localize(m.recipient_name) || "—"}</TableCell>
                             <TableCell className="text-right font-mono text-status-green font-semibold">+{m.quantity} {selectedProduct.unit}</TableCell>
+                            <TableCell className="text-right text-xs font-mono">{Number(m.unit_price) > 0 ? `${fmt(Number(m.unit_price))} ${m.currency ?? "UZS"}` : "—"}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground">{m.source ?? "—"}</TableCell>
                             <TableCell className="text-xs italic text-muted-foreground">{m.comment ?? "—"}</TableCell>
                           </TableRow>
                         ))}
                         {productMovements.filter(m => m.direction === "in").length === 0 && (
-                          <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-4 text-sm">{t.warehouse.noIn}</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-4 text-sm">{t.warehouse.noIn}</TableCell></TableRow>
                         )}
                       </TableBody>
                     </Table>
+
                   </div>
                 </TabsContent>
 
