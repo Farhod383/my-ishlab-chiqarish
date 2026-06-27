@@ -49,10 +49,24 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
       supabase.from("order_supply_requests").select("*").eq("order_id", orderId).order("created_at"),
       supabase.from("products").select("id,name,unit").order("name"),
     ]);
-    setItems(reqs ?? []);
+    const sorted = (reqs ?? []).slice().sort((a: any, b: any) => {
+      const sa = a.status === "fulfilled" ? 1 : 0;
+      const sb = b.status === "fulfilled" ? 1 : 0;
+      if (sa !== sb) return sa - sb;
+      return (a.created_at ?? "").localeCompare(b.created_at ?? "");
+    });
+    setItems(sorted);
     setProducts(prods ?? []);
   };
   useEffect(() => { load(); }, [orderId]);
+
+  useEffect(() => {
+    const ch = supabase
+      .channel(`order-supply-${orderId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "order_supply_requests", filter: `order_id=eq.${orderId}` }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [orderId]);
 
   const handlePid = (id: string) => {
     setPid(id);

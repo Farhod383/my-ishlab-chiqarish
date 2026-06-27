@@ -77,26 +77,68 @@ export default function SupplyRequestsPage() {
   }, []);
 
   const GENERAL_KEY = "__general__";
+  const ALL_ORDERS_KEY = "__all_orders__";
 
-  const orders = useMemo(() => {
-    const map = new Map<string, { order: any; key: string; items: any[]; counts: Record<Status, number>; worst: Status }>();
-    rows.forEach((r) => {
-      const k = r.order?.id ?? GENERAL_KEY;
-      if (!map.has(k)) map.set(k, {
-        order: r.order ?? { id: GENERAL_KEY, order_number: "—", product_name: "Umumiy so'rovlar (zakazsiz)" },
-        key: k,
-        items: [], counts: { pending: 0, fulfilled: 0 }, worst: "fulfilled",
-      });
-      const e = map.get(k)!;
-      e.items.push(r);
-      e.counts[normalizeStatus(r.status)]++;
+  const requesterName = (uid?: string | null) => {
+    if (!uid) return "—";
+    const p = profiles[uid];
+    return p?.full_name || p?.email || "—";
+  };
+
+  const sortByStatus = (a: any, b: any) => {
+    const sa = normalizeStatus(a.status) === "pending" ? 0 : 1;
+    const sb = normalizeStatus(b.status) === "pending" ? 0 : 1;
+    if (sa !== sb) return sa - sb;
+    return (a.required_date ?? "").localeCompare(b.required_date ?? "");
+  };
+
+  const matchesQuery = (r: any) => {
+    if (!q) return true;
+    const t = q.toLowerCase();
+    return (
+      (r.product_name ?? "").toLowerCase().includes(t) ||
+      (r.order?.order_number ?? "").toLowerCase().includes(t) ||
+      (r.order?.product_name ?? "").toLowerCase().includes(t) ||
+      (r.comment ?? "").toLowerCase().includes(t) ||
+      (r.supply_comment ?? "").toLowerCase().includes(t) ||
+      requesterName(r.created_by).toLowerCase().includes(t)
+    );
+  };
+
+  const groups = useMemo(() => {
+    const filtered = rows.filter(matchesQuery).filter((r) => filter === "all" || normalizeStatus(r.status) === filter);
+
+    const general: any[] = [];
+    const allOrders: any[] = [];
+    const perOrder = new Map<string, { order: any; items: any[] }>();
+
+    filtered.forEach((r) => {
+      if (!r.order?.id) {
+        general.push(r);
+      } else {
+        allOrders.push(r);
+        const k = r.order.id;
+        if (!perOrder.has(k)) perOrder.set(k, { order: r.order, items: [] });
+        perOrder.get(k)!.items.push(r);
+      }
     });
-    map.forEach((e) => {
-      e.worst = e.counts.pending > 0 ? "pending" : "fulfilled";
-      e.items.sort((a, b) => (a.required_date ?? "").localeCompare(b.required_date ?? ""));
-    });
-    return Array.from(map.values());
-  }, [rows]);
+
+    const mk = (key: string, order: any, items: any[], pinned: boolean) => {
+      const counts: Record<Status, number> = { pending: 0, fulfilled: 0 };
+      items.forEach((r) => counts[normalizeStatus(r.status)]++);
+      items.sort(sortByStatus);
+      return { key, order, items, counts, worst: counts.pending > 0 ? "pending" as Status : "fulfilled" as Status, pinned };
+    };
+
+    const result: ReturnType<typeof mk>[] = [];
+    result.push(mk(GENERAL_KEY, { id: GENERAL_KEY, order_number: "📌", product_name: "Umumiy so'rovlar (zakazsiz)" }, general, true));
+    result.push(mk(ALL_ORDERS_KEY, { id: ALL_ORDERS_KEY, order_number: "📌", product_name: "Zakazlar uchun umumiy" }, allOrders, true));
+
+    const ordered = Array.from(perOrder.values()).sort((a, b) => (b.order.order_number ?? "").localeCompare(a.order.order_number ?? ""));
+    ordered.forEach((g) => result.push(mk(g.order.id, g.order, g.items, false)));
+
+    return result;
+  }, [rows, q, filter, profiles]);
 
   const counts = useMemo(() => {
     const c: Record<Status, number> = { pending: 0, fulfilled: 0 };
@@ -104,11 +146,7 @@ export default function SupplyRequestsPage() {
     return c;
   }, [rows]);
 
-  const visible = orders.filter((o) => {
-    if (filter !== "all" && o.worst !== filter) return false;
-    if (q && !(`${o.order.order_number ?? ""} ${o.order.product_name ?? ""}`.toLowerCase().includes(q.toLowerCase()))) return false;
-    return true;
-  });
+  const visible = groups;
 
   const saveComment = async (item: any) => {
     const e = edit[item.id];
@@ -143,14 +181,10 @@ export default function SupplyRequestsPage() {
     load();
   };
 
-  const requesterName = (uid?: string | null) => {
-    if (!uid) return "—";
-    const p = profiles[uid];
-    return p?.full_name || p?.email || "—";
-  };
-
-  const openedOrder = openOrderId ? orders.find((o) => o.key === openOrderId) : null;
+  const openedOrder = openOrderId ? groups.find((o) => o.key === openOrderId) : null;
   const isGeneralOpen = openedOrder?.key === GENERAL_KEY;
+  const isAllOrdersOpen = openedOrder?.key === ALL_ORDERS_KEY;
+  const hideOrderNumber = isGeneralOpen || isAllOrdersOpen;
 
   if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
@@ -199,16 +233,16 @@ export default function SupplyRequestsPage() {
             {visible.map((o) => (
               <Card
                 key={o.key}
-                className="cursor-pointer hover:bg-muted/30 border-l-4"
-                style={{ borderLeftColor: o.worst === "pending" ? "hsl(var(--status-red))" : "hsl(var(--status-green))" }}
+                className={`cursor-pointer hover:bg-muted/30 border-l-4 ${o.pinned ? "bg-primary/5 border-primary/40" : ""}`}
+                style={{ borderLeftColor: o.pinned ? "hsl(var(--primary))" : (o.worst === "pending" ? "hsl(var(--status-red))" : "hsl(var(--status-green))") }}
                 onClick={() => setOpenOrderId(o.key)}
               >
                 <CardContent className="p-1.5 flex items-center justify-between gap-2 flex-wrap">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <span className={`h-2 w-2 rounded-full shrink-0 ${dotCls[o.worst]}`} />
+                    {o.pinned ? <span className="text-xs">📌</span> : <span className={`h-2 w-2 rounded-full shrink-0 ${dotCls[o.worst]}`} />}
                     <div className="min-w-0">
-                      <div className="font-mono font-semibold text-primary text-[11px] leading-tight">{o.order.order_number}</div>
-                      <div className="text-xs font-medium truncate leading-tight">{o.order.product_name}</div>
+                      {!o.pinned && <div className="font-mono font-semibold text-primary text-[11px] leading-tight">{o.order.order_number}</div>}
+                      <div className={`text-xs truncate leading-tight ${o.pinned ? "font-semibold" : "font-medium"}`}>{o.order.product_name}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 text-[11px]">
@@ -230,8 +264,8 @@ export default function SupplyRequestsPage() {
               <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setOpenOrderId(null)}>
                 <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Ro'yxatga qaytish
               </Button>
-              {isGeneralOpen ? (
-                <span className="text-xs text-muted-foreground font-medium">Umumiy so'rovlar (zakazsiz)</span>
+              {hideOrderNumber ? (
+                <span className="text-xs text-muted-foreground font-medium">📌 {openedOrder.order.product_name}</span>
               ) : (
                 <Link to={`/orders/${openedOrder.order.id}`} className="text-xs text-primary hover:underline flex items-center gap-1 font-mono">
                   {openedOrder.order.order_number} · {openedOrder.order.product_name} <ExternalLink className="h-3 w-3" />
