@@ -54,6 +54,14 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
   };
   useEffect(() => { load(); }, [orderId]);
 
+  useEffect(() => {
+    const ch = supabase
+      .channel(`order-supply-${orderId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "order_supply_requests", filter: `order_id=eq.${orderId}` }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [orderId]);
+
   const handlePid = (id: string) => {
     setPid(id);
     const p = products.find((x) => x.id === id);
