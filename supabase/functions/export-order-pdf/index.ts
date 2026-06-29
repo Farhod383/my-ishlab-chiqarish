@@ -15,10 +15,12 @@ const fmtDT = (d?: string | null) => (d ? new Date(d).toLocaleString("ru-RU") : 
 // ---- Unicode font (cached across invocations) ---------------------------
 // Roboto supports Latin, Cyrillic and Uzbek diacritics — renders identically
 // in Chrome, Edge, Adobe Reader and mobile PDF viewers.
+// Mirror of the official Google Roboto repo on jsDelivr — TTF with Latin +
+// full Cyrillic coverage (Uzbek diacritics included). Stable URL, verified.
 const FONT_REGULAR_URL =
-  "https://cdn.jsdelivr.net/gh/googlefonts/roboto-3-classic@main/src/hinted/Roboto-Regular.ttf";
+  "https://cdn.jsdelivr.net/gh/googlefonts/roboto-2@main/src/hinted/Roboto-Regular.ttf";
 const FONT_BOLD_URL =
-  "https://cdn.jsdelivr.net/gh/googlefonts/roboto-3-classic@main/src/hinted/Roboto-Bold.ttf";
+  "https://cdn.jsdelivr.net/gh/googlefonts/roboto-2@main/src/hinted/Roboto-Bold.ttf";
 
 let fontCache: { regular: string; bold: string } | null = null;
 
