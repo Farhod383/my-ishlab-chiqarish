@@ -268,7 +268,7 @@ export default function HRPage() {
                   </TableRow>
                   );
                 })}
-                {!loading && filteredEmployees.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{hr.empty ?? "Xodimlar yo'q"}</TableCell></TableRow>}
+                {!loading && filteredEmployees.length === 0 && <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">{hr.empty ?? "Xodimlar yo'q"}</TableCell></TableRow>}
               </TableBody>
             </Table>
           </div>
