@@ -202,16 +202,13 @@ export default function Dashboard() {
               </Table>
             </div>
 
-            {filtered.length > PAGE_SIZE && (
-              <div className="flex items-center justify-between mt-3 text-sm">
-                <div className="text-muted-foreground">
-                  {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} / {filtered.length}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button size="sm" variant="outline" disabled={page === 1} onClick={() => setPage(p => Math.max(1, p - 1))}>‹</Button>
-                  <span className="text-xs font-mono">{page} / {totalPages}</span>
-                  <Button size="sm" variant="outline" disabled={page === totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>›</Button>
-                </div>
+            <div ref={sentinelRef} className="h-6" />
+            {hasMore && (
+              <div className="text-center text-xs text-muted-foreground py-2">Yuklanmoqda…</div>
+            )}
+            {filtered.length > 0 && (
+              <div className="text-right text-xs text-muted-foreground mt-2">
+                {pageRows.length} / {filtered.length}
               </div>
             )}
           </CardContent>
