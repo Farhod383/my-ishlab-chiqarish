@@ -196,6 +196,7 @@ export default function HRPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12 text-right">№</TableHead>
                   <TableHead>{hr.fullName ?? "Ism"}</TableHead>
                   <TableHead>{hr.position ?? "Lavozim"}</TableHead>
                   <TableHead>{hr.department ?? "Bo'lim"}</TableHead>
@@ -207,8 +208,8 @@ export default function HRPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
-                {!loading && filteredEmployees.map(e => {
+                {loading && <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
+                {!loading && filteredEmployees.map((e, idx) => {
                   const held = heldMap[e.id] ?? [];
                   const isActive = (e.status ?? "active") === "active";
                   return (
@@ -217,6 +218,7 @@ export default function HRPage() {
                     className={canManage ? "cursor-pointer hover:bg-muted/40" : undefined}
                     onClick={canManage ? () => openEdit(e) : undefined}
                   >
+                    <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
                     <TableCell className="font-medium">{localize(e.full_name)}</TableCell>
                     <TableCell className="text-sm">{e.position}</TableCell>
                     <TableCell className="text-sm">{e.department}</TableCell>
