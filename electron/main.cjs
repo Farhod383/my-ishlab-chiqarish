@@ -214,10 +214,11 @@ function createMainWindow() {
     return { action: "deny" };
   });
 
-  // handle load failures with error screen
+  // handle load failures with error screen + auto-reconnect
   mainWindow.webContents.on("did-fail-load", (_e, code, desc, validatedURL) => {
     if (code === -3) return; // aborted (navigation replaced)
     showErrorScreen(`${desc} (${code}) — ${validatedURL}`);
+    scheduleReconnect();
   });
 
   // load ERP
