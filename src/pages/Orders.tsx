@@ -112,6 +112,7 @@ export default function Orders() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12 text-right">№</TableHead>
                   <TableHead className="w-8"></TableHead>
                   <TableHead>{t.orders.cols.number}</TableHead>
                   <TableHead>{t.orders.cols.client}</TableHead>
@@ -126,8 +127,8 @@ export default function Orders() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
-                {!loading && filtered.map((o) => {
+                {loading && <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
+                {!loading && filtered.map((o, idx) => {
                   const today0 = new Date(); today0.setHours(0,0,0,0);
                   const dl = new Date(o.deadline); dl.setHours(0,0,0,0);
                   const diffDays = Math.ceil((dl.getTime() - today0.getTime()) / 86400000);
@@ -137,6 +138,7 @@ export default function Orders() {
                   const startStr = startedAt ? new Date(startedAt).toISOString().slice(0,10) : "—";
                   return (
                     <TableRow key={o.id} className="cursor-pointer hover:bg-muted/50" onClick={() => nav(`/orders/${o.id}`)}>
+                      <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
                       <TableCell><HealthDot color={orderHealth(o)} /></TableCell>
                       <TableCell className="font-mono text-sm">{o.order_number}</TableCell>
                       <TableCell className="text-sm">{localize((o as any).client?.name) || "—"}</TableCell>
@@ -159,7 +161,7 @@ export default function Orders() {
                     </TableRow>
                   );
                 })}
-                {!loading && filtered.length === 0 && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">{t.orders.none}</TableCell></TableRow>}
+                {!loading && filtered.length === 0 && <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-8">{t.orders.none}</TableCell></TableRow>}
               </TableBody>
             </Table>
           </div>

@@ -15,6 +15,7 @@ import { useI18n, useLocalize } from "@/i18n/context";
 import { fmtNum } from "@/lib/format";
 import { sortOrdersByStatusAndDate } from "@/lib/orderStatus";
 import { matchesAcrossScripts } from "@/lib/translit";
+import { useInfiniteList } from "@/hooks/useInfiniteList";
 
 type FilterKey = "all" | "active" | "delayed" | "today" | "exception" | "completed";
 
@@ -22,7 +23,7 @@ interface DashStats {
   total: number; active: number; delayed: number; today: number; exception: number; completed: number;
 }
 
-const PAGE_SIZE = 12;
+
 
 export default function Dashboard() {
   const { t } = useI18n();
@@ -35,7 +36,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterKey>("all");
   const [q, setQ] = useState("");
-  const [page, setPage] = useState(1);
 
   useEffect(() => {
     (async () => {
@@ -65,7 +65,7 @@ export default function Dashboard() {
     })();
   }, []);
 
-  useEffect(() => { setPage(1); }, [filter, q]);
+  
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -81,8 +81,7 @@ export default function Dashboard() {
   }), [orders, filter, q, today]);
   const filtered = filter === "all" ? sortOrdersByStatusAndDate(filteredRaw) : filteredRaw;
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const { visible: pageRows, sentinelRef, hasMore } = useInfiniteList(filtered, 50);
 
   const cards: { key: FilterKey; label: string; value: number; icon: any; accent: string }[] = [
     { key: "all",       label: t.dashboard.totalOrders,     value: stats.total,     icon: ClipboardList, accent: "text-primary bg-primary/10" },
@@ -148,6 +147,7 @@ export default function Dashboard() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12 text-right">№</TableHead>
                     <TableHead className="w-8"></TableHead>
                     <TableHead>{t.orders.cols.number}</TableHead>
                     <TableHead>{t.orders.cols.product}</TableHead>
@@ -161,8 +161,8 @@ export default function Dashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {loading && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
-                  {!loading && pageRows.map((o) => {
+                  {loading && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
+                  {!loading && pageRows.map((o, idx) => {
                     const stages = ((o as any).order_stages ?? []).slice().sort((a:any,b:any)=>a.stage_order-b.stage_order);
                     const startedAt = stages[0]?.started_at;
                     const startStr = startedAt ? new Date(startedAt).toISOString().slice(0,10) : "—";
@@ -175,6 +175,7 @@ export default function Dashboard() {
                     const isDone = o.status === "completed";
                     return (
                       <TableRow key={o.id} className="cursor-pointer hover:bg-muted/50" onClick={() => nav(`/orders/${o.id}`)}>
+                        <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
                         <TableCell><HealthDot color={orderHealth(o as any)} /></TableCell>
                         <TableCell className="font-mono text-sm">{o.order_number}</TableCell>
                         <TableCell className="text-sm font-medium">{localize(o.product_name)}</TableCell>
@@ -198,21 +199,18 @@ export default function Dashboard() {
                       </TableRow>
                     );
                   })}
-                  {!loading && pageRows.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">{t.dashboard.noOrders}</TableCell></TableRow>}
+                  {!loading && pageRows.length === 0 && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">{t.dashboard.noOrders}</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </div>
 
-            {filtered.length > PAGE_SIZE && (
-              <div className="flex items-center justify-between mt-3 text-sm">
-                <div className="text-muted-foreground">
-                  {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} / {filtered.length}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button size="sm" variant="outline" disabled={page === 1} onClick={() => setPage(p => Math.max(1, p - 1))}>‹</Button>
-                  <span className="text-xs font-mono">{page} / {totalPages}</span>
-                  <Button size="sm" variant="outline" disabled={page === totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>›</Button>
-                </div>
+            <div ref={sentinelRef} className="h-6" />
+            {hasMore && (
+              <div className="text-center text-xs text-muted-foreground py-2">Yuklanmoqda…</div>
+            )}
+            {filtered.length > 0 && (
+              <div className="text-right text-xs text-muted-foreground mt-2">
+                {pageRows.length} / {filtered.length}
               </div>
             )}
           </CardContent>

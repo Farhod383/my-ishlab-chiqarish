@@ -364,6 +364,7 @@ export default function InstrumentsTab() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12 text-right">№</TableHead>
                   <TableHead>Nomi</TableHead>
                   <TableHead>Kategoriya</TableHead>
                   <TableHead className="text-right">Jami (sklad)</TableHead>
@@ -373,12 +374,13 @@ export default function InstrumentsTab() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredGroups.map(g => (
+                {filteredGroups.map((g, idx) => (
                   <TableRow
                     key={g.key}
                     className="cursor-pointer hover:bg-muted/40"
                     onClick={() => setDetailKey(g.key)}
                   >
+                    <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
                     <TableCell className="font-medium flex items-center gap-2"><Wrench className="h-4 w-4 text-muted-foreground" />{g.name}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{g.category || "—"}</TableCell>
                     <TableCell className="text-right font-mono font-semibold">{g.totalQty}</TableCell>
@@ -392,7 +394,7 @@ export default function InstrumentsTab() {
                   </TableRow>
                 ))}
                 {filteredGroups.length === 0 && (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Instrumentlar yo'q</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Instrumentlar yo'q</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
@@ -407,6 +409,7 @@ export default function InstrumentsTab() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12 text-right">№</TableHead>
                   <TableHead>Xodim</TableHead>
                   <TableHead>Instrument</TableHead>
                   <TableHead className="text-right">Miqdor</TableHead>
@@ -415,8 +418,9 @@ export default function InstrumentsTab() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {assignments.filter(a => !a.returned_at).map(a => (
+                {assignments.filter(a => !a.returned_at).map((a, idx) => (
                   <TableRow key={a.id}>
+                    <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
                     <TableCell className="font-medium">{localize(a.employee?.full_name) || "—"}</TableCell>
                     <TableCell>{a.instrument?.name ?? "—"}{a.instrument?.inventory_number && <span className="text-xs text-muted-foreground ml-1">№{a.instrument.inventory_number}</span>}</TableCell>
                     <TableCell className="text-right font-mono">{a.quantity}</TableCell>
@@ -425,7 +429,7 @@ export default function InstrumentsTab() {
                   </TableRow>
                 ))}
                 {assignments.filter(a => !a.returned_at).length === 0 && (
-                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6 text-sm">Hozircha topshirilmagan instrumentlar yo'q</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6 text-sm">Hozircha topshirilmagan instrumentlar yo'q</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
