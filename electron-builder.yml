@@ -1,0 +1,50 @@
+appId: uz.mcity.erp
+productName: MCITY ERP
+copyright: Copyright © 2026 MCITY
+
+directories:
+  output: electron-release
+  buildResources: build
+
+files:
+  - electron/**/*
+  - build/icon.ico
+  - "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}"
+  - "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}"
+  - "!**/*.map"
+
+extraMetadata:
+  main: electron/main.cjs
+
+asar: true
+compression: maximum
+
+# The renderer loads the deployed ERP from the network, so we don't
+# need to ship the Vite build inside the installer. This keeps the
+# package small and means UI updates require no reinstall.
+# (Auto-update via electron-updater can be wired up later by adding
+# a `publish` block here and `autoUpdater.checkForUpdatesAndNotify()`
+# in electron/main.cjs.)
+
+win:
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+  artifactName: "MCITY-ERP-Setup-${version}.${ext}"
+
+portable:
+  artifactName: "MCITY-ERP-Portable-${version}.${ext}"
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: MCITY ERP
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  uninstallDisplayName: MCITY ERP

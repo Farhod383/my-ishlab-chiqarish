@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="uz">
+  <head>
+    <meta charset="utf-8" />
+    <title>MCITY ERP</title>
+    <style>
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: #0f172a;
+        color: #e2e8f0;
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+        overflow: hidden;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      .wrap {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+      }
+      .logo {
+        width: 88px;
+        height: 88px;
+        border-radius: 22px;
+        background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 32px;
+        letter-spacing: 1px;
+        color: #fff;
+        box-shadow: 0 12px 40px rgba(37, 99, 235, 0.35);
+      }
+      .title { font-size: 18px; font-weight: 600; }
+      .sub { font-size: 12px; color: #94a3b8; }
+      .spinner {
+        margin-top: 6px;
+        width: 28px;
+        height: 28px;
+        border: 3px solid rgba(148, 163, 184, 0.25);
+        border-top-color: #2563eb;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="logo">M</div>
+      <div class="title">MCITY ERP</div>
+      <div class="sub">Ishga tushirilmoqda…</div>
+      <div class="spinner"></div>
+    </div>
+  </body>
+</html>
