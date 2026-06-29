@@ -21,7 +21,7 @@ if (!gotLock) {
 // ---------- config ----------
 const APP_URL =
   process.env.MCITY_ERP_URL ||
-  "https://id-preview--dc7d0109-f32c-47eb-a23e-184a25704832.lovable.app";
+  "https://my-ishlab-chiqarish.vercel.app/";
 const IS_DEV = !app.isPackaged;
 const STATE_FILE = path.join(app.getPath("userData"), "window-state.json");
 const ICON_PATH = path.join(__dirname, "..", "build", "icon.ico");
