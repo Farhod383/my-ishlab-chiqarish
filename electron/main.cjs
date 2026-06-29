@@ -21,7 +21,7 @@ if (!gotLock) {
 // ---------- config ----------
 const APP_URL =
   process.env.MCITY_ERP_URL ||
-  "https://id-preview--dc7d0109-f32c-47eb-a23e-184a25704832.lovable.app";
+  "https://my-ishlab-chiqarish.vercel.app/";
 const IS_DEV = !app.isPackaged;
 const STATE_FILE = path.join(app.getPath("userData"), "window-state.json");
 const ICON_PATH = path.join(__dirname, "..", "build", "icon.ico");
@@ -144,22 +144,58 @@ function createMainWindow() {
     if (splashWindow && !splashWindow.isDestroyed()) splashWindow.close();
   });
 
-  // disable context menu in production
+  // disable context menu + devtools in production
   if (!IS_DEV) {
     mainWindow.webContents.on("context-menu", (e) => e.preventDefault());
+    mainWindow.webContents.on("devtools-opened", () => {
+      mainWindow.webContents.closeDevTools();
+    });
+    mainWindow.webContents.on("before-input-event", (event, input) => {
+      const key = (input.key || "").toLowerCase();
+      // Block F12, Ctrl/Cmd+Shift+I/J/C, Ctrl+U
+      if (
+        key === "f12" ||
+        ((input.control || input.meta) && input.shift && ["i", "j", "c"].includes(key)) ||
+        ((input.control || input.meta) && key === "u")
+      ) {
+        event.preventDefault();
+      }
+    });
   }
+
+  // auto-reconnect when network returns after a load failure
+  let reconnectTimer = null;
+  const scheduleReconnect = () => {
+    if (reconnectTimer) return;
+    reconnectTimer = setInterval(() => {
+      if (!mainWindow || mainWindow.isDestroyed()) {
+        clearInterval(reconnectTimer);
+        reconnectTimer = null;
+        return;
+      }
+      mainWindow.webContents
+        .executeJavaScript("navigator.onLine")
+        .then((isOnline) => {
+          if (isOnline) {
+            clearInterval(reconnectTimer);
+            reconnectTimer = null;
+            mainWindow.loadURL(APP_URL).catch(() => {});
+          }
+        })
+        .catch(() => {});
+    }, 3000);
+  };
 
   // block navigation to external origins; open them in OS browser
   const allowedOrigin = new URL(APP_URL).origin;
   const allowOrigin = (target) => {
     try {
       const o = new URL(target).origin;
-      // allow the ERP host + its Supabase API
+      // allow the ERP host + its Supabase API + Vercel deployment previews
       return (
         o === allowedOrigin ||
-        o.endsWith(".lovable.app") ||
-        o.endsWith(".supabase.co") ||
-        o.endsWith(".lovableproject.com")
+        o.endsWith(".vercel.app") ||
+        o.endsWith(".supabase.co")
       );
     } catch {
       return false;
@@ -178,10 +214,11 @@ function createMainWindow() {
     return { action: "deny" };
   });
 
-  // handle load failures with error screen
+  // handle load failures with error screen + auto-reconnect
   mainWindow.webContents.on("did-fail-load", (_e, code, desc, validatedURL) => {
     if (code === -3) return; // aborted (navigation replaced)
     showErrorScreen(`${desc} (${code}) — ${validatedURL}`);
+    scheduleReconnect();
   });
 
   // load ERP
