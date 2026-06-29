@@ -928,6 +928,7 @@ export default function WarehousePage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12 text-right">№</TableHead>
                       <TableHead>{t.warehouse.cols.datetime}</TableHead>
                       <TableHead>{t.warehouse.cols.direction}</TableHead>
                       <TableHead>{t.warehouse.cols.product}</TableHead>
@@ -943,12 +944,13 @@ export default function WarehousePage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredMovements.map((m: any) => (
+                    {filteredMovements.map((m: any, idx: number) => (
                       <TableRow
                         key={m.id}
                         className={canManage ? "cursor-pointer hover:bg-muted/40" : undefined}
                         onClick={canManage ? () => openEditMovement(m) : undefined}
                       >
+                        <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
                         <TableCell className="text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</TableCell>
                         <TableCell>
                           {m.direction === "out"
