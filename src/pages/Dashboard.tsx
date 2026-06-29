@@ -15,6 +15,7 @@ import { useI18n, useLocalize } from "@/i18n/context";
 import { fmtNum } from "@/lib/format";
 import { sortOrdersByStatusAndDate } from "@/lib/orderStatus";
 import { matchesAcrossScripts } from "@/lib/translit";
+import { useInfiniteList } from "@/hooks/useInfiniteList";
 
 type FilterKey = "all" | "active" | "delayed" | "today" | "exception" | "completed";
 
@@ -22,7 +23,7 @@ interface DashStats {
   total: number; active: number; delayed: number; today: number; exception: number; completed: number;
 }
 
-const PAGE_SIZE = 12;
+
 
 export default function Dashboard() {
   const { t } = useI18n();
@@ -35,7 +36,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterKey>("all");
   const [q, setQ] = useState("");
-  const [page, setPage] = useState(1);
 
   useEffect(() => {
     (async () => {
@@ -65,7 +65,7 @@ export default function Dashboard() {
     })();
   }, []);
 
-  useEffect(() => { setPage(1); }, [filter, q]);
+  
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -81,8 +81,7 @@ export default function Dashboard() {
   }), [orders, filter, q, today]);
   const filtered = filter === "all" ? sortOrdersByStatusAndDate(filteredRaw) : filteredRaw;
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const { visible: pageRows, sentinelRef, hasMore } = useInfiniteList(filtered, 50);
 
   const cards: { key: FilterKey; label: string; value: number; icon: any; accent: string }[] = [
     { key: "all",       label: t.dashboard.totalOrders,     value: stats.total,     icon: ClipboardList, accent: "text-primary bg-primary/10" },
