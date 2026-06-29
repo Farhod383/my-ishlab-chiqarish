@@ -147,6 +147,7 @@ export default function Dashboard() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12 text-right">№</TableHead>
                     <TableHead className="w-8"></TableHead>
                     <TableHead>{t.orders.cols.number}</TableHead>
                     <TableHead>{t.orders.cols.product}</TableHead>
@@ -160,8 +161,8 @@ export default function Dashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {loading && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
-                  {!loading && pageRows.map((o) => {
+                  {loading && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
+                  {!loading && pageRows.map((o, idx) => {
                     const stages = ((o as any).order_stages ?? []).slice().sort((a:any,b:any)=>a.stage_order-b.stage_order);
                     const startedAt = stages[0]?.started_at;
                     const startStr = startedAt ? new Date(startedAt).toISOString().slice(0,10) : "—";
@@ -174,6 +175,7 @@ export default function Dashboard() {
                     const isDone = o.status === "completed";
                     return (
                       <TableRow key={o.id} className="cursor-pointer hover:bg-muted/50" onClick={() => nav(`/orders/${o.id}`)}>
+                        <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
                         <TableCell><HealthDot color={orderHealth(o as any)} /></TableCell>
                         <TableCell className="font-mono text-sm">{o.order_number}</TableCell>
                         <TableCell className="text-sm font-medium">{localize(o.product_name)}</TableCell>
@@ -197,7 +199,7 @@ export default function Dashboard() {
                       </TableRow>
                     );
                   })}
-                  {!loading && pageRows.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">{t.dashboard.noOrders}</TableCell></TableRow>}
+                  {!loading && pageRows.length === 0 && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">{t.dashboard.noOrders}</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </div>
