@@ -978,7 +978,7 @@ export default function WarehousePage() {
                         </div></TableCell>}
                       </TableRow>
                     ))}
-                    {filteredMovements.length === 0 && <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-6">{t.warehouse.noMov}</TableCell></TableRow>}
+                    {filteredMovements.length === 0 && <TableRow><TableCell colSpan={13} className="text-center text-muted-foreground py-6">{t.warehouse.noMov}</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </div>
@@ -986,6 +986,43 @@ export default function WarehousePage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Group (multi-batch) Modal */}
+      <Dialog open={!!groupModal} onOpenChange={(open) => !open && setGroupModal(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          {groupModal && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2"><Package className="h-5 w-5" />{groupModal.name}</DialogTitle>
+                <DialogDescription>Partiyalar ro'yxati — narx va sanasi bo'yicha</DialogDescription>
+              </DialogHeader>
+              <div className="border rounded-md overflow-x-auto mt-3">
+                <Table>
+                  <TableHeader><TableRow>
+                    <TableHead className="w-12 text-right">№</TableHead>
+                    <TableHead>Kelgan sana</TableHead>
+                    <TableHead className="text-right">Qoldiq</TableHead>
+                    <TableHead className="text-right">Narx</TableHead>
+                    <TableHead>Manba</TableHead>
+                  </TableRow></TableHeader>
+                  <TableBody>
+                    {groupModal.batches.map((b: any, i: number) => (
+                      <TableRow key={b.id} className="cursor-pointer hover:bg-muted/40" onClick={() => { setSelectedProduct(b); setGroupModal(null); }}>
+                        <TableCell className="text-right text-xs font-mono text-muted-foreground">{i + 1}</TableCell>
+                        <TableCell className="text-xs whitespace-nowrap">{b.created_at ? new Date(b.created_at).toISOString().slice(0,10) : "—"}</TableCell>
+                        <TableCell className="text-right font-mono">{b.stock_qty} {b.unit}</TableCell>
+                        <TableCell className="text-right font-mono text-sm">{fmt(Number(b.last_price ?? 0))} {b.currency ?? "UZS"}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{b.source ?? "—"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">Partiya ustiga bosing — to'liq kartochka ochiladi.</p>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Product Detail Modal */}
       <Dialog open={!!selectedProduct} onOpenChange={(open) => !open && setSelectedProduct(null)}>
