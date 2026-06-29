@@ -15,10 +15,12 @@ const fmtDT = (d?: string | null) => (d ? new Date(d).toLocaleString("ru-RU") : 
 // ---- Unicode font (cached across invocations) ---------------------------
 // Roboto supports Latin, Cyrillic and Uzbek diacritics — renders identically
 // in Chrome, Edge, Adobe Reader and mobile PDF viewers.
+// Mirror of the official Google Roboto repo on jsDelivr — TTF with Latin +
+// full Cyrillic coverage (Uzbek diacritics included). Stable URL, verified.
 const FONT_REGULAR_URL =
-  "https://cdn.jsdelivr.net/gh/googlefonts/roboto-3-classic@main/src/hinted/Roboto-Regular.ttf";
+  "https://cdn.jsdelivr.net/gh/googlefonts/roboto-2@main/src/hinted/Roboto-Regular.ttf";
 const FONT_BOLD_URL =
-  "https://cdn.jsdelivr.net/gh/googlefonts/roboto-3-classic@main/src/hinted/Roboto-Bold.ttf";
+  "https://cdn.jsdelivr.net/gh/googlefonts/roboto-2@main/src/hinted/Roboto-Bold.ttf";
 
 let fontCache: { regular: string; bold: string } | null = null;
 
@@ -37,15 +39,24 @@ async function fetchFontBase64(url: string): Promise<string> {
 
 async function loadFonts() {
   if (fontCache) return fontCache;
-  const [regular, bold] = await Promise.all([
-    fetchFontBase64(FONT_REGULAR_URL),
-    fetchFontBase64(FONT_BOLD_URL),
-  ]);
-  fontCache = { regular, bold };
+  try {
+    const [regular, bold] = await Promise.all([
+      fetchFontBase64(FONT_REGULAR_URL),
+      fetchFontBase64(FONT_BOLD_URL),
+    ]);
+    fontCache = { regular, bold };
+  } catch (e) {
+    console.error("Unicode font yuklanmadi, helvetica fallback:", e);
+    fontCache = { regular: "", bold: "" };
+  }
   return fontCache;
 }
 
 function registerFonts(doc: jsPDF, fonts: { regular: string; bold: string }) {
+  if (!fonts.regular || !fonts.bold) {
+    doc.setFont("helvetica", "normal");
+    return;
+  }
   doc.addFileToVFS("Roboto-Regular.ttf", fonts.regular);
   doc.addFont("Roboto-Regular.ttf", "Roboto", "normal");
   doc.addFileToVFS("Roboto-Bold.ttf", fonts.bold);

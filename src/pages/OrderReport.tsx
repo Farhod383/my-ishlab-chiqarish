@@ -135,16 +135,31 @@ export default function OrderReport() {
         },
         body: JSON.stringify({ orderId: id }),
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        const ct = res.headers.get("content-type") ?? "";
+        const msg = ct.includes("application/json")
+          ? (await res.json()).error ?? res.statusText
+          : (await res.text()) || res.statusText;
+        throw new Error(String(msg));
+      }
       const blob = await res.blob();
+      if (blob.size === 0) throw new Error("Bo'sh fayl qaytdi");
+      const expected = format === "pdf" ? "application/pdf" : "application/vnd.openxmlformats";
+      const typed = blob.type && blob.type !== "application/octet-stream"
+        ? blob
+        : new Blob([blob], { type: expected });
+      const objectUrl = URL.createObjectURL(typed);
       const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
+      a.href = objectUrl;
       a.download = `${order.order_number}-hisobot.${format}`;
+      a.rel = "noopener";
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(a.href);
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 2000);
       toast.success(t.common.download);
     } catch (e: any) {
-      toast.error(e.message);
+      toast.error(e.message ?? "Yuklab olishda xatolik");
     } finally {
       setExporting(null);
     }
