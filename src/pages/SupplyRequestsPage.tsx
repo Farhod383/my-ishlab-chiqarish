@@ -233,16 +233,16 @@ export default function SupplyRequestsPage() {
             {visible.map((o) => (
               <Card
                 key={o.key}
-                className={`cursor-pointer hover:bg-muted/30 border-l-4 ${o.pinned ? "bg-primary/5 border-primary/40" : ""}`}
-                style={{ borderLeftColor: o.pinned ? "hsl(var(--primary))" : (o.worst === "pending" ? "hsl(var(--status-red))" : "hsl(var(--status-green))") }}
+                className="cursor-pointer hover:bg-muted/30 border-l-4"
+                style={{ borderLeftColor: o.worst === "pending" ? "hsl(var(--status-red))" : "hsl(var(--status-green))" }}
                 onClick={() => setOpenOrderId(o.key)}
               >
                 <CardContent className="p-1.5 flex items-center justify-between gap-2 flex-wrap">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    {o.pinned ? <span className="text-xs">📌</span> : <span className={`h-2 w-2 rounded-full shrink-0 ${dotCls[o.worst]}`} />}
+                    {o.pinned ? <span className="text-xs shrink-0">📌</span> : <span className={`h-2 w-2 rounded-full shrink-0 ${dotCls[o.worst]}`} />}
                     <div className="min-w-0">
                       {!o.pinned && <div className="font-mono font-semibold text-primary text-[11px] leading-tight">{o.order.order_number}</div>}
-                      <div className={`text-xs truncate leading-tight ${o.pinned ? "font-semibold" : "font-medium"}`}>{o.order.product_name}</div>
+                      <div className="text-xs truncate leading-tight font-medium">{o.order.product_name}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 text-[11px]">
