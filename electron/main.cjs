@@ -154,12 +154,11 @@ function createMainWindow() {
   const allowOrigin = (target) => {
     try {
       const o = new URL(target).origin;
-      // allow the ERP host + its Supabase API
+      // allow the ERP host + its Supabase API + Vercel deployment previews
       return (
         o === allowedOrigin ||
-        o.endsWith(".lovable.app") ||
-        o.endsWith(".supabase.co") ||
-        o.endsWith(".lovableproject.com")
+        o.endsWith(".vercel.app") ||
+        o.endsWith(".supabase.co")
       );
     } catch {
       return false;
