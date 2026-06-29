@@ -39,6 +39,7 @@ export default function WarehousePage() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+  const [groupModal, setGroupModal] = useState<{ name: string; batches: any[] } | null>(null);
   const [search, setSearch] = useState("");
   const [historySearch, setHistorySearch] = useState("");
 
@@ -861,13 +862,12 @@ export default function WarehousePage() {
             <div className="border rounded-md overflow-x-auto">
               <Table>
                 <TableHeader><TableRow>
+                  <TableHead className="w-12 text-right">№</TableHead>
                   <TableHead>{t.warehouse.cols.product}</TableHead>
                   <TableHead className="text-right">{t.warehouse.cols.stock}</TableHead>
-                  <TableHead className="text-right">{t.warehouse.cols.min}</TableHead>
+                  <TableHead className="text-right">Partiyalar</TableHead>
                   <TableHead className="text-right">{t.warehouse.price}</TableHead>
-                  <TableHead>{(t.warehouse.cols as any).source}</TableHead>
                   <TableHead>{t.warehouse.cols.state}</TableHead>
-                  {canManage && <TableHead></TableHead>}
                 </TableRow></TableHeader>
                 <TableBody>
                   {(() => {
@@ -875,26 +875,35 @@ export default function WarehousePage() {
                     const filtered = q ? products.filter(p =>
                       [p.name, p.unit, p.source, p.phone].some((v: any) => (v ?? "").toString().toLowerCase().includes(q))
                     ) : products;
-                    if (filtered.length === 0) return <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{q ? (t.warehouse as any).noResults : t.common.noRecords}</TableCell></TableRow>;
-                    return filtered.map(p => {
-                      const low = Number(p.stock_qty) <= Number(p.min_limit);
-                      return (
-                        <TableRow key={p.id} className={`cursor-pointer hover:bg-muted/40 ${low ? "bg-status-red/5" : ""}`} onClick={() => setSelectedProduct(p)}>
-                          <TableCell className="font-medium flex items-center gap-2"><PriorityDot priority={p.priority} /><Package className="h-4 w-4 text-muted-foreground" />{p.name}{p.currency && p.currency !== "UZS" && <span className="text-[10px] font-mono bg-muted px-1 rounded">{p.currency}</span>}</TableCell>
-                          <TableCell className="text-right font-mono">{p.stock_qty} {p.unit}</TableCell>
-                          <TableCell className="text-right text-sm text-muted-foreground">{p.min_limit} {p.unit}</TableCell>
-                          <TableCell className="text-right text-sm font-mono">{fmt(Number(p.last_price ?? 0))}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground">{p.source ?? "—"}</TableCell>
-                          <TableCell>{low ? <span className="text-status-red text-xs font-semibold flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{t.warehouse.low}</span> : <span className="text-status-green text-xs">{t.warehouse.enough}</span>}</TableCell>
-                          {canManage && <TableCell onClick={(e) => e.stopPropagation()}>
-                            <div className="flex gap-1">
-                              <Button size="sm" variant="ghost" onClick={() => openEditProduct(p)}><Pencil className="h-3.5 w-3.5" /></Button>
-                              <Button size="sm" variant="ghost" onClick={() => deleteProduct(p)}><Trash2 className="h-3.5 w-3.5 text-status-red" /></Button>
-                            </div>
-                          </TableCell>}
-                        </TableRow>
-                      );
+                    // Group by normalised name
+                    const groups = new Map<string, any[]>();
+                    filtered.forEach(p => {
+                      const key = String(p.name ?? "").trim().toLowerCase();
+                      const arr = groups.get(key) ?? [];
+                      arr.push(p);
+                      groups.set(key, arr);
                     });
+                    const rows = Array.from(groups.entries()).map(([, batches]) => {
+                      const totalQty = batches.reduce((s, b) => s + Number(b.stock_qty || 0), 0);
+                      const minLim = batches.reduce((s, b) => s + Number(b.min_limit || 0), 0);
+                      const low = totalQty <= minLim;
+                      const first = batches[0];
+                      const prices = batches.map(b => Number(b.last_price || 0)).filter(n => n > 0);
+                      const minP = prices.length ? Math.min(...prices) : 0;
+                      const maxP = prices.length ? Math.max(...prices) : 0;
+                      return { batches, totalQty, minLim, low, first, minP, maxP };
+                    });
+                    if (rows.length === 0) return <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{q ? (t.warehouse as any).noResults : t.common.noRecords}</TableCell></TableRow>;
+                    return rows.map((r, i) => (
+                      <TableRow key={r.first.name + i} className={`cursor-pointer hover:bg-muted/40 ${r.low ? "bg-status-red/5" : ""}`} onClick={() => r.batches.length === 1 ? setSelectedProduct(r.first) : setGroupModal({ name: r.first.name, batches: r.batches })}>
+                        <TableCell className="text-right text-xs font-mono text-muted-foreground">{i + 1}</TableCell>
+                        <TableCell className="font-medium flex items-center gap-2"><PriorityDot priority={r.first.priority} /><Package className="h-4 w-4 text-muted-foreground" />{r.first.name}{r.batches.length > 1 && <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded">{r.batches.length} partiya</span>}</TableCell>
+                        <TableCell className="text-right font-mono font-semibold">{r.totalQty} {r.first.unit}</TableCell>
+                        <TableCell className="text-right text-xs text-muted-foreground">{r.batches.length}</TableCell>
+                        <TableCell className="text-right text-sm font-mono">{r.minP === r.maxP ? fmt(r.minP) : `${fmt(r.minP)}–${fmt(r.maxP)}`}</TableCell>
+                        <TableCell>{r.low ? <span className="text-status-red text-xs font-semibold flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{t.warehouse.low}</span> : <span className="text-status-green text-xs">{t.warehouse.enough}</span>}</TableCell>
+                      </TableRow>
+                    ));
                   })()}
                 </TableBody>
               </Table>
