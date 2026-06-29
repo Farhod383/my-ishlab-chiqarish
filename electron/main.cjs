@@ -76,22 +76,24 @@ function showErrorScreen(message) {
   <title>MCITY ERP — Ulanish xatosi</title>
   <style>
     html,body{margin:0;height:100%;font-family:Segoe UI,system-ui,sans-serif;background:#0f172a;color:#e2e8f0;display:flex;align-items:center;justify-content:center}
-    .card{max-width:480px;padding:32px;text-align:center}
-    h1{font-size:20px;margin:0 0 12px}
-    p{color:#94a3b8;font-size:14px;line-height:1.5}
-    button{margin-top:20px;background:#1e3a8a;color:#fff;border:0;padding:10px 22px;border-radius:8px;font-size:14px;cursor:pointer}
+    .card{max-width:520px;padding:36px;text-align:center}
+    .icon{width:64px;height:64px;border-radius:50%;background:rgba(239,68,68,.12);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;color:#ef4444;font-size:30px}
+    h1{font-size:20px;margin:0 0 12px;font-weight:600}
+    p{color:#94a3b8;font-size:14px;line-height:1.6;margin:0 0 8px;white-space:pre-line}
+    .spinner{margin:18px auto 0;width:22px;height:22px;border:3px solid rgba(148,163,184,.25);border-top-color:#2563eb;border-radius:50%;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    button{margin-top:22px;background:#1e3a8a;color:#fff;border:0;padding:10px 22px;border-radius:8px;font-size:14px;cursor:pointer}
     button:hover{background:#1d4ed8}
-    code{display:block;margin-top:14px;font-size:12px;color:#64748b;word-break:break-all}
+    code{display:block;margin-top:14px;font-size:11px;color:#475569;word-break:break-all;opacity:.7}
   </style></head><body>
   <div class="card">
-    <h1>Serverga ulanib bo'lmadi</h1>
-    <p>Internet aloqasi yoki ERP serverga ulanishni tekshiring va qayta urinib ko'ring.</p>
+    <div class="icon">⚠</div>
+    <h1>Internet aloqasi mavjud emas</h1>
+    <p>Server bilan qayta bog'lanishga urinilmoqda...</p>
+    <div class="spinner"></div>
     <button onclick="location.reload()">Qayta urinib ko'rish</button>
     <code>${String(message || "").replace(/[<>&]/g, "")}</code>
   </div>
-  <script>
-    const { ipcRenderer } = require ? {} : {};
-  </script>
   </body></html>`;
   mainWindow.loadURL("data:text/html;charset=utf-8," + encodeURIComponent(html));
 }
