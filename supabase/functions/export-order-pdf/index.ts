@@ -39,11 +39,16 @@ async function fetchFontBase64(url: string): Promise<string> {
 
 async function loadFonts() {
   if (fontCache) return fontCache;
-  const [regular, bold] = await Promise.all([
-    fetchFontBase64(FONT_REGULAR_URL),
-    fetchFontBase64(FONT_BOLD_URL),
-  ]);
-  fontCache = { regular, bold };
+  try {
+    const [regular, bold] = await Promise.all([
+      fetchFontBase64(FONT_REGULAR_URL),
+      fetchFontBase64(FONT_BOLD_URL),
+    ]);
+    fontCache = { regular, bold };
+  } catch (e) {
+    console.error("Unicode font yuklanmadi, helvetica fallback:", e);
+    fontCache = { regular: "", bold: "" };
+  }
   return fontCache;
 }
 
