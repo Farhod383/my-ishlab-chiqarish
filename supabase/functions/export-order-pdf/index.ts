@@ -53,6 +53,10 @@ async function loadFonts() {
 }
 
 function registerFonts(doc: jsPDF, fonts: { regular: string; bold: string }) {
+  if (!fonts.regular || !fonts.bold) {
+    doc.setFont("helvetica", "normal");
+    return;
+  }
   doc.addFileToVFS("Roboto-Regular.ttf", fonts.regular);
   doc.addFont("Roboto-Regular.ttf", "Roboto", "normal");
   doc.addFileToVFS("Roboto-Bold.ttf", fonts.bold);
