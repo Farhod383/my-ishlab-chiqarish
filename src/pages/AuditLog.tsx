@@ -106,6 +106,7 @@ export default function AuditLog() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12 text-right">№</TableHead>
                   <TableHead>{t.audit.cols.date}</TableHead>
                   <TableHead>{t.audit.cols.who}</TableHead>
                   <TableHead>{(t.audit.cols as any).role}</TableHead>
@@ -116,8 +117,9 @@ export default function AuditLog() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map(l => (
+                {filtered.map((l, idx) => (
                   <TableRow key={l.id}>
+                    <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
                     <TableCell className="text-xs whitespace-nowrap">{new Date(l.created_at).toLocaleString()}</TableCell>
                     <TableCell className="text-sm">{l.actor_name ? localize(l.actor_name) : t.common.system}</TableCell>
                     <TableCell className="text-xs"><Badge variant="secondary">{roleLabel(l.actor_id)}</Badge></TableCell>
@@ -127,7 +129,7 @@ export default function AuditLog() {
                     <TableCell className="text-xs text-muted-foreground">{l.details ?? "—"}</TableCell>
                   </TableRow>
                 ))}
-                {filtered.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t.audit.none}</TableCell></TableRow>}
+                {filtered.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{t.audit.none}</TableCell></TableRow>}
               </TableBody>
             </Table>
           </div>
