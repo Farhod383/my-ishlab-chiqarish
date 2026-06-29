@@ -54,7 +54,7 @@ Outputs in `electron-release/`:
 
 ## Point the shell at a different ERP URL
 
-The shell defaults to the current preview URL. Override per-environment:
+The shell defaults to `https://my-ishlab-chiqarish.vercel.app/`. Override per-environment:
 
 ```powershell
 set MCITY_ERP_URL=https://erp.mcity.uz
