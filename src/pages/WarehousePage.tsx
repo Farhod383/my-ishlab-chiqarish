@@ -710,9 +710,9 @@ export default function WarehousePage() {
           {canImport && (
             <Dialog open={importOpen} onOpenChange={setImportOpen}>
               <DialogTrigger asChild><Button variant="secondary"><ArrowUpCircle className="h-4 w-4 mr-2" />{t.supply.receive}</Button></DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>{t.supply.receiveTitle}</DialogTitle></DialogHeader>
-                <div className="space-y-3">
+              <DialogContent className="max-w-lg max-h-[90vh] flex flex-col p-0 gap-0">
+                <DialogHeader className="px-6 pt-6 pb-3 border-b shrink-0"><DialogTitle>{t.supply.receiveTitle}</DialogTitle></DialogHeader>
+                <div className="space-y-3 overflow-y-auto px-6 py-4 flex-1">
                   <div><Label>{t.supply.productName || t.warehouse.productName} *</Label>
                     <Popover open={impPickerOpen} onOpenChange={setImpPickerOpen}>
                       <PopoverTrigger asChild>
@@ -780,6 +780,18 @@ export default function WarehousePage() {
                       <SelectContent>{locations.map(l => <SelectItem key={l.id} value={l.name}>{l.name}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
+                  <div>
+                    <Label>Qaysi zakaz uchun olib kelindi <span className="text-muted-foreground text-xs">(ixtiyoriy)</span></Label>
+                    <SearchableSelect
+                      value={impOrderId}
+                      onChange={setImpOrderId}
+                      placeholder="Tanlanmasa — umumiy ombor kirimi"
+                      options={[
+                        { value: "", label: "— Yo'q (umumiy) —" },
+                        ...orders.map((o: any) => ({ value: o.id, label: `${o.order_number} — ${o.product_name}` })),
+                      ]}
+                    />
+                  </div>
                   {Number(impQty) > 0 && Number(impPrice) > 0 && (
                     <div className="text-sm bg-primary/5 border border-primary/20 rounded p-2 flex justify-between">
                       <span className="text-muted-foreground">{t.supply.totalValue}:</span>
@@ -790,6 +802,8 @@ export default function WarehousePage() {
                   <div><Label>{t.supply.bringer}</Label><Input list="dl-suppliers" value={impSupplier} onChange={e => setImpSupplier(e.target.value)} placeholder={t.supply.bringerPh} /></div>
                   <div><Label>{t.supply.phone}</Label><Input list="dl-phones" value={impPhone} onChange={e => setImpPhone(e.target.value)} placeholder={t.supply.phonePh} /></div>
                   <div><Label>{t.supply.image}</Label><Input type="file" accept="image/*" onChange={e => setImpImage(e.target.files?.[0] ?? null)} /></div>
+                </div>
+                <div className="px-6 py-4 border-t bg-background shrink-0">
                   <Button className="w-full" onClick={doImport}>{t.supply.saveIn}</Button>
                 </div>
               </DialogContent>
