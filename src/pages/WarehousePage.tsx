@@ -569,7 +569,27 @@ export default function WarehousePage() {
   );
 
   const fmtDateTime = (s: string) => new Date(s).toLocaleString();
-  const lowStock = products.filter(p => Number(p.stock_qty) <= Number(p.min_limit));
+  // Grouped products by name (for stat cards + reorder list)
+  const productGroups = useMemo(() => {
+    const map = new Map<string, any[]>();
+    products.forEach(p => {
+      const k = String(p.name ?? "").trim().toLowerCase();
+      const arr = map.get(k) ?? [];
+      arr.push(p);
+      map.set(k, arr);
+    });
+    return Array.from(map.values()).map(batches => {
+      const totalQty = batches.reduce((s, b) => s + Number(b.stock_qty || 0), 0);
+      const minLim = batches.reduce((s, b) => s + Number(b.min_limit || 0), 0);
+      return { batches, totalQty, minLim, status: getStockStatus(totalQty, minLim), first: batches[0] };
+    });
+  }, [products]);
+  const stockCounts = useMemo(() => ({
+    green: productGroups.filter(g => g.status === "green").length,
+    yellow: productGroups.filter(g => g.status === "yellow").length,
+    red: productGroups.filter(g => g.status === "red").length,
+  }), [productGroups]);
+  const lowStock = productGroups.filter(g => g.status !== "green");
 
   const filteredMovements = useMemo(() => {
     const q = historySearch.trim().toLowerCase();
