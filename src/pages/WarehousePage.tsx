@@ -194,13 +194,14 @@ export default function WarehousePage() {
     if (outOrder) {
       const { data: srcRows } = await supabase
         .from("stock_movements")
-        .select("source_order_id, order:orders!stock_movements_source_order_id_fkey(order_number)")
+        .select("source_order_id")
         .eq("product_id", outProduct).eq("direction", "in")
         .not("source_order_id", "is", null)
         .order("created_at", { ascending: false }).limit(1);
       const src: any = srcRows?.[0];
       if (src?.source_order_id && src.source_order_id !== outOrder) {
-        setCrossInfo({ sourceOrderId: src.source_order_id, sourceOrderNumber: src.order?.order_number ?? "—" });
+        const { data: ord } = await supabase.from("orders").select("order_number").eq("id", src.source_order_id).maybeSingle();
+        setCrossInfo({ sourceOrderId: src.source_order_id, sourceOrderNumber: ord?.order_number ?? "—" });
         setCrossReason("");
         setCrossOpen(true);
         return;
