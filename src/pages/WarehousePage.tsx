@@ -85,7 +85,13 @@ export default function WarehousePage() {
   const [impImage, setImpImage] = useState<File | null>(null);
   const [impLocation, setImpLocation] = useState<string>("Asosiy zavod");
   const [impCurrency, setImpCurrency] = useState<string>("UZS");
+  const [impOrderId, setImpOrderId] = useState<string>("");
   const [locations, setLocations] = useState<{ id: string; name: string }[]>([]);
+
+  // Cross-order release confirmation
+  const [crossOpen, setCrossOpen] = useState(false);
+  const [crossReason, setCrossReason] = useState("");
+  const [crossInfo, setCrossInfo] = useState<{ sourceOrderId: string; sourceOrderNumber: string } | null>(null);
 
   // Edit product
   const [editProdOpen, setEditProdOpen] = useState(false);
