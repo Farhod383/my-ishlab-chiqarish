@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import type { AppRole } from "@/auth/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/auth/AuthContext";
-import { Bell, Check, CheckCheck } from "lucide-react";
+import { Bell, BellRing, Check, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
