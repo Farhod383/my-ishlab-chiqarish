@@ -665,7 +665,10 @@ export default function WarehousePage() {
                   </div>
                 </DialogContent>
               </Dialog>
-
+            </>
+          )}
+          {canOut && (
+            <>
               <Dialog open={otherOpen} onOpenChange={setOtherOpen}>
                 <DialogTrigger asChild><Button variant="outline"><PackageMinus className="h-4 w-4 mr-2" />{t.warehouse.otherOut}</Button></DialogTrigger>
                 <DialogContent>
