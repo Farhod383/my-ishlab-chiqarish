@@ -1,0 +1,1 @@
+ALTER TABLE public.order_supply_requests ADD COLUMN IF NOT EXISTS late_reason text;

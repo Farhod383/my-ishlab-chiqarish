@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Truck, Search, ExternalLink, ChevronLeft, Save, Loader2, Package, MessageSquare, Check } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Truck, Search, ExternalLink, ChevronLeft, Save, Loader2, Package, MessageSquare, Check, AlertTriangle, CalendarDays } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { toast } from "sonner";
 
@@ -32,6 +33,7 @@ const normalizeStatus = (s: string): Status => (s === "fulfilled" ? "fulfilled" 
 export default function SupplyRequestsPage() {
   const { hasRole } = useAuth();
   const canEdit = hasRole(["supply", "admin", "warehouse"]);
+  const isAdmin = hasRole(["admin"]);
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
@@ -40,6 +42,9 @@ export default function SupplyRequestsPage() {
   const [edit, setEdit] = useState<Record<string, { status: Status; supply_comment: string; dirty: boolean }>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [savingStatus, setSavingStatus] = useState<Record<string, boolean>>({});
+
+  const [lateItem, setLateItem] = useState<any | null>(null);
+  const [lateReason, setLateReason] = useState("");
 
   const [profiles, setProfiles] = useState<Record<string, { full_name: string | null; email: string | null }>>({});
 
@@ -159,18 +164,25 @@ export default function SupplyRequestsPage() {
     load();
   };
 
-  const markStatus = async (item: any, status: Status) => {
-    const current = normalizeStatus(item.status);
-    if (current === status || savingStatus[item.id]) return;
+  const isLate = (item: any) => {
+    if (!item?.required_date) return false;
+    const req = new Date(item.required_date + "T23:59:59");
+    return new Date() > req;
+  };
 
+  const applyStatus = async (item: any, status: Status, late_reason?: string | null) => {
     setSavingStatus((prev) => ({ ...prev, [item.id]: true }));
     const patch: any = { status };
-    if (status === "fulfilled") patch.fulfilled_at = new Date().toISOString();
+    if (status === "fulfilled") {
+      patch.fulfilled_at = new Date().toISOString();
+      if (late_reason !== undefined) patch.late_reason = late_reason;
+    } else {
+      patch.late_reason = null;
+    }
 
     const { error } = await supabase.from("order_supply_requests").update(patch).eq("id", item.id);
     setSavingStatus((prev) => ({ ...prev, [item.id]: false }));
-
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(error.message); return false; }
 
     setRows((prev) => prev.map((r) => r.id === item.id ? { ...r, ...patch } : r));
     setEdit((prev) => ({
@@ -179,7 +191,34 @@ export default function SupplyRequestsPage() {
     }));
     toast.success(status === "fulfilled" ? "Ta'minlandi — omborga kirim qilindi" : "Kutilmoqda holatiga qaytarildi");
     load();
+    return true;
   };
+
+  const markStatus = async (item: any, status: Status) => {
+    const current = normalizeStatus(item.status);
+    if (current === status || savingStatus[item.id]) return;
+    if (status === "fulfilled" && isLate(item)) {
+      setLateReason("");
+      setLateItem(item);
+      return;
+    }
+    await applyStatus(item, status, status === "fulfilled" ? null : undefined);
+  };
+
+  const confirmLate = async () => {
+    if (!lateItem || lateReason.trim().length < 10) return;
+    const ok = await applyStatus(lateItem, "fulfilled", lateReason.trim());
+    if (ok) { setLateItem(null); setLateReason(""); }
+  };
+
+  const fmtDT = (v?: string | null) => {
+    if (!v) return "—";
+    const d = new Date(v);
+    if (isNaN(d.getTime())) return v;
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  };
+  const fmtDate = (v?: string | null) => v ?? "—";
 
   const openedOrder = openOrderId ? groups.find((o) => o.key === openOrderId) : null;
   const isGeneralOpen = openedOrder?.key === GENERAL_KEY;
@@ -280,15 +319,14 @@ export default function SupplyRequestsPage() {
               const isExpanded = !!expanded[item.id];
               return (
                 <Card key={item.id} className="border-l-4" style={{ borderLeftColor: color === "pending" ? "hsl(var(--status-red))" : "hsl(var(--status-green))" }}>
-                  <CardContent className="p-1.5 space-y-1">
-                    <div className="flex items-center justify-between gap-1.5 flex-wrap">
-                      <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                        <Package className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <CardContent className="p-2 space-y-1.5">
+                    <div className="flex items-start justify-between gap-2 flex-wrap">
+                      <div className="flex items-start gap-2 min-w-0 flex-1">
+                        <Package className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                         <div className="min-w-0 flex-1">
-                          <div className="font-semibold text-xs truncate leading-tight">{item.product_name}</div>
-                          <div className="text-[10px] text-muted-foreground flex flex-wrap gap-x-1.5 leading-tight">
+                          <div className="font-semibold text-sm leading-tight">{item.product_name}</div>
+                          <div className="text-[11px] text-muted-foreground flex flex-wrap gap-x-2 leading-tight mt-0.5">
                             <span className="font-mono">{item.quantity} {item.unit ?? ""}</span>
-                            {item.required_date && <span>· {item.required_date}</span>}
                             <span>· {requesterName(item.created_by)}</span>
                             {item.department && <span className="uppercase">· {item.department}</span>}
                           </div>
@@ -300,7 +338,7 @@ export default function SupplyRequestsPage() {
                             <Button
                               key={s}
                               size="sm"
-                              className="h-6 px-1.5 text-[11px]"
+                              className="h-7 px-2 text-xs"
                               variant={color === s ? "default" : "outline"}
                               disabled={!!savingStatus[item.id]}
                               onClick={() => markStatus(item, s)}
@@ -310,30 +348,56 @@ export default function SupplyRequestsPage() {
                             </Button>
                           ))
                         ) : (
-                          <div className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0 text-[10px] font-semibold ${statusCls[color]}`}>
+                          <div className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${statusCls[color]}`}>
                             <span className={`h-1.5 w-1.5 rounded-full ${dotCls[color]}`} />
                             {statusLabel[color]}
                           </div>
                         )}
                       </div>
                     </div>
+
+                    <div className="grid grid-cols-3 gap-2 text-[11px] bg-muted/40 rounded px-2 py-1.5">
+                      <div className="flex items-center gap-1 min-w-0">
+                        <CalendarDays className="h-3 w-3 text-muted-foreground shrink-0" />
+                        <span className="text-muted-foreground">Berilgan:</span>
+                        <span className="font-mono truncate">{fmtDT(item.created_at)}</span>
+                      </div>
+                      <div className="flex items-center gap-1 min-w-0">
+                        <CalendarDays className="h-3 w-3 text-muted-foreground shrink-0" />
+                        <span className="text-muted-foreground">Kerak:</span>
+                        <span className={`font-mono truncate ${color === "pending" && isLate(item) ? "text-status-red font-semibold" : ""}`}>{fmtDate(item.required_date)}</span>
+                      </div>
+                      <div className="flex items-center gap-1 min-w-0">
+                        <CalendarDays className="h-3 w-3 text-muted-foreground shrink-0" />
+                        <span className="text-muted-foreground">Ta'minlandi:</span>
+                        <span className="font-mono truncate">{color === "fulfilled" ? fmtDT(item.fulfilled_at) : "—"}</span>
+                      </div>
+                    </div>
+
+                    {isAdmin && item.late_reason && (
+                      <div className="text-[11px] flex items-start gap-1 border border-status-red/30 bg-status-red/5 text-status-red rounded px-2 py-1">
+                        <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />
+                        <span><b>Kechikish sababi (faqat Admin):</b> {item.late_reason}</span>
+                      </div>
+                    )}
+
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-5 px-1.5 text-[10px] text-muted-foreground"
+                        className="h-6 px-1.5 text-[11px] text-muted-foreground"
                         onClick={() => setExpanded({ ...expanded, [item.id]: !isExpanded })}
                       >
                         <MessageSquare className="h-3 w-3 mr-1" /> {isExpanded ? "Yopish" : "Izoh / Batafsil"}
                       </Button>
                       {!isExpanded && item.supply_comment && (
-                        <span className="text-[10px] text-muted-foreground truncate max-w-sm">Ta'minot: {item.supply_comment}</span>
+                        <span className="text-[11px] text-muted-foreground truncate max-w-sm">Ta'minot: {item.supply_comment}</span>
                       )}
                     </div>
                     {isExpanded && (
                       <div className="space-y-1">
                         {item.comment && (
-                          <div className="text-[10px] text-muted-foreground border-l-2 border-primary/40 pl-1.5 italic">
+                          <div className="text-[11px] text-muted-foreground border-l-2 border-primary/40 pl-1.5 italic">
                             So'rov izohi: {item.comment}
                           </div>
                         )}
@@ -353,7 +417,7 @@ export default function SupplyRequestsPage() {
                             )}
                           </div>
                         ) : item.supply_comment ? (
-                          <div className="text-[10px] text-muted-foreground">Ta'minot: {item.supply_comment}</div>
+                          <div className="text-[11px] text-muted-foreground">Ta'minot: {item.supply_comment}</div>
                         ) : null}
                       </div>
                     )}
@@ -364,6 +428,44 @@ export default function SupplyRequestsPage() {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={!!lateItem} onOpenChange={(o) => { if (!o) { setLateItem(null); setLateReason(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-status-red">
+              <AlertTriangle className="h-5 w-5" /> Kechikish sababi
+            </DialogTitle>
+            <DialogDescription>
+              Ushbu mahsulot belgilangan muddatdan kech ta'minlanmoqda. Iltimos, kechikish sababini yozing.
+            </DialogDescription>
+          </DialogHeader>
+          {lateItem && (
+            <div className="text-xs text-muted-foreground space-y-0.5">
+              <div><b className="text-foreground">{lateItem.product_name}</b> · {lateItem.quantity} {lateItem.unit ?? ""}</div>
+              <div>Kerak sana: <span className="font-mono">{fmtDate(lateItem.required_date)}</span> · Hozir: <span className="font-mono">{fmtDT(new Date().toISOString())}</span></div>
+            </div>
+          )}
+          <Textarea
+            rows={4}
+            placeholder="Kechikish sababini kamida 10 ta belgi bilan yozing..."
+            value={lateReason}
+            onChange={(e) => setLateReason(e.target.value)}
+          />
+          <div className="text-[11px] text-muted-foreground">
+            {lateReason.trim().length}/10 belgi {lateReason.trim().length < 10 && "— tasdiqlash uchun yetarli emas"}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setLateItem(null); setLateReason(""); }}>Bekor qilish</Button>
+            <Button
+              onClick={confirmLate}
+              disabled={lateReason.trim().length < 10 || (lateItem && !!savingStatus[lateItem.id])}
+            >
+              {lateItem && savingStatus[lateItem.id] ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Check className="h-4 w-4 mr-1" />}
+              Tasdiqlash va Ta'minlandi
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
