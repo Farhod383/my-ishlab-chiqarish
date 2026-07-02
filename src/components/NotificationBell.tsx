@@ -107,10 +107,13 @@ export function NotificationBell() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
+        <Button variant="ghost" size="icon" className="relative h-11 w-11">
+          <Bell className={`h-7 w-7 ${unread > 0 ? "animate-bell-shake origin-top" : ""}`} strokeWidth={2.2} />
           {unread > 0 && (
-            <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 min-w-5 px-1 text-[10px] flex items-center justify-center rounded-full">
+            <Badge
+              variant="destructive"
+              className="absolute -top-0.5 -right-0.5 h-6 min-w-6 px-1.5 text-[11px] font-bold flex items-center justify-center rounded-full ring-2 ring-background shadow"
+            >
               {unread > 99 ? "99+" : unread}
             </Badge>
           )}
