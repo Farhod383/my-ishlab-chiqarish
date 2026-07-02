@@ -980,38 +980,43 @@ export default function WarehousePage() {
                 <TableBody>
                   {(() => {
                     const q = search.trim().toLowerCase();
-                    const filtered = q ? products.filter(p =>
-                      [p.name, p.unit, p.source, p.phone].some((v: any) => (v ?? "").toString().toLowerCase().includes(q))
-                    ) : products;
-                    // Group by normalised name
-                    const groups = new Map<string, any[]>();
-                    filtered.forEach(p => {
-                      const key = String(p.name ?? "").trim().toLowerCase();
-                      const arr = groups.get(key) ?? [];
-                      arr.push(p);
-                      groups.set(key, arr);
+                    let rows = productGroups
+                      .filter(g => stockFilter === "all" ? true : g.status === stockFilter)
+                      .filter(g => !q || g.batches.some((p: any) =>
+                        [p.name, p.unit, p.source, p.phone].some((v: any) => (v ?? "").toString().toLowerCase().includes(q))
+                      ))
+                      .map(g => {
+                        const prices = g.batches.map((b: any) => Number(b.last_price || 0)).filter((n: number) => n > 0);
+                        const minP = prices.length ? Math.min(...prices) : 0;
+                        const maxP = prices.length ? Math.max(...prices) : 0;
+                        return { ...g, minP, maxP };
+                      });
+                    if (rows.length === 0) return <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{q || stockFilter !== "all" ? (t.warehouse as any).noResults ?? "Natija topilmadi" : t.common.noRecords}</TableCell></TableRow>;
+                    return rows.map((r, i) => {
+                      const meta = stockStatusMeta[r.status];
+                      return (
+                        <TableRow key={r.first.name + i} className={`cursor-pointer hover:bg-muted/40 ${r.status !== "green" ? meta.bg : ""}`} onClick={() => r.batches.length === 1 ? setSelectedProduct(r.first) : setGroupModal({ name: r.first.name, batches: r.batches })}>
+                          <TableCell className="text-right text-xs font-mono text-muted-foreground">{i + 1}</TableCell>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              <StockDot status={r.status} />
+                              <Package className="h-4 w-4 text-muted-foreground" />
+                              <span>{r.first.name}</span>
+                              {r.batches.length > 1 && <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded">{r.batches.length} partiya</span>}
+                            </div>
+                          </TableCell>
+                          <TableCell className={`text-right font-mono font-semibold ${meta.text}`}>{r.totalQty} {r.first.unit}</TableCell>
+                          <TableCell className="text-right text-xs text-muted-foreground">{r.batches.length}</TableCell>
+                          <TableCell className="text-right text-sm font-mono">{r.minP === r.maxP ? fmt(r.minP) : `${fmt(r.minP)}–${fmt(r.maxP)}`}</TableCell>
+                          <TableCell>
+                            <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-semibold ${meta.bg} ${meta.border} ${meta.text}`}>
+                              <span className={`inline-block h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+                              {meta.label}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      );
                     });
-                    const rows = Array.from(groups.entries()).map(([, batches]) => {
-                      const totalQty = batches.reduce((s, b) => s + Number(b.stock_qty || 0), 0);
-                      const minLim = batches.reduce((s, b) => s + Number(b.min_limit || 0), 0);
-                      const low = totalQty <= minLim;
-                      const first = batches[0];
-                      const prices = batches.map(b => Number(b.last_price || 0)).filter(n => n > 0);
-                      const minP = prices.length ? Math.min(...prices) : 0;
-                      const maxP = prices.length ? Math.max(...prices) : 0;
-                      return { batches, totalQty, minLim, low, first, minP, maxP };
-                    });
-                    if (rows.length === 0) return <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{q ? (t.warehouse as any).noResults : t.common.noRecords}</TableCell></TableRow>;
-                    return rows.map((r, i) => (
-                      <TableRow key={r.first.name + i} className={`cursor-pointer hover:bg-muted/40 ${r.low ? "bg-status-red/5" : ""}`} onClick={() => r.batches.length === 1 ? setSelectedProduct(r.first) : setGroupModal({ name: r.first.name, batches: r.batches })}>
-                        <TableCell className="text-right text-xs font-mono text-muted-foreground">{i + 1}</TableCell>
-                        <TableCell className="font-medium flex items-center gap-2"><PriorityDot priority={r.first.priority} /><Package className="h-4 w-4 text-muted-foreground" />{r.first.name}{r.batches.length > 1 && <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded">{r.batches.length} partiya</span>}</TableCell>
-                        <TableCell className="text-right font-mono font-semibold">{r.totalQty} {r.first.unit}</TableCell>
-                        <TableCell className="text-right text-xs text-muted-foreground">{r.batches.length}</TableCell>
-                        <TableCell className="text-right text-sm font-mono">{r.minP === r.maxP ? fmt(r.minP) : `${fmt(r.minP)}–${fmt(r.maxP)}`}</TableCell>
-                        <TableCell>{r.low ? <span className="text-status-red text-xs font-semibold flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{t.warehouse.low}</span> : <span className="text-status-green text-xs">{t.warehouse.enough}</span>}</TableCell>
-                      </TableRow>
-                    ));
                   })()}
                 </TableBody>
               </Table>
