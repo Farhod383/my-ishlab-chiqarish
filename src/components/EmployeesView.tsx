@@ -279,7 +279,7 @@ function exportEmployeePDF(
       ["Lavozim", emp.position || "—"],
       ["Bo'lim", emp.department || "—"],
       ["Telefon", emp.phone ?? "—"],
-      ["Holat", emp.status === "active" ? "Faol" : "Nofaol"],
+      ["Holat", emp.status === "active" ? "Faol" : "Bo'shagan"],
     ],
     columnStyles: { 0: { cellWidth: 130, fontStyle: "bold", fillColor: [245, 240, 255] } },
   });
