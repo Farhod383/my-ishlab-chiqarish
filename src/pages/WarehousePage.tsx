@@ -42,6 +42,7 @@ export default function WarehousePage() {
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [groupModal, setGroupModal] = useState<{ name: string; batches: any[] } | null>(null);
   const [search, setSearch] = useState("");
+  const [stockFilter, setStockFilter] = useState<"all" | StockStatus>("all");
   const [historySearch, setHistorySearch] = useState("");
 
   // Output states
