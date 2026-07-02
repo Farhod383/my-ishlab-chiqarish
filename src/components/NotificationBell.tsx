@@ -19,6 +19,7 @@ interface Notif {
   entity: string | null;
   entity_id: string | null;
   recipient_id: string | null;
+  recipient_role: string | null;
   sender_name: string | null;
   read_at: string | null;
   created_at: string;
