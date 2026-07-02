@@ -629,6 +629,7 @@ export const uzc: Translations = {
     otk: "ОТК (Сифат назорати)", chat: "Суҳбатлар (Chat)", audit: "Аудит лог",
     nachalnik: "Начальник", hr: "Ходимлар (HR)", kassa: "Касса (Молия)", returns: "Возврат (Қайтариш)", defects: "Брак (Носозликлар)",
     reports: "Ҳисобот / Атчот",
+    service: "Ремонт (Сервис)",
     signOut: "Чиқиш",
   },
   roles: { admin: "Администратор", marketing: "Маркетинг", manager: "Начальник", warehouse: "Складчи", supply: "Таъминот", otk: "ОТК", hr: "HR", cashier: "Кассир" },
