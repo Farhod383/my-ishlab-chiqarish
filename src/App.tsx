@@ -27,6 +27,7 @@ import DefectsPage from "./pages/DefectsPage";
 import AuditLog from "./pages/AuditLog";
 import ReportsPage from "./pages/ReportsPage";
 import SupplyRequestsPage from "./pages/SupplyRequestsPage";
+import LowStockPage from "./pages/LowStockPage";
 import NotFound from "./pages/NotFound";
 
 
