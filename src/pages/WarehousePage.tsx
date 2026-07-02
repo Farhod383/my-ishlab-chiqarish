@@ -190,20 +190,49 @@ export default function WarehousePage() {
       toast.error(`Yetarli qoldiq mavjud emas (mavjud: ${avail})`);
       return;
     }
+    // Cross-order check: latest inbound with source_order_id for this product
+    if (outOrder) {
+      const { data: srcRows } = await supabase
+        .from("stock_movements")
+        .select("source_order_id, order:orders!stock_movements_source_order_id_fkey(order_number)")
+        .eq("product_id", outProduct).eq("direction", "in")
+        .not("source_order_id", "is", null)
+        .order("created_at", { ascending: false }).limit(1);
+      const src: any = srcRows?.[0];
+      if (src?.source_order_id && src.source_order_id !== outOrder) {
+        setCrossInfo({ sourceOrderId: src.source_order_id, sourceOrderNumber: src.order?.order_number ?? "—" });
+        setCrossReason("");
+        setCrossOpen(true);
+        return;
+      }
+    }
+    await finalizeRelease(null, null);
+  };
+
+  const finalizeRelease = async (crossOrderReason: string | null, sourceOrderId: string | null) => {
     const { error } = await supabase.from("stock_movements").insert({
       product_id: outProduct, order_id: outOrder || null, direction: "out",
       quantity: outQty, recipient_name: outRecipient, comment: outComment, created_by: user?.id, taken_by: user?.id,
-    });
+      ...(crossOrderReason ? { cross_order_reason: crossOrderReason, source_order_id: sourceOrderId } : {}),
+    } as any);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email, action: "Sklad chiqimi",
+      actor_id: user?.id, actor_name: user?.email,
+      action: crossOrderReason ? "Sklad chiqimi (boshqa zakazga)" : "Sklad chiqimi",
       entity: "stock_movement", order_id: outOrder || null,
-      details: `${products.find(p=>p.id===outProduct)?.name} — ${outQty}, ${outRecipient}`,
+      details: `${products.find(p=>p.id===outProduct)?.name} — ${outQty}, ${outRecipient}${crossOrderReason ? ` · manba zakaz: ${crossInfo?.sourceOrderNumber} · sabab: ${crossOrderReason}` : ""}`,
     });
     toast.success(t.warehouse.outRecorded);
     setOutProduct(""); setOutOrder(""); setOutQty(1); setOutRecipient(""); setOutComment("");
+    setCrossOpen(false); setCrossInfo(null); setCrossReason("");
     load();
   };
+
+  const confirmCrossRelease = async () => {
+    if (crossReason.trim().length < 5) { toast.error("Izoh yozing (kamida 5 belgi)"); return; }
+    await finalizeRelease(crossReason.trim(), crossInfo?.sourceOrderId ?? null);
+  };
+
 
   const addProduct = async () => {
     if (!newName.trim()) { toast.error(t.warehouse.fillFields); return; }
