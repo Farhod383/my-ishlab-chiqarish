@@ -83,13 +83,14 @@ export default function Dashboard() {
 
   const { visible: pageRows, sentinelRef, hasMore } = useInfiniteList(filtered, 50);
 
-  const cards: { key: FilterKey; label: string; value: number; icon: any; accent: string }[] = [
+  const cards: { key: FilterKey | "lowstock"; label: string; value: number; icon: any; accent: string; to?: string }[] = [
     { key: "all",       label: t.dashboard.totalOrders,     value: stats.total,     icon: ClipboardList, accent: "text-primary bg-primary/10" },
     { key: "active",    label: t.dashboard.activeOrders,    value: stats.active,    icon: Activity,      accent: "text-status-blue bg-status-blue/10" },
     { key: "delayed",   label: t.dashboard.delayed,         value: stats.delayed,   icon: AlertTriangle, accent: "text-status-red bg-status-red/10" },
     { key: "today",     label: t.dashboard.todayDeadline,   value: stats.today,     icon: Clock,         accent: "text-status-yellow bg-status-yellow/15" },
     { key: "exception", label: t.dashboard.exception,       value: stats.exception, icon: AlertOctagon,  accent: "text-status-red bg-status-red/10" },
     { key: "completed", label: t.dashboard.completedOrders, value: stats.completed, icon: CheckCircle2,  accent: "text-status-green bg-status-green/10" },
+    { key: "lowstock",  label: t.dashboard.lowStock,        value: lowStock.length, icon: AlertTriangle, accent: "text-status-red bg-status-red/10", to: "/low-stock" },
   ];
 
   return (
