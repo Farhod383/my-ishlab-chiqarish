@@ -228,23 +228,23 @@ export default function SupplyRequestsPage() {
   if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-bold tracking-tight flex items-center gap-2"><Truck className="h-5 w-5" /> Ta'minot — Kerakli mahsulotlar</h1>
-        <p className="text-xs text-muted-foreground">Ta'minot so'rovlari ro'yxati</p>
+        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><Truck className="h-6 w-6" /> Ta'minot — Kerakli mahsulotlar</h1>
+        <p className="text-sm text-muted-foreground">Ta'minot so'rovlari ro'yxati</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {(["pending", "fulfilled"] as const).map((s) => (
-          <Card key={s} className={`cursor-pointer ${filter === s ? "ring-2 ring-primary" : ""}`} onClick={() => setFilter(filter === s ? "all" : s)}>
-            <CardContent className="p-2 flex items-center justify-between">
+          <Card key={s} className={`cursor-pointer transition-all hover:shadow-md ${filter === s ? "ring-2 ring-primary" : ""}`} onClick={() => setFilter(filter === s ? "all" : s)}>
+            <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <div className={`text-[10px] uppercase tracking-wide font-semibold ${s === "pending" ? "text-status-red" : "text-status-green"}`}>
+                <div className={`text-xs uppercase tracking-wide font-semibold ${s === "pending" ? "text-status-red" : "text-status-green"}`}>
                   {statusLabel[s]}
                 </div>
-                <div className="text-lg font-bold leading-none">{counts[s]} <span className="text-[10px] text-muted-foreground font-normal">ta so'rov</span></div>
+                <div className="text-3xl font-bold leading-tight mt-1">{counts[s]} <span className="text-sm text-muted-foreground font-normal">ta so'rov</span></div>
               </div>
-              <div className={`h-5 w-5 rounded-full ${dotCls[s]}`} />
+              <div className={`h-8 w-8 rounded-full ${dotCls[s]}`} />
             </CardContent>
           </Card>
         ))}
@@ -252,42 +252,42 @@ export default function SupplyRequestsPage() {
 
       {!openedOrder && (
         <Card>
-          <CardHeader className="py-2 px-3">
+          <CardHeader className="py-3 px-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-                <TabsList className="h-8">
-                  <TabsTrigger className="h-7 text-xs" value="all">Hammasi</TabsTrigger>
-                  <TabsTrigger className="h-7 text-xs" value="pending">🔴 Kutilmoqda</TabsTrigger>
-                  <TabsTrigger className="h-7 text-xs" value="fulfilled">🟢 Ta'minlandi</TabsTrigger>
+                <TabsList className="h-10">
+                  <TabsTrigger className="h-9 text-sm px-3" value="all">Hammasi</TabsTrigger>
+                  <TabsTrigger className="h-9 text-sm px-3" value="pending">🔴 Kutilmoqda</TabsTrigger>
+                  <TabsTrigger className="h-9 text-sm px-3" value="fulfilled">🟢 Ta'minlandi</TabsTrigger>
                 </TabsList>
               </Tabs>
               <div className="relative">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input className="pl-7 h-8 w-56 text-xs" placeholder="Qidiruv..." value={q} onChange={(e) => setQ(e.target.value)} />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input className="pl-8 h-10 w-full sm:w-64 text-sm" placeholder="Qidiruv..." value={q} onChange={(e) => setQ(e.target.value)} />
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-1.5 px-3 pb-3">
-            {visible.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">So'rovlar mavjud emas</p>}
+          <CardContent className="space-y-2.5 px-4 pb-4">
+            {visible.length === 0 && <p className="text-base text-muted-foreground text-center py-10">So'rovlar mavjud emas</p>}
             {visible.map((o) => (
               <Card
                 key={o.key}
-                className="cursor-pointer hover:bg-muted/30 border-l-4"
+                className="cursor-pointer hover:bg-muted/40 hover:shadow-sm transition-all border-l-4"
                 style={{ borderLeftColor: o.worst === "pending" ? "hsl(var(--status-red))" : "hsl(var(--status-green))" }}
                 onClick={() => setOpenOrderId(o.key)}
               >
-                <CardContent className="p-1.5 flex items-center justify-between gap-2 flex-wrap">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    {o.pinned ? <span className="text-xs shrink-0">📌</span> : <span className={`h-2 w-2 rounded-full shrink-0 ${dotCls[o.worst]}`} />}
+                <CardContent className="p-3.5 flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    {o.pinned ? <span className="text-2xl shrink-0">📌</span> : <span className={`h-3 w-3 rounded-full shrink-0 ${dotCls[o.worst]}`} />}
                     <div className="min-w-0">
-                      {!o.pinned && <div className="font-mono font-semibold text-primary text-[11px] leading-tight">{o.order.order_number}</div>}
-                      <div className="text-xs truncate leading-tight font-medium">{o.order.product_name}</div>
+                      {!o.pinned && <div className="font-mono font-semibold text-primary text-sm leading-tight">{o.order.order_number}</div>}
+                      <div className="text-base sm:text-lg truncate leading-snug font-semibold">{o.order.product_name}</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 text-[11px]">
-                    {o.counts.pending > 0 && <Badge variant="outline" className={`px-1.5 py-0 text-[10px] ${statusCls.pending}`}>🔴 {o.counts.pending}</Badge>}
-                    {o.counts.fulfilled > 0 && <Badge variant="outline" className={`px-1.5 py-0 text-[10px] ${statusCls.fulfilled}`}>🟢 {o.counts.fulfilled}</Badge>}
-                    <span className="text-muted-foreground">{o.items.length} ta</span>
+                  <div className="flex items-center gap-2 text-sm">
+                    {o.counts.pending > 0 && <Badge variant="outline" className={`px-2.5 py-1 text-sm font-semibold ${statusCls.pending}`}>🔴 {o.counts.pending}</Badge>}
+                    {o.counts.fulfilled > 0 && <Badge variant="outline" className={`px-2.5 py-1 text-sm font-semibold ${statusCls.fulfilled}`}>🟢 {o.counts.fulfilled}</Badge>}
+                    <span className="text-sm text-muted-foreground font-medium">{o.items.length} ta</span>
                   </div>
                 </CardContent>
               </Card>
@@ -319,58 +319,58 @@ export default function SupplyRequestsPage() {
               const isExpanded = !!expanded[item.id];
               return (
                 <Card key={item.id} className="border-l-4" style={{ borderLeftColor: color === "pending" ? "hsl(var(--status-red))" : "hsl(var(--status-green))" }}>
-                  <CardContent className="p-2 space-y-1.5">
-                    <div className="flex items-start justify-between gap-2 flex-wrap">
-                      <div className="flex items-start gap-2 min-w-0 flex-1">
-                        <Package className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        <Package className="h-6 w-6 text-primary shrink-0 mt-0.5" />
                         <div className="min-w-0 flex-1">
-                          <div className="font-semibold text-sm leading-tight">{item.product_name}</div>
-                          <div className="text-[11px] text-muted-foreground flex flex-wrap gap-x-2 leading-tight mt-0.5">
-                            <span className="font-mono">{item.quantity} {item.unit ?? ""}</span>
+                          <div className="font-bold text-lg leading-snug">{item.product_name}</div>
+                          <div className="text-sm text-muted-foreground flex flex-wrap gap-x-3 leading-tight mt-1">
+                            <span className="font-mono font-semibold text-foreground">{item.quantity} {item.unit ?? ""}</span>
                             <span>· {requesterName(item.created_by)}</span>
                             {item.department && <span className="uppercase">· {item.department}</span>}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 flex-wrap">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         {canEdit ? (
                           (["pending", "fulfilled"] as Status[]).map((s) => (
                             <Button
                               key={s}
                               size="sm"
-                              className="h-7 px-2 text-xs"
+                              className="h-9 px-3 text-sm"
                               variant={color === s ? "default" : "outline"}
                               disabled={!!savingStatus[item.id]}
                               onClick={() => markStatus(item, s)}
                             >
-                              {savingStatus[item.id] && color !== s ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : s === "fulfilled" && <Check className="h-3 w-3 mr-1" />}
+                              {savingStatus[item.id] && color !== s ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : s === "fulfilled" && <Check className="h-3.5 w-3.5 mr-1" />}
                               {statusLabel[s]}
                             </Button>
                           ))
                         ) : (
-                          <div className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${statusCls[color]}`}>
-                            <span className={`h-1.5 w-1.5 rounded-full ${dotCls[color]}`} />
+                          <div className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold ${statusCls[color]}`}>
+                            <span className={`h-2 w-2 rounded-full ${dotCls[color]}`} />
                             {statusLabel[color]}
                           </div>
                         )}
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 text-[11px] bg-muted/40 rounded px-2 py-1.5">
-                      <div className="flex items-center gap-1 min-w-0">
-                        <CalendarDays className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm bg-muted/40 rounded-md px-3 py-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
                         <span className="text-muted-foreground">Berilgan:</span>
-                        <span className="font-mono truncate">{fmtDT(item.created_at)}</span>
+                        <span className="font-mono font-medium truncate">{fmtDT(item.created_at)}</span>
                       </div>
-                      <div className="flex items-center gap-1 min-w-0">
-                        <CalendarDays className="h-3 w-3 text-muted-foreground shrink-0" />
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
                         <span className="text-muted-foreground">Kerak:</span>
-                        <span className={`font-mono truncate ${color === "pending" && isLate(item) ? "text-status-red font-semibold" : ""}`}>{fmtDate(item.required_date)}</span>
+                        <span className={`font-mono font-medium truncate ${color === "pending" && isLate(item) ? "text-status-red font-bold" : ""}`}>{fmtDate(item.required_date)}</span>
                       </div>
-                      <div className="flex items-center gap-1 min-w-0">
-                        <CalendarDays className="h-3 w-3 text-muted-foreground shrink-0" />
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
                         <span className="text-muted-foreground">Ta'minlandi:</span>
-                        <span className="font-mono truncate">{color === "fulfilled" ? fmtDT(item.fulfilled_at) : "—"}</span>
+                        <span className="font-mono font-medium truncate">{color === "fulfilled" ? fmtDT(item.fulfilled_at) : "—"}</span>
                       </div>
                     </div>
 

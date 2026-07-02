@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Users, Plus, Edit2, Wrench, UserX, UserCheck } from "lucide-react";
+import { Users, Plus, Edit2, Wrench, UserX, UserCheck, Briefcase } from "lucide-react";
+import VacanciesTab from "@/components/hr/VacanciesTab";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
@@ -66,9 +67,11 @@ export default function HRPage() {
 
   const canManage = hasRole(["hr", "admin", "cashier"]);
   const canDeactivate = hasRole(["admin", "cashier"]);
-  const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "all">("active");
+  const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "all" | "vacancy">("active");
   const filteredEmployees = useMemo(
-    () => statusFilter === "all" ? employees : employees.filter(e => (e.status ?? "active") === statusFilter),
+    () => statusFilter === "all" || statusFilter === "vacancy"
+      ? employees
+      : employees.filter(e => (e.status ?? "active") === statusFilter),
     [employees, statusFilter]
   );
 
@@ -191,7 +194,7 @@ export default function HRPage() {
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><Users className="h-6 w-6" />{hr.title ?? "Xodimlar"}</h1>
           <p className="text-sm text-muted-foreground">{hr.subtitle ?? "Xodimlar ro'yxati va boshqaruvi"}</p>
         </div>
-        {canManage && (
+        {canManage && statusFilter !== "vacancy" && (
           <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) { setEditId(null); resetForm(); } }}>
             <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{hr.add ?? "Xodim qo'shish"}</Button></DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -244,16 +247,22 @@ export default function HRPage() {
 
       <Card>
         <CardContent className="p-0">
-          <div className="flex items-center justify-between p-3 border-b">
+          <div className="flex items-center justify-between p-3 border-b flex-wrap gap-2">
             <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
               <TabsList>
                 <TabsTrigger value="active">Faol</TabsTrigger>
                 <TabsTrigger value="inactive">Bo'shagan</TabsTrigger>
                 <TabsTrigger value="all">Hammasi</TabsTrigger>
+                <TabsTrigger value="vacancy" className="gap-1"><Briefcase className="h-3.5 w-3.5" />Vakansiya</TabsTrigger>
               </TabsList>
             </Tabs>
-            <span className="text-xs text-muted-foreground">{filteredEmployees.length} / {employees.length}</span>
+            {statusFilter !== "vacancy" && (
+              <span className="text-xs text-muted-foreground">{filteredEmployees.length} / {employees.length}</span>
+            )}
           </div>
+          {statusFilter === "vacancy" ? (
+            <div className="p-3"><VacanciesTab /></div>
+          ) : (
           <div className="border rounded-md overflow-x-auto">
             <Table>
               <TableHeader>
@@ -333,6 +342,7 @@ export default function HRPage() {
               </TableBody>
             </Table>
           </div>
+          )}
         </CardContent>
       </Card>
     </div>

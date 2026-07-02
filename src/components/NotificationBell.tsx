@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import type { AppRole } from "@/auth/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/auth/AuthContext";
-import { Bell, Check, CheckCheck } from "lucide-react";
+import { Bell, BellRing, Check, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -122,12 +122,16 @@ export function NotificationBell() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative h-11 w-11">
-          <Bell className={`h-7 w-7 ${unread > 0 ? "animate-bell-shake origin-top" : ""}`} strokeWidth={2.2} />
+        <Button variant="ghost" size="icon" className="relative h-12 w-12">
+          {unread > 0 ? (
+            <BellRing className="h-9 w-9 animate-bell-shake origin-top text-primary" strokeWidth={2.2} />
+          ) : (
+            <Bell className="h-9 w-9" strokeWidth={2.2} />
+          )}
           {unread > 0 && (
             <Badge
               variant="destructive"
-              className="absolute -top-0.5 -right-0.5 h-6 min-w-6 px-1.5 text-[11px] font-bold flex items-center justify-center rounded-full ring-2 ring-background shadow"
+              className="absolute -top-1 -right-1 h-7 min-w-7 px-1.5 text-[13px] font-bold flex items-center justify-center rounded-full ring-2 ring-background shadow-md"
             >
               {unread > 99 ? "99+" : unread}
             </Badge>
