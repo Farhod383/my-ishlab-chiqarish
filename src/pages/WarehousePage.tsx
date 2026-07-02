@@ -168,11 +168,12 @@ export default function WarehousePage() {
     if (error) { toast.error(error.message); return; }
     const { notify } = await import("@/lib/notify");
     await notify({
-      type: "info",
+      type: "supply_request",
       title: `Yangi ta'minot so'rovi${prOrderId ? "" : " (umumiy)"}`,
       body: `${name} · ${prQty} ${prUnit ?? ""}${prDate ? ` · kerak: ${prDate}` : ""}`,
       link: `/supply`,
       entity: "supply_request",
+      recipient_role: ["supply", "warehouse"],
       sender_id: user?.id,
       sender_name: user?.email,
     });
