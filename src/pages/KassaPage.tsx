@@ -232,10 +232,18 @@ export default function KassaPage() {
     return idx === -1 ? CURRENCIES.length : idx;
   };
   const allCurList = (m: Record<string, number>) => {
-    return CARD_CURRENCIES.map((c) => [c, Number(m[c]) || 0] as [string, number]);
+    // Show only currencies with non-zero activity in the current filter window.
+    const entries = Object.entries(m)
+      .map(([c, v]) => [c, Number(v) || 0] as [string, number])
+      .filter(([, v]) => Math.abs(v) > 0.0001);
+    entries.sort((a, b) => currencyRank(a[0]) - currencyRank(b[0]));
+    return entries;
   };
   const renderCurrencies = (m: Record<string, number>, tone: "balance" | "in" | "out") => {
     const items = allCurList(m);
+    if (items.length === 0) {
+      return <div className="text-xl font-bold font-mono leading-tight tabular-nums text-muted-foreground">0 <span className="text-xs font-sans">so'm</span></div>;
+    }
     return (
       <div className="space-y-1.5">
         {items.map(([c, v]) => {
