@@ -134,6 +134,7 @@ export default function WarehousePage() {
 
   const canManage = hasRole(["warehouse", "admin"]);
   const canImport = hasRole(["warehouse", "admin"]);
+  const canOut = hasRole(["warehouse", "admin", "engineer"]);
   // Anyone authenticated can create a purchase request
   const canRequest = !!user;
   const userRoles = (roles as string[] | undefined) ?? [];
