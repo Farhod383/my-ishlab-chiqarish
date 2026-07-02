@@ -1405,6 +1405,80 @@ export type Database = {
         }
         Relationships: []
       }
+      vacancies: {
+        Row: {
+          address: string | null
+          birth_date: string | null
+          created_at: string
+          created_by: string | null
+          department: string | null
+          expected_salary: number | null
+          experience: string | null
+          first_name: string
+          hired_employee_id: string | null
+          id: string
+          last_name: string
+          neighborhood: string | null
+          note: string | null
+          passport: string | null
+          phone: string
+          position: string | null
+          resume_url: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          birth_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          expected_salary?: number | null
+          experience?: string | null
+          first_name: string
+          hired_employee_id?: string | null
+          id?: string
+          last_name: string
+          neighborhood?: string | null
+          note?: string | null
+          passport?: string | null
+          phone: string
+          position?: string | null
+          resume_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          birth_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          expected_salary?: number | null
+          experience?: string | null
+          first_name?: string
+          hired_employee_id?: string | null
+          id?: string
+          last_name?: string
+          neighborhood?: string | null
+          note?: string | null
+          passport?: string | null
+          phone?: string
+          position?: string | null
+          resume_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vacancies_hired_employee_id_fkey"
+            columns: ["hired_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
