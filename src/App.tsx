@@ -27,6 +27,7 @@ import DefectsPage from "./pages/DefectsPage";
 import AuditLog from "./pages/AuditLog";
 import ReportsPage from "./pages/ReportsPage";
 import SupplyRequestsPage from "./pages/SupplyRequestsPage";
+import LowStockPage from "./pages/LowStockPage";
 import NotFound from "./pages/NotFound";
 
 
@@ -65,6 +66,7 @@ const App = () => (
                       <Route path="/audit" element={<ProtectedRoute roles={["admin"]}><AuditLog /></ProtectedRoute>} />
                       <Route path="/reports" element={<ProtectedRoute roles={["admin"]}><ReportsPage /></ProtectedRoute>} />
                       <Route path="/supply" element={<ProtectedRoute><SupplyRequestsPage /></ProtectedRoute>} />
+                      <Route path="/low-stock" element={<LowStockPage />} />
                       
                       <Route path="*" element={<NotFound />} />
                     </Routes>

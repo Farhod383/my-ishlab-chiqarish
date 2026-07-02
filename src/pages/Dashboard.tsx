@@ -83,13 +83,14 @@ export default function Dashboard() {
 
   const { visible: pageRows, sentinelRef, hasMore } = useInfiniteList(filtered, 50);
 
-  const cards: { key: FilterKey; label: string; value: number; icon: any; accent: string }[] = [
+  const cards: { key: FilterKey | "lowstock"; label: string; value: number; icon: any; accent: string; to?: string }[] = [
     { key: "all",       label: t.dashboard.totalOrders,     value: stats.total,     icon: ClipboardList, accent: "text-primary bg-primary/10" },
     { key: "active",    label: t.dashboard.activeOrders,    value: stats.active,    icon: Activity,      accent: "text-status-blue bg-status-blue/10" },
     { key: "delayed",   label: t.dashboard.delayed,         value: stats.delayed,   icon: AlertTriangle, accent: "text-status-red bg-status-red/10" },
     { key: "today",     label: t.dashboard.todayDeadline,   value: stats.today,     icon: Clock,         accent: "text-status-yellow bg-status-yellow/15" },
     { key: "exception", label: t.dashboard.exception,       value: stats.exception, icon: AlertOctagon,  accent: "text-status-red bg-status-red/10" },
     { key: "completed", label: t.dashboard.completedOrders, value: stats.completed, icon: CheckCircle2,  accent: "text-status-green bg-status-green/10" },
+    { key: "lowstock",  label: t.dashboard.lowStock,        value: lowStock.length, icon: AlertTriangle, accent: "text-status-red bg-status-red/10", to: "/low-stock" },
   ];
 
   return (
@@ -99,11 +100,11 @@ export default function Dashboard() {
         <p className="text-sm text-muted-foreground">{t.dashboard.subtitle}</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
         {cards.map((c) => (
           <Link
             key={c.key}
-            to={`/orders?filter=${c.key}`}
+            to={c.to ?? `/orders?filter=${c.key}`}
             className="block transition-transform hover:-translate-y-0.5"
           >
             <Card className="hover:border-primary/40 hover:shadow-md transition cursor-pointer h-full">
@@ -121,8 +122,8 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
+      <div className="w-full">
+        <Card className="w-full">
           <CardHeader>
             <div className="flex items-center justify-between flex-wrap gap-3">
               <CardTitle className="text-base flex items-center gap-2"><ClipboardList className="h-4 w-4" /> {t.dashboard.allOrders}</CardTitle>
@@ -216,52 +217,23 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2"><Package className="h-4 w-4 text-status-red" /> {t.dashboard.lowStock} {lowStock.length > 0 && <span className="text-xs font-normal text-muted-foreground">({lowStock.length})</span>}</CardTitle>
-              <CardDescription className="text-xs">{t.dashboard.lowStockHint}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {lowStock.length === 0 && <p className="text-sm text-muted-foreground">{t.dashboard.enough} ✓</p>}
-              {lowStock.length > 0 && (
-                <div className="max-h-[420px] overflow-y-auto pr-1 space-y-2">
-                  {lowStock.map((p) => (
-                    <Link
-                      key={p.id}
-                      to={`/warehouse?product=${p.id}`}
-                      className="flex items-center justify-between text-sm p-2 rounded border border-status-red/30 bg-status-red/5 hover:bg-status-red/10 transition-colors"
-                    >
-                      <div className="min-w-0 pr-2">
-                        <div className="truncate font-medium">{localize(p.name)}</div>
-                        {p.location && <div className="text-[10px] text-muted-foreground truncate">{p.location}</div>}
-                      </div>
-                      <span className="font-mono text-status-red shrink-0 text-xs">{fmtNum(p.stock_qty)} / {fmtNum(p.min_limit)} {p.unit}</span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2"><History className="h-4 w-4" /> {t.dashboard.recentActivity}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {recentLog.map((l) => (
-                <div key={l.id} className="text-xs border-l-2 border-primary/30 pl-2 py-1">
-                  <div className="font-medium">{localize(l.action)}</div>
-                  <div className="text-muted-foreground truncate">{localize(l.details)}</div>
-                  <div className="text-[10px] text-muted-foreground">{new Date(l.created_at).toLocaleString()}</div>
-                </div>
-              ))}
-              {recentLog.length === 0 && <p className="text-sm text-muted-foreground">{t.common.noRecords}</p>}
-            </CardContent>
-          </Card>
-        </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2"><History className="h-4 w-4" /> {t.dashboard.recentActivity}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {recentLog.map((l) => (
+            <div key={l.id} className="text-xs border-l-2 border-primary/30 pl-2 py-1">
+              <div className="font-medium">{localize(l.action)}</div>
+              <div className="text-muted-foreground truncate">{localize(l.details)}</div>
+              <div className="text-[10px] text-muted-foreground">{new Date(l.created_at).toLocaleString()}</div>
+            </div>
+          ))}
+          {recentLog.length === 0 && <p className="text-sm text-muted-foreground">{t.common.noRecords}</p>}
+        </CardContent>
+      </Card>
     </div>
   );
 }
