@@ -895,7 +895,33 @@ export default function WarehousePage() {
         </div>
       </div>
 
-      {/* Low stock alert */}
+      {/* Stock status stat cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {(["green", "yellow", "red"] as StockStatus[]).map(s => {
+          const meta = stockStatusMeta[s];
+          const count = stockCounts[s];
+          const active = stockFilter === s;
+          return (
+            <button
+              type="button"
+              key={s}
+              onClick={() => setStockFilter(active ? "all" : s)}
+              className={`text-left rounded-lg border p-4 transition-all hover:shadow-md ${meta.border} ${meta.bg} ${active ? "ring-2 ring-offset-1 " + meta.ring : ""}`}
+            >
+              <div className="flex items-center gap-2">
+                <span className={`inline-block h-3 w-3 rounded-full ${meta.dot}`} />
+                <div className="text-sm font-medium text-foreground">
+                  {s === "green" ? "Yetarli mahsulotlar" : s === "yellow" ? "Kam qolgan mahsulotlar" : "Tugagan mahsulotlar"}
+                </div>
+              </div>
+              <div className={`text-3xl font-bold font-mono mt-2 ${meta.text}`}>{count}</div>
+              <div className="text-xs text-muted-foreground mt-1">{active ? "Filtr yoqilgan — bosib olib tashlang" : "Kartani bosing — filtr"}</div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Reorder list (only yellow + red) */}
       {lowStock.length > 0 && (
         <Card className="border-status-red/30 bg-status-red/5">
           <CardHeader className="py-3">
@@ -903,16 +929,23 @@ export default function WarehousePage() {
           </CardHeader>
           <CardContent className="pt-0">
             <div className="grid sm:grid-cols-3 gap-2">
-              {lowStock.map(p => (
-                <div key={p.id} className="p-2 bg-background rounded border flex items-center justify-between text-sm">
-                  <span className="font-medium">{p.name}</span>
-                  <span className="font-mono text-status-red font-semibold">{p.stock_qty}/{p.min_limit} {p.unit}</span>
-                </div>
-              ))}
+              {lowStock.map(g => {
+                const meta = stockStatusMeta[g.status];
+                return (
+                  <div key={g.first.id} className={`p-2 bg-background rounded border flex items-center justify-between text-sm ${meta.border}`}>
+                    <span className="font-medium flex items-center gap-2">
+                      <StockDot status={g.status} />
+                      {g.first.name}
+                    </span>
+                    <span className={`font-mono font-semibold ${meta.text}`}>{g.totalQty}/{g.minLim} {g.first.unit}</span>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
       )}
+
 
       <Tabs defaultValue="stock">
         <TabsList>
