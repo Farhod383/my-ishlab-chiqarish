@@ -780,6 +780,7 @@ export type Database = {
           department: string | null
           fulfilled_at: string | null
           id: string
+          late_reason: string | null
           order_id: string | null
           product_id: string | null
           product_name: string
@@ -798,6 +799,7 @@ export type Database = {
           department?: string | null
           fulfilled_at?: string | null
           id?: string
+          late_reason?: string | null
           order_id?: string | null
           product_id?: string | null
           product_name: string
@@ -816,6 +818,7 @@ export type Database = {
           department?: string | null
           fulfilled_at?: string | null
           id?: string
+          late_reason?: string | null
           order_id?: string | null
           product_id?: string | null
           product_name?: string
