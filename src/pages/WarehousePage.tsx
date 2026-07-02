@@ -25,6 +25,7 @@ import EmployeesView from "@/components/EmployeesView";
 import NumberInput from "@/components/NumberInput";
 import SearchableSelect from "@/components/SearchableSelect";
 import { PriorityDot, PRIORITY_OPTIONS } from "@/components/PriorityDot";
+import { getStockStatus, stockStatusMeta, StockDot, type StockStatus } from "@/lib/stockStatus";
 
 const UNITS = ["dona", "kg", "metr", "litr", "rulon", "komplekt"] as const;
 const CURRENCIES = ["UZS", "USD"] as const;
