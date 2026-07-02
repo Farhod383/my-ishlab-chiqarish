@@ -17,6 +17,7 @@ export const uz = {
     returns: "Vozvrat (Qaytarish)",
     defects: "Brak (Nosozliklar)",
     reports: "Hisobot / Atchot",
+    service: "Remont (Servis)",
     signOut: "Chiqish",
   },
   roles: {
