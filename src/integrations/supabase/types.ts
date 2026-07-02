@@ -355,12 +355,19 @@ export type Database = {
       }
       employees: {
         Row: {
+          address: string | null
+          birth_date: string | null
           created_at: string
           department: string
           full_name: string
           hire_date: string
           id: string
           leave_date: string | null
+          login: string | null
+          neighborhood: string | null
+          note: string | null
+          passport: string | null
+          password: string | null
           phone: string | null
           position: string
           salary: number
@@ -368,12 +375,19 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          address?: string | null
+          birth_date?: string | null
           created_at?: string
           department?: string
           full_name: string
           hire_date?: string
           id?: string
           leave_date?: string | null
+          login?: string | null
+          neighborhood?: string | null
+          note?: string | null
+          passport?: string | null
+          password?: string | null
           phone?: string | null
           position?: string
           salary?: number
@@ -381,12 +395,19 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          address?: string | null
+          birth_date?: string | null
           created_at?: string
           department?: string
           full_name?: string
           hire_date?: string
           id?: string
           leave_date?: string | null
+          login?: string | null
+          neighborhood?: string | null
+          note?: string | null
+          passport?: string | null
+          password?: string | null
           phone?: string | null
           position?: string
           salary?: number
@@ -1168,6 +1189,7 @@ export type Database = {
           comment: string | null
           created_at: string
           created_by: string | null
+          cross_order_reason: string | null
           currency: string
           direction: Database["public"]["Enums"]["movement_direction"]
           id: string
@@ -1180,6 +1202,7 @@ export type Database = {
           reason: string | null
           recipient_name: string | null
           source: string | null
+          source_order_id: string | null
           supply_request_id: string | null
           taken_by: string | null
           unit_price: number
@@ -1188,6 +1211,7 @@ export type Database = {
           comment?: string | null
           created_at?: string
           created_by?: string | null
+          cross_order_reason?: string | null
           currency?: string
           direction: Database["public"]["Enums"]["movement_direction"]
           id?: string
@@ -1200,6 +1224,7 @@ export type Database = {
           reason?: string | null
           recipient_name?: string | null
           source?: string | null
+          source_order_id?: string | null
           supply_request_id?: string | null
           taken_by?: string | null
           unit_price?: number
@@ -1208,6 +1233,7 @@ export type Database = {
           comment?: string | null
           created_at?: string
           created_by?: string | null
+          cross_order_reason?: string | null
           currency?: string
           direction?: Database["public"]["Enums"]["movement_direction"]
           id?: string
@@ -1220,6 +1246,7 @@ export type Database = {
           reason?: string | null
           recipient_name?: string | null
           source?: string | null
+          source_order_id?: string | null
           supply_request_id?: string | null
           taken_by?: string | null
           unit_price?: number
@@ -1237,6 +1264,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_source_order_id_fkey"
+            columns: ["source_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
           {
