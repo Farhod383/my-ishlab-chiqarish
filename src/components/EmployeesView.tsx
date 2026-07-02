@@ -131,7 +131,7 @@ export default function EmployeesView() {
                     <TableCell className="text-sm">{e.phone ?? "—"}</TableCell>
                     <TableCell>
                       <Badge variant={e.status === "active" ? "default" : "secondary"}>
-                        {e.status === "active" ? "Faol" : "Nofaol"}
+                        {e.status === "active" ? "Faol" : "Bo'shagan"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm">{heldCount[e.id] ?? 0}</TableCell>
