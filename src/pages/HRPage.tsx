@@ -247,16 +247,22 @@ export default function HRPage() {
 
       <Card>
         <CardContent className="p-0">
-          <div className="flex items-center justify-between p-3 border-b">
+          <div className="flex items-center justify-between p-3 border-b flex-wrap gap-2">
             <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
               <TabsList>
                 <TabsTrigger value="active">Faol</TabsTrigger>
                 <TabsTrigger value="inactive">Bo'shagan</TabsTrigger>
                 <TabsTrigger value="all">Hammasi</TabsTrigger>
+                <TabsTrigger value="vacancy" className="gap-1"><Briefcase className="h-3.5 w-3.5" />Vakansiya</TabsTrigger>
               </TabsList>
             </Tabs>
-            <span className="text-xs text-muted-foreground">{filteredEmployees.length} / {employees.length}</span>
+            {statusFilter !== "vacancy" && (
+              <span className="text-xs text-muted-foreground">{filteredEmployees.length} / {employees.length}</span>
+            )}
           </div>
+          {statusFilter === "vacancy" ? (
+            <div className="p-3"><VacanciesTab /></div>
+          ) : (
           <div className="border rounded-md overflow-x-auto">
             <Table>
               <TableHeader>
