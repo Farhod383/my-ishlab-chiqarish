@@ -319,58 +319,58 @@ export default function SupplyRequestsPage() {
               const isExpanded = !!expanded[item.id];
               return (
                 <Card key={item.id} className="border-l-4" style={{ borderLeftColor: color === "pending" ? "hsl(var(--status-red))" : "hsl(var(--status-green))" }}>
-                  <CardContent className="p-2 space-y-1.5">
-                    <div className="flex items-start justify-between gap-2 flex-wrap">
-                      <div className="flex items-start gap-2 min-w-0 flex-1">
-                        <Package className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        <Package className="h-6 w-6 text-primary shrink-0 mt-0.5" />
                         <div className="min-w-0 flex-1">
-                          <div className="font-semibold text-sm leading-tight">{item.product_name}</div>
-                          <div className="text-[11px] text-muted-foreground flex flex-wrap gap-x-2 leading-tight mt-0.5">
-                            <span className="font-mono">{item.quantity} {item.unit ?? ""}</span>
+                          <div className="font-bold text-lg leading-snug">{item.product_name}</div>
+                          <div className="text-sm text-muted-foreground flex flex-wrap gap-x-3 leading-tight mt-1">
+                            <span className="font-mono font-semibold text-foreground">{item.quantity} {item.unit ?? ""}</span>
                             <span>· {requesterName(item.created_by)}</span>
                             {item.department && <span className="uppercase">· {item.department}</span>}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 flex-wrap">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         {canEdit ? (
                           (["pending", "fulfilled"] as Status[]).map((s) => (
                             <Button
                               key={s}
                               size="sm"
-                              className="h-7 px-2 text-xs"
+                              className="h-9 px-3 text-sm"
                               variant={color === s ? "default" : "outline"}
                               disabled={!!savingStatus[item.id]}
                               onClick={() => markStatus(item, s)}
                             >
-                              {savingStatus[item.id] && color !== s ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : s === "fulfilled" && <Check className="h-3 w-3 mr-1" />}
+                              {savingStatus[item.id] && color !== s ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : s === "fulfilled" && <Check className="h-3.5 w-3.5 mr-1" />}
                               {statusLabel[s]}
                             </Button>
                           ))
                         ) : (
-                          <div className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${statusCls[color]}`}>
-                            <span className={`h-1.5 w-1.5 rounded-full ${dotCls[color]}`} />
+                          <div className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold ${statusCls[color]}`}>
+                            <span className={`h-2 w-2 rounded-full ${dotCls[color]}`} />
                             {statusLabel[color]}
                           </div>
                         )}
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 text-[11px] bg-muted/40 rounded px-2 py-1.5">
-                      <div className="flex items-center gap-1 min-w-0">
-                        <CalendarDays className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm bg-muted/40 rounded-md px-3 py-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
                         <span className="text-muted-foreground">Berilgan:</span>
-                        <span className="font-mono truncate">{fmtDT(item.created_at)}</span>
+                        <span className="font-mono font-medium truncate">{fmtDT(item.created_at)}</span>
                       </div>
-                      <div className="flex items-center gap-1 min-w-0">
-                        <CalendarDays className="h-3 w-3 text-muted-foreground shrink-0" />
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
                         <span className="text-muted-foreground">Kerak:</span>
-                        <span className={`font-mono truncate ${color === "pending" && isLate(item) ? "text-status-red font-semibold" : ""}`}>{fmtDate(item.required_date)}</span>
+                        <span className={`font-mono font-medium truncate ${color === "pending" && isLate(item) ? "text-status-red font-bold" : ""}`}>{fmtDate(item.required_date)}</span>
                       </div>
-                      <div className="flex items-center gap-1 min-w-0">
-                        <CalendarDays className="h-3 w-3 text-muted-foreground shrink-0" />
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
                         <span className="text-muted-foreground">Ta'minlandi:</span>
-                        <span className="font-mono truncate">{color === "fulfilled" ? fmtDT(item.fulfilled_at) : "—"}</span>
+                        <span className="font-mono font-medium truncate">{color === "fulfilled" ? fmtDT(item.fulfilled_at) : "—"}</span>
                       </div>
                     </div>
 
