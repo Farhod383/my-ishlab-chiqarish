@@ -85,7 +85,13 @@ export default function WarehousePage() {
   const [impImage, setImpImage] = useState<File | null>(null);
   const [impLocation, setImpLocation] = useState<string>("Asosiy zavod");
   const [impCurrency, setImpCurrency] = useState<string>("UZS");
+  const [impOrderId, setImpOrderId] = useState<string>("");
   const [locations, setLocations] = useState<{ id: string; name: string }[]>([]);
+
+  // Cross-order release confirmation
+  const [crossOpen, setCrossOpen] = useState(false);
+  const [crossReason, setCrossReason] = useState("");
+  const [crossInfo, setCrossInfo] = useState<{ sourceOrderId: string; sourceOrderNumber: string } | null>(null);
 
   // Edit product
   const [editProdOpen, setEditProdOpen] = useState(false);
@@ -184,20 +190,50 @@ export default function WarehousePage() {
       toast.error(`Yetarli qoldiq mavjud emas (mavjud: ${avail})`);
       return;
     }
+    // Cross-order check: latest inbound with source_order_id for this product
+    if (outOrder) {
+      const { data: srcRows } = await supabase
+        .from("stock_movements")
+        .select("source_order_id")
+        .eq("product_id", outProduct).eq("direction", "in")
+        .not("source_order_id", "is", null)
+        .order("created_at", { ascending: false }).limit(1);
+      const src: any = srcRows?.[0];
+      if (src?.source_order_id && src.source_order_id !== outOrder) {
+        const { data: ord } = await supabase.from("orders").select("order_number").eq("id", src.source_order_id).maybeSingle();
+        setCrossInfo({ sourceOrderId: src.source_order_id, sourceOrderNumber: ord?.order_number ?? "—" });
+        setCrossReason("");
+        setCrossOpen(true);
+        return;
+      }
+    }
+    await finalizeRelease(null, null);
+  };
+
+  const finalizeRelease = async (crossOrderReason: string | null, sourceOrderId: string | null) => {
     const { error } = await supabase.from("stock_movements").insert({
       product_id: outProduct, order_id: outOrder || null, direction: "out",
       quantity: outQty, recipient_name: outRecipient, comment: outComment, created_by: user?.id, taken_by: user?.id,
-    });
+      ...(crossOrderReason ? { cross_order_reason: crossOrderReason, source_order_id: sourceOrderId } : {}),
+    } as any);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email, action: "Sklad chiqimi",
+      actor_id: user?.id, actor_name: user?.email,
+      action: crossOrderReason ? "Sklad chiqimi (boshqa zakazga)" : "Sklad chiqimi",
       entity: "stock_movement", order_id: outOrder || null,
-      details: `${products.find(p=>p.id===outProduct)?.name} — ${outQty}, ${outRecipient}`,
+      details: `${products.find(p=>p.id===outProduct)?.name} — ${outQty}, ${outRecipient}${crossOrderReason ? ` · manba zakaz: ${crossInfo?.sourceOrderNumber} · sabab: ${crossOrderReason}` : ""}`,
     });
     toast.success(t.warehouse.outRecorded);
     setOutProduct(""); setOutOrder(""); setOutQty(1); setOutRecipient(""); setOutComment("");
+    setCrossOpen(false); setCrossInfo(null); setCrossReason("");
     load();
   };
+
+  const confirmCrossRelease = async () => {
+    if (crossReason.trim().length < 5) { toast.error("Izoh yozing (kamida 5 belgi)"); return; }
+    await finalizeRelease(crossReason.trim(), crossInfo?.sourceOrderId ?? null);
+  };
+
 
   const addProduct = async () => {
     if (!newName.trim()) { toast.error(t.warehouse.fillFields); return; }
@@ -321,6 +357,7 @@ export default function WarehousePage() {
       }
     }
 
+    const orderLabel = impOrderId ? (orders.find(o => o.id === impOrderId)?.order_number ?? "") : "";
     const { error } = await supabase.from("stock_movements").insert({
       product_id: productId, direction: "in", quantity: qtyN,
       unit_price: priceN,
@@ -329,16 +366,18 @@ export default function WarehousePage() {
       source: impSource.trim() || null,
       location: impLocation || "Asosiy zavod",
       currency: impCurrency || "UZS",
-      comment: `${t.supply.title}${impSupplier ? `: ${impSupplier}` : ""}${priceN ? ` · ${fmt(priceN)} ${impCurrency}/${t.common.pieces}` : ""} · ${impLocation}`,
+      source_order_id: impOrderId || null,
+      comment: `${t.supply.title}${impSupplier ? `: ${impSupplier}` : ""}${priceN ? ` · ${fmt(priceN)} ${impCurrency}/${t.common.pieces}` : ""} · ${impLocation}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
     } as any);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: user?.email,
       action: "Mahsulot keltirildi", entity: "stock_movement",
-      details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${t.common.sum}`,
+      order_id: impOrderId || null,
+      details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${t.common.sum}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
     });
     toast.success(t.warehouse.inRecorded);
-    setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpSupplier(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImportOpen(false);
+    setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpSupplier(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId(""); setImportOpen(false);
     load();
   };
 
@@ -671,9 +710,9 @@ export default function WarehousePage() {
           {canImport && (
             <Dialog open={importOpen} onOpenChange={setImportOpen}>
               <DialogTrigger asChild><Button variant="secondary"><ArrowUpCircle className="h-4 w-4 mr-2" />{t.supply.receive}</Button></DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>{t.supply.receiveTitle}</DialogTitle></DialogHeader>
-                <div className="space-y-3">
+              <DialogContent className="max-w-lg max-h-[90vh] flex flex-col p-0 gap-0">
+                <DialogHeader className="px-6 pt-6 pb-3 border-b shrink-0"><DialogTitle>{t.supply.receiveTitle}</DialogTitle></DialogHeader>
+                <div className="space-y-3 overflow-y-auto px-6 py-4 flex-1">
                   <div><Label>{t.supply.productName || t.warehouse.productName} *</Label>
                     <Popover open={impPickerOpen} onOpenChange={setImpPickerOpen}>
                       <PopoverTrigger asChild>
@@ -741,6 +780,18 @@ export default function WarehousePage() {
                       <SelectContent>{locations.map(l => <SelectItem key={l.id} value={l.name}>{l.name}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
+                  <div>
+                    <Label>Qaysi zakaz uchun olib kelindi <span className="text-muted-foreground text-xs">(ixtiyoriy)</span></Label>
+                    <SearchableSelect
+                      value={impOrderId}
+                      onChange={setImpOrderId}
+                      placeholder="Tanlanmasa — umumiy ombor kirimi"
+                      options={[
+                        { value: "", label: "— Yo'q (umumiy) —" },
+                        ...orders.map((o: any) => ({ value: o.id, label: `${o.order_number} — ${o.product_name}` })),
+                      ]}
+                    />
+                  </div>
                   {Number(impQty) > 0 && Number(impPrice) > 0 && (
                     <div className="text-sm bg-primary/5 border border-primary/20 rounded p-2 flex justify-between">
                       <span className="text-muted-foreground">{t.supply.totalValue}:</span>
@@ -751,6 +802,8 @@ export default function WarehousePage() {
                   <div><Label>{t.supply.bringer}</Label><Input list="dl-suppliers" value={impSupplier} onChange={e => setImpSupplier(e.target.value)} placeholder={t.supply.bringerPh} /></div>
                   <div><Label>{t.supply.phone}</Label><Input list="dl-phones" value={impPhone} onChange={e => setImpPhone(e.target.value)} placeholder={t.supply.phonePh} /></div>
                   <div><Label>{t.supply.image}</Label><Input type="file" accept="image/*" onChange={e => setImpImage(e.target.files?.[0] ?? null)} /></div>
+                </div>
+                <div className="px-6 py-4 border-t bg-background shrink-0">
                   <Button className="w-full" onClick={doImport}>{t.supply.saveIn}</Button>
                 </div>
               </DialogContent>
@@ -1266,6 +1319,29 @@ export default function WarehousePage() {
             <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={emSource} onChange={e => setEmSource(e.target.value)} /></div>
             <div><Label>{t.warehouse.cols.comment}</Label><Textarea value={emComment} onChange={e => setEmComment(e.target.value)} /></div>
             <Button className="w-full" onClick={saveEditMovement}>{t.common.save}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cross-order release reason */}
+      <Dialog open={crossOpen} onOpenChange={(o) => { setCrossOpen(o); if (!o) { setCrossReason(""); setCrossInfo(null); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Boshqa zakazga berilyapti</DialogTitle>
+            <DialogDescription>
+              Bu mahsulot dastlab <b>{crossInfo?.sourceOrderNumber}</b> zakazi uchun olib kelingan.
+              Boshqa zakazga chiqim uchun majburiy izoh kiriting.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Nega boshqa zakazga berilyapti? *</Label>
+              <Textarea rows={4} value={crossReason} onChange={(e) => setCrossReason(e.target.value)} placeholder="Sabab (kamida 5 belgi)..." />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setCrossOpen(false)}>{t.common.cancel ?? "Bekor qilish"}</Button>
+              <Button onClick={confirmCrossRelease}>Tasdiqlash</Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

@@ -235,7 +235,7 @@ export const uz = {
   },
   production: {
     title: "Ishlab chiqarish taxtasi",
-    subtitle: "Navbat tartibi · Istisno zakazni manager oldinga o'tkaza oladi",
+    subtitle: "Ishlab chiqarish rejasi va zakazlar navbati. Muhim buyurtmalar ustuvor tartibda bajariladi.",
     currentStage: "Hozirgi bosqich",
     progress: "{a} / {b} bosqich",
     moveFront: "Istisno qilib oldinga",
@@ -519,7 +519,7 @@ export const ru: Translations = {
   },
   production: {
     title: "Производственная доска",
-    subtitle: "Порядок очереди · Менеджер может продвинуть исключение",
+    subtitle: "План производства и очередь заказов. Приоритетные заказы выполняются в первую очередь.",
     currentStage: "Текущий этап",
     progress: "{a} / {b} этапов",
     moveFront: "Сделать исключением",
@@ -781,7 +781,7 @@ export const uzc: Translations = {
   },
   production: {
     title: "Ишлаб чиқариш тахтаси",
-    subtitle: "Навбат тартиби · Истисно заказни менежер олдинга ўтказа олади",
+    subtitle: "Ишлаб чиқариш режаси ва заказлар навбати. Муҳим буюртмалар устувор тартибда бажарилади.",
     currentStage: "Ҳозирги босқич",
     progress: "{a} / {b} босқич",
     moveFront: "Истисно қилиб олдинга",

@@ -131,7 +131,7 @@ export default function EmployeesView() {
                     <TableCell className="text-sm">{e.phone ?? "—"}</TableCell>
                     <TableCell>
                       <Badge variant={e.status === "active" ? "default" : "secondary"}>
-                        {e.status === "active" ? "Faol" : "Nofaol"}
+                        {e.status === "active" ? "Faol" : "Bo'shagan"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm">{heldCount[e.id] ?? 0}</TableCell>
@@ -279,7 +279,7 @@ function exportEmployeePDF(
       ["Lavozim", emp.position || "—"],
       ["Bo'lim", emp.department || "—"],
       ["Telefon", emp.phone ?? "—"],
-      ["Holat", emp.status === "active" ? "Faol" : "Nofaol"],
+      ["Holat", emp.status === "active" ? "Faol" : "Bo'shagan"],
     ],
     columnStyles: { 0: { cellWidth: 130, fontStyle: "bold", fillColor: [245, 240, 255] } },
   });
