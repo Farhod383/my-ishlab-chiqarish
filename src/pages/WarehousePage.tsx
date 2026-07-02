@@ -25,6 +25,7 @@ import EmployeesView from "@/components/EmployeesView";
 import NumberInput from "@/components/NumberInput";
 import SearchableSelect from "@/components/SearchableSelect";
 import { PriorityDot, PRIORITY_OPTIONS } from "@/components/PriorityDot";
+import { getStockStatus, stockStatusMeta, StockDot, type StockStatus } from "@/lib/stockStatus";
 
 const UNITS = ["dona", "kg", "metr", "litr", "rulon", "komplekt"] as const;
 const CURRENCIES = ["UZS", "USD"] as const;
@@ -41,6 +42,7 @@ export default function WarehousePage() {
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [groupModal, setGroupModal] = useState<{ name: string; batches: any[] } | null>(null);
   const [search, setSearch] = useState("");
+  const [stockFilter, setStockFilter] = useState<"all" | StockStatus>("all");
   const [historySearch, setHistorySearch] = useState("");
 
   // Output states
@@ -567,7 +569,27 @@ export default function WarehousePage() {
   );
 
   const fmtDateTime = (s: string) => new Date(s).toLocaleString();
-  const lowStock = products.filter(p => Number(p.stock_qty) <= Number(p.min_limit));
+  // Grouped products by name (for stat cards + reorder list)
+  const productGroups = useMemo(() => {
+    const map = new Map<string, any[]>();
+    products.forEach(p => {
+      const k = String(p.name ?? "").trim().toLowerCase();
+      const arr = map.get(k) ?? [];
+      arr.push(p);
+      map.set(k, arr);
+    });
+    return Array.from(map.values()).map(batches => {
+      const totalQty = batches.reduce((s, b) => s + Number(b.stock_qty || 0), 0);
+      const minLim = batches.reduce((s, b) => s + Number(b.min_limit || 0), 0);
+      return { batches, totalQty, minLim, status: getStockStatus(totalQty, minLim), first: batches[0] };
+    });
+  }, [products]);
+  const stockCounts = useMemo(() => ({
+    green: productGroups.filter(g => g.status === "green").length,
+    yellow: productGroups.filter(g => g.status === "yellow").length,
+    red: productGroups.filter(g => g.status === "red").length,
+  }), [productGroups]);
+  const lowStock = productGroups.filter(g => g.status !== "green");
 
   const filteredMovements = useMemo(() => {
     const q = historySearch.trim().toLowerCase();
@@ -873,7 +895,33 @@ export default function WarehousePage() {
         </div>
       </div>
 
-      {/* Low stock alert */}
+      {/* Stock status stat cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {(["green", "yellow", "red"] as StockStatus[]).map(s => {
+          const meta = stockStatusMeta[s];
+          const count = stockCounts[s];
+          const active = stockFilter === s;
+          return (
+            <button
+              type="button"
+              key={s}
+              onClick={() => setStockFilter(active ? "all" : s)}
+              className={`text-left rounded-lg border p-4 transition-all hover:shadow-md ${meta.border} ${meta.bg} ${active ? "ring-2 ring-offset-1 " + meta.ring : ""}`}
+            >
+              <div className="flex items-center gap-2">
+                <span className={`inline-block h-3 w-3 rounded-full ${meta.dot}`} />
+                <div className="text-sm font-medium text-foreground">
+                  {s === "green" ? "Yetarli mahsulotlar" : s === "yellow" ? "Kam qolgan mahsulotlar" : "Tugagan mahsulotlar"}
+                </div>
+              </div>
+              <div className={`text-3xl font-bold font-mono mt-2 ${meta.text}`}>{count}</div>
+              <div className="text-xs text-muted-foreground mt-1">{active ? "Filtr yoqilgan — bosib olib tashlang" : "Kartani bosing — filtr"}</div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Reorder list (only yellow + red) */}
       {lowStock.length > 0 && (
         <Card className="border-status-red/30 bg-status-red/5">
           <CardHeader className="py-3">
@@ -881,16 +929,23 @@ export default function WarehousePage() {
           </CardHeader>
           <CardContent className="pt-0">
             <div className="grid sm:grid-cols-3 gap-2">
-              {lowStock.map(p => (
-                <div key={p.id} className="p-2 bg-background rounded border flex items-center justify-between text-sm">
-                  <span className="font-medium">{p.name}</span>
-                  <span className="font-mono text-status-red font-semibold">{p.stock_qty}/{p.min_limit} {p.unit}</span>
-                </div>
-              ))}
+              {lowStock.map(g => {
+                const meta = stockStatusMeta[g.status];
+                return (
+                  <div key={g.first.id} className={`p-2 bg-background rounded border flex items-center justify-between text-sm ${meta.border}`}>
+                    <span className="font-medium flex items-center gap-2">
+                      <StockDot status={g.status} />
+                      {g.first.name}
+                    </span>
+                    <span className={`font-mono font-semibold ${meta.text}`}>{g.totalQty}/{g.minLim} {g.first.unit}</span>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
       )}
+
 
       <Tabs defaultValue="stock">
         <TabsList>
@@ -925,38 +980,43 @@ export default function WarehousePage() {
                 <TableBody>
                   {(() => {
                     const q = search.trim().toLowerCase();
-                    const filtered = q ? products.filter(p =>
-                      [p.name, p.unit, p.source, p.phone].some((v: any) => (v ?? "").toString().toLowerCase().includes(q))
-                    ) : products;
-                    // Group by normalised name
-                    const groups = new Map<string, any[]>();
-                    filtered.forEach(p => {
-                      const key = String(p.name ?? "").trim().toLowerCase();
-                      const arr = groups.get(key) ?? [];
-                      arr.push(p);
-                      groups.set(key, arr);
+                    let rows = productGroups
+                      .filter(g => stockFilter === "all" ? true : g.status === stockFilter)
+                      .filter(g => !q || g.batches.some((p: any) =>
+                        [p.name, p.unit, p.source, p.phone].some((v: any) => (v ?? "").toString().toLowerCase().includes(q))
+                      ))
+                      .map(g => {
+                        const prices = g.batches.map((b: any) => Number(b.last_price || 0)).filter((n: number) => n > 0);
+                        const minP = prices.length ? Math.min(...prices) : 0;
+                        const maxP = prices.length ? Math.max(...prices) : 0;
+                        return { ...g, minP, maxP };
+                      });
+                    if (rows.length === 0) return <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{q || stockFilter !== "all" ? (t.warehouse as any).noResults ?? "Natija topilmadi" : t.common.noRecords}</TableCell></TableRow>;
+                    return rows.map((r, i) => {
+                      const meta = stockStatusMeta[r.status];
+                      return (
+                        <TableRow key={r.first.name + i} className={`cursor-pointer hover:bg-muted/40 ${r.status !== "green" ? meta.bg : ""}`} onClick={() => r.batches.length === 1 ? setSelectedProduct(r.first) : setGroupModal({ name: r.first.name, batches: r.batches })}>
+                          <TableCell className="text-right text-xs font-mono text-muted-foreground">{i + 1}</TableCell>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              <StockDot status={r.status} />
+                              <Package className="h-4 w-4 text-muted-foreground" />
+                              <span>{r.first.name}</span>
+                              {r.batches.length > 1 && <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded">{r.batches.length} partiya</span>}
+                            </div>
+                          </TableCell>
+                          <TableCell className={`text-right font-mono font-semibold ${meta.text}`}>{r.totalQty} {r.first.unit}</TableCell>
+                          <TableCell className="text-right text-xs text-muted-foreground">{r.batches.length}</TableCell>
+                          <TableCell className="text-right text-sm font-mono">{r.minP === r.maxP ? fmt(r.minP) : `${fmt(r.minP)}–${fmt(r.maxP)}`}</TableCell>
+                          <TableCell>
+                            <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-semibold ${meta.bg} ${meta.border} ${meta.text}`}>
+                              <span className={`inline-block h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+                              {meta.label}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      );
                     });
-                    const rows = Array.from(groups.entries()).map(([, batches]) => {
-                      const totalQty = batches.reduce((s, b) => s + Number(b.stock_qty || 0), 0);
-                      const minLim = batches.reduce((s, b) => s + Number(b.min_limit || 0), 0);
-                      const low = totalQty <= minLim;
-                      const first = batches[0];
-                      const prices = batches.map(b => Number(b.last_price || 0)).filter(n => n > 0);
-                      const minP = prices.length ? Math.min(...prices) : 0;
-                      const maxP = prices.length ? Math.max(...prices) : 0;
-                      return { batches, totalQty, minLim, low, first, minP, maxP };
-                    });
-                    if (rows.length === 0) return <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{q ? (t.warehouse as any).noResults : t.common.noRecords}</TableCell></TableRow>;
-                    return rows.map((r, i) => (
-                      <TableRow key={r.first.name + i} className={`cursor-pointer hover:bg-muted/40 ${r.low ? "bg-status-red/5" : ""}`} onClick={() => r.batches.length === 1 ? setSelectedProduct(r.first) : setGroupModal({ name: r.first.name, batches: r.batches })}>
-                        <TableCell className="text-right text-xs font-mono text-muted-foreground">{i + 1}</TableCell>
-                        <TableCell className="font-medium flex items-center gap-2"><PriorityDot priority={r.first.priority} /><Package className="h-4 w-4 text-muted-foreground" />{r.first.name}{r.batches.length > 1 && <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded">{r.batches.length} partiya</span>}</TableCell>
-                        <TableCell className="text-right font-mono font-semibold">{r.totalQty} {r.first.unit}</TableCell>
-                        <TableCell className="text-right text-xs text-muted-foreground">{r.batches.length}</TableCell>
-                        <TableCell className="text-right text-sm font-mono">{r.minP === r.maxP ? fmt(r.minP) : `${fmt(r.minP)}–${fmt(r.maxP)}`}</TableCell>
-                        <TableCell>{r.low ? <span className="text-status-red text-xs font-semibold flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{t.warehouse.low}</span> : <span className="text-status-green text-xs">{t.warehouse.enough}</span>}</TableCell>
-                      </TableRow>
-                    ));
                   })()}
                 </TableBody>
               </Table>
