@@ -67,9 +67,11 @@ export default function HRPage() {
 
   const canManage = hasRole(["hr", "admin", "cashier"]);
   const canDeactivate = hasRole(["admin", "cashier"]);
-  const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "all">("active");
+  const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "all" | "vacancy">("active");
   const filteredEmployees = useMemo(
-    () => statusFilter === "all" ? employees : employees.filter(e => (e.status ?? "active") === statusFilter),
+    () => statusFilter === "all" || statusFilter === "vacancy"
+      ? employees
+      : employees.filter(e => (e.status ?? "active") === statusFilter),
     [employees, statusFilter]
   );
 
