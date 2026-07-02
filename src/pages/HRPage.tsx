@@ -342,6 +342,7 @@ export default function HRPage() {
               </TableBody>
             </Table>
           </div>
+          )}
         </CardContent>
       </Card>
     </div>
