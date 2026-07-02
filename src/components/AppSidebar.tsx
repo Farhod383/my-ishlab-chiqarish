@@ -39,7 +39,33 @@ export function AppSidebar() {
   const engineerAllowed = new Set(["/", "/orders", "/production", "/chat"]);
   const items = isEngineerOnly ? allItems.filter((i) => engineerAllowed.has(i.url)) : allItems;
 
-  const visible = items.filter((i) => !i.roles || hasRole(i.roles));
+  // Per-role sidebar visibility overrides (does not affect permissions/routes)
+  const isAdmin = roles.includes("admin");
+  const hiddenByRole: Record<string, string[]> = {
+    warehouse: ["/", "/production", "/otk"],
+    marketing: ["/defects"],
+    supply: ["/", "/production"],
+  };
+  const extraByRole: Record<string, string[]> = {
+    supply: ["/returns"],
+    otk: ["/returns"],
+    manager: ["/returns", "/hr"],
+  };
+  const hidden = new Set<string>();
+  const extras = new Set<string>();
+  if (!isAdmin) {
+    for (const r of roles) {
+      (hiddenByRole[r] ?? []).forEach((u) => hidden.add(u));
+      (extraByRole[r] ?? []).forEach((u) => extras.add(u));
+    }
+    extras.forEach((u) => hidden.delete(u));
+  }
+
+  const visible = items.filter((i) => {
+    if (hidden.has(i.url)) return false;
+    if (!i.roles || hasRole(i.roles)) return true;
+    return extras.has(i.url);
+  });
 
   return (
     <Sidebar collapsible="icon">
