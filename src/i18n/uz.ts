@@ -366,6 +366,7 @@ export const ru: Translations = {
     otk: "ОТК (Контроль качества)", chat: "Чаты", audit: "Журнал аудита",
     nachalnik: "Начальник", hr: "Сотрудники (HR)", kassa: "Касса (Финансы)", returns: "Возврат", defects: "Брак (Дефекты)",
     reports: "Отчёт / Атчот",
+    service: "Ремонт (Сервис)",
     signOut: "Выход",
   },
   roles: { admin: "Администратор", marketing: "Маркетинг", manager: "Начальник", warehouse: "Кладовщик", supply: "Снабжение", otk: "ОТК", hr: "HR", cashier: "Кассир" },
