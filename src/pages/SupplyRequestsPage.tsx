@@ -164,18 +164,25 @@ export default function SupplyRequestsPage() {
     load();
   };
 
-  const markStatus = async (item: any, status: Status) => {
-    const current = normalizeStatus(item.status);
-    if (current === status || savingStatus[item.id]) return;
+  const isLate = (item: any) => {
+    if (!item?.required_date) return false;
+    const req = new Date(item.required_date + "T23:59:59");
+    return new Date() > req;
+  };
 
+  const applyStatus = async (item: any, status: Status, late_reason?: string | null) => {
     setSavingStatus((prev) => ({ ...prev, [item.id]: true }));
     const patch: any = { status };
-    if (status === "fulfilled") patch.fulfilled_at = new Date().toISOString();
+    if (status === "fulfilled") {
+      patch.fulfilled_at = new Date().toISOString();
+      if (late_reason !== undefined) patch.late_reason = late_reason;
+    } else {
+      patch.late_reason = null;
+    }
 
     const { error } = await supabase.from("order_supply_requests").update(patch).eq("id", item.id);
     setSavingStatus((prev) => ({ ...prev, [item.id]: false }));
-
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(error.message); return false; }
 
     setRows((prev) => prev.map((r) => r.id === item.id ? { ...r, ...patch } : r));
     setEdit((prev) => ({
@@ -184,7 +191,34 @@ export default function SupplyRequestsPage() {
     }));
     toast.success(status === "fulfilled" ? "Ta'minlandi — omborga kirim qilindi" : "Kutilmoqda holatiga qaytarildi");
     load();
+    return true;
   };
+
+  const markStatus = async (item: any, status: Status) => {
+    const current = normalizeStatus(item.status);
+    if (current === status || savingStatus[item.id]) return;
+    if (status === "fulfilled" && isLate(item)) {
+      setLateReason("");
+      setLateItem(item);
+      return;
+    }
+    await applyStatus(item, status, status === "fulfilled" ? null : undefined);
+  };
+
+  const confirmLate = async () => {
+    if (!lateItem || lateReason.trim().length < 10) return;
+    const ok = await applyStatus(lateItem, "fulfilled", lateReason.trim());
+    if (ok) { setLateItem(null); setLateReason(""); }
+  };
+
+  const fmtDT = (v?: string | null) => {
+    if (!v) return "—";
+    const d = new Date(v);
+    if (isNaN(d.getTime())) return v;
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  };
+  const fmtDate = (v?: string | null) => v ?? "—";
 
   const openedOrder = openOrderId ? groups.find((o) => o.key === openOrderId) : null;
   const isGeneralOpen = openedOrder?.key === GENERAL_KEY;
