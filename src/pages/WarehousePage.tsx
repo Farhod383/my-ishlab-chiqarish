@@ -1322,6 +1322,29 @@ export default function WarehousePage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Cross-order release reason */}
+      <Dialog open={crossOpen} onOpenChange={(o) => { setCrossOpen(o); if (!o) { setCrossReason(""); setCrossInfo(null); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Boshqa zakazga berilyapti</DialogTitle>
+            <DialogDescription>
+              Bu mahsulot dastlab <b>{crossInfo?.sourceOrderNumber}</b> zakazi uchun olib kelingan.
+              Boshqa zakazga chiqim uchun majburiy izoh kiriting.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Nega boshqa zakazga berilyapti? *</Label>
+              <Textarea rows={4} value={crossReason} onChange={(e) => setCrossReason(e.target.value)} placeholder="Sabab (kamida 5 belgi)..." />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setCrossOpen(false)}>{t.common.cancel ?? "Bekor qilish"}</Button>
+              <Button onClick={confirmCrossRelease}>Tasdiqlash</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
