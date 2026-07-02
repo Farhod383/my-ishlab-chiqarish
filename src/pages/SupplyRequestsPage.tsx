@@ -33,6 +33,7 @@ const normalizeStatus = (s: string): Status => (s === "fulfilled" ? "fulfilled" 
 export default function SupplyRequestsPage() {
   const { hasRole } = useAuth();
   const canEdit = hasRole(["supply", "admin", "warehouse"]);
+  const isAdmin = hasRole(["admin"]);
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
@@ -41,6 +42,9 @@ export default function SupplyRequestsPage() {
   const [edit, setEdit] = useState<Record<string, { status: Status; supply_comment: string; dirty: boolean }>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [savingStatus, setSavingStatus] = useState<Record<string, boolean>>({});
+
+  const [lateItem, setLateItem] = useState<any | null>(null);
+  const [lateReason, setLateReason] = useState("");
 
   const [profiles, setProfiles] = useState<Record<string, { full_name: string | null; email: string | null }>>({});
 
