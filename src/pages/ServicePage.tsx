@@ -10,8 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { NumberInput } from "@/components/NumberInput";
-import { SearchableSelect } from "@/components/SearchableSelect";
+import NumberInput from "@/components/NumberInput";
+import SearchableSelect from "@/components/SearchableSelect";
 import { Plus, Wrench, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
