@@ -217,52 +217,23 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2"><Package className="h-4 w-4 text-status-red" /> {t.dashboard.lowStock} {lowStock.length > 0 && <span className="text-xs font-normal text-muted-foreground">({lowStock.length})</span>}</CardTitle>
-              <CardDescription className="text-xs">{t.dashboard.lowStockHint}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {lowStock.length === 0 && <p className="text-sm text-muted-foreground">{t.dashboard.enough} ✓</p>}
-              {lowStock.length > 0 && (
-                <div className="max-h-[420px] overflow-y-auto pr-1 space-y-2">
-                  {lowStock.map((p) => (
-                    <Link
-                      key={p.id}
-                      to={`/warehouse?product=${p.id}`}
-                      className="flex items-center justify-between text-sm p-2 rounded border border-status-red/30 bg-status-red/5 hover:bg-status-red/10 transition-colors"
-                    >
-                      <div className="min-w-0 pr-2">
-                        <div className="truncate font-medium">{localize(p.name)}</div>
-                        {p.location && <div className="text-[10px] text-muted-foreground truncate">{p.location}</div>}
-                      </div>
-                      <span className="font-mono text-status-red shrink-0 text-xs">{fmtNum(p.stock_qty)} / {fmtNum(p.min_limit)} {p.unit}</span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2"><History className="h-4 w-4" /> {t.dashboard.recentActivity}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {recentLog.map((l) => (
-                <div key={l.id} className="text-xs border-l-2 border-primary/30 pl-2 py-1">
-                  <div className="font-medium">{localize(l.action)}</div>
-                  <div className="text-muted-foreground truncate">{localize(l.details)}</div>
-                  <div className="text-[10px] text-muted-foreground">{new Date(l.created_at).toLocaleString()}</div>
-                </div>
-              ))}
-              {recentLog.length === 0 && <p className="text-sm text-muted-foreground">{t.common.noRecords}</p>}
-            </CardContent>
-          </Card>
-        </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2"><History className="h-4 w-4" /> {t.dashboard.recentActivity}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {recentLog.map((l) => (
+            <div key={l.id} className="text-xs border-l-2 border-primary/30 pl-2 py-1">
+              <div className="font-medium">{localize(l.action)}</div>
+              <div className="text-muted-foreground truncate">{localize(l.details)}</div>
+              <div className="text-[10px] text-muted-foreground">{new Date(l.created_at).toLocaleString()}</div>
+            </div>
+          ))}
+          {recentLog.length === 0 && <p className="text-sm text-muted-foreground">{t.common.noRecords}</p>}
+        </CardContent>
+      </Card>
     </div>
   );
 }
