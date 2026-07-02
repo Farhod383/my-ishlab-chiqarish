@@ -357,6 +357,7 @@ export default function WarehousePage() {
       }
     }
 
+    const orderLabel = impOrderId ? (orders.find(o => o.id === impOrderId)?.order_number ?? "") : "";
     const { error } = await supabase.from("stock_movements").insert({
       product_id: productId, direction: "in", quantity: qtyN,
       unit_price: priceN,
@@ -365,16 +366,18 @@ export default function WarehousePage() {
       source: impSource.trim() || null,
       location: impLocation || "Asosiy zavod",
       currency: impCurrency || "UZS",
-      comment: `${t.supply.title}${impSupplier ? `: ${impSupplier}` : ""}${priceN ? ` · ${fmt(priceN)} ${impCurrency}/${t.common.pieces}` : ""} · ${impLocation}`,
+      source_order_id: impOrderId || null,
+      comment: `${t.supply.title}${impSupplier ? `: ${impSupplier}` : ""}${priceN ? ` · ${fmt(priceN)} ${impCurrency}/${t.common.pieces}` : ""} · ${impLocation}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
     } as any);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: user?.email,
       action: "Mahsulot keltirildi", entity: "stock_movement",
-      details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${t.common.sum}`,
+      order_id: impOrderId || null,
+      details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${t.common.sum}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
     });
     toast.success(t.warehouse.inRecorded);
-    setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpSupplier(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImportOpen(false);
+    setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpSupplier(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId(""); setImportOpen(false);
     load();
   };
 
