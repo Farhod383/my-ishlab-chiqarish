@@ -17,6 +17,7 @@ export const uz = {
     returns: "Vozvrat (Qaytarish)",
     defects: "Brak (Nosozliklar)",
     reports: "Hisobot / Atchot",
+    service: "Remont (Servis)",
     signOut: "Chiqish",
   },
   roles: {
@@ -365,6 +366,7 @@ export const ru: Translations = {
     otk: "ОТК (Контроль качества)", chat: "Чаты", audit: "Журнал аудита",
     nachalnik: "Начальник", hr: "Сотрудники (HR)", kassa: "Касса (Финансы)", returns: "Возврат", defects: "Брак (Дефекты)",
     reports: "Отчёт / Атчот",
+    service: "Ремонт (Сервис)",
     signOut: "Выход",
   },
   roles: { admin: "Администратор", marketing: "Маркетинг", manager: "Начальник", warehouse: "Кладовщик", supply: "Снабжение", otk: "ОТК", hr: "HR", cashier: "Кассир" },
@@ -627,6 +629,7 @@ export const uzc: Translations = {
     otk: "ОТК (Сифат назорати)", chat: "Суҳбатлар (Chat)", audit: "Аудит лог",
     nachalnik: "Начальник", hr: "Ходимлар (HR)", kassa: "Касса (Молия)", returns: "Возврат (Қайтариш)", defects: "Брак (Носозликлар)",
     reports: "Ҳисобот / Атчот",
+    service: "Ремонт (Сервис)",
     signOut: "Чиқиш",
   },
   roles: { admin: "Администратор", marketing: "Маркетинг", manager: "Начальник", warehouse: "Складчи", supply: "Таъминот", otk: "ОТК", hr: "HR", cashier: "Кассир" },

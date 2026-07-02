@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import type { AppRole } from "@/auth/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/auth/AuthContext";
 import { Bell, Check, CheckCheck } from "lucide-react";
@@ -18,6 +19,7 @@ interface Notif {
   entity: string | null;
   entity_id: string | null;
   recipient_id: string | null;
+  recipient_role: string | null;
   sender_name: string | null;
   read_at: string | null;
   created_at: string;
@@ -36,19 +38,33 @@ const TYPE_DOT: Record<string, string> = {
 };
 
 export function NotificationBell() {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
+  const isAdmin = roles.includes("admin" as AppRole);
+  const myRoles = roles as string[];
   const nav = useNavigate();
   const [items, setItems] = useState<Notif[]>([]);
   const [open, setOpen] = useState(false);
   const askedRef = useRef(false);
 
+  // Does this notification belong in my bell?
+  const belongsToMe = (n: Notif): boolean => {
+    if (isAdmin) return true;
+    if (n.recipient_id && n.recipient_id === user?.id) return true;
+    if (n.recipient_role && myRoles.includes(n.recipient_role)) return true;
+    // Fully broadcast (no user, no role) → only admins.
+    return false;
+  };
+
   const load = async () => {
-    const { data } = await supabase
-      .from("notifications")
-      .select("*")
-      .or(`recipient_id.is.null,recipient_id.eq.${user?.id ?? "00000000-0000-0000-0000-000000000000"}`)
-      .order("created_at", { ascending: false })
-      .limit(50);
+    if (!user) return;
+    let query = supabase.from("notifications").select("*");
+    if (!isAdmin) {
+      const roleList = myRoles.map((r) => `"${r}"`).join(",");
+      const orParts = [`recipient_id.eq.${user.id}`];
+      if (myRoles.length) orParts.push(`recipient_role.in.(${roleList})`);
+      query = query.or(orParts.join(","));
+    }
+    const { data } = await query.order("created_at", { ascending: false }).limit(50);
     setItems((data as any) ?? []);
   };
 
@@ -66,8 +82,7 @@ export function NotificationBell() {
       .channel("notifications-bell")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications" }, (payload) => {
         const n = payload.new as Notif;
-        // Only react to broadcasts or those for me.
-        if (n.recipient_id && n.recipient_id !== user.id) return;
+        if (!belongsToMe(n)) return;
         setItems((prev) => [n, ...prev].slice(0, 50));
         toast(n.title, { description: n.body ?? undefined });
         if (typeof Notification !== "undefined" && Notification.permission === "granted" && document.hidden) {
@@ -79,7 +94,7 @@ export function NotificationBell() {
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [user?.id]);
+  }, [user?.id, isAdmin, myRoles.join(",")]);
 
   const unread = items.filter((n) => !n.read_at).length;
 

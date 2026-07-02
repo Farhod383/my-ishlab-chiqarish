@@ -609,6 +609,7 @@ export type Database = {
           link: string | null
           read_at: string | null
           recipient_id: string | null
+          recipient_role: string | null
           sender_id: string | null
           sender_name: string | null
           title: string
@@ -623,6 +624,7 @@ export type Database = {
           link?: string | null
           read_at?: string | null
           recipient_id?: string | null
+          recipient_role?: string | null
           sender_id?: string | null
           sender_name?: string | null
           title: string
@@ -637,6 +639,7 @@ export type Database = {
           link?: string | null
           read_at?: string | null
           recipient_id?: string | null
+          recipient_role?: string | null
           sender_id?: string | null
           sender_name?: string | null
           title?: string
@@ -1183,6 +1186,105 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      service_request_items: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string | null
+          product_name: string
+          quantity: number
+          service_request_id: string
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          product_name: string
+          quantity?: number
+          service_request_id: string
+          total_price?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          service_request_id?: string
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_request_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_request_items_service_request_id_fkey"
+            columns: ["service_request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_requests: {
+        Row: {
+          client_name: string
+          client_phone: string | null
+          created_at: string
+          created_by: string | null
+          deadline: string | null
+          device_name: string
+          finished_at: string | null
+          id: string
+          materials_cost: number
+          notes: string | null
+          problem_description: string
+          received_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_name: string
+          client_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          device_name: string
+          finished_at?: string | null
+          id?: string
+          materials_cost?: number
+          notes?: string | null
+          problem_description: string
+          received_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_name?: string
+          client_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          device_name?: string
+          finished_at?: string | null
+          id?: string
+          materials_cost?: number
+          notes?: string | null
+          problem_description?: string
+          received_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       stock_movements: {
         Row: {

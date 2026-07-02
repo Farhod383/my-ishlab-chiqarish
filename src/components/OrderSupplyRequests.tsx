@@ -93,11 +93,12 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
     } as any);
     if (error) { toast.error(error.message); return; }
     await notify({
-      type: "info" as any,
+      type: "supply_request",
       title: `Yangi ta'minot so'rovi — ${orderNumber}`,
       body: `${name} · ${qty} ${unit ?? ""}${date ? ` · kerak: ${date}` : ""}`,
       link: `/supply`,
       entity: "supply_request",
+      recipient_role: ["supply", "warehouse"],
       sender_id: user?.id,
       sender_name: user?.email,
     });
