@@ -24,6 +24,7 @@ export function AppSidebar() {
     { title: t.nav.orders, url: "/orders", icon: ClipboardList },
     { title: t.nav.production, url: "/production", icon: Factory },
     { title: t.nav.nachalnik, url: "/nachalnik", icon: UserCog, roles: ["manager", "admin"] },
+    { title: (t.nav as any).service ?? "Remont (Servis)", url: "/service", icon: Wrench, roles: ["manager", "admin"] },
     { title: t.nav.otk, url: "/otk", icon: ShieldCheck },
     { title: t.nav.warehouse, url: "/warehouse", icon: Warehouse },
     { title: t.nav.supply, url: "/supply", icon: Truck },
@@ -36,7 +37,7 @@ export function AppSidebar() {
     { title: t.nav.audit, url: "/audit", icon: History, roles: ["admin"] },
   ];
 
-  const engineerAllowed = new Set(["/", "/orders", "/production", "/chat"]);
+  const engineerAllowed = new Set(["/", "/orders", "/production", "/warehouse", "/supply", "/chat"]);
   const items = isEngineerOnly ? allItems.filter((i) => engineerAllowed.has(i.url)) : allItems;
 
   // Per-role sidebar visibility overrides (does not affect permissions/routes)
