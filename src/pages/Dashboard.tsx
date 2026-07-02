@@ -100,11 +100,11 @@ export default function Dashboard() {
         <p className="text-sm text-muted-foreground">{t.dashboard.subtitle}</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
         {cards.map((c) => (
           <Link
             key={c.key}
-            to={`/orders?filter=${c.key}`}
+            to={c.to ?? `/orders?filter=${c.key}`}
             className="block transition-transform hover:-translate-y-0.5"
           >
             <Card className="hover:border-primary/40 hover:shadow-md transition cursor-pointer h-full">
