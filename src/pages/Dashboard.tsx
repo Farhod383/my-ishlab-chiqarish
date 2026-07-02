@@ -122,8 +122,8 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
+      <div className="w-full">
+        <Card className="w-full">
           <CardHeader>
             <div className="flex items-center justify-between flex-wrap gap-3">
               <CardTitle className="text-base flex items-center gap-2"><ClipboardList className="h-4 w-4" /> {t.dashboard.allOrders}</CardTitle>
