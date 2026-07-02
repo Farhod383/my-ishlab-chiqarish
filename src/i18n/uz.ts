@@ -235,7 +235,7 @@ export const uz = {
   },
   production: {
     title: "Ishlab chiqarish taxtasi",
-    subtitle: "Navbat tartibi · Istisno zakazni manager oldinga o'tkaza oladi",
+    subtitle: "Ishlab chiqarish rejasi va zakazlar navbati. Muhim buyurtmalar ustuvor tartibda bajariladi.",
     currentStage: "Hozirgi bosqich",
     progress: "{a} / {b} bosqich",
     moveFront: "Istisno qilib oldinga",
