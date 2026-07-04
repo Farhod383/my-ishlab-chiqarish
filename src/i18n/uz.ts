@@ -236,7 +236,7 @@ export const uz = {
   },
   production: {
     title: "Ishlab chiqarish taxtasi",
-    subtitle: "Ishlab chiqarish rejasi va zakazlar navbati. Muhim buyurtmalar ustuvor tartibda bajariladi.",
+    subtitle: "Faol zakazlar bajarilish rejasi. Muhim buyurtmalar birinchi navbatda ishlanadi.",
     currentStage: "Hozirgi bosqich",
     progress: "{a} / {b} bosqich",
     moveFront: "Istisno qilib oldinga",
