@@ -186,12 +186,3 @@ export function NotificationBell() {
     </Popover>
   );
 }
-
-              {!n.read_at && <Check className="h-3 w-3 text-primary mt-1 shrink-0 opacity-60" />}
-            </button>
-          ))}
-        </ScrollArea>
-      </PopoverContent>
-    </Popover>
-  );
-}
