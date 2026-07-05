@@ -124,14 +124,14 @@ export function NotificationBell() {
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative h-12 w-12">
           {unread > 0 ? (
-            <BellRing className="h-9 w-9 animate-bell-shake origin-top text-primary" strokeWidth={2.2} />
+            <BellRing className="h-8 w-8 animate-bell-shake origin-top text-primary" strokeWidth={2} />
           ) : (
-            <Bell className="h-9 w-9" strokeWidth={2.2} />
+            <Bell className="h-8 w-8" strokeWidth={2} />
           )}
           {unread > 0 && (
             <Badge
               variant="destructive"
-              className="absolute -top-1 -right-1 h-7 min-w-7 px-1.5 text-[13px] font-bold flex items-center justify-center rounded-full ring-2 ring-background shadow-md"
+              className="absolute -top-1.5 -right-1.5 h-8 min-w-8 px-1.5 text-sm font-bold flex items-center justify-center rounded-full ring-2 ring-background shadow-lg"
             >
               {unread > 99 ? "99+" : unread}
             </Badge>
