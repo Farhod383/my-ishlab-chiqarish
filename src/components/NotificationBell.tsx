@@ -170,11 +170,23 @@ export function NotificationBell() {
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold truncate">{n.title}</div>
                 {n.body && <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{n.body}</div>}
-                <div className="text-[11px] text-muted-foreground mt-1 flex flex-wrap gap-x-2 gap-y-0.5">
-                  <span className="font-medium text-foreground/70">{new Date(n.created_at).toLocaleDateString()} {new Date(n.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                <div className="text-[11px] text-muted-foreground/80 mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                  <span>
+                    {new Date(n.created_at).toLocaleDateString()}{" "}
+                    {new Date(n.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </span>
                   {n.sender_name && <span>· {n.sender_name}</span>}
                 </div>
               </div>
+              {!n.read_at && <Check className="h-3 w-3 text-primary mt-1 shrink-0 opacity-60" />}
+            </button>
+          ))}
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
               {!n.read_at && <Check className="h-3 w-3 text-primary mt-1 shrink-0 opacity-60" />}
             </button>
           ))}
