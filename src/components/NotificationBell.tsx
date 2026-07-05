@@ -122,22 +122,31 @@ export function NotificationBell() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative h-12 w-12">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Bildirishnomalar"
+          className="relative h-14 w-14 rounded-full [&_svg]:!size-9"
+        >
           {unread > 0 ? (
-            <BellRing className="h-8 w-8 animate-bell-shake origin-top text-primary" strokeWidth={2} />
+            <BellRing
+              className="animate-bell-shake origin-top text-primary"
+              strokeWidth={2.2}
+            />
           ) : (
-            <Bell className="h-8 w-8" strokeWidth={2} />
+            <Bell strokeWidth={2.2} />
           )}
           {unread > 0 && (
             <Badge
               variant="destructive"
-              className="absolute -top-1.5 -right-1.5 h-8 min-w-8 px-1.5 text-sm font-bold flex items-center justify-center rounded-full ring-2 ring-background shadow-lg"
+              className="absolute -top-1 -right-1 h-7 min-w-[1.75rem] px-2 text-sm font-bold flex items-center justify-center rounded-full ring-2 ring-background shadow-lg"
             >
               {unread > 99 ? "99+" : unread}
             </Badge>
           )}
         </Button>
       </PopoverTrigger>
+
       <PopoverContent align="end" className="w-96 p-0">
         <div className="flex items-center justify-between px-3 py-2 border-b">
           <div className="text-sm font-semibold">Bildirishnomalar</div>
