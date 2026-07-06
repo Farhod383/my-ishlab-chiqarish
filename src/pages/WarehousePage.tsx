@@ -826,7 +826,7 @@ export default function WarehousePage() {
                     </div>
                   )}
                   <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={impSource} onChange={e => setImpSource(e.target.value)} placeholder={(t.warehouse as any).sourcePh} /></div>
-                  <div><Label>{t.supply.bringer}</Label><Input list="dl-suppliers" value={impSupplier} onChange={e => setImpSupplier(e.target.value)} placeholder={t.supply.bringerPh} /></div>
+                  <div><Label>{t.supply.bringer}</Label><SupplierAutocomplete value={impSupplier} onChange={setImpSupplier} options={supplierOptions} placeholder={t.supply.bringerPh} /></div>
                   <div><Label>{t.supply.phone}</Label><Input list="dl-phones" value={impPhone} onChange={e => setImpPhone(e.target.value)} placeholder={t.supply.phonePh} /></div>
                   <div><Label>{t.supply.image}</Label><Input type="file" accept="image/*" onChange={e => setImpImage(e.target.files?.[0] ?? null)} /></div>
                 </div>
