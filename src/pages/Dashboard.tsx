@@ -43,7 +43,16 @@ export default function Dashboard() {
       const [{ data: orderRows }, { data: products }, { data: log }] = await Promise.all([
         supabase
           .from("orders")
-          .select("*, client:clients(name), order_stages(stage_order, started_at, status)")
+          .select("*, client:clients(name), order_stages(stage_order, started_at, status, qc_required, qc_passed)")
+          .order("priority", { ascending: false })
+          .order("queue_position"),
+        supabase.from("products").select("*"),
+        supabase.from("audit_log").select("*").order("created_at", { ascending: false }).limit(8),
+      ]);
+      const all = (orderRows as any[]) ?? [];
+      // Sync with Orders module: auto-complete orders whose stages are all done + OTK-approved.
+      const fixed = await recalcOrdersBatch(all);
+      if (fixed.size > 0) for (const r of all) if (fixed.has(r.id)) r.status = "completed";
           .order("priority", { ascending: false })
           .order("queue_position"),
         supabase.from("products").select("*"),
