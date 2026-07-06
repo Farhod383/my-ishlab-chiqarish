@@ -1484,3 +1484,44 @@ function ProductSearchBox({ movements, value, onChange, placeholder }: {
     </div>
   );
 }
+
+function SupplierAutocomplete({ value, onChange, options, placeholder }: {
+  value: string; onChange: (v: string) => void; options: string[]; placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+  const q = value.trim().toLowerCase();
+  const list = q ? options.filter(o => o.toLowerCase().includes(q)) : options;
+  const suggestions = list.slice(0, 10);
+  return (
+    <div ref={ref} className="relative">
+      <Input
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => { onChange(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+      />
+      {open && suggestions.length > 0 && (
+        <div className="absolute z-50 mt-1 w-full bg-popover border rounded-md shadow-md max-h-56 overflow-auto">
+          {suggestions.map(s => (
+            <button
+              key={s}
+              type="button"
+              className="block w-full text-left px-3 py-1.5 text-sm hover:bg-accent"
+              onMouseDown={(e) => { e.preventDefault(); onChange(s); setOpen(false); }}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
