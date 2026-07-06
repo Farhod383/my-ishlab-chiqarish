@@ -981,6 +981,7 @@ export default function WarehousePage() {
                   <TableHead className="text-right">Partiyalar</TableHead>
                   <TableHead className="text-right">{t.warehouse.price}</TableHead>
                   <TableHead>{t.warehouse.cols.state}</TableHead>
+                  {canManage && <TableHead className="w-24 text-right">{t.common.edit ?? "Amal"}</TableHead>}
                 </TableRow></TableHeader>
                 <TableBody>
                   {(() => {
