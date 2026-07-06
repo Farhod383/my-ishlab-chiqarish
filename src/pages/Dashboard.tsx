@@ -13,7 +13,7 @@ import { ClipboardList, Activity, AlertTriangle, AlertOctagon, Package, History,
 import { Skeleton } from "@/components/ui/skeleton";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { fmtNum } from "@/lib/format";
-import { sortOrdersByStatusAndDate } from "@/lib/orderStatus";
+import { sortOrdersByStatusAndDate, recalcOrdersBatch } from "@/lib/orderStatus";
 import { matchesAcrossScripts } from "@/lib/translit";
 import { useInfiniteList } from "@/hooks/useInfiniteList";
 
