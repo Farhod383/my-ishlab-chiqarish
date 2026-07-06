@@ -997,7 +997,7 @@ export default function WarehousePage() {
                         const maxP = prices.length ? Math.max(...prices) : 0;
                         return { ...g, minP, maxP };
                       });
-                    if (rows.length === 0) return <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{q || stockFilter !== "all" ? (t.warehouse as any).noResults ?? "Natija topilmadi" : t.common.noRecords}</TableCell></TableRow>;
+                    if (rows.length === 0) return <TableRow><TableCell colSpan={canManage ? 7 : 6} className="text-center text-muted-foreground py-8">{q || stockFilter !== "all" ? (t.warehouse as any).noResults ?? "Natija topilmadi" : t.common.noRecords}</TableCell></TableRow>;
                     return rows.map((r, i) => {
                       const meta = stockStatusMeta[r.status];
                       return (
@@ -1020,6 +1020,18 @@ export default function WarehousePage() {
                               {meta.label}
                             </span>
                           </TableCell>
+                          {canManage && (
+                            <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex justify-end gap-1">
+                                <Button size="sm" variant="ghost" title={t.common.edit ?? "Tahrirlash"} onClick={() => openEditProduct(r.first)}>
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button size="sm" variant="ghost" title={t.common.delete ?? "O'chirish"} onClick={() => deleteProduct(r.first)}>
+                                  <Trash2 className="h-3.5 w-3.5 text-status-red" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          )}
                         </TableRow>
                       );
                     });
