@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { StatusBadge, PriorityBadge, HealthDot } from "@/components/StatusBadge";
 import { orderHealth, logAudit, type OrderRow, type StageRow } from "@/types/erp";
 import { useAuth } from "@/auth/AuthContext";
@@ -16,8 +19,12 @@ interface OrderWithStages extends OrderRow { stages: StageRow[]; client?: any }
 export default function ProductionBoard() {
   const { hasRole, user } = useAuth();
   const { t } = useI18n();
+  const nav = useNavigate();
   const [orders, setOrders] = useState<OrderWithStages[]>([]);
   const [loading, setLoading] = useState(true);
+  const [moveOrder, setMoveOrder] = useState<OrderWithStages | null>(null);
+  const [movePos, setMovePos] = useState<string>("1");
+  const [saving, setSaving] = useState(false);
 
   const load = async () => {
     const { data } = await supabase
@@ -36,19 +43,37 @@ export default function ProductionBoard() {
 
   useEffect(() => { load(); }, []);
 
-  const moveToFront = async (o: OrderWithStages) => {
+  const openMoveDialog = (o: OrderWithStages) => {
     if (!hasRole(["manager", "admin"])) { toast.error(t.production.onlyManager); return; }
-    for (const x of orders) {
-      if (x.id === o.id) continue;
-      await supabase.from("orders").update({ queue_position: (x.queue_position ?? 0) + 1 }).eq("id", x.id);
+    setMoveOrder(o);
+    setMovePos("1");
+  };
+
+  const confirmMove = async () => {
+    if (!moveOrder) return;
+    const target = Math.max(1, Math.min(orders.length, Number(movePos) || 1));
+    setSaving(true);
+    // Build new ordering: remove moveOrder from current list (already sorted by queue_position), insert at target-1
+    const rest = orders.filter((x) => x.id !== moveOrder.id);
+    const newList = [...rest.slice(0, target - 1), moveOrder, ...rest.slice(target - 1)];
+    // Reassign queue_position sequentially
+    for (let i = 0; i < newList.length; i++) {
+      const desired = i + 1;
+      const row = newList[i];
+      if ((row.queue_position ?? 0) !== desired) {
+        await supabase.from("orders").update({ queue_position: desired }).eq("id", row.id);
+      }
     }
-    await supabase.from("orders").update({ queue_position: 1, priority: "exception", exception_approved_by: user?.id }).eq("id", o.id);
+    // Mark exception on moved order
+    await supabase.from("orders").update({ priority: "exception", exception_approved_by: user?.id }).eq("id", moveOrder.id);
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: user?.email,
-      action: "Istisno tasdiqlandi", entity: "order", order_id: o.id,
-      details: `${o.order_number}`,
+      action: "Istisno tasdiqlandi", entity: "order", order_id: moveOrder.id,
+      details: `${moveOrder.order_number} → tartib ${target}`,
     });
-    toast.success(t.production.movedFront);
+    toast.success(`${moveOrder.order_number}: ${target}-o'ringa qo'yildi`);
+    setSaving(false);
+    setMoveOrder(null);
     load();
   };
 
@@ -62,17 +87,21 @@ export default function ProductionBoard() {
       {loading && <p className="text-muted-foreground">{t.common.loading}</p>}
 
       <div className="space-y-3">
-        {orders.map((o) => {
+        {orders.map((o, idx) => {
           const completed = o.stages.filter((s) => s.status === "completed").length;
           const total = o.stages.length || 1;
           const active = o.stages.find((s) => s.status === "in_progress" || s.status === "delayed") ?? o.stages.find((s) => s.status === "pending");
           return (
-            <Card key={o.id} className={o.priority === "exception" ? "border-status-red/40 bg-status-red/[0.02]" : ""}>
+            <Card
+              key={o.id}
+              className={`cursor-pointer transition hover:border-primary/40 hover:shadow-md ${o.priority === "exception" ? "border-status-red/40 bg-status-red/[0.02]" : ""}`}
+              onClick={() => nav(`/orders/${o.id}`)}
+            >
               <CardContent className="p-4">
                 <div className="flex items-start gap-4 flex-wrap">
                   <div className="flex items-center gap-2">
                     <GripVertical className="h-4 w-4 text-muted-foreground" />
-                    <div className="text-2xl font-bold text-muted-foreground w-8 text-center">{o.queue_position}</div>
+                    <div className="text-2xl font-bold text-muted-foreground w-8 text-center">{idx + 1}</div>
                     <HealthDot color={orderHealth(o)} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -82,7 +111,11 @@ export default function ProductionBoard() {
                           {o.product_name}
                         </div>
                         <div className="flex items-center gap-2 flex-wrap mt-0.5">
-                          <Link to={`/orders/${o.id}`} className="text-xs font-mono font-medium text-muted-foreground hover:text-primary hover:underline">
+                          <Link
+                            to={`/orders/${o.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-xs font-mono font-medium text-muted-foreground hover:text-primary hover:underline"
+                          >
                             #{o.order_number}
                           </Link>
                           <PriorityBadge priority={o.priority} />
@@ -118,7 +151,12 @@ export default function ProductionBoard() {
                     </div>
                   </div>
                   {o.priority !== "exception" && hasRole(["manager", "admin"]) && (
-                    <Button size="sm" variant="outline" onClick={() => moveToFront(o)} className="shrink-0">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => { e.stopPropagation(); openMoveDialog(o); }}
+                      className="shrink-0"
+                    >
                       <ArrowUp className="h-3 w-3 mr-1" /> {t.production.moveFront}
                     </Button>
                   )}
@@ -134,6 +172,40 @@ export default function ProductionBoard() {
           <Card><CardContent className="py-10 text-center text-muted-foreground">{t.production.noActive}</CardContent></Card>
         )}
       </div>
+
+      <Dialog open={!!moveOrder} onOpenChange={(o) => !o && setMoveOrder(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Istisno — tartibga qo'yish</DialogTitle>
+            <DialogDescription>
+              {moveOrder && <>#{moveOrder.order_number} — {moveOrder.product_name}</>}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Qaysi tartib raqamiga o'tkazilsin? (1–{orders.length})</Label>
+              <Input
+                type="number"
+                min={1}
+                max={orders.length}
+                value={movePos}
+                onChange={(e) => setMovePos(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Tanlangan tartibga qo'yiladi, qolganlar avtomatik qayta tartiblanadi.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setMoveOrder(null)} disabled={saving}>
+                {t.common.cancel ?? "Bekor qilish"}
+              </Button>
+              <Button onClick={confirmMove} disabled={saving}>
+                {saving ? "Saqlanmoqda..." : "Tasdiqlash"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -826,7 +826,7 @@ export default function WarehousePage() {
                     </div>
                   )}
                   <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={impSource} onChange={e => setImpSource(e.target.value)} placeholder={(t.warehouse as any).sourcePh} /></div>
-                  <div><Label>{t.supply.bringer}</Label><Input list="dl-suppliers" value={impSupplier} onChange={e => setImpSupplier(e.target.value)} placeholder={t.supply.bringerPh} /></div>
+                  <div><Label>{t.supply.bringer}</Label><SupplierAutocomplete value={impSupplier} onChange={setImpSupplier} options={supplierOptions} placeholder={t.supply.bringerPh} /></div>
                   <div><Label>{t.supply.phone}</Label><Input list="dl-phones" value={impPhone} onChange={e => setImpPhone(e.target.value)} placeholder={t.supply.phonePh} /></div>
                   <div><Label>{t.supply.image}</Label><Input type="file" accept="image/*" onChange={e => setImpImage(e.target.files?.[0] ?? null)} /></div>
                 </div>
@@ -981,6 +981,7 @@ export default function WarehousePage() {
                   <TableHead className="text-right">Partiyalar</TableHead>
                   <TableHead className="text-right">{t.warehouse.price}</TableHead>
                   <TableHead>{t.warehouse.cols.state}</TableHead>
+                  {canManage && <TableHead className="w-24 text-right">{t.common.edit ?? "Amal"}</TableHead>}
                 </TableRow></TableHeader>
                 <TableBody>
                   {(() => {
@@ -996,7 +997,7 @@ export default function WarehousePage() {
                         const maxP = prices.length ? Math.max(...prices) : 0;
                         return { ...g, minP, maxP };
                       });
-                    if (rows.length === 0) return <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{q || stockFilter !== "all" ? (t.warehouse as any).noResults ?? "Natija topilmadi" : t.common.noRecords}</TableCell></TableRow>;
+                    if (rows.length === 0) return <TableRow><TableCell colSpan={canManage ? 7 : 6} className="text-center text-muted-foreground py-8">{q || stockFilter !== "all" ? (t.warehouse as any).noResults ?? "Natija topilmadi" : t.common.noRecords}</TableCell></TableRow>;
                     return rows.map((r, i) => {
                       const meta = stockStatusMeta[r.status];
                       return (
@@ -1019,6 +1020,18 @@ export default function WarehousePage() {
                               {meta.label}
                             </span>
                           </TableCell>
+                          {canManage && (
+                            <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex justify-end gap-1">
+                                <Button size="sm" variant="ghost" title={t.common.edit ?? "Tahrirlash"} onClick={() => openEditProduct(r.first)}>
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button size="sm" variant="ghost" title={t.common.delete ?? "O'chirish"} onClick={() => deleteProduct(r.first)}>
+                                  <Trash2 className="h-3.5 w-3.5 text-status-red" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          )}
                         </TableRow>
                       );
                     });
@@ -1456,6 +1469,47 @@ function ProductSearchBox({ movements, value, onChange, placeholder }: {
       />
       {open && suggestions.length > 0 && (
         <div className="absolute z-50 mt-1 w-full bg-popover border rounded-md shadow-md max-h-64 overflow-auto">
+          {suggestions.map(s => (
+            <button
+              key={s}
+              type="button"
+              className="block w-full text-left px-3 py-1.5 text-sm hover:bg-accent"
+              onMouseDown={(e) => { e.preventDefault(); onChange(s); setOpen(false); }}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SupplierAutocomplete({ value, onChange, options, placeholder }: {
+  value: string; onChange: (v: string) => void; options: string[]; placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+  const q = value.trim().toLowerCase();
+  const list = q ? options.filter(o => o.toLowerCase().includes(q)) : options;
+  const suggestions = list.slice(0, 10);
+  return (
+    <div ref={ref} className="relative">
+      <Input
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => { onChange(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+      />
+      {open && suggestions.length > 0 && (
+        <div className="absolute z-50 mt-1 w-full bg-popover border rounded-md shadow-md max-h-56 overflow-auto">
           {suggestions.map(s => (
             <button
               key={s}
