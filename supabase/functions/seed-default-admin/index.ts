@@ -22,6 +22,7 @@ const USERS: Array<{
   { email: "manager@gmail.com",   password: "manager123",   full_name: "Nachalnik",       department: "Boshqaruv",      roles: ["manager"] },
   { email: "cashier@gmail.com",   password: "cashier123",   full_name: "Kassir",          department: "Kassa",          roles: ["cashier"] },
   { email: "engineer@gmail.com",  password: "engineer123",  full_name: "Injener",         department: "Injeneriya",     roles: ["engineer"] },
+  { email: "constructor@gmail.com", password: "constructor123", full_name: "Konstruktor",  department: "Konstruktorlik", roles: ["engineer"] },
 ];
 
 const DEMO_EMAILS = [
