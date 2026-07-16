@@ -320,6 +320,9 @@ export default function HRPage() {
                     {canManage && (
                       <TableCell onClick={(ev) => ev.stopPropagation()}>
                         <div className="flex items-center gap-1">
+                          <Button size="sm" variant="ghost" onClick={() => setAttEmp({ id: e.id, full_name: e.full_name })} title="Davomat kalendari">
+                            <CalendarDays className="h-3.5 w-3.5" />
+                          </Button>
                           <Button size="sm" variant="ghost" onClick={() => openEdit(e)} title="Tahrirlash">
                             <Edit2 className="h-3.5 w-3.5" />
                           </Button>
