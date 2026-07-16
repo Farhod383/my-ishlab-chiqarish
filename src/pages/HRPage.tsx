@@ -350,6 +350,12 @@ export default function HRPage() {
           )}
         </CardContent>
       </Card>
+
+      <AttendanceCalendarDialog
+        employee={attEmp}
+        open={!!attEmp}
+        onOpenChange={(o) => { if (!o) setAttEmp(null); }}
+      />
     </div>
   );
 }
