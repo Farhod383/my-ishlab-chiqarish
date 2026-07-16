@@ -42,6 +42,7 @@ export default function HRPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm());
+  const [attEmp, setAttEmp] = useState<{ id: string; full_name: string } | null>(null);
 
   const load = async () => {
     const [eRes, aRes] = await Promise.all([
