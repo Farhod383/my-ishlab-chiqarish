@@ -10,8 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Users, Plus, Edit2, Wrench, UserX, UserCheck, Briefcase } from "lucide-react";
+import { Users, Plus, Edit2, Wrench, UserX, UserCheck, Briefcase, CalendarDays } from "lucide-react";
 import VacanciesTab from "@/components/hr/VacanciesTab";
+import AttendanceCalendarDialog from "@/components/hr/AttendanceCalendarDialog";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
@@ -41,6 +42,7 @@ export default function HRPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm());
+  const [attEmp, setAttEmp] = useState<{ id: string; full_name: string } | null>(null);
 
   const load = async () => {
     const [eRes, aRes] = await Promise.all([
@@ -318,6 +320,9 @@ export default function HRPage() {
                     {canManage && (
                       <TableCell onClick={(ev) => ev.stopPropagation()}>
                         <div className="flex items-center gap-1">
+                          <Button size="sm" variant="ghost" onClick={() => setAttEmp({ id: e.id, full_name: e.full_name })} title="Davomat kalendari">
+                            <CalendarDays className="h-3.5 w-3.5" />
+                          </Button>
                           <Button size="sm" variant="ghost" onClick={() => openEdit(e)} title="Tahrirlash">
                             <Edit2 className="h-3.5 w-3.5" />
                           </Button>
@@ -345,6 +350,12 @@ export default function HRPage() {
           )}
         </CardContent>
       </Card>
+
+      <AttendanceCalendarDialog
+        employee={attEmp}
+        open={!!attEmp}
+        onOpenChange={(o) => { if (!o) setAttEmp(null); }}
+      />
     </div>
   );
 }
