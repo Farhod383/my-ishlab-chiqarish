@@ -970,6 +970,7 @@ export default function WarehousePage() {
             </Dialog>
           )}
         </div>
+        </div>
       </div>
 
       {/* Stock status stat cards */}
