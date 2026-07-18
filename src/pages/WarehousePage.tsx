@@ -143,6 +143,8 @@ export default function WarehousePage() {
 
   // Purchase request (Buyurtma berish) state
   const [prOpen, setPrOpen] = useState(false);
+  const [prMode, setPrMode] = useState<"order" | "factory">("factory");
+  const [releaseOpen, setReleaseOpen] = useState(false);
   const [prPid, setPrPid] = useState("");
   const [prPname, setPrPname] = useState("");
   const [prQty, setPrQty] = useState<number>(0);
