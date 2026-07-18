@@ -156,9 +156,10 @@ export default function WarehousePage() {
   const submitPurchaseRequest = async () => {
     const name = prPname.trim();
     if (!name || !prQty) { toast.error("Mahsulot va miqdorni kiriting"); return; }
+    if (prMode === "order" && !prOrderId) { toast.error("Zakaz uchun buyurtmada zakazni tanlang"); return; }
     if (!(await ensureOnline())) return;
     const { error } = await supabase.from("order_supply_requests").insert({
-      order_id: prOrderId || null,
+      order_id: prMode === "order" ? (prOrderId || null) : null,
       product_id: prPid || null,
       product_name: name,
       quantity: prQty,
