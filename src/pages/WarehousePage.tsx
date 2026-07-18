@@ -769,8 +769,8 @@ export default function WarehousePage() {
                 </DialogContent>
               </Dialog>
 
-              <Dialog>
-                <DialogTrigger asChild><Button><ArrowDownToLine className="h-4 w-4 mr-2" />{t.warehouse.release}</Button></DialogTrigger>
+              <Dialog open={releaseOpen} onOpenChange={setReleaseOpen}>
+                <DialogTrigger asChild><Button className="hidden">release</Button></DialogTrigger>
                 <DialogContent>
                   <DialogHeader><DialogTitle>{t.warehouse.releaseTitle}</DialogTitle></DialogHeader>
                   <div className="space-y-3">
