@@ -12,7 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { AlertTriangle, Package, ArrowDownToLine, ArrowDownCircle, ArrowUpCircle, History, Plus, PackageMinus, Pencil, Check, ChevronsUpDown, Trash2, Search } from "lucide-react";
+import { AlertTriangle, Package, ArrowDownToLine, ArrowUpFromLine, ArrowDownCircle, ArrowUpCircle, History, Plus, PackageMinus, Pencil, Check, ChevronsUpDown, Trash2, Search, ChevronDown, Factory, ClipboardList, ShoppingCart } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n, useLocalize } from "@/i18n/context";
@@ -142,6 +143,8 @@ export default function WarehousePage() {
 
   // Purchase request (Buyurtma berish) state
   const [prOpen, setPrOpen] = useState(false);
+  const [prMode, setPrMode] = useState<"order" | "factory">("factory");
+  const [releaseOpen, setReleaseOpen] = useState(false);
   const [prPid, setPrPid] = useState("");
   const [prPname, setPrPname] = useState("");
   const [prQty, setPrQty] = useState<number>(0);
@@ -153,9 +156,10 @@ export default function WarehousePage() {
   const submitPurchaseRequest = async () => {
     const name = prPname.trim();
     if (!name || !prQty) { toast.error("Mahsulot va miqdorni kiriting"); return; }
+    if (prMode === "order" && !prOrderId) { toast.error("Zakaz uchun buyurtmada zakazni tanlang"); return; }
     if (!(await ensureOnline())) return;
     const { error } = await supabase.from("order_supply_requests").insert({
-      order_id: prOrderId || null,
+      order_id: prMode === "order" ? (prOrderId || null) : null,
       product_id: prPid || null,
       product_name: name,
       quantity: prQty,
@@ -170,7 +174,7 @@ export default function WarehousePage() {
     const { notify } = await import("@/lib/notify");
     await notify({
       type: "supply_request",
-      title: `Yangi ta'minot so'rovi${prOrderId ? "" : " (umumiy)"}`,
+      title: `Yangi ta'minot so'rovi${prMode === "order" ? "" : " (zavod uchun)"}`,
       body: `${name} · ${prQty} ${prUnit ?? ""}${prDate ? ` · kerak: ${prDate}` : ""}`,
       link: `/supply`,
       entity: "supply_request",
@@ -623,6 +627,74 @@ export default function WarehousePage() {
         </div>
         <div className="flex flex-wrap gap-2">
           {canManage && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary" className="min-h-11">
+                  <ArrowDownToLine className="h-4 w-4 mr-2" />Kirim qilish
+                  <ChevronDown className="h-4 w-4 ml-2 opacity-70" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Kirim varianti</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setImportOpen(true)}>
+                  <ArrowDownToLine className="h-4 w-4 mr-2" />
+                  Kirim qilish (mavjud mahsulotga)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setAddOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Mahsulot qo'shish (yangi)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          {canOut && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="min-h-11">
+                  <ArrowUpFromLine className="h-4 w-4 mr-2" />Chiqim qilish
+                  <ChevronDown className="h-4 w-4 ml-2 opacity-70" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Chiqim varianti</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setReleaseOpen(true)}>
+                  <ClipboardList className="h-4 w-4 mr-2" />
+                  Chiqim qilish (zakaz uchun)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setOtherOpen(true)}>
+                  <PackageMinus className="h-4 w-4 mr-2" />
+                  Boshqa chiqim (zavod ehtiyoji)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          {canRequest && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="min-h-11">
+                  <ShoppingCart className="h-4 w-4 mr-2" />Buyurtma berish
+                  <ChevronDown className="h-4 w-4 ml-2 opacity-70" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Buyurtma turi</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => { setPrMode("order"); setPrOpen(true); }}>
+                  <ClipboardList className="h-4 w-4 mr-2" />
+                  Zakaz uchun buyurtma
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setPrMode("factory"); setPrOrderId(""); setPrOpen(true); }}>
+                  <Factory className="h-4 w-4 mr-2" />
+                  Zavod uchun buyurtma
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+        <div className="hidden">
+          {canManage && (
             <>
               <Dialog open={addOpen} onOpenChange={setAddOpen}>
                 <DialogTrigger asChild><Button variant="outline"><Plus className="h-4 w-4 mr-2" />{t.warehouse.addProduct}</Button></DialogTrigger>
@@ -697,8 +769,8 @@ export default function WarehousePage() {
                 </DialogContent>
               </Dialog>
 
-              <Dialog>
-                <DialogTrigger asChild><Button><ArrowDownToLine className="h-4 w-4 mr-2" />{t.warehouse.release}</Button></DialogTrigger>
+              <Dialog open={releaseOpen} onOpenChange={setReleaseOpen}>
+                <DialogTrigger asChild><Button className="hidden">release</Button></DialogTrigger>
                 <DialogContent>
                   <DialogHeader><DialogTitle>{t.warehouse.releaseTitle}</DialogTitle></DialogHeader>
                   <div className="space-y-3">
@@ -843,7 +915,9 @@ export default function WarehousePage() {
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Ta'minotga buyurtma berish</DialogTitle>
+                  <DialogTitle>
+                    {prMode === "order" ? "Zakaz uchun buyurtma" : "Zavod uchun buyurtma"}
+                  </DialogTitle>
                   <DialogDescription>So'rov Ta'minot bo'limiga yuboriladi</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-3">
@@ -877,15 +951,17 @@ export default function WarehousePage() {
                     <Label>Kerak bo'ladigan sana</Label>
                     <Input type="date" value={prDate} onChange={(e) => setPrDate(e.target.value)} />
                   </div>
-                  <div>
-                    <Label>Bog'liq zakaz (ixtiyoriy)</Label>
-                    <SearchableSelect
-                      value={prOrderId}
-                      onChange={setPrOrderId}
-                      placeholder="Zakaz tanlang..."
-                      options={orders.map((o) => ({ value: o.id, label: o.product_name, hint: o.order_number }))}
-                    />
-                  </div>
+                  {prMode === "order" && (
+                    <div>
+                      <Label>Zakaz *</Label>
+                      <SearchableSelect
+                        value={prOrderId}
+                        onChange={setPrOrderId}
+                        placeholder="Zakaz tanlang..."
+                        options={orders.map((o) => ({ value: o.id, label: o.product_name, hint: o.order_number }))}
+                      />
+                    </div>
+                  )}
                   <div>
                     <Label>Izoh</Label>
                     <Textarea rows={2} value={prComment} onChange={(e) => setPrComment(e.target.value)} />
