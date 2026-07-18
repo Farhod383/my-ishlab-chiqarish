@@ -491,3 +491,83 @@ function StatCard({ color, label, value }: { color: "emerald"|"amber"|"rose"|"sk
     </div>
   );
 }
+
+function MultiSelectPanel({
+  selected, allRows, onClear, onQuickRange, onSelectMonth,
+}: {
+  selected: Set<string>;
+  allRows: Record<string, AttRow>;
+  onClear: () => void;
+  onQuickRange: (days: number) => void;
+  onSelectMonth: () => void;
+}) {
+  const list = Array.from(selected).sort();
+  let totalHours = 0;
+  let present = 0, late = 0, absent = 0, leave = 0, noData = 0;
+  list.forEach(d => {
+    const r = allRows[d];
+    if (!r) { noData++; return; }
+    totalHours += hoursBetween(r.check_in, r.check_out);
+    if (r.status === "present") present++;
+    else if (r.status === "late") late++;
+    else if (r.status === "absent") absent++;
+    else if (r.status === "leave") leave++;
+  });
+  const workedDays = present + late;
+  const avg = workedDays ? totalHours / workedDays : 0;
+
+  return (
+    <Card className="border-primary/30">
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="text-sm font-semibold flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-primary" />
+            Tanlangan kunlar tahlili
+            <Badge variant="outline" className="ml-1">{list.length}</Badge>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            <Button size="sm" variant="outline" onClick={() => onQuickRange(3)}>Oxirgi 3</Button>
+            <Button size="sm" variant="outline" onClick={() => onQuickRange(7)}>7 kun</Button>
+            <Button size="sm" variant="outline" onClick={() => onQuickRange(14)}>14 kun</Button>
+            <Button size="sm" variant="outline" onClick={() => onQuickRange(30)}>30 kun</Button>
+            <Button size="sm" variant="outline" onClick={onSelectMonth}>Shu oy</Button>
+            <Button size="sm" variant="ghost" onClick={onClear} disabled={!list.length}>Tozalash</Button>
+          </div>
+        </div>
+
+        {list.length === 0 ? (
+          <div className="text-sm text-muted-foreground text-center py-3">
+            Kalendardan kunlarni bosib tanlang yoki yuqoridagi tugmalardan foydalaning
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="rounded-lg border bg-primary/5 p-3">
+                <div className="text-xs text-muted-foreground">Tanlangan kunlar</div>
+                <div className="text-2xl font-bold text-primary">{list.length}</div>
+              </div>
+              <div className="rounded-lg border bg-emerald-500/5 p-3">
+                <div className="text-xs text-muted-foreground">Jami soat</div>
+                <div className="text-2xl font-bold text-emerald-600">{totalHours.toFixed(1)}</div>
+              </div>
+              <div className="rounded-lg border bg-sky-500/5 p-3">
+                <div className="text-xs text-muted-foreground">O'rtacha (ishlangan)</div>
+                <div className="text-2xl font-bold text-sky-600">{avg.toFixed(2)}</div>
+              </div>
+              <div className="rounded-lg border bg-amber-500/5 p-3">
+                <div className="text-xs text-muted-foreground">Ishlangan / Kech / Kelmagan / Ta'til / Ma'lumotsiz</div>
+                <div className="text-sm font-semibold mt-1">
+                  {present} · <span className="text-amber-600">{late}</span> · <span className="text-rose-600">{absent}</span> · <span className="text-sky-600">{leave}</span> · <span className="text-muted-foreground">{noData}</span>
+                </div>
+              </div>
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              {list[0]} — {list[list.length - 1]}
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
