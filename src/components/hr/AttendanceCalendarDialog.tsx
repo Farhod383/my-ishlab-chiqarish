@@ -99,8 +99,27 @@ export default function AttendanceCalendarDialog({ employee, open, onOpenChange 
       .gte("date", ymd(monthStart))
       .lte("date", ymd(monthEnd));
     if (error) { toast.error(error.message); setLoading(false); return; }
-    setRows((data ?? []) as AttRow[]);
+    const list = (data ?? []) as AttRow[];
+    setRows(list);
+    setAllRows(prev => {
+      const next = { ...prev };
+      list.forEach(r => { next[r.date] = r; });
+      return next;
+    });
     setLoading(false);
+  };
+
+  const fetchRange = async (from: string, to: string) => {
+    if (!employee) return;
+    const { data } = await supabase
+      .from("attendance").select("*")
+      .eq("employee_id", employee.id)
+      .gte("date", from).lte("date", to);
+    setAllRows(prev => {
+      const next = { ...prev };
+      (data ?? []).forEach((r: any) => { next[r.date] = r as AttRow; });
+      return next;
+    });
   };
 
   useEffect(() => { if (open && employee) load(); /* eslint-disable-next-line */ }, [open, employee?.id, cursor]);
