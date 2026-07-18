@@ -145,6 +145,10 @@ export default function WarehousePage() {
   const [prOpen, setPrOpen] = useState(false);
   const [prMode, setPrMode] = useState<"order" | "factory">("factory");
   const [releaseOpen, setReleaseOpen] = useState(false);
+  // Action chooser modals
+  const [chooseIn, setChooseIn] = useState(false);
+  const [chooseOut, setChooseOut] = useState(false);
+  const [chooseBuy, setChooseBuy] = useState(false);
   const [prPid, setPrPid] = useState("");
   const [prPname, setPrPname] = useState("");
   const [prQty, setPrQty] = useState<number>(0);
@@ -627,72 +631,115 @@ export default function WarehousePage() {
         </div>
         <div className="flex flex-wrap gap-2">
           {canManage && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="secondary" className="min-h-11">
-                  <ArrowDownToLine className="h-4 w-4 mr-2" />Kirim qilish
-                  <ChevronDown className="h-4 w-4 ml-2 opacity-70" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Kirim varianti</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setImportOpen(true)}>
-                  <ArrowDownToLine className="h-4 w-4 mr-2" />
-                  Kirim qilish (mavjud mahsulotga)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setAddOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Mahsulot qo'shish (yangi)
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button variant="secondary" className="min-h-11" onClick={() => setChooseIn(true)}>
+              <ArrowDownToLine className="h-4 w-4 mr-2" />Kirim qilish
+            </Button>
           )}
           {canOut && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button className="min-h-11">
-                  <ArrowUpFromLine className="h-4 w-4 mr-2" />Chiqim qilish
-                  <ChevronDown className="h-4 w-4 ml-2 opacity-70" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Chiqim varianti</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setReleaseOpen(true)}>
-                  <ClipboardList className="h-4 w-4 mr-2" />
-                  Chiqim qilish (zakaz uchun)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setOtherOpen(true)}>
-                  <PackageMinus className="h-4 w-4 mr-2" />
-                  Boshqa chiqim (zavod ehtiyoji)
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button className="min-h-11" onClick={() => setChooseOut(true)}>
+              <ArrowUpFromLine className="h-4 w-4 mr-2" />Chiqim qilish
+            </Button>
           )}
           {canRequest && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="min-h-11">
-                  <ShoppingCart className="h-4 w-4 mr-2" />Buyurtma berish
-                  <ChevronDown className="h-4 w-4 ml-2 opacity-70" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Buyurtma turi</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => { setPrMode("order"); setPrOpen(true); }}>
-                  <ClipboardList className="h-4 w-4 mr-2" />
-                  Zakaz uchun buyurtma
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { setPrMode("factory"); setPrOrderId(""); setPrOpen(true); }}>
-                  <Factory className="h-4 w-4 mr-2" />
-                  Zavod uchun buyurtma
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button variant="outline" className="min-h-11" onClick={() => setChooseBuy(true)}>
+              <ShoppingCart className="h-4 w-4 mr-2" />Buyurtma berish
+            </Button>
           )}
         </div>
+
+        {/* KIRIM chooser modal */}
+        <Dialog open={chooseIn} onOpenChange={setChooseIn}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle className="text-2xl">Kirim varianti</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <button
+                onClick={() => { setChooseIn(false); setAddOpen(true); }}
+                className="group text-left rounded-2xl border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 p-6 hover:border-emerald-500 hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[200px] flex flex-col gap-3"
+              >
+                <div className="h-14 w-14 rounded-xl bg-emerald-500/20 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Plus className="h-8 w-8" />
+                </div>
+                <div className="text-xl font-bold">Mahsulot qo'shish</div>
+                <div className="text-sm text-muted-foreground">Yangi mahsulot yaratish va katalogga kiritish</div>
+              </button>
+              <button
+                onClick={() => { setChooseIn(false); setImportOpen(true); }}
+                className="group text-left rounded-2xl border-2 border-sky-500/30 bg-gradient-to-br from-sky-500/10 to-sky-500/5 p-6 hover:border-sky-500 hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[200px] flex flex-col gap-3"
+              >
+                <div className="h-14 w-14 rounded-xl bg-sky-500/20 text-sky-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <ArrowDownToLine className="h-8 w-8" />
+                </div>
+                <div className="text-xl font-bold">Kirim qilish</div>
+                <div className="text-sm text-muted-foreground">Mavjud mahsulotga yangi partiya qo'shish</div>
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* CHIQIM chooser modal */}
+        <Dialog open={chooseOut} onOpenChange={setChooseOut}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle className="text-2xl">Chiqim varianti</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <button
+                onClick={() => { setChooseOut(false); setReleaseOpen(true); }}
+                className="group text-left rounded-2xl border-2 border-red-500/30 bg-gradient-to-br from-red-500/10 to-red-500/5 p-6 hover:border-red-500 hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[200px] flex flex-col gap-3"
+              >
+                <div className="h-14 w-14 rounded-xl bg-red-500/20 text-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <ClipboardList className="h-8 w-8" />
+                </div>
+                <div className="text-xl font-bold">Zakaz uchun chiqim</div>
+                <div className="text-sm text-muted-foreground">Aniq zakaz uchun mahsulot berish</div>
+              </button>
+              <button
+                onClick={() => { setChooseOut(false); setOtherOpen(true); }}
+                className="group text-left rounded-2xl border-2 border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-orange-500/5 p-6 hover:border-orange-500 hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[200px] flex flex-col gap-3"
+              >
+                <div className="h-14 w-14 rounded-xl bg-orange-500/20 text-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <PackageMinus className="h-8 w-8" />
+                </div>
+                <div className="text-xl font-bold">Boshqa chiqim</div>
+                <div className="text-sm text-muted-foreground">Zavod ehtiyoji yoki boshqa maqsad uchun</div>
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* BUYURTMA chooser modal */}
+        <Dialog open={chooseBuy} onOpenChange={setChooseBuy}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle className="text-2xl">Buyurtma turi</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <button
+                onClick={() => { setChooseBuy(false); setPrMode("order"); setPrOpen(true); }}
+                className="group text-left rounded-2xl border-2 border-purple-500/30 bg-gradient-to-br from-purple-500/10 to-purple-500/5 p-6 hover:border-purple-500 hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[200px] flex flex-col gap-3"
+              >
+                <div className="h-14 w-14 rounded-xl bg-purple-500/20 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <ClipboardList className="h-8 w-8" />
+                </div>
+                <div className="text-xl font-bold">Zakaz uchun buyurtma</div>
+                <div className="text-sm text-muted-foreground">Aniq zakaz uchun mahsulot buyurtma qilish (zakaz tanlash majburiy)</div>
+              </button>
+              <button
+                onClick={() => { setChooseBuy(false); setPrMode("factory"); setPrOrderId(""); setPrOpen(true); }}
+                className="group text-left rounded-2xl border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 p-6 hover:border-emerald-500 hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[200px] flex flex-col gap-3"
+              >
+                <div className="h-14 w-14 rounded-xl bg-emerald-500/20 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Factory className="h-8 w-8" />
+                </div>
+                <div className="text-xl font-bold">Zavod uchun buyurtma</div>
+                <div className="text-sm text-muted-foreground">Umumiy zavod ehtiyoji uchun buyurtma</div>
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         <div className="hidden">
           {canManage && (
             <>
