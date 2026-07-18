@@ -190,12 +190,15 @@ export default function OrderDetail() {
           <Button variant="ghost" size="sm" onClick={() => nav(-1)}><ArrowLeft className="h-4 w-4 mr-1" /> {t.orderDetail.backToList}</Button>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-bold tracking-tight">{order.order_number}</h1>
+              <h1 className="text-2xl font-bold tracking-tight">{order.product_name}</h1>
               <PriorityBadge priority={order.priority} />
               <StatusBadge status={order.status as any} />
             </div>
-            <p className="text-sm text-muted-foreground">{order.product_name} · {order.quantity} {t.common.pieces} · {t.orderDetail.client}: {order.client?.name ?? "—"}</p>
+            <p className="text-sm text-muted-foreground">
+              <span className="font-mono">#{order.order_number}</span> · {order.quantity} {t.common.pieces} · {t.orderDetail.client}: {order.client?.name ?? "—"}
+            </p>
           </div>
+
         </div>
         <div className="flex gap-2 flex-wrap">
           {hasRole(["admin", "marketing"]) && (
