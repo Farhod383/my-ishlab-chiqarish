@@ -174,7 +174,7 @@ export default function WarehousePage() {
     const { notify } = await import("@/lib/notify");
     await notify({
       type: "supply_request",
-      title: `Yangi ta'minot so'rovi${prOrderId ? "" : " (umumiy)"}`,
+      title: `Yangi ta'minot so'rovi${prMode === "order" ? "" : " (zavod uchun)"}`,
       body: `${name} · ${prQty} ${prUnit ?? ""}${prDate ? ` · kerak: ${prDate}` : ""}`,
       link: `/supply`,
       entity: "supply_request",
