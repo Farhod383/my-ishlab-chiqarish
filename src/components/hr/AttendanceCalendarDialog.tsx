@@ -280,16 +280,26 @@ export default function AttendanceCalendarDialog({ employee, open, onOpenChange 
                 const isFuture = dateStr > today;
                 const isToday = dateStr === today;
                 const meta = r ? STATUS_META[r.status] : null;
-                const isSelected = selectedDate === dateStr;
+                const isFocused = selectedDate === dateStr;
+                const isPicked = multiSelected.has(dateStr);
                 return (
                   <button
                     key={dateStr}
-                    onClick={() => setSelectedDate(dateStr)}
+                    onClick={() => {
+                      setSelectedDate(dateStr);
+                      setMultiSelected(prev => {
+                        const next = new Set(prev);
+                        if (next.has(dateStr)) next.delete(dateStr);
+                        else next.add(dateStr);
+                        return next;
+                      });
+                    }}
                     onDoubleClick={() => openEdit(dateStr)}
                     className={`
                       relative aspect-square rounded-lg text-sm font-medium
                       transition-all flex flex-col items-center justify-center
-                      ${isSelected ? "ring-2 ring-primary" : ""}
+                      ${isPicked ? "ring-2 ring-primary ring-offset-1" : ""}
+                      ${isFocused && !isPicked ? "ring-2 ring-primary/40" : ""}
                       ${isFuture && !r ? "bg-muted/40 text-muted-foreground" : ""}
                       ${meta ? `${meta.color} text-white shadow-sm hover:opacity-90` : "bg-background hover:bg-muted border"}
                       ${isToday ? "outline outline-2 outline-offset-1 outline-primary" : ""}
@@ -300,11 +310,40 @@ export default function AttendanceCalendarDialog({ employee, open, onOpenChange 
                     {r?.check_in && (
                       <span className="text-[9px] opacity-90 leading-none mt-0.5">{toLocalTime(r.check_in)}</span>
                     )}
+                    {isPicked && (
+                      <span className="absolute top-0.5 right-0.5 h-2 w-2 rounded-full bg-primary shadow" />
+                    )}
                   </button>
                 );
               })}
             </div>
           </div>
+
+          {/* Multi-select controls & stats */}
+          <MultiSelectPanel
+            selected={multiSelected}
+            allRows={allRows}
+            onClear={() => setMultiSelected(new Set())}
+            onQuickRange={async (days) => {
+              const to = new Date();
+              const from = new Date(); from.setDate(to.getDate() - (days - 1));
+              await fetchRange(ymd(from), ymd(to));
+              const set = new Set<string>();
+              for (let i = 0; i < days; i++) {
+                const d = new Date(from); d.setDate(from.getDate() + i);
+                set.add(ymd(d));
+              }
+              setMultiSelected(set);
+            }}
+            onSelectMonth={() => {
+              const set = new Set<string>();
+              for (let d = 1; d <= daysInMonth; d++) {
+                set.add(`${cursor.getFullYear()}-${pad(cursor.getMonth()+1)}-${pad(d)}`);
+              }
+              setMultiSelected(set);
+            }}
+          />
+
 
           {/* Selected day details */}
           <Card>
