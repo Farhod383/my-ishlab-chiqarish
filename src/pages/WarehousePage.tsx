@@ -951,15 +951,17 @@ export default function WarehousePage() {
                     <Label>Kerak bo'ladigan sana</Label>
                     <Input type="date" value={prDate} onChange={(e) => setPrDate(e.target.value)} />
                   </div>
-                  <div>
-                    <Label>Bog'liq zakaz (ixtiyoriy)</Label>
-                    <SearchableSelect
-                      value={prOrderId}
-                      onChange={setPrOrderId}
-                      placeholder="Zakaz tanlang..."
-                      options={orders.map((o) => ({ value: o.id, label: o.product_name, hint: o.order_number }))}
-                    />
-                  </div>
+                  {prMode === "order" && (
+                    <div>
+                      <Label>Zakaz *</Label>
+                      <SearchableSelect
+                        value={prOrderId}
+                        onChange={setPrOrderId}
+                        placeholder="Zakaz tanlang..."
+                        options={orders.map((o) => ({ value: o.id, label: o.product_name, hint: o.order_number }))}
+                      />
+                    </div>
+                  )}
                   <div>
                     <Label>Izoh</Label>
                     <Textarea rows={2} value={prComment} onChange={(e) => setPrComment(e.target.value)} />
