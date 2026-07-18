@@ -31,6 +31,8 @@ interface Props {
 export default function ProductPicker({ products, value, onChange, placeholder = "Mahsulot tanlang", emptyText = "Topilmadi", disabled, className }: Props) {
   const [open, setOpen] = useState(false);
   const selected = products.find(p => p.id === value);
+  const dragRef = useDragScroll<HTMLDivElement>();
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
