@@ -76,6 +76,8 @@ export default function AttendanceCalendarDialog({ employee, open, onOpenChange 
   const canEdit = hasRole(["admin", "hr"]);
   const [cursor, setCursor] = useState(() => { const d = new Date(); d.setDate(1); return d; });
   const [rows, setRows] = useState<AttRow[]>([]);
+  const [allRows, setAllRows] = useState<Record<string, AttRow>>({});
+  const [multiSelected, setMultiSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>(() => ymd(new Date()));
   const [editOpen, setEditOpen] = useState(false);
