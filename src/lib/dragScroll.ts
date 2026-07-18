@@ -135,6 +135,7 @@ export function useDragScroll<T extends HTMLElement = HTMLDivElement>(options: D
     };
 
     const onMouseDown = (event: MouseEvent) => {
+      if (state.current.down) return;
       if (event.button !== 0) return;
       begin(event.clientX, event.clientY, "mouse");
     };
@@ -154,6 +155,7 @@ export function useDragScroll<T extends HTMLElement = HTMLDivElement>(options: D
     };
 
     const onTouchStart = (event: TouchEvent) => {
+      if (state.current.down) return;
       if (event.touches.length !== 1) return;
       const touch = event.touches[0];
       begin(touch.clientX, touch.clientY, "touch", -1, touch.identifier);
