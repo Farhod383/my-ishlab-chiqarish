@@ -145,6 +145,10 @@ export default function WarehousePage() {
   const [prOpen, setPrOpen] = useState(false);
   const [prMode, setPrMode] = useState<"order" | "factory">("factory");
   const [releaseOpen, setReleaseOpen] = useState(false);
+  // Action chooser modals
+  const [chooseIn, setChooseIn] = useState(false);
+  const [chooseOut, setChooseOut] = useState(false);
+  const [chooseBuy, setChooseBuy] = useState(false);
   const [prPid, setPrPid] = useState("");
   const [prPname, setPrPname] = useState("");
   const [prQty, setPrQty] = useState<number>(0);
