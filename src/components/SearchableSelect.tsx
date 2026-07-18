@@ -23,8 +23,7 @@ interface Props {
 }
 
 /**
- * Universal searchable select — replaces plain <Select> when the user needs to
- * search through many items (employees, orders, products, instruments...).
+ * Universal searchable select — touch-friendly. Tapping anywhere on the field opens it.
  */
 export default function SearchableSelect({
   options, value, onChange,
@@ -43,9 +42,18 @@ export default function SearchableSelect({
           variant="outline"
           role="combobox"
           disabled={disabled}
-          className={cn("w-full justify-between font-normal", className)}
+          onPointerDown={(e) => {
+            if (e.pointerType !== "mouse") {
+              e.preventDefault();
+              setOpen((o) => !o);
+            }
+          }}
+          className={cn(
+            "w-full justify-between font-normal min-h-11 h-auto py-2 touch-manipulation cursor-pointer",
+            className
+          )}
         >
-          <span className={cn("truncate", !selected && "text-muted-foreground")}>
+          <span className={cn("truncate text-left", !selected && "text-muted-foreground")}>
             {selected ? selected.label : placeholder}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -54,7 +62,7 @@ export default function SearchableSelect({
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
         <Command>
           <CommandInput placeholder={searchPlaceholder} />
-          <CommandList>
+          <CommandList className="max-h-[60vh]">
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
               {options.map(o => (
@@ -62,6 +70,7 @@ export default function SearchableSelect({
                   key={o.value}
                   value={`${o.label} ${o.hint ?? ""}`}
                   onSelect={() => { onChange(o.value); setOpen(false); }}
+                  className="min-h-11 cursor-pointer"
                 >
                   <Check className={cn("mr-2 h-4 w-4", value === o.value ? "opacity-100" : "opacity-0")} />
                   <span className="flex-1 truncate">{o.label}</span>
