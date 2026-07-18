@@ -631,17 +631,17 @@ export default function WarehousePage() {
         </div>
         <div className="flex flex-wrap gap-2">
           {canManage && (
-            <Button variant="secondary" className="min-h-11" onClick={() => setChooseIn(true)}>
+            <Button className="min-h-11 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm" onClick={() => setChooseIn(true)}>
               <ArrowDownToLine className="h-4 w-4 mr-2" />Kirim qilish
             </Button>
           )}
           {canOut && (
-            <Button className="min-h-11" onClick={() => setChooseOut(true)}>
+            <Button className="min-h-11 bg-red-600 hover:bg-red-700 text-white shadow-sm" onClick={() => setChooseOut(true)}>
               <ArrowUpFromLine className="h-4 w-4 mr-2" />Chiqim qilish
             </Button>
           )}
           {canRequest && (
-            <Button variant="outline" className="min-h-11" onClick={() => setChooseBuy(true)}>
+            <Button className="min-h-11 bg-sky-600 hover:bg-sky-700 text-white shadow-sm" onClick={() => setChooseBuy(true)}>
               <ShoppingCart className="h-4 w-4 mr-2" />Buyurtma berish
             </Button>
           )}
