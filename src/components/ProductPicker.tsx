@@ -63,7 +63,7 @@ export default function ProductPicker({ products, value, onChange, placeholder =
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
         <Command>
           <CommandInput placeholder="Qidirish..." />
-          <CommandList className="max-h-[60vh]">
+          <CommandList ref={dragRef} className="max-h-[60vh] select-none">
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
               {products.map(p => (
