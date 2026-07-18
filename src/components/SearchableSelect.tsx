@@ -36,6 +36,8 @@ export default function SearchableSelect({
 }: Props) {
   const [open, setOpen] = useState(false);
   const selected = options.find(o => o.value === value);
+  const dragRef = useDragScroll<HTMLDivElement>();
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
