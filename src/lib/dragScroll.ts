@@ -87,7 +87,9 @@ export function useDragScroll<T extends HTMLElement = HTMLDivElement>(options: D
     };
 
     const move = (clientX: number, clientY: number, source: typeof state.current.source) => {
-      if (!state.current.down || state.current.source !== source) return false;
+      if (!state.current.down) return false;
+      if (source === "touch" && state.current.source !== "touch") return false;
+      if (source !== "touch" && state.current.source === "touch") return false;
       const dx = clientX - state.current.startX;
       const dy = clientY - state.current.startY;
       const { axis, threshold } = optionsRef.current;
