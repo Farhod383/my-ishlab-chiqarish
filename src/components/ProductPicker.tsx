@@ -24,7 +24,7 @@ interface Props {
 
 /**
  * Universal searchable product picker.
- * Shows: "Name — qty unit" in dropdown.
+ * Whole field is a touch-friendly button — tapping anywhere opens the dropdown.
  */
 export default function ProductPicker({ products, value, onChange, placeholder = "Mahsulot tanlang", emptyText = "Topilmadi", disabled, className }: Props) {
   const [open, setOpen] = useState(false);
@@ -37,9 +37,18 @@ export default function ProductPicker({ products, value, onChange, placeholder =
           variant="outline"
           role="combobox"
           disabled={disabled}
-          className={cn("w-full justify-between font-normal", className)}
+          onPointerDown={(e) => {
+            if (e.pointerType !== "mouse") {
+              e.preventDefault();
+              setOpen((o) => !o);
+            }
+          }}
+          className={cn(
+            "w-full justify-between font-normal min-h-11 h-auto py-2 touch-manipulation cursor-pointer",
+            className
+          )}
         >
-          <span className="truncate">
+          <span className="truncate text-left">
             {selected
               ? `${selected.name}${selected.stock_qty != null ? ` — ${selected.stock_qty} ${selected.unit ?? ""}` : ""}`
               : placeholder}
@@ -50,7 +59,7 @@ export default function ProductPicker({ products, value, onChange, placeholder =
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
         <Command>
           <CommandInput placeholder="Qidirish..." />
-          <CommandList>
+          <CommandList className="max-h-[60vh]">
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
               {products.map(p => (
@@ -58,6 +67,7 @@ export default function ProductPicker({ products, value, onChange, placeholder =
                   key={p.id}
                   value={`${p.name} ${p.unit ?? ""}`}
                   onSelect={() => { onChange(p.id); setOpen(false); }}
+                  className="min-h-11 cursor-pointer"
                 >
                   <Check className={cn("mr-2 h-4 w-4", value === p.id ? "opacity-100" : "opacity-0")} />
                   <span className="flex-1 truncate">{p.name}</span>

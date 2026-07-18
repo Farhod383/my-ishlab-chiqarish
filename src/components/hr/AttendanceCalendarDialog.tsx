@@ -76,6 +76,8 @@ export default function AttendanceCalendarDialog({ employee, open, onOpenChange 
   const canEdit = hasRole(["admin", "hr"]);
   const [cursor, setCursor] = useState(() => { const d = new Date(); d.setDate(1); return d; });
   const [rows, setRows] = useState<AttRow[]>([]);
+  const [allRows, setAllRows] = useState<Record<string, AttRow>>({});
+  const [multiSelected, setMultiSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>(() => ymd(new Date()));
   const [editOpen, setEditOpen] = useState(false);
@@ -97,8 +99,27 @@ export default function AttendanceCalendarDialog({ employee, open, onOpenChange 
       .gte("date", ymd(monthStart))
       .lte("date", ymd(monthEnd));
     if (error) { toast.error(error.message); setLoading(false); return; }
-    setRows((data ?? []) as AttRow[]);
+    const list = (data ?? []) as AttRow[];
+    setRows(list);
+    setAllRows(prev => {
+      const next = { ...prev };
+      list.forEach(r => { next[r.date] = r; });
+      return next;
+    });
     setLoading(false);
+  };
+
+  const fetchRange = async (from: string, to: string) => {
+    if (!employee) return;
+    const { data } = await supabase
+      .from("attendance").select("*")
+      .eq("employee_id", employee.id)
+      .gte("date", from).lte("date", to);
+    setAllRows(prev => {
+      const next = { ...prev };
+      (data ?? []).forEach((r: any) => { next[r.date] = r as AttRow; });
+      return next;
+    });
   };
 
   useEffect(() => { if (open && employee) load(); /* eslint-disable-next-line */ }, [open, employee?.id, cursor]);
@@ -259,16 +280,26 @@ export default function AttendanceCalendarDialog({ employee, open, onOpenChange 
                 const isFuture = dateStr > today;
                 const isToday = dateStr === today;
                 const meta = r ? STATUS_META[r.status] : null;
-                const isSelected = selectedDate === dateStr;
+                const isFocused = selectedDate === dateStr;
+                const isPicked = multiSelected.has(dateStr);
                 return (
                   <button
                     key={dateStr}
-                    onClick={() => setSelectedDate(dateStr)}
+                    onClick={() => {
+                      setSelectedDate(dateStr);
+                      setMultiSelected(prev => {
+                        const next = new Set(prev);
+                        if (next.has(dateStr)) next.delete(dateStr);
+                        else next.add(dateStr);
+                        return next;
+                      });
+                    }}
                     onDoubleClick={() => openEdit(dateStr)}
                     className={`
                       relative aspect-square rounded-lg text-sm font-medium
                       transition-all flex flex-col items-center justify-center
-                      ${isSelected ? "ring-2 ring-primary" : ""}
+                      ${isPicked ? "ring-2 ring-primary ring-offset-1" : ""}
+                      ${isFocused && !isPicked ? "ring-2 ring-primary/40" : ""}
                       ${isFuture && !r ? "bg-muted/40 text-muted-foreground" : ""}
                       ${meta ? `${meta.color} text-white shadow-sm hover:opacity-90` : "bg-background hover:bg-muted border"}
                       ${isToday ? "outline outline-2 outline-offset-1 outline-primary" : ""}
@@ -279,11 +310,40 @@ export default function AttendanceCalendarDialog({ employee, open, onOpenChange 
                     {r?.check_in && (
                       <span className="text-[9px] opacity-90 leading-none mt-0.5">{toLocalTime(r.check_in)}</span>
                     )}
+                    {isPicked && (
+                      <span className="absolute top-0.5 right-0.5 h-2 w-2 rounded-full bg-primary shadow" />
+                    )}
                   </button>
                 );
               })}
             </div>
           </div>
+
+          {/* Multi-select controls & stats */}
+          <MultiSelectPanel
+            selected={multiSelected}
+            allRows={allRows}
+            onClear={() => setMultiSelected(new Set())}
+            onQuickRange={async (days) => {
+              const to = new Date();
+              const from = new Date(); from.setDate(to.getDate() - (days - 1));
+              await fetchRange(ymd(from), ymd(to));
+              const set = new Set<string>();
+              for (let i = 0; i < days; i++) {
+                const d = new Date(from); d.setDate(from.getDate() + i);
+                set.add(ymd(d));
+              }
+              setMultiSelected(set);
+            }}
+            onSelectMonth={() => {
+              const set = new Set<string>();
+              for (let d = 1; d <= daysInMonth; d++) {
+                set.add(`${cursor.getFullYear()}-${pad(cursor.getMonth()+1)}-${pad(d)}`);
+              }
+              setMultiSelected(set);
+            }}
+          />
+
 
           {/* Selected day details */}
           <Card>
@@ -431,3 +491,83 @@ function StatCard({ color, label, value }: { color: "emerald"|"amber"|"rose"|"sk
     </div>
   );
 }
+
+function MultiSelectPanel({
+  selected, allRows, onClear, onQuickRange, onSelectMonth,
+}: {
+  selected: Set<string>;
+  allRows: Record<string, AttRow>;
+  onClear: () => void;
+  onQuickRange: (days: number) => void;
+  onSelectMonth: () => void;
+}) {
+  const list = Array.from(selected).sort();
+  let totalHours = 0;
+  let present = 0, late = 0, absent = 0, leave = 0, noData = 0;
+  list.forEach(d => {
+    const r = allRows[d];
+    if (!r) { noData++; return; }
+    totalHours += hoursBetween(r.check_in, r.check_out);
+    if (r.status === "present") present++;
+    else if (r.status === "late") late++;
+    else if (r.status === "absent") absent++;
+    else if (r.status === "leave") leave++;
+  });
+  const workedDays = present + late;
+  const avg = workedDays ? totalHours / workedDays : 0;
+
+  return (
+    <Card className="border-primary/30">
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="text-sm font-semibold flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-primary" />
+            Tanlangan kunlar tahlili
+            <Badge variant="outline" className="ml-1">{list.length}</Badge>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            <Button size="sm" variant="outline" onClick={() => onQuickRange(3)}>Oxirgi 3</Button>
+            <Button size="sm" variant="outline" onClick={() => onQuickRange(7)}>7 kun</Button>
+            <Button size="sm" variant="outline" onClick={() => onQuickRange(14)}>14 kun</Button>
+            <Button size="sm" variant="outline" onClick={() => onQuickRange(30)}>30 kun</Button>
+            <Button size="sm" variant="outline" onClick={onSelectMonth}>Shu oy</Button>
+            <Button size="sm" variant="ghost" onClick={onClear} disabled={!list.length}>Tozalash</Button>
+          </div>
+        </div>
+
+        {list.length === 0 ? (
+          <div className="text-sm text-muted-foreground text-center py-3">
+            Kalendardan kunlarni bosib tanlang yoki yuqoridagi tugmalardan foydalaning
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="rounded-lg border bg-primary/5 p-3">
+                <div className="text-xs text-muted-foreground">Tanlangan kunlar</div>
+                <div className="text-2xl font-bold text-primary">{list.length}</div>
+              </div>
+              <div className="rounded-lg border bg-emerald-500/5 p-3">
+                <div className="text-xs text-muted-foreground">Jami soat</div>
+                <div className="text-2xl font-bold text-emerald-600">{totalHours.toFixed(1)}</div>
+              </div>
+              <div className="rounded-lg border bg-sky-500/5 p-3">
+                <div className="text-xs text-muted-foreground">O'rtacha (ishlangan)</div>
+                <div className="text-2xl font-bold text-sky-600">{avg.toFixed(2)}</div>
+              </div>
+              <div className="rounded-lg border bg-amber-500/5 p-3">
+                <div className="text-xs text-muted-foreground">Ishlangan / Kech / Kelmagan / Ta'til / Ma'lumotsiz</div>
+                <div className="text-sm font-semibold mt-1">
+                  {present} · <span className="text-amber-600">{late}</span> · <span className="text-rose-600">{absent}</span> · <span className="text-sky-600">{leave}</span> · <span className="text-muted-foreground">{noData}</span>
+                </div>
+              </div>
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              {list[0]} — {list[list.length - 1]}
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
