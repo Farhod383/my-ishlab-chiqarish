@@ -915,7 +915,9 @@ export default function WarehousePage() {
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Ta'minotga buyurtma berish</DialogTitle>
+                  <DialogTitle>
+                    {prMode === "order" ? "Zakaz uchun buyurtma" : "Zavod uchun buyurtma"}
+                  </DialogTitle>
                   <DialogDescription>So'rov Ta'minot bo'limiga yuboriladi</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-3">
