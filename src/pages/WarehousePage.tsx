@@ -627,6 +627,74 @@ export default function WarehousePage() {
         </div>
         <div className="flex flex-wrap gap-2">
           {canManage && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary" className="min-h-11">
+                  <ArrowDownToLine className="h-4 w-4 mr-2" />Kirim qilish
+                  <ChevronDown className="h-4 w-4 ml-2 opacity-70" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Kirim varianti</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setImportOpen(true)}>
+                  <ArrowDownToLine className="h-4 w-4 mr-2" />
+                  Kirim qilish (mavjud mahsulotga)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setAddOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Mahsulot qo'shish (yangi)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          {canOut && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="min-h-11">
+                  <ArrowUpFromLine className="h-4 w-4 mr-2" />Chiqim qilish
+                  <ChevronDown className="h-4 w-4 ml-2 opacity-70" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Chiqim varianti</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setReleaseOpen(true)}>
+                  <ClipboardList className="h-4 w-4 mr-2" />
+                  Chiqim qilish (zakaz uchun)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setOtherOpen(true)}>
+                  <PackageMinus className="h-4 w-4 mr-2" />
+                  Boshqa chiqim (zavod ehtiyoji)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          {canRequest && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="min-h-11">
+                  <ShoppingCart className="h-4 w-4 mr-2" />Buyurtma berish
+                  <ChevronDown className="h-4 w-4 ml-2 opacity-70" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Buyurtma turi</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => { setPrMode("order"); setPrOpen(true); }}>
+                  <ClipboardList className="h-4 w-4 mr-2" />
+                  Zakaz uchun buyurtma
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setPrMode("factory"); setPrOrderId(""); setPrOpen(true); }}>
+                  <Factory className="h-4 w-4 mr-2" />
+                  Zavod uchun buyurtma
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+        <div className="hidden">
+          {canManage && (
             <>
               <Dialog open={addOpen} onOpenChange={setAddOpen}>
                 <DialogTrigger asChild><Button variant="outline"><Plus className="h-4 w-4 mr-2" />{t.warehouse.addProduct}</Button></DialogTrigger>
