@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useDragScroll } from "@/lib/dragScroll";
 
 const Command = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive>,
@@ -57,13 +58,22 @@ CommandInput.displayName = CommandPrimitive.Input.displayName;
 const CommandList = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.List>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.List>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.List
-    ref={ref}
-    className={cn("max-h-[300px] overflow-y-auto overflow-x-hidden", className)}
-    {...props}
-  />
-));
+>(({ className, ...props }, ref) => {
+  const dragScrollRef = useDragScroll<React.ElementRef<typeof CommandPrimitive.List>>();
+  const composedRef = React.useCallback((node: React.ElementRef<typeof CommandPrimitive.List> | null) => {
+    dragScrollRef(node);
+    if (typeof ref === "function") ref(node);
+    else if (ref) ref.current = node;
+  }, [dragScrollRef, ref]);
+
+  return (
+    <CommandPrimitive.List
+      ref={composedRef}
+      className={cn("max-h-[300px] overflow-y-auto overflow-x-hidden overscroll-contain", className)}
+      {...props}
+    />
+  );
+});
 
 CommandList.displayName = CommandPrimitive.List.displayName;
 
