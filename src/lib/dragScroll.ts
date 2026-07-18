@@ -21,12 +21,14 @@ export function useDragScroll<T extends HTMLElement = HTMLDivElement>(options: D
   const state = useRef({
     down: false,
     dragging: false,
+    source: "" as "" | "pointer" | "mouse" | "touch",
     startX: 0,
     startY: 0,
     startLeft: 0,
     startTop: 0,
     pointerId: -1,
     touchId: -1,
+    lastPointerScrollAt: 0,
   });
 
   useEffect(() => {
@@ -72,9 +74,10 @@ export function useDragScroll<T extends HTMLElement = HTMLDivElement>(options: D
     node.style.overscrollBehavior = "contain";
     (node.style as any).webkitOverflowScrolling = "touch";
 
-    const begin = (clientX: number, clientY: number, pointerId = -1, touchId = -1) => {
+    const begin = (clientX: number, clientY: number, source: typeof state.current.source, pointerId = -1, touchId = -1) => {
       state.current.down = true;
       state.current.dragging = false;
+      state.current.source = source;
       state.current.startX = clientX;
       state.current.startY = clientY;
       state.current.startLeft = node.scrollLeft;
@@ -83,8 +86,8 @@ export function useDragScroll<T extends HTMLElement = HTMLDivElement>(options: D
       state.current.touchId = touchId;
     };
 
-    const move = (clientX: number, clientY: number) => {
-      if (!state.current.down) return;
+    const move = (clientX: number, clientY: number, source: typeof state.current.source) => {
+      if (!state.current.down || state.current.source !== source) return false;
       const dx = clientX - state.current.startX;
       const dy = clientY - state.current.startY;
       const { axis, threshold } = optionsRef.current;
@@ -92,26 +95,32 @@ export function useDragScroll<T extends HTMLElement = HTMLDivElement>(options: D
       if (!state.current.dragging && distance > threshold && canScroll(node)) {
         state.current.dragging = true;
       }
-      if (state.current.dragging) applyScroll(node, dx, dy);
+      if (state.current.dragging) {
+        applyScroll(node, dx, dy);
+        return true;
+      }
+      return false;
     };
 
     const end = () => {
       if (state.current.dragging) suppressNextClick(node);
       state.current.down = false;
       state.current.dragging = false;
+      state.current.source = "";
       state.current.pointerId = -1;
       state.current.touchId = -1;
     };
 
     const onPointerDown = (event: PointerEvent) => {
       if (event.button !== undefined && event.button !== 0) return;
-      begin(event.clientX, event.clientY, event.pointerId);
+      begin(event.clientX, event.clientY, "pointer", event.pointerId);
     };
 
     const onPointerMove = (event: PointerEvent) => {
       if (!state.current.down || state.current.pointerId !== event.pointerId) return;
-      move(event.clientX, event.clientY);
+      const didScroll = move(event.clientX, event.clientY, "pointer");
       if (state.current.dragging) {
+        if (didScroll) state.current.lastPointerScrollAt = Date.now();
         try { node.setPointerCapture(event.pointerId); } catch {}
         stopEvent(event);
       }
@@ -123,23 +132,36 @@ export function useDragScroll<T extends HTMLElement = HTMLDivElement>(options: D
       end();
     };
 
+    const onMouseDown = (event: MouseEvent) => {
+      if (event.button !== 0) return;
+      begin(event.clientX, event.clientY, "mouse");
+    };
+
+    const onMouseMove = (event: MouseEvent) => {
+      if (Date.now() - state.current.lastPointerScrollAt < 80) return;
+      if (move(event.clientX, event.clientY, "mouse")) stopEvent(event);
+    };
+
+    const onMouseEnd = () => {
+      if (state.current.source === "mouse") end();
+    };
+
     const findTouch = (event: TouchEvent) => {
       const touches = Array.from(event.changedTouches);
       return touches.find((touch) => touch.identifier === state.current.touchId) ?? touches[0];
     };
 
     const onTouchStart = (event: TouchEvent) => {
-      if ((window as any).PointerEvent || event.touches.length !== 1) return;
+      if (event.touches.length !== 1) return;
       const touch = event.touches[0];
-      begin(touch.clientX, touch.clientY, -1, touch.identifier);
+      begin(touch.clientX, touch.clientY, "touch", -1, touch.identifier);
     };
 
     const onTouchMove = (event: TouchEvent) => {
-      if ((window as any).PointerEvent || !state.current.down) return;
+      if (!state.current.down || state.current.source !== "touch") return;
       const touch = findTouch(event);
       if (!touch) return;
-      move(touch.clientX, touch.clientY);
-      if (state.current.dragging) stopEvent(event);
+      if (move(touch.clientX, touch.clientY, "touch")) stopEvent(event);
     };
 
     const onWheel = (event: WheelEvent) => {
@@ -155,6 +177,10 @@ export function useDragScroll<T extends HTMLElement = HTMLDivElement>(options: D
     node.addEventListener("pointermove", onPointerMove, { capture: true, passive: false });
     node.addEventListener("pointerup", onPointerEnd, { capture: true });
     node.addEventListener("pointercancel", onPointerEnd, { capture: true });
+    node.addEventListener("mousedown", onMouseDown, { capture: true });
+    node.addEventListener("mousemove", onMouseMove, { capture: true, passive: false });
+    node.addEventListener("mouseup", onMouseEnd, { capture: true });
+    node.addEventListener("mouseleave", onMouseEnd, { capture: true });
     node.addEventListener("touchstart", onTouchStart, { capture: true, passive: true });
     node.addEventListener("touchmove", onTouchMove, { capture: true, passive: false });
     node.addEventListener("touchend", end, { capture: true });
@@ -166,6 +192,10 @@ export function useDragScroll<T extends HTMLElement = HTMLDivElement>(options: D
       node.removeEventListener("pointermove", onPointerMove, { capture: true } as any);
       node.removeEventListener("pointerup", onPointerEnd, { capture: true });
       node.removeEventListener("pointercancel", onPointerEnd, { capture: true });
+      node.removeEventListener("mousedown", onMouseDown, { capture: true });
+      node.removeEventListener("mousemove", onMouseMove, { capture: true } as any);
+      node.removeEventListener("mouseup", onMouseEnd, { capture: true });
+      node.removeEventListener("mouseleave", onMouseEnd, { capture: true });
       node.removeEventListener("touchstart", onTouchStart, { capture: true });
       node.removeEventListener("touchmove", onTouchMove, { capture: true } as any);
       node.removeEventListener("touchend", end, { capture: true });
@@ -176,6 +206,7 @@ export function useDragScroll<T extends HTMLElement = HTMLDivElement>(options: D
       (node.style as any).webkitOverflowScrolling = previous.webkitOverflowScrolling;
       state.current.down = false;
       state.current.dragging = false;
+      state.current.source = "";
     };
   }, []);
 
