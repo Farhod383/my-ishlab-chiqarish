@@ -4,6 +4,8 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Button } from "@/components/ui/button";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDragScroll } from "@/lib/dragScroll";
+
 
 export interface PickerProduct {
   id: string;
@@ -29,6 +31,8 @@ interface Props {
 export default function ProductPicker({ products, value, onChange, placeholder = "Mahsulot tanlang", emptyText = "Topilmadi", disabled, className }: Props) {
   const [open, setOpen] = useState(false);
   const selected = products.find(p => p.id === value);
+  const dragRef = useDragScroll<HTMLDivElement>();
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -59,7 +63,7 @@ export default function ProductPicker({ products, value, onChange, placeholder =
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
         <Command>
           <CommandInput placeholder="Qidirish..." />
-          <CommandList className="max-h-[60vh]">
+          <CommandList ref={dragRef} className="max-h-[60vh] select-none">
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
               {products.map(p => (

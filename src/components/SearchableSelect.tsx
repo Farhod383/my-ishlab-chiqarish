@@ -4,6 +4,8 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Button } from "@/components/ui/button";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDragScroll } from "@/lib/dragScroll";
+
 
 export interface SearchOption {
   value: string;
@@ -34,6 +36,8 @@ export default function SearchableSelect({
 }: Props) {
   const [open, setOpen] = useState(false);
   const selected = options.find(o => o.value === value);
+  const dragRef = useDragScroll<HTMLDivElement>();
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -62,7 +66,7 @@ export default function SearchableSelect({
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
         <Command>
           <CommandInput placeholder={searchPlaceholder} />
-          <CommandList className="max-h-[60vh]">
+          <CommandList ref={dragRef} className="max-h-[60vh] select-none">
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
               {options.map(o => (
