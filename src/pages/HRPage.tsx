@@ -223,7 +223,19 @@ export default function HRPage() {
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><Users className="h-6 w-6" />{hr.title ?? "Xodimlar"}</h1>
           <p className="text-sm text-muted-foreground">{hr.subtitle ?? "Xodimlar ro'yxati va boshqaruvi"}</p>
         </div>
+        <div className="flex items-center gap-2 flex-wrap">
+        {canExport && statusFilter !== "vacancy" && (
+          <>
+            <Button variant="outline" disabled={!!exporting} onClick={() => runExport("pdf")}>
+              <FileDown className="h-4 w-4 mr-2" />{exporting === "pdf" ? "Tayyorlanmoqda..." : "PDF eksport"}
+            </Button>
+            <Button variant="outline" disabled={!!exporting} onClick={() => runExport("docx")}>
+              <FileText className="h-4 w-4 mr-2" />{exporting === "docx" ? "Tayyorlanmoqda..." : "Word eksport"}
+            </Button>
+          </>
+        )}
         {canManage && statusFilter !== "vacancy" && (
+
           <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) { setEditId(null); resetForm(); } }}>
             <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{hr.add ?? "Xodim qo'shish"}</Button></DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
