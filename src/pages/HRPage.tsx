@@ -10,7 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Users, Plus, Edit2, Wrench, UserX, UserCheck, Briefcase, CalendarDays } from "lucide-react";
+import { Users, Plus, Edit2, Wrench, UserX, UserCheck, Briefcase, CalendarDays, FileDown, FileText } from "lucide-react";
+import { exportEmployeesPDF, exportEmployeesDocx } from "@/lib/hrExport";
+
 import VacanciesTab from "@/components/hr/VacanciesTab";
 import AttendanceCalendarDialog from "@/components/hr/AttendanceCalendarDialog";
 import { useAuth } from "@/auth/AuthContext";
@@ -69,6 +71,31 @@ export default function HRPage() {
 
   const canManage = hasRole(["hr", "admin", "cashier"]);
   const canDeactivate = hasRole(["admin", "cashier"]);
+  const canExport = hasRole(["hr"]); // admin ham avtomatik kiradi
+  const [exporting, setExporting] = useState<null | "pdf" | "docx">(null);
+
+  const runExport = async (kind: "pdf" | "docx") => {
+    setExporting(kind);
+    try {
+      const { data, error } = await supabase
+        .from("employees")
+        .select("full_name, position, phone, status")
+        .order("position")
+        .order("full_name");
+      if (error) throw error;
+      const rows = (data ?? []).filter((e: any) => (e.status ?? "active") === "active");
+      if (rows.length === 0) { toast.error("Eksport uchun xodimlar topilmadi"); return; }
+      const actor = user?.email ?? "—";
+      if (kind === "pdf") await exportEmployeesPDF(rows as any, actor);
+      else await exportEmployeesDocx(rows as any, actor);
+      toast.success("Eksport tayyor");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Eksportda xatolik");
+    } finally {
+      setExporting(null);
+    }
+  };
+
   const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "all" | "vacancy">("active");
   const filteredEmployees = useMemo(
     () => statusFilter === "all" || statusFilter === "vacancy"
@@ -196,7 +223,19 @@ export default function HRPage() {
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><Users className="h-6 w-6" />{hr.title ?? "Xodimlar"}</h1>
           <p className="text-sm text-muted-foreground">{hr.subtitle ?? "Xodimlar ro'yxati va boshqaruvi"}</p>
         </div>
+        <div className="flex items-center gap-2 flex-wrap">
+        {canExport && statusFilter !== "vacancy" && (
+          <>
+            <Button variant="outline" disabled={!!exporting} onClick={() => runExport("pdf")}>
+              <FileDown className="h-4 w-4 mr-2" />{exporting === "pdf" ? "Tayyorlanmoqda..." : "PDF eksport"}
+            </Button>
+            <Button variant="outline" disabled={!!exporting} onClick={() => runExport("docx")}>
+              <FileText className="h-4 w-4 mr-2" />{exporting === "docx" ? "Tayyorlanmoqda..." : "Word eksport"}
+            </Button>
+          </>
+        )}
         {canManage && statusFilter !== "vacancy" && (
+
           <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) { setEditId(null); resetForm(); } }}>
             <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{hr.add ?? "Xodim qo'shish"}</Button></DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -245,7 +284,9 @@ export default function HRPage() {
             </DialogContent>
           </Dialog>
         )}
+        </div>
       </div>
+
 
       <Card>
         <CardContent className="p-0">
