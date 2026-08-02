@@ -69,6 +69,31 @@ export default function HRPage() {
 
   const canManage = hasRole(["hr", "admin", "cashier"]);
   const canDeactivate = hasRole(["admin", "cashier"]);
+  const canExport = hasRole(["hr"]); // admin ham avtomatik kiradi
+  const [exporting, setExporting] = useState<null | "pdf" | "docx">(null);
+
+  const runExport = async (kind: "pdf" | "docx") => {
+    setExporting(kind);
+    try {
+      const { data, error } = await supabase
+        .from("employees")
+        .select("full_name, position, phone, status")
+        .order("position")
+        .order("full_name");
+      if (error) throw error;
+      const rows = (data ?? []).filter((e: any) => (e.status ?? "active") === "active");
+      if (rows.length === 0) { toast.error("Eksport uchun xodimlar topilmadi"); return; }
+      const actor = user?.email ?? "—";
+      if (kind === "pdf") await exportEmployeesPDF(rows as any, actor);
+      else await exportEmployeesDocx(rows as any, actor);
+      toast.success("Eksport tayyor");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Eksportda xatolik");
+    } finally {
+      setExporting(null);
+    }
+  };
+
   const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "all" | "vacancy">("active");
   const filteredEmployees = useMemo(
     () => statusFilter === "all" || statusFilter === "vacancy"
