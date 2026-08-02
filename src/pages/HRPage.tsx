@@ -284,7 +284,9 @@ export default function HRPage() {
             </DialogContent>
           </Dialog>
         )}
+        </div>
       </div>
+
 
       <Card>
         <CardContent className="p-0">
