@@ -10,7 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Users, Plus, Edit2, Wrench, UserX, UserCheck, Briefcase, CalendarDays } from "lucide-react";
+import { Users, Plus, Edit2, Wrench, UserX, UserCheck, Briefcase, CalendarDays, FileDown, FileText } from "lucide-react";
+import { exportEmployeesPDF, exportEmployeesDocx } from "@/lib/hrExport";
+
 import VacanciesTab from "@/components/hr/VacanciesTab";
 import AttendanceCalendarDialog from "@/components/hr/AttendanceCalendarDialog";
 import { useAuth } from "@/auth/AuthContext";
