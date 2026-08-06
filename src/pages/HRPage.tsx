@@ -252,7 +252,6 @@ export default function HRPage() {
                   <div><Label>Ish boshlagan sana</Label><Input type="date" value={form.hire_date} onChange={e => setForm({ ...form, hire_date: e.target.value })} /></div>
                   <div><Label>Tug'ilgan sana</Label><Input type="date" value={form.birth_date} onChange={e => setForm({ ...form, birth_date: e.target.value })} /></div>
                 </div>
-                <div><Label>Pasport / JSHSHIR</Label><Input value={form.passport} onChange={e => setForm({ ...form, passport: e.target.value })} /></div>
                 <div><Label>Manzil</Label><Input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} /></div>
                 <div><Label>Izoh</Label><Textarea rows={2} value={form.note} onChange={e => setForm({ ...form, note: e.target.value })} /></div>
                 {canDeactivate && editId && (
