@@ -114,13 +114,8 @@ export default function HRPage() {
     if (!composedName) { toast.error("Ism va familiyani kiriting"); return; }
     if (!form.phone.trim()) { toast.error("Telefon raqami majburiy"); return; }
     if (!isValidPhone(form.phone)) { toast.error("Telefon formati: +998 XX XXX XX XX"); return; }
-    if (!form.neighborhood.trim()) { toast.error("Mahalla majburiy"); return; }
     if (!form.position.trim()) { toast.error("Lavozim majburiy"); return; }
     if (!form.department.trim()) { toast.error("Bo'lim majburiy"); return; }
-    if (!editId) {
-      if (!form.login.trim()) { toast.error("Login majburiy"); return; }
-      if (!form.password.trim()) { toast.error("Parol majburiy"); return; }
-    }
 
     // Termination guard
     if (editId) {
@@ -247,21 +242,16 @@ export default function HRPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>Telefon * (+998 XX XXX XX XX)</Label><Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+998 90 123 45 67" /></div>
-                  <div><Label>Mahalla *</Label><Input value={form.neighborhood} onChange={e => setForm({ ...form, neighborhood: e.target.value })} /></div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
                   <div><Label>Lavozim *</Label><Input value={form.position} onChange={e => setForm({ ...form, position: e.target.value })} /></div>
-                  <div><Label>Bo'lim *</Label><Input value={form.department} onChange={e => setForm({ ...form, department: e.target.value })} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Login {!editId && "*"}</Label><Input value={form.login} onChange={e => setForm({ ...form, login: e.target.value })} autoComplete="off" /></div>
-                  <div><Label>Parol {!editId && "*"}</Label><Input type="text" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} autoComplete="new-password" /></div>
+                  <div><Label>Bo'lim *</Label><Input value={form.department} onChange={e => setForm({ ...form, department: e.target.value })} /></div>
+                  <div><Label>Pasport / JSHSHIR</Label><Input value={form.passport} onChange={e => setForm({ ...form, passport: e.target.value })} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>Ish boshlagan sana</Label><Input type="date" value={form.hire_date} onChange={e => setForm({ ...form, hire_date: e.target.value })} /></div>
                   <div><Label>Tug'ilgan sana</Label><Input type="date" value={form.birth_date} onChange={e => setForm({ ...form, birth_date: e.target.value })} /></div>
                 </div>
-                <div><Label>Pasport / JSHSHIR</Label><Input value={form.passport} onChange={e => setForm({ ...form, passport: e.target.value })} /></div>
                 <div><Label>Manzil</Label><Input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} /></div>
                 <div><Label>Izoh</Label><Textarea rows={2} value={form.note} onChange={e => setForm({ ...form, note: e.target.value })} /></div>
                 {canDeactivate && editId && (
