@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { notify } from "@/lib/notify";
 
 type Filter = "all" | "red" | "yellow" | "green";
+type Color = "red" | "yellow" | "green" | "none";
 
 function otkColor(s: any): "red" | "yellow" | "green" {
   if (s.qc_passed) return "green";
@@ -23,7 +24,7 @@ function otkColor(s: any): "red" | "yellow" | "green" {
   return "red";
 }
 
-const dotCls = { red: "bg-status-red", yellow: "bg-status-yellow", green: "bg-status-green" };
+const dotCls: Record<Color, string> = { red: "bg-status-red", yellow: "bg-status-yellow", green: "bg-status-green", none: "bg-muted-foreground/40" };
 const labelCls = {
   red: "text-status-red border-status-red/30 bg-status-red/10",
   yellow: "text-status-yellow border-status-yellow/30 bg-status-yellow/10",
@@ -34,54 +35,57 @@ export default function OtkPage() {
   const { user, hasRole } = useAuth();
   const { t } = useI18n();
   const [stages, setStages] = useState<any[]>([]);
+  const [ordersRaw, setOrdersRaw] = useState<any[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
   const [edit, setEdit] = useState<Record<string, { comment: string; passed: boolean; dirty: boolean }>>({});
 
   const load = async () => {
+    // Same data source as other modules: all active orders with their stages
     const { data } = await supabase
-      .from("order_stages")
-      .select("*, order:orders(id, order_number, product_name, status, deadline)")
-      .eq("qc_required", true)
-      .order("created_at", { ascending: false });
-    setStages(data ?? []);
+      .from("orders")
+      .select("id, order_number, product_name, status, priority, deadline, queue_position, order_stages(*)")
+      .neq("status", "cancelled")
+      .order("queue_position");
+    const rows = (data as any[]) ?? [];
+    const flat: any[] = [];
+    rows.forEach((o: any) => {
+      (o.order_stages ?? []).forEach((s: any) => {
+        flat.push({ ...s, order: { id: o.id, order_number: o.order_number, product_name: o.product_name, status: o.status, priority: o.priority, deadline: o.deadline } });
+      });
+    });
+    setOrdersRaw(rows);
+    setStages(flat);
     const map: any = {};
-    (data ?? []).forEach((s: any) => { map[s.id] = { comment: s.otk_comment ?? "", passed: !!s.qc_passed, dirty: false }; });
+    flat.forEach((s: any) => { map[s.id] = { comment: s.otk_comment ?? "", passed: !!s.qc_passed, dirty: false }; });
     setEdit(map);
   };
   useEffect(() => { load(); }, []);
 
-  // Group stages by order
+  // Group stages by order — every active order is listed, even without QC stages
   const orders = useMemo(() => {
-    const map = new Map<string, { order: any; stages: any[]; worstColor: "red" | "yellow" | "green"; counts: { red: number; yellow: number; green: number } }>();
-    stages.forEach((s) => {
-      if (!s.order) return;
-      const key = s.order.id;
-      if (!map.has(key)) map.set(key, { order: s.order, stages: [], worstColor: "green", counts: { red: 0, yellow: 0, green: 0 } });
-      const entry = map.get(key)!;
-      entry.stages.push(s);
-      const c = otkColor(s);
-      entry.counts[c]++;
+    const byOrder = new Map<string, any[]>();
+    stages.forEach((s) => { if (s.order) { const a = byOrder.get(s.order.id) ?? []; a.push(s); byOrder.set(s.order.id, a); } });
+    return ordersRaw.map((o: any) => {
+      const list = (byOrder.get(o.id) ?? []).slice().sort((a: any, b: any) => a.stage_order - b.stage_order);
+      const counts = { red: 0, yellow: 0, green: 0 };
+      list.filter((s: any) => s.qc_required).forEach((s: any) => { counts[otkColor(s)]++; });
+      const hasQc = counts.red + counts.yellow + counts.green > 0;
+      const worstColor: any = !hasQc ? "none" : counts.red > 0 ? "red" : counts.yellow > 0 ? "yellow" : "green";
+      return { order: { id: o.id, order_number: o.order_number, product_name: o.product_name, status: o.status, priority: o.priority, deadline: o.deadline }, stages: list, worstColor, counts };
     });
-    map.forEach((entry) => {
-      entry.stages.sort((a: any, b: any) => a.stage_order - b.stage_order);
-      if (entry.counts.red > 0) entry.worstColor = "red";
-      else if (entry.counts.yellow > 0) entry.worstColor = "yellow";
-      else entry.worstColor = "green";
-    });
-    return Array.from(map.values());
-  }, [stages]);
+  }, [stages, ordersRaw]);
 
   const counts = useMemo(() => {
     const c = { red: 0, yellow: 0, green: 0 };
-    stages.forEach((s) => { c[otkColor(s)]++; });
+    stages.filter((s) => s.qc_required).forEach((s) => { c[otkColor(s)]++; });
     return c;
   }, [stages]);
 
   const ordersCounts = useMemo(() => {
     const sets = { red: new Set<string>(), yellow: new Set<string>(), green: new Set<string>() };
-    stages.forEach((s) => { if (s.order?.id) sets[otkColor(s)].add(s.order.id); });
+    stages.forEach((s) => { if (s.qc_required && s.order?.id) sets[otkColor(s)].add(s.order.id); });
     return { red: sets.red.size, yellow: sets.yellow.size, green: sets.green.size };
   }, [stages]);
 
@@ -90,6 +94,7 @@ export default function OtkPage() {
     if (q && !(`${o.order.order_number} ${o.order.product_name}`.toLowerCase().includes(q.toLowerCase()))) return false;
     return true;
   });
+
 
   const save = async (s: any) => {
     const e = edit[s.id];
@@ -168,7 +173,7 @@ export default function OtkPage() {
               <Card
                 key={o.order.id}
                 className="cursor-pointer hover:bg-muted/30 border-l-4"
-                style={{ borderLeftColor: o.worstColor === "red" ? "hsl(var(--status-red))" : o.worstColor === "yellow" ? "hsl(var(--status-yellow))" : "hsl(var(--status-green))" }}
+                style={{ borderLeftColor: o.worstColor === "red" ? "hsl(var(--status-red))" : o.worstColor === "yellow" ? "hsl(var(--status-yellow))" : o.worstColor === "green" ? "hsl(var(--status-green))" : "hsl(var(--border))" }}
                 onClick={() => setOpenOrderId(o.order.id)}
               >
                 <CardContent className="p-3 flex items-center justify-between gap-3 flex-wrap">
@@ -183,6 +188,7 @@ export default function OtkPage() {
                     {o.counts.red > 0 && <Badge className={labelCls.red} variant="outline">🔴 {o.counts.red}</Badge>}
                     {o.counts.yellow > 0 && <Badge className={labelCls.yellow} variant="outline">🟡 {o.counts.yellow}</Badge>}
                     {o.counts.green > 0 && <Badge className={labelCls.green} variant="outline">🟢 {o.counts.green}</Badge>}
+                    {o.worstColor === "none" && <Badge variant="outline" className="text-muted-foreground">OTK bosqichi yo'q</Badge>}
                     <span className="text-muted-foreground">{o.stages.length} {t.otk.stage}</span>
                   </div>
                 </CardContent>
@@ -208,40 +214,41 @@ export default function OtkPage() {
             {/* vertical timeline */}
             <div className="relative pl-6 space-y-4 before:content-[''] before:absolute before:left-[10px] before:top-2 before:bottom-2 before:w-0.5 before:bg-border">
               {openedOrder.stages.map((s) => {
-                const color = otkColor(s);
+                const color = s.qc_required ? otkColor(s) : ("none" as const);
                 const e = edit[s.id] ?? { comment: "", passed: false, dirty: false };
                 const Icon = color === "green" ? CheckCircle2 : color === "yellow" ? AlertCircle : Circle;
-                const iconCls = color === "green" ? "text-status-green" : color === "yellow" ? "text-status-yellow" : "text-status-red";
+                const iconCls = color === "green" ? "text-status-green" : color === "yellow" ? "text-status-yellow" : color === "red" ? "text-status-red" : "text-muted-foreground";
+                const stageEditable = canEdit && s.qc_required;
                 return (
                   <div key={s.id} className="relative">
                     <Icon className={`h-5 w-5 absolute -left-6 top-3 bg-background ${iconCls}`} />
-                    <Card className="border-l-4" style={{ borderLeftColor: color === "red" ? "hsl(var(--status-red))" : color === "yellow" ? "hsl(var(--status-yellow))" : "hsl(var(--status-green))" }}>
+                    <Card className="border-l-4" style={{ borderLeftColor: color === "red" ? "hsl(var(--status-red))" : color === "yellow" ? "hsl(var(--status-yellow))" : color === "green" ? "hsl(var(--status-green))" : "hsl(var(--border))" }}>
                       <CardContent className="p-4 space-y-3">
                         <div className="flex items-center justify-between gap-2 flex-wrap">
                           <div>
                             <div className="text-xs text-muted-foreground">Bosqich {s.stage_order}</div>
                             <div className="font-semibold">{s.name}</div>
                           </div>
-                          <div className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-semibold ${labelCls[color]}`}>
+                          <div className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-semibold ${color === "none" ? "text-muted-foreground" : labelCls[color]}`}>
                             <span className={`h-2 w-2 rounded-full ${dotCls[color]}`} />
-                            {color === "red" ? t.otk.notChecked : color === "yellow" ? t.otk.commentOnly : t.otk.passed}
+                            {color === "red" ? t.otk.notChecked : color === "yellow" ? t.otk.commentOnly : color === "green" ? t.otk.passed : "OTK talab qilinmaydi"}
                           </div>
                         </div>
                         <div>
                           <CardDescription className="text-xs mb-1">{t.otk.comment}</CardDescription>
                           <Textarea
-                            rows={2} disabled={!canEdit} value={e.comment}
+                            rows={2} disabled={!stageEditable} value={e.comment}
                             onChange={(ev) => setEdit({ ...edit, [s.id]: { ...e, comment: ev.target.value, dirty: true } })}
                             placeholder={t.otk.placeholder}
                           />
                         </div>
                         <div className="flex items-center justify-between flex-wrap gap-2">
                           <label className="flex items-center gap-2 text-sm cursor-pointer">
-                            <Checkbox disabled={!canEdit} checked={e.passed}
+                            <Checkbox disabled={!stageEditable} checked={e.passed}
                               onCheckedChange={(v) => setEdit({ ...edit, [s.id]: { ...e, passed: !!v, dirty: true } })} />
                             <span>{t.otk.checkPassed}</span>
                           </label>
-                          {canEdit && (
+                          {stageEditable && (
                             <Button size="sm" disabled={!e.dirty} onClick={() => save(s)}>
                               <Save className="h-3.5 w-3.5 mr-1" /> {t.otk.save}
                             </Button>
