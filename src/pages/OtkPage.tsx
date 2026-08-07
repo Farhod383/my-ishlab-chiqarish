@@ -40,48 +40,50 @@ export default function OtkPage() {
   const [edit, setEdit] = useState<Record<string, { comment: string; passed: boolean; dirty: boolean }>>({});
 
   const load = async () => {
+    // Same data source as other modules: all active orders with their stages
     const { data } = await supabase
-      .from("order_stages")
-      .select("*, order:orders(id, order_number, product_name, status, deadline)")
-      .eq("qc_required", true)
-      .order("created_at", { ascending: false });
-    setStages(data ?? []);
+      .from("orders")
+      .select("id, order_number, product_name, status, priority, deadline, queue_position, order_stages(*)")
+      .neq("status", "cancelled")
+      .order("queue_position");
+    const rows = (data as any[]) ?? [];
+    const flat: any[] = [];
+    rows.forEach((o: any) => {
+      (o.order_stages ?? []).forEach((s: any) => {
+        flat.push({ ...s, order: { id: o.id, order_number: o.order_number, product_name: o.product_name, status: o.status, priority: o.priority, deadline: o.deadline } });
+      });
+    });
+    setOrdersRaw(rows);
+    setStages(flat);
     const map: any = {};
-    (data ?? []).forEach((s: any) => { map[s.id] = { comment: s.otk_comment ?? "", passed: !!s.qc_passed, dirty: false }; });
+    flat.forEach((s: any) => { map[s.id] = { comment: s.otk_comment ?? "", passed: !!s.qc_passed, dirty: false }; });
     setEdit(map);
   };
   useEffect(() => { load(); }, []);
 
-  // Group stages by order
+  // Group stages by order — every active order is listed, even without QC stages
   const orders = useMemo(() => {
-    const map = new Map<string, { order: any; stages: any[]; worstColor: "red" | "yellow" | "green"; counts: { red: number; yellow: number; green: number } }>();
-    stages.forEach((s) => {
-      if (!s.order) return;
-      const key = s.order.id;
-      if (!map.has(key)) map.set(key, { order: s.order, stages: [], worstColor: "green", counts: { red: 0, yellow: 0, green: 0 } });
-      const entry = map.get(key)!;
-      entry.stages.push(s);
-      const c = otkColor(s);
-      entry.counts[c]++;
+    const byOrder = new Map<string, any[]>();
+    stages.forEach((s) => { if (s.order) { const a = byOrder.get(s.order.id) ?? []; a.push(s); byOrder.set(s.order.id, a); } });
+    return ordersRaw.map((o: any) => {
+      const list = (byOrder.get(o.id) ?? []).slice().sort((a: any, b: any) => a.stage_order - b.stage_order);
+      const counts = { red: 0, yellow: 0, green: 0 };
+      list.filter((s: any) => s.qc_required).forEach((s: any) => { counts[otkColor(s)]++; });
+      const hasQc = counts.red + counts.yellow + counts.green > 0;
+      const worstColor: any = !hasQc ? "none" : counts.red > 0 ? "red" : counts.yellow > 0 ? "yellow" : "green";
+      return { order: { id: o.id, order_number: o.order_number, product_name: o.product_name, status: o.status, priority: o.priority, deadline: o.deadline }, stages: list, worstColor, counts };
     });
-    map.forEach((entry) => {
-      entry.stages.sort((a: any, b: any) => a.stage_order - b.stage_order);
-      if (entry.counts.red > 0) entry.worstColor = "red";
-      else if (entry.counts.yellow > 0) entry.worstColor = "yellow";
-      else entry.worstColor = "green";
-    });
-    return Array.from(map.values());
-  }, [stages]);
+  }, [stages, ordersRaw]);
 
   const counts = useMemo(() => {
     const c = { red: 0, yellow: 0, green: 0 };
-    stages.forEach((s) => { c[otkColor(s)]++; });
+    stages.filter((s) => s.qc_required).forEach((s) => { c[otkColor(s)]++; });
     return c;
   }, [stages]);
 
   const ordersCounts = useMemo(() => {
     const sets = { red: new Set<string>(), yellow: new Set<string>(), green: new Set<string>() };
-    stages.forEach((s) => { if (s.order?.id) sets[otkColor(s)].add(s.order.id); });
+    stages.forEach((s) => { if (s.qc_required && s.order?.id) sets[otkColor(s)].add(s.order.id); });
     return { red: sets.red.size, yellow: sets.yellow.size, green: sets.green.size };
   }, [stages]);
 
@@ -90,6 +92,7 @@ export default function OtkPage() {
     if (q && !(`${o.order.order_number} ${o.order.product_name}`.toLowerCase().includes(q.toLowerCase()))) return false;
     return true;
   });
+
 
   const save = async (s: any) => {
     const e = edit[s.id];
