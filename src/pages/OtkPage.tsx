@@ -214,40 +214,41 @@ export default function OtkPage() {
             {/* vertical timeline */}
             <div className="relative pl-6 space-y-4 before:content-[''] before:absolute before:left-[10px] before:top-2 before:bottom-2 before:w-0.5 before:bg-border">
               {openedOrder.stages.map((s) => {
-                const color = otkColor(s);
+                const color = s.qc_required ? otkColor(s) : ("none" as const);
                 const e = edit[s.id] ?? { comment: "", passed: false, dirty: false };
                 const Icon = color === "green" ? CheckCircle2 : color === "yellow" ? AlertCircle : Circle;
-                const iconCls = color === "green" ? "text-status-green" : color === "yellow" ? "text-status-yellow" : "text-status-red";
+                const iconCls = color === "green" ? "text-status-green" : color === "yellow" ? "text-status-yellow" : color === "red" ? "text-status-red" : "text-muted-foreground";
+                const stageEditable = canEdit && s.qc_required;
                 return (
                   <div key={s.id} className="relative">
                     <Icon className={`h-5 w-5 absolute -left-6 top-3 bg-background ${iconCls}`} />
-                    <Card className="border-l-4" style={{ borderLeftColor: color === "red" ? "hsl(var(--status-red))" : color === "yellow" ? "hsl(var(--status-yellow))" : "hsl(var(--status-green))" }}>
+                    <Card className="border-l-4" style={{ borderLeftColor: color === "red" ? "hsl(var(--status-red))" : color === "yellow" ? "hsl(var(--status-yellow))" : color === "green" ? "hsl(var(--status-green))" : "hsl(var(--border))" }}>
                       <CardContent className="p-4 space-y-3">
                         <div className="flex items-center justify-between gap-2 flex-wrap">
                           <div>
                             <div className="text-xs text-muted-foreground">Bosqich {s.stage_order}</div>
                             <div className="font-semibold">{s.name}</div>
                           </div>
-                          <div className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-semibold ${labelCls[color]}`}>
+                          <div className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-semibold ${color === "none" ? "text-muted-foreground" : labelCls[color]}`}>
                             <span className={`h-2 w-2 rounded-full ${dotCls[color]}`} />
-                            {color === "red" ? t.otk.notChecked : color === "yellow" ? t.otk.commentOnly : t.otk.passed}
+                            {color === "red" ? t.otk.notChecked : color === "yellow" ? t.otk.commentOnly : color === "green" ? t.otk.passed : "OTK talab qilinmaydi"}
                           </div>
                         </div>
                         <div>
                           <CardDescription className="text-xs mb-1">{t.otk.comment}</CardDescription>
                           <Textarea
-                            rows={2} disabled={!canEdit} value={e.comment}
+                            rows={2} disabled={!stageEditable} value={e.comment}
                             onChange={(ev) => setEdit({ ...edit, [s.id]: { ...e, comment: ev.target.value, dirty: true } })}
                             placeholder={t.otk.placeholder}
                           />
                         </div>
                         <div className="flex items-center justify-between flex-wrap gap-2">
                           <label className="flex items-center gap-2 text-sm cursor-pointer">
-                            <Checkbox disabled={!canEdit} checked={e.passed}
+                            <Checkbox disabled={!stageEditable} checked={e.passed}
                               onCheckedChange={(v) => setEdit({ ...edit, [s.id]: { ...e, passed: !!v, dirty: true } })} />
                             <span>{t.otk.checkPassed}</span>
                           </label>
-                          {canEdit && (
+                          {stageEditable && (
                             <Button size="sm" disabled={!e.dirty} onClick={() => save(s)}>
                               <Save className="h-3.5 w-3.5 mr-1" /> {t.otk.save}
                             </Button>
