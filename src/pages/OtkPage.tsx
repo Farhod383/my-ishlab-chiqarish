@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { notify } from "@/lib/notify";
 
 type Filter = "all" | "red" | "yellow" | "green";
+type Color = "red" | "yellow" | "green" | "none";
 
 function otkColor(s: any): "red" | "yellow" | "green" {
   if (s.qc_passed) return "green";
@@ -23,7 +24,7 @@ function otkColor(s: any): "red" | "yellow" | "green" {
   return "red";
 }
 
-const dotCls = { red: "bg-status-red", yellow: "bg-status-yellow", green: "bg-status-green" };
+const dotCls: Record<Color, string> = { red: "bg-status-red", yellow: "bg-status-yellow", green: "bg-status-green", none: "bg-muted-foreground/40" };
 const labelCls = {
   red: "text-status-red border-status-red/30 bg-status-red/10",
   yellow: "text-status-yellow border-status-yellow/30 bg-status-yellow/10",
@@ -34,6 +35,7 @@ export default function OtkPage() {
   const { user, hasRole } = useAuth();
   const { t } = useI18n();
   const [stages, setStages] = useState<any[]>([]);
+  const [ordersRaw, setOrdersRaw] = useState<any[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
@@ -171,7 +173,7 @@ export default function OtkPage() {
               <Card
                 key={o.order.id}
                 className="cursor-pointer hover:bg-muted/30 border-l-4"
-                style={{ borderLeftColor: o.worstColor === "red" ? "hsl(var(--status-red))" : o.worstColor === "yellow" ? "hsl(var(--status-yellow))" : "hsl(var(--status-green))" }}
+                style={{ borderLeftColor: o.worstColor === "red" ? "hsl(var(--status-red))" : o.worstColor === "yellow" ? "hsl(var(--status-yellow))" : o.worstColor === "green" ? "hsl(var(--status-green))" : "hsl(var(--border))" }}
                 onClick={() => setOpenOrderId(o.order.id)}
               >
                 <CardContent className="p-3 flex items-center justify-between gap-3 flex-wrap">
@@ -186,6 +188,7 @@ export default function OtkPage() {
                     {o.counts.red > 0 && <Badge className={labelCls.red} variant="outline">🔴 {o.counts.red}</Badge>}
                     {o.counts.yellow > 0 && <Badge className={labelCls.yellow} variant="outline">🟡 {o.counts.yellow}</Badge>}
                     {o.counts.green > 0 && <Badge className={labelCls.green} variant="outline">🟢 {o.counts.green}</Badge>}
+                    {o.worstColor === "none" && <Badge variant="outline" className="text-muted-foreground">OTK bosqichi yo'q</Badge>}
                     <span className="text-muted-foreground">{o.stages.length} {t.otk.stage}</span>
                   </div>
                 </CardContent>
