@@ -29,6 +29,8 @@ import ReportsPage from "./pages/ReportsPage";
 import SupplyRequestsPage from "./pages/SupplyRequestsPage";
 import LowStockPage from "./pages/LowStockPage";
 import ServicePage from "./pages/ServicePage";
+import ClientsPage from "./pages/ClientsPage";
+import ClientDetail from "./pages/ClientDetail";
 import NotFound from "./pages/NotFound";
 
 
