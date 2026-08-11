@@ -4,6 +4,7 @@ export const uz = {
   nav: {
     dashboard: "Boshqaruv paneli",
     orders: "Zakazlar",
+    clients: "Klientlar (CRM)",
     newOrder: "Yangi zakaz",
     production: "Ishlab chiqarish",
     warehouse: "Sklad (Ombor)",
@@ -361,7 +362,7 @@ export const ru: Translations = {
   meta: { code: "ru", label: "Русский" },
   appName: "MCITY",
   nav: {
-    dashboard: "Панель управления", orders: "Заказы", newOrder: "Новый заказ",
+    dashboard: "Панель управления", orders: "Заказы", clients: "Клиенты (CRM)", newOrder: "Новый заказ",
     production: "Производство", warehouse: "Склад", supply: "Снабжение",
     otk: "ОТК (Контроль качества)", chat: "Чаты", audit: "Журнал аудита",
     nachalnik: "Начальник", hr: "Сотрудники (HR)", kassa: "Касса (Финансы)", returns: "Возврат", defects: "Брак (Дефекты)",
@@ -624,7 +625,7 @@ export const uzc: Translations = {
   meta: { code: "uzc", label: "Ўзбекча (кирил)" },
   appName: "MCITY",
   nav: {
-    dashboard: "Бошқарув панели", orders: "Заказлар", newOrder: "Янги заказ",
+    dashboard: "Бошқарув панели", orders: "Заказлар", clients: "Клиентлар (CRM)", newOrder: "Янги заказ",
     production: "Ишлаб чиқариш", warehouse: "Склад (Омбор)", supply: "Таъминот (Буюртмалар)",
     otk: "ОТК (Сифат назорати)", chat: "Суҳбатлар (Chat)", audit: "Аудит лог",
     nachalnik: "Начальник", hr: "Ходимлар (HR)", kassa: "Касса (Молия)", returns: "Возврат (Қайтариш)", defects: "Брак (Носозликлар)",

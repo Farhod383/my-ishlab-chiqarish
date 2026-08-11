@@ -29,6 +29,8 @@ import ReportsPage from "./pages/ReportsPage";
 import SupplyRequestsPage from "./pages/SupplyRequestsPage";
 import LowStockPage from "./pages/LowStockPage";
 import ServicePage from "./pages/ServicePage";
+import ClientsPage from "./pages/ClientsPage";
+import ClientDetail from "./pages/ClientDetail";
 import NotFound from "./pages/NotFound";
 
 
@@ -52,7 +54,10 @@ const App = () => (
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/orders" element={<Orders />} />
                       <Route path="/orders/new" element={<ProtectedRoute roles={["marketing","admin"]}><NewOrder /></ProtectedRoute>} />
+                      <Route path="/clients" element={<ClientsPage />} />
+                      <Route path="/clients/:id" element={<ClientDetail />} />
                       <Route path="/orders/:id/edit" element={<ProtectedRoute roles={["marketing","admin"]}><EditOrder /></ProtectedRoute>} />
+
                       <Route path="/orders/:id" element={<OrderDetail />} />
                       <Route path="/orders/:id/report" element={<OrderReport />} />
                       <Route path="/production" element={<ProductionBoard />} />

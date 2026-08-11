@@ -313,27 +313,149 @@ export type Database = {
           },
         ]
       }
+      client_documents: {
+        Row: {
+          client_id: string
+          comment: string | null
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          doc_type: string | null
+          file_url: string | null
+          id: string
+          issued_at: string | null
+          name: string
+          order_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          doc_type?: string | null
+          file_url?: string | null
+          id?: string
+          issued_at?: string | null
+          name: string
+          order_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          doc_type?: string | null
+          file_url?: string | null
+          id?: string
+          issued_at?: string | null
+          name?: string
+          order_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_documents_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_interactions: {
+        Row: {
+          actor_id: string | null
+          actor_name: string | null
+          client_id: string
+          comment: string | null
+          content: string
+          created_at: string
+          id: string
+          kind: string
+          next_contact_date: string | null
+          occurred_at: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_name?: string | null
+          client_id: string
+          comment?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          kind?: string
+          next_contact_date?: string | null
+          occurred_at?: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_name?: string | null
+          client_id?: string
+          comment?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          next_contact_date?: string | null
+          occurred_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_interactions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null
+          contact_person: string | null
           created_at: string
+          email: string | null
           id: string
           name: string
+          note: string | null
           phone: string | null
+          updated_at: string
         }
         Insert: {
           address?: string | null
+          contact_person?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           name: string
+          note?: string | null
           phone?: string | null
+          updated_at?: string
         }
         Update: {
           address?: string | null
+          contact_person?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           name?: string
+          note?: string | null
           phone?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
