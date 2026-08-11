@@ -22,6 +22,8 @@ export function AppSidebar() {
   const allItems: Item[] = [
     { title: t.nav.dashboard, url: "/", icon: LayoutDashboard },
     { title: t.nav.orders, url: "/orders", icon: ClipboardList },
+    { title: (t.nav as any).clients ?? "Klientlar (CRM)", url: "/clients", icon: Contact },
+
     { title: t.nav.production, url: "/production", icon: Factory },
     { title: t.nav.nachalnik, url: "/nachalnik", icon: UserCog, roles: ["manager", "admin"] },
     { title: (t.nav as any).service ?? "Remont (Servis)", url: "/service", icon: Wrench, roles: ["manager", "admin"] },
