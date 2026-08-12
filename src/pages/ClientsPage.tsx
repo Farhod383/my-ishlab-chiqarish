@@ -49,9 +49,12 @@ export default function ClientsPage() {
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    if (!s) return clients;
-    return clients.filter((c) =>
-      [c.name, c.phone, c.contact_person, c.address].some((v) => (v ?? "").toLowerCase().includes(s)));
+    const base = !s
+      ? clients
+      : clients.filter((c) =>
+          [c.name, c.phone, c.contact_person, c.address].some((v) => (v ?? "").toLowerCase().includes(s)));
+    return [...base].sort((a, b) =>
+      (a.name ?? "").localeCompare(b.name ?? "", "uz", { sensitivity: "base", numeric: true }));
   }, [clients, q]);
 
   const save = async () => {
