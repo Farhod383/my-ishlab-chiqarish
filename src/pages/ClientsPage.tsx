@@ -6,10 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Users, Plus, Phone, MapPin, User as UserIcon, Loader2, Search } from "lucide-react";
+import { Users, Plus, Loader2, Search } from "lucide-react";
 
 interface ClientRow {
   id: string; name: string; phone: string | null; address: string | null;
@@ -101,36 +100,38 @@ export default function ClientsPage() {
       ) : filtered.length === 0 ? (
         <div className="text-center text-muted-foreground py-16">Klientlar topilmadi</div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((c, i) => {
-            const cnt = counts[c.id] ?? { total: 0, active: 0 };
-            return (
-              <Card key={c.id} onClick={() => nav(`/clients/${c.id}`)}
-                className="cursor-pointer transition-all hover:shadow-lg hover:border-primary/50">
-                <CardContent className="p-5 space-y-3">
-                  <div className="flex items-start gap-3">
-                    <span className="shrink-0 mt-0.5 inline-flex h-8 min-w-8 items-center justify-center rounded-lg bg-primary/10 px-2 text-sm font-bold text-primary">
-                      {i + 1}
-                    </span>
-                    <div className="text-xl font-bold leading-tight">{c.name}</div>
-                  </div>
-                  <div className="space-y-1 text-sm text-muted-foreground">
-                    {c.contact_person && <div className="flex items-center gap-2"><UserIcon className="h-4 w-4" />{c.contact_person}</div>}
-                    {c.phone && <div className="flex items-center gap-2"><Phone className="h-4 w-4" />{c.phone}</div>}
-                    {c.address && <div className="flex items-center gap-2"><MapPin className="h-4 w-4" />{c.address}</div>}
-                  </div>
-                  <div className="flex gap-2 pt-1">
-                    <span className="rounded-full border border-status-blue/30 bg-status-blue/10 text-status-blue px-2.5 py-0.5 text-xs font-medium">
-                      Faol: {cnt.active}
-                    </span>
-                    <span className="rounded-full border border-border bg-muted text-muted-foreground px-2.5 py-0.5 text-xs font-medium">
-                      Jami zakaz: {cnt.total}
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="grid grid-cols-12 gap-4 bg-muted/60 px-4 py-3 text-sm font-semibold text-muted-foreground border-b border-border">
+            <div className="col-span-1 text-center">№</div>
+            <div className="col-span-6 sm:col-span-7">Klient nomi</div>
+            <div className="col-span-2 sm:col-span-2 text-center">Faol zakazlar</div>
+            <div className="col-span-3 sm:col-span-2 text-center">Jami zakazlar</div>
+          </div>
+          <div className="divide-y divide-border">
+            {filtered.map((c, i) => {
+              const cnt = counts[c.id] ?? { total: 0, active: 0 };
+              return (
+                <div
+                  key={c.id}
+                  onClick={() => nav(`/clients/${c.id}`)}
+                  className="grid grid-cols-12 gap-4 px-4 py-3 items-center text-sm cursor-pointer transition-colors hover:bg-accent/50 hover:text-accent-foreground"
+                >
+                  <div className="col-span-1 text-center font-semibold text-muted-foreground">{i + 1}</div>
+                  <div className="col-span-6 sm:col-span-7 font-medium truncate">{c.name}</div>
+                  <div className="col-span-2 sm:col-span-2 text-center">
+                    <span className="inline-flex min-w-[2rem] items-center justify-center rounded-md bg-status-blue/10 px-2 py-0.5 text-xs font-medium text-status-blue border border-status-blue/20">
+                      {cnt.active}
                     </span>
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                  <div className="col-span-3 sm:col-span-2 text-center">
+                    <span className="inline-flex min-w-[2rem] items-center justify-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground border border-border">
+                      {cnt.total}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
