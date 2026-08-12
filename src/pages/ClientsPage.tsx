@@ -49,9 +49,12 @@ export default function ClientsPage() {
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    if (!s) return clients;
-    return clients.filter((c) =>
-      [c.name, c.phone, c.contact_person, c.address].some((v) => (v ?? "").toLowerCase().includes(s)));
+    const base = !s
+      ? clients
+      : clients.filter((c) =>
+          [c.name, c.phone, c.contact_person, c.address].some((v) => (v ?? "").toLowerCase().includes(s)));
+    return [...base].sort((a, b) =>
+      (a.name ?? "").localeCompare(b.name ?? "", "uz", { sensitivity: "base", numeric: true }));
   }, [clients, q]);
 
   const save = async () => {
@@ -99,13 +102,18 @@ export default function ClientsPage() {
         <div className="text-center text-muted-foreground py-16">Klientlar topilmadi</div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((c) => {
+          {filtered.map((c, i) => {
             const cnt = counts[c.id] ?? { total: 0, active: 0 };
             return (
               <Card key={c.id} onClick={() => nav(`/clients/${c.id}`)}
                 className="cursor-pointer transition-all hover:shadow-lg hover:border-primary/50">
                 <CardContent className="p-5 space-y-3">
-                  <div className="text-xl font-bold leading-tight">{c.name}</div>
+                  <div className="flex items-start gap-3">
+                    <span className="shrink-0 mt-0.5 inline-flex h-8 min-w-8 items-center justify-center rounded-lg bg-primary/10 px-2 text-sm font-bold text-primary">
+                      {i + 1}
+                    </span>
+                    <div className="text-xl font-bold leading-tight">{c.name}</div>
+                  </div>
                   <div className="space-y-1 text-sm text-muted-foreground">
                     {c.contact_person && <div className="flex items-center gap-2"><UserIcon className="h-4 w-4" />{c.contact_person}</div>}
                     {c.phone && <div className="flex items-center gap-2"><Phone className="h-4 w-4" />{c.phone}</div>}
