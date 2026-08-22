@@ -14,6 +14,7 @@ export const uz = {
     audit: "Audit log",
     nachalnik: "Nachalnik",
     hr: "Xodimlar (HR)",
+    faceId: "Face_id (Davomat)",
     kassa: "Kassa (Moliya)",
     returns: "Vozvrat (Qaytarish)",
     defects: "Brak (Nosozliklar)",
