@@ -242,6 +242,17 @@ export default function WarehousePage() {
       entity: "stock_movement", order_id: outOrder || null,
       details: `${products.find(p=>p.id===outProduct)?.name} — ${outQty}, ${outRecipient}${crossOrderReason ? ` · manba zakaz: ${crossInfo?.sourceOrderNumber} · sabab: ${crossOrderReason}` : ""}`,
     });
+    {
+      const { notify } = await import("@/lib/notify");
+      await notify({
+        type: "info",
+        title: `Sklad chiqimi — ${products.find(p=>p.id===outProduct)?.name ?? ""}`,
+        body: `${outQty} · ${outRecipient}`,
+        link: "/warehouse", entity: "stock_movement",
+        recipient_role: ["warehouse", "manager", "supply"],
+        sender_id: user?.id, sender_name: user?.email,
+      });
+    }
     toast.success(t.warehouse.outRecorded);
     setOutProduct(""); setOutOrder(""); setOutQty(1); setOutRecipient(""); setOutComment("");
     setCrossOpen(false); setCrossInfo(null); setCrossReason("");
@@ -395,6 +406,17 @@ export default function WarehousePage() {
       order_id: impOrderId || null,
       details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${t.common.sum}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
     });
+    {
+      const { notify } = await import("@/lib/notify");
+      await notify({
+        type: "info",
+        title: `Sklad kirimi — ${trimmedName}`,
+        body: `+${qtyN} ${impUnit}${impSupplier ? ` · ${impSupplier}` : ""}`,
+        link: "/warehouse", entity: "stock_movement",
+        recipient_role: ["warehouse", "manager", "supply"],
+        sender_id: user?.id, sender_name: user?.email,
+      });
+    }
     toast.success(t.warehouse.inRecorded);
     setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpSupplier(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId(""); setImportOpen(false);
     load();

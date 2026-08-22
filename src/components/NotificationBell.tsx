@@ -156,7 +156,7 @@ export function NotificationBell() {
             </Button>
           )}
         </div>
-        <ScrollArea className="max-h-[420px]">
+        <ScrollArea className="h-[min(70vh,460px)]">
           {items.length === 0 && (
             <div className="text-sm text-muted-foreground text-center py-8">Bildirishnomalar yo'q</div>
           )}
