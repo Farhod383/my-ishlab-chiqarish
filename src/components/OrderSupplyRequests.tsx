@@ -13,6 +13,7 @@ import NumberInput from "@/components/NumberInput";
 import { useAuth } from "@/auth/AuthContext";
 import { toast } from "sonner";
 import { notify } from "@/lib/notify";
+import { logAudit } from "@/types/erp";
 
 interface Props {
   orderId: string;
@@ -102,6 +103,12 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
       sender_id: user?.id,
       sender_name: user?.email,
     });
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: "Ta'minot so'rovi qo'shildi", entity: "supply_request",
+      order_id: orderId,
+      details: `${name} · ${qty} ${unit ?? ""}`,
+    });
     toast.success("Qo'shildi");
     reset();
     setOpen(false);
@@ -110,8 +117,15 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
 
   const remove = async (id: string) => {
     if (!confirm("O'chirilsinmi?")) return;
+    const target = items.find((x) => x.id === id);
     const { error } = await supabase.from("order_supply_requests").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: "Ta'minot so'rovi o'chirildi", entity: "supply_request",
+      order_id: orderId,
+      details: `${target?.product_name ?? id} · ${target?.quantity ?? ""} ${target?.unit ?? ""}`,
+    });
     load();
   };
 

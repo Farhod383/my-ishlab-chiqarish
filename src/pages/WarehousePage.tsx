@@ -186,6 +186,13 @@ export default function WarehousePage() {
       sender_id: user?.id,
       sender_name: user?.email,
     });
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: prMode === "order" ? "Zakaz uchun buyurtma berildi" : "Zavod uchun buyurtma berildi",
+      entity: "supply_request",
+      order_id: prMode === "order" ? (prOrderId || null) : null,
+      details: `${name} · ${prQty} ${prUnit ?? ""}`,
+    });
     toast.success("So'rov yuborildi");
     setPrPid(""); setPrPname(""); setPrQty(0); setPrUnit("dona"); setPrDate(""); setPrComment(""); setPrOrderId("");
     setPrOpen(false);

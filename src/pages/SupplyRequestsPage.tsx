@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Truck, Search, ExternalLink, ChevronLeft, Save, Loader2, Package, MessageSquare, Check, AlertTriangle, CalendarDays } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { toast } from "sonner";
+import { logAudit } from "@/types/erp";
+import { notify } from "@/lib/notify";
 
 type Status = "pending" | "fulfilled";
 type Filter = "all" | Status;
@@ -31,7 +33,7 @@ const dotCls: Record<Status, string> = {
 const normalizeStatus = (s: string): Status => (s === "fulfilled" ? "fulfilled" : "pending");
 
 export default function SupplyRequestsPage() {
-  const { hasRole } = useAuth();
+  const { hasRole, user } = useAuth();
   const canEdit = hasRole(["supply", "admin", "warehouse"]);
   const isAdmin = hasRole(["admin"]);
   const [rows, setRows] = useState<any[]>([]);
@@ -160,6 +162,12 @@ export default function SupplyRequestsPage() {
       .update({ supply_comment: e.supply_comment || null })
       .eq("id", item.id);
     if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: "Ta'minot izohi saqlandi", entity: "supply_request",
+      order_id: item.order_id ?? null,
+      details: `${item.product_name}: ${e.supply_comment || "—"}`,
+    });
     toast.success("Izoh saqlandi");
     load();
   };
@@ -189,6 +197,37 @@ export default function SupplyRequestsPage() {
       ...prev,
       [item.id]: { ...(prev[item.id] ?? { supply_comment: item.supply_comment ?? "", dirty: false }), status, dirty: false },
     }));
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: status === "fulfilled" ? "Ta'minot bajarildi" : "Ta'minot kutilmoqdaga qaytarildi",
+      entity: "supply_request",
+      order_id: item.order_id ?? null,
+      details: `${item.product_name} · ${item.quantity} ${item.unit ?? ""}${late_reason ? ` · Kechikish sababi: ${late_reason}` : ""}`,
+    });
+    await notify({
+      type: status === "fulfilled" ? "supply_fulfilled" : "supply_request",
+      title: status === "fulfilled" ? `Ta'minlandi — ${item.product_name}` : `Ta'minot qayta ochildi — ${item.product_name}`,
+      body: `${item.quantity} ${item.unit ?? ""}${item.order?.order_number ? ` · ${item.order.order_number}` : ""}`,
+      link: "/supply",
+      entity: "supply_request",
+      entity_id: item.id,
+      recipient_role: ["warehouse", "manager", "supply"],
+      sender_id: user?.id,
+      sender_name: user?.email,
+    });
+    if (item.created_by && item.created_by !== user?.id) {
+      await notify({
+        type: status === "fulfilled" ? "supply_fulfilled" : "supply_request",
+        title: status === "fulfilled" ? `So'rovingiz ta'minlandi — ${item.product_name}` : `So'rovingiz qayta ochildi — ${item.product_name}`,
+        body: `${item.quantity} ${item.unit ?? ""}`,
+        link: "/supply",
+        entity: "supply_request",
+        entity_id: item.id,
+        recipient_id: item.created_by,
+        sender_id: user?.id,
+        sender_name: user?.email,
+      });
+    }
     toast.success(status === "fulfilled" ? "Ta'minlandi — omborga kirim qilindi" : "Kutilmoqda holatiga qaytarildi");
     load();
     return true;
