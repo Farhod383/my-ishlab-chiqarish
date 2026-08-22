@@ -23,16 +23,39 @@ export default function AuditLog() {
 
   useEffect(() => {
     (async () => {
-      const [{ data: l }, { data: r }] = await Promise.all([
+      const [{ data: l }, { data: r }, { data: ea }] = await Promise.all([
         supabase.from("audit_log").select("*, order:orders(order_number), stage:order_stages(name, worker_name)").order("created_at", { ascending: false }).limit(500),
         supabase.from("user_roles").select("user_id, role"),
+        supabase.from("entity_audit").select("*").order("created_at", { ascending: false }).limit(500),
       ]);
-      setLogs(l ?? []);
+      const short = (v: any) => {
+        if (!v) return "";
+        try {
+          const o = typeof v === "string" ? JSON.parse(v) : v;
+          return Object.entries(o).map(([k, val]) => `${k}: ${val ?? "—"}`).join(", ").slice(0, 200);
+        } catch { return String(v).slice(0, 200); }
+      };
+      const mapped = (ea ?? []).map((x: any) => ({
+        id: `ea_${x.id}`,
+        created_at: x.created_at,
+        actor_id: x.actor_id,
+        actor_name: x.actor_name,
+        action: x.action,
+        entity: x.entity,
+        details: [short(x.old_value) && `Eski → ${short(x.old_value)}`, short(x.new_value) && `Yangi → ${short(x.new_value)}`]
+          .filter(Boolean).join(" | ") || null,
+        _role: x.role ?? null,
+      }));
+      const merged = [...(l ?? []), ...mapped].sort(
+        (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      setLogs(merged);
       const rm: Record<string, string[]> = {};
       (r ?? []).forEach((x: any) => { (rm[x.user_id] ||= []).push(x.role); });
       setRoleMap(rm);
     })();
   }, []);
+
 
   const users = useMemo(() => {
     const m = new Map<string, string>();
