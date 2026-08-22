@@ -16,6 +16,8 @@ import { useAuth } from "@/auth/AuthContext";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { toast } from "sonner";
 import { matchesAcrossScripts } from "@/lib/translit";
+import { logAudit } from "@/types/erp";
+import { notify } from "@/lib/notify";
 
 type ItemType = "product" | "instrument";
 
@@ -119,6 +121,24 @@ export default function DefectsPage() {
     };
     const { error } = await supabase.from("defects").insert(payload);
     if (error) { toast.error(error.message); return; }
+    const itemName = form.item_type === "product"
+      ? (products.find((p: any) => p.id === form.product_id)?.name ?? "—")
+      : (instruments.find((i: any) => i.id === form.instrument_id)?.name ?? "—");
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: "Brak qayd etildi", entity: "defect",
+      order_id: payload.order_id,
+      details: `${itemName} · ${form.quantity} · ${form.reason.trim() || "sabab ko'rsatilmagan"}`,
+    });
+    await notify({
+      type: "info",
+      title: `Yangi brak — ${itemName}`,
+      body: `${form.quantity} dona${form.reason.trim() ? ` · ${form.reason.trim()}` : ""}`,
+      link: "/defects",
+      entity: "defect",
+      recipient_role: ["otk", "manager", "warehouse"],
+      sender_id: user?.id, sender_name: user?.email,
+    });
     toast.success(d.saved ?? "Saqlandi");
     setForm({ item_type: "product", order_id: "", product_id: "", instrument_id: "", quantity: 1, detected_by_id: "", reason: "", comment: "", resolution: "pending", image: null });
     setOpen(false);
@@ -127,6 +147,13 @@ export default function DefectsPage() {
 
   const updateResolution = async (id: string, resolution: string) => {
     await supabase.from("defects").update({ resolution } as any).eq("id", id);
+    const def = defects.find((x: any) => x.id === id);
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: "Brak yechimi o'zgartirildi", entity: "defect",
+      order_id: def?.order_id ?? null,
+      details: `${def?.product?.name ?? def?.instrument?.name ?? id}: ${resolution}`,
+    });
     load();
   };
 

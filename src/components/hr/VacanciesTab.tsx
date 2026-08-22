@@ -165,6 +165,13 @@ export default function VacanciesTab() {
       action: "Nomzod ishga qabul qilindi",
       entity: "vacancy", details: `${v.last_name} ${v.first_name} → xodimlar`,
     });
+    const { notify } = await import("@/lib/notify");
+    await notify({
+      type: "info", title: `Nomzod ishga qabul qilindi — ${v.last_name} ${v.first_name}`,
+      body: v.position ?? undefined, link: "/hr", entity: "vacancy",
+      recipient_role: ["hr", "manager", "cashier"],
+      sender_id: user?.id, sender_name: user?.email,
+    });
     toast.success("Nomzod ishga qabul qilindi va Xodimlar ro'yxatiga ko'chirildi");
     setHireId(null);
     load();

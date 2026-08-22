@@ -23,16 +23,39 @@ export default function AuditLog() {
 
   useEffect(() => {
     (async () => {
-      const [{ data: l }, { data: r }] = await Promise.all([
+      const [{ data: l }, { data: r }, { data: ea }] = await Promise.all([
         supabase.from("audit_log").select("*, order:orders(order_number), stage:order_stages(name, worker_name)").order("created_at", { ascending: false }).limit(500),
         supabase.from("user_roles").select("user_id, role"),
+        supabase.from("entity_audit").select("*").order("created_at", { ascending: false }).limit(500),
       ]);
-      setLogs(l ?? []);
+      const short = (v: any) => {
+        if (!v) return "";
+        try {
+          const o = typeof v === "string" ? JSON.parse(v) : v;
+          return Object.entries(o).map(([k, val]) => `${k}: ${val ?? "—"}`).join(", ").slice(0, 200);
+        } catch { return String(v).slice(0, 200); }
+      };
+      const mapped = (ea ?? []).map((x: any) => ({
+        id: `ea_${x.id}`,
+        created_at: x.created_at,
+        actor_id: x.actor_id,
+        actor_name: x.actor_name,
+        action: x.action,
+        entity: x.entity,
+        details: [short(x.old_value) && `Eski → ${short(x.old_value)}`, short(x.new_value) && `Yangi → ${short(x.new_value)}`]
+          .filter(Boolean).join(" | ") || null,
+        _role: x.role ?? null,
+      }));
+      const merged = [...(l ?? []), ...mapped].sort(
+        (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      setLogs(merged);
       const rm: Record<string, string[]> = {};
       (r ?? []).forEach((x: any) => { (rm[x.user_id] ||= []).push(x.role); });
       setRoleMap(rm);
     })();
   }, []);
+
 
   const users = useMemo(() => {
     const m = new Map<string, string>();
@@ -48,17 +71,18 @@ export default function AuditLog() {
     if (actionFilter !== "all" && l.action !== actionFilter) return false;
     if (roleFilter !== "all") {
       const roles = l.actor_id ? roleMap[l.actor_id] ?? [] : [];
-      if (!roles.includes(roleFilter)) return false;
+      const all = l._role ? [...roles, l._role] : roles;
+      if (!all.includes(roleFilter)) return false;
     }
     if (from && new Date(l.created_at) < new Date(from)) return false;
     if (to && new Date(l.created_at) > new Date(`${to}T23:59:59`)) return false;
     return true;
   }), [logs, q, userFilter, actionFilter, roleFilter, from, to, roleMap]);
 
-  const roleLabel = (uid?: string | null) => {
-    if (!uid) return "—";
-    const rs = roleMap[uid] ?? [];
-    return rs.map(r => (t.roles as any)[r] ?? r).join(", ") || "—";
+  const roleLabel = (l: any) => {
+    const rs = l.actor_id ? roleMap[l.actor_id] ?? [] : [];
+    const all = Array.from(new Set(l._role ? [...rs, l._role] : rs));
+    return all.map((r: string) => (t.roles as any)[r] ?? r).join(", ") || "—";
   };
 
   return (
@@ -122,7 +146,7 @@ export default function AuditLog() {
                     <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
                     <TableCell className="text-xs whitespace-nowrap">{new Date(l.created_at).toLocaleString()}</TableCell>
                     <TableCell className="text-sm">{l.actor_name ? localize(l.actor_name) : t.common.system}</TableCell>
-                    <TableCell className="text-xs"><Badge variant="secondary">{roleLabel(l.actor_id)}</Badge></TableCell>
+                    <TableCell className="text-xs"><Badge variant="secondary">{roleLabel(l)}</Badge></TableCell>
                     <TableCell className="text-sm font-medium">{l.action}</TableCell>
                     <TableCell className="text-sm font-mono">{l.order?.order_number ?? "—"}</TableCell>
                     <TableCell className="text-xs">{l.stage?.name ?? "—"}{l.stage?.worker_name ? ` · ${String(l.stage.worker_name).split(",").map((n: string) => localize(n.trim())).join(", ")}` : ""}</TableCell>

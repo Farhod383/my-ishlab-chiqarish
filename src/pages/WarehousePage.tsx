@@ -186,6 +186,13 @@ export default function WarehousePage() {
       sender_id: user?.id,
       sender_name: user?.email,
     });
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: prMode === "order" ? "Zakaz uchun buyurtma berildi" : "Zavod uchun buyurtma berildi",
+      entity: "supply_request",
+      order_id: prMode === "order" ? (prOrderId || null) : null,
+      details: `${name} · ${prQty} ${prUnit ?? ""}`,
+    });
     toast.success("So'rov yuborildi");
     setPrPid(""); setPrPname(""); setPrQty(0); setPrUnit("dona"); setPrDate(""); setPrComment(""); setPrOrderId("");
     setPrOpen(false);
@@ -235,6 +242,17 @@ export default function WarehousePage() {
       entity: "stock_movement", order_id: outOrder || null,
       details: `${products.find(p=>p.id===outProduct)?.name} — ${outQty}, ${outRecipient}${crossOrderReason ? ` · manba zakaz: ${crossInfo?.sourceOrderNumber} · sabab: ${crossOrderReason}` : ""}`,
     });
+    {
+      const { notify } = await import("@/lib/notify");
+      await notify({
+        type: "info",
+        title: `Sklad chiqimi — ${products.find(p=>p.id===outProduct)?.name ?? ""}`,
+        body: `${outQty} · ${outRecipient}`,
+        link: "/warehouse", entity: "stock_movement",
+        recipient_role: ["warehouse", "manager", "supply"],
+        sender_id: user?.id, sender_name: user?.email,
+      });
+    }
     toast.success(t.warehouse.outRecorded);
     setOutProduct(""); setOutOrder(""); setOutQty(1); setOutRecipient(""); setOutComment("");
     setCrossOpen(false); setCrossInfo(null); setCrossReason("");
@@ -388,6 +406,17 @@ export default function WarehousePage() {
       order_id: impOrderId || null,
       details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${t.common.sum}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
     });
+    {
+      const { notify } = await import("@/lib/notify");
+      await notify({
+        type: "info",
+        title: `Sklad kirimi — ${trimmedName}`,
+        body: `+${qtyN} ${impUnit}${impSupplier ? ` · ${impSupplier}` : ""}`,
+        link: "/warehouse", entity: "stock_movement",
+        recipient_role: ["warehouse", "manager", "supply"],
+        sender_id: user?.id, sender_name: user?.email,
+      });
+    }
     toast.success(t.warehouse.inRecorded);
     setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpSupplier(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId(""); setImportOpen(false);
     load();
