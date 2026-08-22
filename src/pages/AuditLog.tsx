@@ -71,17 +71,18 @@ export default function AuditLog() {
     if (actionFilter !== "all" && l.action !== actionFilter) return false;
     if (roleFilter !== "all") {
       const roles = l.actor_id ? roleMap[l.actor_id] ?? [] : [];
-      if (!roles.includes(roleFilter)) return false;
+      const all = l._role ? [...roles, l._role] : roles;
+      if (!all.includes(roleFilter)) return false;
     }
     if (from && new Date(l.created_at) < new Date(from)) return false;
     if (to && new Date(l.created_at) > new Date(`${to}T23:59:59`)) return false;
     return true;
   }), [logs, q, userFilter, actionFilter, roleFilter, from, to, roleMap]);
 
-  const roleLabel = (uid?: string | null) => {
-    if (!uid) return "—";
-    const rs = roleMap[uid] ?? [];
-    return rs.map(r => (t.roles as any)[r] ?? r).join(", ") || "—";
+  const roleLabel = (l: any) => {
+    const rs = l.actor_id ? roleMap[l.actor_id] ?? [] : [];
+    const all = Array.from(new Set(l._role ? [...rs, l._role] : rs));
+    return all.map((r: string) => (t.roles as any)[r] ?? r).join(", ") || "—";
   };
 
   return (
@@ -145,7 +146,7 @@ export default function AuditLog() {
                     <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
                     <TableCell className="text-xs whitespace-nowrap">{new Date(l.created_at).toLocaleString()}</TableCell>
                     <TableCell className="text-sm">{l.actor_name ? localize(l.actor_name) : t.common.system}</TableCell>
-                    <TableCell className="text-xs"><Badge variant="secondary">{roleLabel(l.actor_id)}</Badge></TableCell>
+                    <TableCell className="text-xs"><Badge variant="secondary">{roleLabel(l)}</Badge></TableCell>
                     <TableCell className="text-sm font-medium">{l.action}</TableCell>
                     <TableCell className="text-sm font-mono">{l.order?.order_number ?? "—"}</TableCell>
                     <TableCell className="text-xs">{l.stage?.name ?? "—"}{l.stage?.worker_name ? ` · ${String(l.stage.worker_name).split(",").map((n: string) => localize(n.trim())).join(", ")}` : ""}</TableCell>
