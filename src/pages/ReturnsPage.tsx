@@ -16,6 +16,8 @@ import { useAuth } from "@/auth/AuthContext";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { toast } from "sonner";
 import ProductPicker from "@/components/ProductPicker";
+import { logAudit } from "@/types/erp";
+import { notify } from "@/lib/notify";
 
 export default function ReturnsPage() {
   const { user, hasRole } = useAuth();
@@ -69,6 +71,22 @@ export default function ReturnsPage() {
       order_id: form.order_id || null,
     } as any);
     if (error) { toast.error(error.message); return; }
+    const pname = products.find((p: any) => p.id === form.product_id)?.name ?? "—";
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: "Vozvrat qayd etildi", entity: "return",
+      order_id: form.order_id || null,
+      details: `${pname} · ${form.quantity} · ${emp?.full_name ?? "—"}`,
+    });
+    await notify({
+      type: "info",
+      title: `Vozvrat — ${pname}`,
+      body: `${form.quantity} dona · ${emp?.full_name ?? "—"}`,
+      link: "/returns",
+      entity: "return",
+      recipient_role: ["warehouse", "manager", "otk"],
+      sender_id: user?.id, sender_name: user?.email,
+    });
     toast.success(r.saved ?? "Saqlandi");
     setForm({ product_id: "", quantity: 1, returned_by_id: "", return_type: "worker_to_warehouse", reason: "", comment: "", image: null, order_id: "" });
     setOpen(false);
