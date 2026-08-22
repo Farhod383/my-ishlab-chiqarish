@@ -535,6 +535,7 @@ export type Database = {
           created_at: string
           department: string
           full_name: string
+          hikvision_person_id: string | null
           hire_date: string
           id: string
           leave_date: string | null
@@ -544,10 +545,13 @@ export type Database = {
           passport: string | null
           password: string | null
           phone: string | null
+          photo_url: string | null
           position: string
           salary: number
+          shift_id: string | null
           status: string
           updated_at: string
+          work_site: string | null
         }
         Insert: {
           address?: string | null
@@ -555,6 +559,7 @@ export type Database = {
           created_at?: string
           department?: string
           full_name: string
+          hikvision_person_id?: string | null
           hire_date?: string
           id?: string
           leave_date?: string | null
@@ -564,10 +569,13 @@ export type Database = {
           passport?: string | null
           password?: string | null
           phone?: string | null
+          photo_url?: string | null
           position?: string
           salary?: number
+          shift_id?: string | null
           status?: string
           updated_at?: string
+          work_site?: string | null
         }
         Update: {
           address?: string | null
@@ -575,6 +583,7 @@ export type Database = {
           created_at?: string
           department?: string
           full_name?: string
+          hikvision_person_id?: string | null
           hire_date?: string
           id?: string
           leave_date?: string | null
@@ -584,12 +593,23 @@ export type Database = {
           passport?: string | null
           password?: string | null
           phone?: string | null
+          photo_url?: string | null
           position?: string
           salary?: number
+          shift_id?: string | null
           status?: string
           updated_at?: string
+          work_site?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "employees_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "face_shifts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       entity_audit: {
         Row: {
@@ -627,6 +647,132 @@ export type Database = {
           new_value?: Json | null
           old_value?: Json | null
           role?: string | null
+        }
+        Relationships: []
+      }
+      face_devices: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: string | null
+          last_error: string | null
+          last_event_at: string | null
+          last_sync_at: string | null
+          name: string
+          site: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          last_error?: string | null
+          last_event_at?: string | null
+          last_sync_at?: string | null
+          name: string
+          site: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          last_error?: string | null
+          last_event_at?: string | null
+          last_sync_at?: string | null
+          name?: string
+          site?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      face_events: {
+        Row: {
+          created_at: string
+          device_id: string | null
+          direction: string
+          employee_id: string | null
+          event_time: string
+          id: string
+          person_code: string
+          person_name: string | null
+          raw: Json | null
+          site: string
+          work_date: string
+        }
+        Insert: {
+          created_at?: string
+          device_id?: string | null
+          direction: string
+          employee_id?: string | null
+          event_time: string
+          id?: string
+          person_code: string
+          person_name?: string | null
+          raw?: Json | null
+          site: string
+          work_date: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string | null
+          direction?: string
+          employee_id?: string | null
+          event_time?: string
+          id?: string
+          person_code?: string
+          person_name?: string | null
+          raw?: Json | null
+          site?: string
+          work_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "face_events_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "face_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "face_events_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      face_shifts: {
+        Row: {
+          created_at: string
+          crosses_midnight: boolean
+          end_time: string
+          grace_minutes: number
+          id: string
+          name: string
+          start_time: string
+        }
+        Insert: {
+          created_at?: string
+          crosses_midnight?: boolean
+          end_time: string
+          grace_minutes?: number
+          id?: string
+          name: string
+          start_time: string
+        }
+        Update: {
+          created_at?: string
+          crosses_midnight?: boolean
+          end_time?: string
+          grace_minutes?: number
+          id?: string
+          name?: string
+          start_time?: string
         }
         Relationships: []
       }
