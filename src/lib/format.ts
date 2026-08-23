@@ -39,3 +39,20 @@ export function fmtMoney(amount: number | string | null | undefined, currency?: 
   const sym = CURRENCY_SYMBOL[code] ?? code;
   return `${fmtNum(amount)} ${sym}`;
 }
+
+/**
+ * Display-only formatter for Kassa amounts. Legacy USD cash records are stored
+ * in thousandths, so only their rendered value is divided by 1,000. Database
+ * values and all calculations remain unchanged.
+ */
+export function fmtKassaAmount(
+  amount: number | string | null | undefined,
+  currency?: string | null,
+): string {
+  const code = String(currency ?? "UZS").trim().toUpperCase() || "UZS";
+  const numericAmount = typeof amount === "string" ? Number(amount) : amount;
+  const displayAmount = code === "USD" && Number.isFinite(numericAmount)
+    ? Number(numericAmount) / 1_000
+    : numericAmount;
+  return fmtNum(displayAmount);
+}

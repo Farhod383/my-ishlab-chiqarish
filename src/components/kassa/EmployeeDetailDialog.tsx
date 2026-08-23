@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Search, Wrench, Wallet } from "lucide-react";
-import { fmtNum } from "@/lib/format";
+import { fmtKassaAmount, fmtNum } from "@/lib/format";
 
 export const SALARY_KINDS = ["salary", "advance", "bonus", "penalty", "other"] as const;
 export type SalaryKind = typeof SALARY_KINDS[number];
@@ -152,7 +152,7 @@ export default function EmployeeDetailDialog({ employee, open, onOpenChange }: P
                       <TableRow key={p.id}>
                         <TableCell className="text-sm whitespace-nowrap">{new Date(p.expense_date).toLocaleString()}</TableCell>
                         <TableCell><Badge variant={kind === "penalty" ? "destructive" : "secondary"}>{SALARY_KIND_LABELS[kind]}</Badge></TableCell>
-                        <TableCell className="text-right font-mono font-semibold">{fmtNum(Number(p.amount))}</TableCell>
+                        <TableCell className="text-right font-mono font-semibold">{fmtKassaAmount(Number(p.amount), p.currency)}</TableCell>
                         <TableCell className="text-xs">{p.currency ?? "UZS"} <span className="text-muted-foreground">{CUR_SYMBOL[p.currency ?? "UZS"] ?? ""}</span></TableCell>
                         <TableCell className="text-xs text-muted-foreground">{[p.reason, p.comment].filter(Boolean).join(" · ") || "—"}</TableCell>
                         <TableCell className="text-xs">{creator}</TableCell>
