@@ -16,7 +16,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
-import { fmtNum } from "@/lib/format";
+import { fmtKassaAmount, fmtNum } from "@/lib/format";
 import EmployeeDetailDialog, { SALARY_KINDS, SALARY_KIND_LABELS, type SalaryKind } from "@/components/kassa/EmployeeDetailDialog";
 
 const PAYMENT_TYPES = ["cash", "corporate_card", "transfer", "other"] as const;
@@ -106,6 +106,7 @@ export default function KassaPage() {
 
   const canManage = hasRole(["cashier", "admin"]);
   const fmt = (n: number) => fmtNum(n);
+  const fmtCash = (n: number, currency?: string | null) => fmtKassaAmount(n, currency);
   const computeUzs = (amount: number, currency: string, rate: number) =>
     currency === "UZS" ? Number(amount) || 0 : (Number(amount) || 0) * (Number(rate) || 0);
 
@@ -250,7 +251,7 @@ export default function KassaPage() {
           const color = tone === "in" ? "text-status-green" : tone === "out" ? "text-status-red" : v < 0 ? "text-status-red" : "text-status-green";
           return (
             <div key={c} className={`text-xl font-bold font-mono leading-tight tabular-nums ${color}`}>
-              {fmt(v)} <span className="text-xs text-muted-foreground font-sans">{CUR_SYMBOL[c] ?? c}</span>
+              {fmtCash(v, c)} <span className="text-xs text-muted-foreground font-sans">{CUR_SYMBOL[c] ?? c}</span>
             </div>
           );
         })}
@@ -273,7 +274,7 @@ export default function KassaPage() {
     const avail = totalIn - totalOut;
     if (Number(expForm.amount) > avail) {
       await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: "kassa.expense.BLOCKED", entity: "cash_expenses", details: `${expForm.amount} ${cur} (${pt}) — mavjud ${avail}` });
-      toast.error(`Mablag' yetarli emas (mavjud: ${fmt(avail)} ${cur})`);
+      toast.error(`Mablag' yetarli emas (mavjud: ${fmtCash(avail, cur)} ${cur})`);
       return;
     }
     const emp = recipientMode === "employee" ? employees.find(e => e.id === expForm.recipient_id) : null;
@@ -530,7 +531,7 @@ export default function KassaPage() {
                   {!loading && fInc.map(i => (
                     <TableRow key={i.id}>
                       <TableCell className="text-sm whitespace-nowrap">{new Date(i.income_date).toLocaleString()}</TableCell>
-                      <TableCell className="text-right font-mono font-semibold text-status-green">{fmt(Number(i.amount))}</TableCell>
+                      <TableCell className="text-right font-mono font-semibold text-status-green">{fmtCash(Number(i.amount), i.currency)}</TableCell>
                       <TableCell className="text-xs"><Badge variant="secondary">{i.currency ?? "UZS"}</Badge></TableCell>
                       <TableCell className="text-right text-xs font-mono">{(i.currency ?? "UZS") === "UZS" ? "—" : fmt(Number(i.exchange_rate ?? 1))}</TableCell>
                       <TableCell className="text-right font-mono text-status-green">{fmt(Number(i.total_uzs || i.amount))} {t.common.sum}</TableCell>
@@ -619,7 +620,7 @@ export default function KassaPage() {
                   {!loading && fExp.map(e => (
                     <TableRow key={e.id}>
                       <TableCell className="text-sm whitespace-nowrap">{new Date(e.expense_date).toLocaleString()}</TableCell>
-                      <TableCell className="text-right font-mono font-semibold text-status-red">{fmt(Number(e.amount))}</TableCell>
+                      <TableCell className="text-right font-mono font-semibold text-status-red">{fmtCash(Number(e.amount), e.currency)}</TableCell>
                       <TableCell className="text-xs"><Badge variant="secondary">{e.currency ?? "UZS"}</Badge></TableCell>
                       <TableCell className="text-right text-xs font-mono">{(e.currency ?? "UZS") === "UZS" ? "—" : fmt(Number(e.exchange_rate ?? 1))}</TableCell>
                       <TableCell className="text-right font-mono text-status-red">{fmt(Number(e.total_uzs || e.amount))} {t.common.sum}</TableCell>
