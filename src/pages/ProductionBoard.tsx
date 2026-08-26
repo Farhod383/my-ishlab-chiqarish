@@ -13,6 +13,7 @@ import { useI18n } from "@/i18n/context";
 import { ArrowUp, GripVertical, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
+import { OrderUnreadBadge } from "@/components/OrderUnreadBadge";
 
 interface OrderWithStages extends OrderRow { stages: StageRow[]; client?: any }
 
@@ -118,6 +119,7 @@ export default function ProductionBoard() {
                           >
                             #{o.order_number}
                           </Link>
+                          <OrderUnreadBadge orderId={o.id} />
                           <PriorityBadge priority={o.priority} />
                           <StatusBadge status={o.status as any} />
                         </div>
