@@ -32,21 +32,39 @@ export default function ReportsPage() {
     })();
   }, []);
 
-  const filteredRaw = useMemo(() => orders.filter((o) => {
-    if (filter !== "all" && o.status !== filter) return false;
+  const isDelayed = (o: any) =>
+    o.status === "delayed" ||
+    (o.status !== "completed" && o.status !== "cancelled" && o.deadline && new Date(o.deadline) < new Date(new Date().toDateString()));
+
+  const matchesTab = (o: any, f: Filter) => {
+    if (f === "all") return true;
+    if (f === "delayed") return isDelayed(o);
+    if (f === "completed") return o.status === "completed";
+    if (f === "in_progress") return o.status === "in_progress" && !isDelayed(o);
+    return true;
+  };
+
+  // search + date filters applied first (tab counts respect them)
+  const base = useMemo(() => orders.filter((o) => {
     if (q && !`${o.order_number} ${o.product_name} ${o.client?.name ?? ""}`.toLowerCase().includes(q.toLowerCase())) return false;
     if (from && new Date(o.order_date) < new Date(from)) return false;
     if (to && new Date(o.order_date) > new Date(to)) return false;
     return true;
-  }), [orders, filter, q, from, to]);
-  const filtered = filter === "all" ? sortOrdersByStatusAndDate(filteredRaw) : filteredRaw;
+  }), [orders, q, from, to]);
+
+  const filteredRaw = useMemo(() => base.filter((o) => matchesTab(o, filter)), [base, filter]);
+  const filtered = useMemo(
+    () => (filter === "all" ? sortOrdersByStatusAndDate(filteredRaw) : filteredRaw),
+    [filteredRaw, filter]
+  );
 
   const totals = useMemo(() => ({
-    total: orders.length,
-    completed: orders.filter(o => o.status === "completed").length,
-    in_progress: orders.filter(o => o.status === "in_progress").length,
-    delayed: orders.filter(o => o.status === "delayed").length,
-  }), [orders]);
+    total: base.length,
+    completed: base.filter(o => matchesTab(o, "completed")).length,
+    in_progress: base.filter(o => matchesTab(o, "in_progress")).length,
+    delayed: base.filter(o => matchesTab(o, "delayed")).length,
+  }), [base]);
+
 
   const fmtDur = (start?: string | null, end?: string | null) => {
     if (!start || !end) return "—";
