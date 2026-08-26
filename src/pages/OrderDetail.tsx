@@ -44,7 +44,7 @@ export default function OrderDetail() {
   const [otkEdit, setOtkEdit] = useState<Record<string, string>>({});
   const [tab, setTab] = useState("timeline");
   const [openStageId, setOpenStageId] = useState<string | null>(null);
-  const { items: notifItems, markRead, markOrderRead } = useNotifications();
+  const { items: notifItems, markOrderRead } = useNotifications();
   const [orderNotifSnapshot, setOrderNotifSnapshot] = useState<any[]>([]);
 
   // Unread notifications tied to this order (any department).
