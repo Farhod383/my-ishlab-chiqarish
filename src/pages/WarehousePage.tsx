@@ -1078,79 +1078,13 @@ export default function WarehousePage() {
         })}
       </div>
 
-      {/* Reorder cards (only yellow + red) */}
-      {lowStock.length > 0 && (
-        <Card className="border-status-red/30 bg-status-red/5">
-          <CardHeader className="py-3">
-            <CardTitle className="text-sm flex items-center gap-2 text-status-red">
-              <AlertTriangle className="h-4 w-4" />{t.supply.reorderTitle} ({lowStock.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {lowStock.map(g => {
-                const meta = stockStatusMeta[g.status];
-                const need = Math.max(Number(g.minLim) - Number(g.totalQty), 1);
-                return (
-                  <button
-                    key={g.first.id}
-                    type="button"
-                    disabled={!canRequest}
-                    onClick={() => {
-                      setPrMode("factory");
-                      setPrPid(g.first.id);
-                      setPrPname(g.first.name);
-                      setPrQty(need);
-                      setPrUnit(g.first.unit || "dona");
-                      setPrOrderId("");
-                      setPrOpen(true);
-                    }}
-                    className={`text-left rounded-xl border-2 bg-background p-3 space-y-2 transition-all hover:shadow-md hover:-translate-y-0.5 disabled:cursor-default disabled:hover:translate-y-0 disabled:hover:shadow-none ${meta.border}`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="font-semibold text-sm flex items-center gap-2 min-w-0">
-                        <StockDot status={g.status} />
-                        <span className="truncate">{g.first.name}</span>
-                      </span>
-                      <span className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${meta.bg} ${meta.border} ${meta.text}`}>
-                        {meta.label}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-[11px]">
-                      <div>
-                        <div className="text-muted-foreground">Qoldiq</div>
-                        <div className={`font-mono font-bold text-sm ${meta.text}`}>{fmt(g.totalQty)}</div>
-                      </div>
-                      <div>
-                        <div className="text-muted-foreground">Min. limit</div>
-                        <div className="font-mono font-semibold text-sm">{fmt(g.minLim)}</div>
-                      </div>
-                      <div>
-                        <div className="text-muted-foreground">Kerak</div>
-                        <div className="font-mono font-bold text-sm text-primary">{fmt(need)} {g.first.unit}</div>
-                      </div>
-                    </div>
-                    {canRequest && (
-                      <div className="text-[11px] text-primary font-medium flex items-center gap-1">
-                        <ShoppingCart className="h-3 w-3" /> Buyurtma berish
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-
-
       <Tabs defaultValue="stock">
         <TabsList>
           <TabsTrigger value="stock">{t.warehouse.tabs.stock}</TabsTrigger>
           <TabsTrigger value="history">{t.warehouse.tabs.history}</TabsTrigger>
           <TabsTrigger value="instruments">Instrumentlar</TabsTrigger>
           <TabsTrigger value="employees">Xodimlar</TabsTrigger>
+          <TabsTrigger value="reorder">Qayta zakaz berish kerak ({lowStock.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="instruments" className="mt-4">
@@ -1161,8 +1095,81 @@ export default function WarehousePage() {
           <EmployeesView />
         </TabsContent>
 
+        <TabsContent value="reorder" className="mt-4">
+          {lowStock.length === 0 ? (
+            <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Qayta zakaz talab qilayotgan mahsulot yo'q</CardContent></Card>
+          ) : (
+            <Card className="border-status-red/30 bg-status-red/5">
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm flex items-center gap-2 text-status-red">
+                  <AlertTriangle className="h-4 w-4" />{t.supply.reorderTitle} ({lowStock.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {lowStock.map(g => {
+                    const meta = stockStatusMeta[g.status];
+                    const need = Math.max(Number(g.minLim) - Number(g.totalQty), 1);
+                    return (
+                      <div
+                        key={g.first.id}
+                        className={`text-left rounded-xl border-2 bg-background p-3 space-y-2 ${meta.border}`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-semibold text-sm flex items-center gap-2 min-w-0">
+                            <StockDot status={g.status} />
+                            <span className="truncate">{g.first.name}</span>
+                          </span>
+                          <span className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${meta.bg} ${meta.border} ${meta.text}`}>
+                            {meta.label}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2 text-[11px]">
+                          <div>
+                            <div className="text-muted-foreground">Qoldiq</div>
+                            <div className={`font-mono font-bold text-sm ${meta.text}`}>{fmt(g.totalQty)}</div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Min. limit</div>
+                            <div className="font-mono font-semibold text-sm">{fmt(g.minLim)}</div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Kerak</div>
+                            <div className="font-mono font-bold text-sm text-primary">{fmt(need)}</div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Birligi</div>
+                            <div className="font-semibold text-sm">{g.first.unit || "dona"}</div>
+                          </div>
+                        </div>
+                        {canRequest && (
+                          <Button
+                            size="sm"
+                            className="w-full"
+                            onClick={() => {
+                              setPrMode("factory");
+                              setPrPid(g.first.id);
+                              setPrPname(g.first.name);
+                              setPrQty(need);
+                              setPrUnit(g.first.unit || "dona");
+                              setPrOrderId("");
+                              setPrOpen(true);
+                            }}
+                          >
+                            <ShoppingCart className="h-3.5 w-3.5 mr-1" /> Buyurtma berish
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
 
         <TabsContent value="stock" className="mt-4 space-y-3">
+
           <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={(t.warehouse as any).search} className="max-w-md" />
           <Card><CardContent className="p-0">
             <div className="border rounded-md overflow-x-auto">
