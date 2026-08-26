@@ -61,8 +61,8 @@ export default function KassaPage() {
   const [empOpen, setEmpOpen] = useState(false);
   const [empEditId, setEmpEditId] = useState<string | null>(null);
   const [empForm, setEmpForm] = useState({ full_name: "", position: "", department: "", phone: "", salary: 0, hire_date: new Date().toISOString().slice(0,10), leave_date: "", status: "active" });
-  const [filterFrom, setFilterFrom] = useState("");
-  const [filterTo, setFilterTo] = useState("");
+  const [filterFrom, setFilterFrom] = useState(() => monthBounds(currentMonth()).from);
+  const [filterTo, setFilterTo] = useState(() => monthBounds(currentMonth()).to);
   const [searchQ, setSearchQ] = useState("");
 
   // expense form
