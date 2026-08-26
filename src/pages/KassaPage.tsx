@@ -107,6 +107,8 @@ export default function KassaPage() {
   }, []);
 
   const canManage = hasRole(["cashier", "admin"]);
+  // Glavniy buxgalter (chief accountant) and admin can manage users / cashiers.
+  const canManageUsers = roles.includes("admin") || roles.includes("chief_accountant");
   const fmt = (n: number) => fmtNum(n);
   const fmtCash = (n: number, currency?: string | null) => fmtKassaAmount(n, currency);
   const computeUzs = (amount: number, currency: string, rate: number) =>
