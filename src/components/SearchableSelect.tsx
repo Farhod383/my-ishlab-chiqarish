@@ -21,17 +21,20 @@ interface Props {
   emptyText?: string;
   disabled?: boolean;
   className?: string;
+  /** When set, an extra item that resets the value to "" is rendered on top. */
+  clearLabel?: string;
 }
 
 /**
- * Universal searchable select — touch-friendly. Tapping anywhere on the field opens it.
+ * Universal searchable select — touch-friendly and fully keyboard accessible
+ * (type to filter, ↑ ↓ to move, Enter to pick, Esc to close, Tab to leave).
  */
 export default function SearchableSelect({
   options, value, onChange,
   placeholder = "Tanlang",
   searchPlaceholder = "🔍 Qidirish...",
   emptyText = "Topilmadi",
-  disabled, className,
+  disabled, className, clearLabel,
 }: Props) {
   const [open, setOpen] = useState(false);
   const selected = options.find(o => o.value === value);
@@ -43,6 +46,7 @@ export default function SearchableSelect({
           type="button"
           variant="outline"
           role="combobox"
+          aria-expanded={open}
           disabled={disabled}
           onPointerDown={(e) => {
             if (e.pointerType !== "mouse") {
@@ -62,11 +66,21 @@ export default function SearchableSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-        <Command disablePointerSelection>
+        <Command loop>
           <CommandInput placeholder={searchPlaceholder} />
-          <CommandList className="max-h-[60vh] select-none">
+          <CommandList className="max-h-[min(60vh,320px)] overflow-y-auto">
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
+              {clearLabel && (
+                <CommandItem
+                  value={clearLabel}
+                  onSelect={() => { onChange(""); setOpen(false); }}
+                  className="min-h-11 cursor-pointer text-muted-foreground"
+                >
+                  <Check className={cn("mr-2 h-4 w-4", !value ? "opacity-100" : "opacity-0")} />
+                  <span className="flex-1 truncate">{clearLabel}</span>
+                </CommandItem>
+              )}
               {options.map(o => (
                 <CommandItem
                   key={o.value}
@@ -86,3 +100,4 @@ export default function SearchableSelect({
     </Popover>
   );
 }
+

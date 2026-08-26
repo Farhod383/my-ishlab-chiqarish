@@ -173,6 +173,13 @@ export default function HRPage() {
     setAddOpen(false); setEditId(null); resetForm(); load();
   };
 
+  // "Yangi" marker — employees added within the last 7 days (real created_at).
+  const isNew = (emp: any) => {
+    if (!emp?.created_at) return false;
+    return Date.now() - new Date(emp.created_at).getTime() < 7 * 86400000;
+  };
+  const newCount = employees.filter(isNew).length;
+
   const openEdit = (emp: any) => {
     const parts = String(emp.full_name ?? "").trim().split(/\s+/);
     const last = parts.shift() ?? "";
@@ -298,7 +305,12 @@ export default function HRPage() {
               </TabsList>
             </Tabs>
             {statusFilter !== "vacancy" && (
-              <span className="text-xs text-muted-foreground">{filteredEmployees.length} / {employees.length}</span>
+              <div className="flex items-center gap-2">
+                {newCount > 0 && (
+                  <Badge className="bg-status-green text-status-green-foreground">{newCount} yangi xodim</Badge>
+                )}
+                <span className="text-xs text-muted-foreground">{filteredEmployees.length} / {employees.length}</span>
+              </div>
             )}
           </div>
           {statusFilter === "vacancy" ? (
@@ -327,11 +339,18 @@ export default function HRPage() {
                   return (
                   <TableRow
                     key={e.id}
-                    className={canManage ? "cursor-pointer hover:bg-muted/40" : undefined}
+                    className={`${canManage ? "cursor-pointer hover:bg-muted/40" : ""} ${isNew(e) ? "bg-status-green/5" : ""}`.trim() || undefined}
                     onClick={canManage ? () => openEdit(e) : undefined}
                   >
                     <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
-                    <TableCell className="font-medium">{localize(e.full_name)}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <span>{localize(e.full_name)}</span>
+                        {isNew(e) && (
+                          <Badge className="h-5 px-1.5 text-[10px] bg-status-green text-status-green-foreground">Yangi</Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-sm">{e.position}</TableCell>
                     <TableCell className="text-sm">{e.department}</TableCell>
                     <TableCell className="text-sm">{e.phone ?? "—"}</TableCell>

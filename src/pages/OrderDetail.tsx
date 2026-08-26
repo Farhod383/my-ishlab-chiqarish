@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,19 +35,22 @@ export default function OrderDetail() {
   const [logs, setLogs] = useState<AuditLogRow[]>([]);
   const [movements, setMovements] = useState<any[]>([]);
   const [orderFiles, setOrderFiles] = useState<any[]>([]);
+  const [supplyRows, setSupplyRows] = useState<any[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [reportOpen, setReportOpen] = useState(false);
   const [otkEdit, setOtkEdit] = useState<Record<string, string>>({});
 
   const load = async () => {
     if (!id) { setLoading(false); return; }
-    const [o, s, p, l, mv, of] = await Promise.all([
+    const [o, s, p, l, mv, of, sr] = await Promise.all([
       supabase.from("orders").select("*, client:clients(*)").eq("id", id).maybeSingle(),
       supabase.from("order_stages").select("*").eq("order_id", id).order("stage_order"),
       supabase.from("order_parts").select("*").eq("order_id", id),
       supabase.from("audit_log").select("*").eq("order_id", id).order("created_at", { ascending: false }),
       supabase.from("stock_movements").select("*, product:products(name, unit)").eq("order_id", id).order("created_at", { ascending: false }),
       supabase.from("order_files").select("*").eq("order_id", id).order("created_at"),
+      supabase.from("order_supply_requests").select("*").eq("order_id", id).order("created_at", { ascending: false }),
     ]);
     setOrder(o.data as any);
     setStages(s.data ?? []);
@@ -55,6 +58,8 @@ export default function OrderDetail() {
     setLogs(l.data ?? []);
     setMovements(mv.data ?? []);
     setOrderFiles(of.data ?? []);
+    setSupplyRows(sr.data ?? []);
+
     const map: Record<string, string> = {};
     (s.data ?? []).forEach((st: any) => { map[st.id] = st.otk_comment ?? ""; });
     setOtkEdit(map);
@@ -183,6 +188,39 @@ export default function OrderDetail() {
     return "red";
   };
 
+  // Merged change history from every department that touched this order.
+  const changeTimeline = [
+    ...logs.map((l: any) => ({
+      key: `a-${l.id}`,
+      at: l.created_at,
+      actor: l.actor_name as string | null,
+      action: l.action as string,
+      details: l.details as string | null,
+      dept: l.entity === "stage" ? "Ishlab chiqarish"
+        : l.entity === "supply_request" ? "Ta'minot"
+        : l.entity === "stock_movement" ? "Sklad"
+        : l.entity === "order" ? "Zakaz" : "Tizim",
+    })),
+    ...movements.map((m: any) => ({
+      key: `m-${m.id}`,
+      at: m.created_at,
+      actor: (m.recipient_name as string | null) ?? null,
+      action: m.direction === "in" ? "Skladga kirim" : "Skladdan chiqim",
+      details: `${m.product?.name ?? "—"} · ${m.quantity} ${m.product?.unit ?? ""}${m.comment ? ` · ${m.comment}` : ""}`,
+      dept: "Sklad",
+    })),
+    ...supplyRows.map((s: any) => ({
+      key: `s-${s.id}`,
+      at: s.fulfilled_at ?? s.updated_at ?? s.created_at,
+      actor: null as string | null,
+      action: s.status === "fulfilled" ? "Ta'minot bajarildi" : "Ta'minot so'rovi",
+      details: `${s.product_name} · ${s.quantity} ${s.unit ?? ""}${s.supply_comment ? ` · ${s.supply_comment}` : ""}`,
+      dept: "Ta'minot",
+    })),
+  ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+
+
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -292,7 +330,9 @@ export default function OrderDetail() {
           <TabsTrigger value="timeline">{t.orderDetail.tabs.stages}</TabsTrigger>
           <TabsTrigger value="warehouse">{t.orderDetail.tabs.warehouse}</TabsTrigger>
           <TabsTrigger value="movements">{t.orderDetail.tabs.movements}</TabsTrigger>
+          <TabsTrigger value="changes">O'zgarishlar tarixi</TabsTrigger>
           <TabsTrigger value="log">{t.orderDetail.tabs.log}</TabsTrigger>
+
         </TabsList>
 
         <TabsContent value="timeline" className="space-y-3 mt-4">
@@ -392,6 +432,34 @@ export default function OrderDetail() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="changes" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <ClipboardList className="h-4 w-4" /> O'zgarishlar tarixi ({changeTimeline.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {changeTimeline.length === 0 && <p className="text-sm text-muted-foreground">{t.common.noRecords}</p>}
+              {changeTimeline.map((ev) => (
+                <div key={ev.key} className="flex gap-3 border-l-2 pl-3 py-2 border-primary/30">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="outline" className="text-[10px]">{ev.dept}</Badge>
+                      <span className="font-semibold text-sm">{ev.action}</span>
+                    </div>
+                    {ev.details && <div className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">{ev.details}</div>}
+                    <div className="text-[11px] text-muted-foreground/80 mt-1">
+                      {new Date(ev.at).toLocaleString()} · {ev.actor ? localize(ev.actor) : t.common.system}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
 
         <TabsContent value="log" className="mt-4">
           <Card>

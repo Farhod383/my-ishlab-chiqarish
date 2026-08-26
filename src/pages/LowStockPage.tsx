@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
 import { Package, AlertTriangle } from "lucide-react";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { fmtNum } from "@/lib/format";
@@ -66,58 +66,51 @@ export default function LowStockPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="border rounded-md overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12 text-right">№</TableHead>
-                  <TableHead>Holat</TableHead>
-                  <TableHead>{t.orders.cols.product}</TableHead>
-                  <TableHead>Joylashuv</TableHead>
-                  <TableHead className="text-right">Qoldiq</TableHead>
-                  <TableHead className="text-right">Min. limit</TableHead>
-                  <TableHead>Birlik</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading && (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>
-                )}
-                {!loading && filtered.length === 0 && (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{t.dashboard.enough} ✓</TableCell></TableRow>
-                )}
-                {!loading && filtered.map((p, i) => {
-                  const status = getStockStatus(p.stock_qty, p.min_limit);
-                  const meta = stockStatusMeta[status];
-                  return (
-                    <TableRow key={p.id} className="cursor-pointer hover:bg-muted/50" onClick={() => (window.location.href = `/warehouse?product=${p.id}`)}>
-                      <TableCell className="text-right text-xs font-mono text-muted-foreground">{i + 1}</TableCell>
-                      <TableCell>
-                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-semibold ${meta.bg} ${meta.border} ${meta.text}`}>
-                          <span className={`inline-block h-1.5 w-1.5 rounded-full ${meta.dot}`} />
-                          {meta.label}
-                        </span>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <StockDot status={status} />
-                          <Link to={`/warehouse?product=${p.id}`} onClick={(e) => e.stopPropagation()} className="hover:underline">
-                            {localize(p.name)}
-                          </Link>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{p.location || "—"}</TableCell>
-                      <TableCell className={`text-right font-mono font-semibold ${meta.text}`}>{fmtNum(p.stock_qty)}</TableCell>
-                      <TableCell className="text-right font-mono">{fmtNum(p.min_limit)}</TableCell>
-                      <TableCell className="text-xs">{p.unit}</TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+          {loading && <p className="text-sm text-muted-foreground py-6 text-center">{t.common.loading}</p>}
+          {!loading && filtered.length === 0 && (
+            <p className="text-sm text-muted-foreground py-6 text-center">{t.dashboard.enough} ✓</p>
+          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {!loading && filtered.map((p) => {
+              const status = getStockStatus(p.stock_qty, p.min_limit);
+              const meta = stockStatusMeta[status];
+              const need = Math.max(Number(p.min_limit) - Number(p.stock_qty), 1);
+              return (
+                <Link
+                  key={p.id}
+                  to={`/warehouse?product=${p.id}`}
+                  className={`rounded-xl border-2 bg-background p-3 space-y-2 transition-all hover:shadow-md hover:-translate-y-0.5 ${meta.border}`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="font-semibold text-sm flex items-center gap-2 min-w-0">
+                      <StockDot status={status} />
+                      <span className="truncate">{localize(p.name)}</span>
+                    </span>
+                    <span className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${meta.bg} ${meta.border} ${meta.text}`}>
+                      {meta.label}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-[11px]">
+                    <div>
+                      <div className="text-muted-foreground">Qoldiq</div>
+                      <div className={`font-mono font-bold text-sm ${meta.text}`}>{fmtNum(p.stock_qty)} {p.unit}</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Min. limit</div>
+                      <div className="font-mono font-semibold text-sm">{fmtNum(p.min_limit)}</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Kerak</div>
+                      <div className="font-mono font-bold text-sm text-primary">{fmtNum(need)} {p.unit}</div>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
+
     </div>
   );
 }

@@ -37,7 +37,6 @@ export default function SupplyRequestsPage() {
   const [q, setQ] = useState("");
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
   const [edit, setEdit] = useState<Record<string, { status: Status; supply_comment: string; dirty: boolean }>>({});
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [savingStatus, setSavingStatus] = useState<Record<string, boolean>>({});
 
   const [lateItem, setLateItem] = useState<any | null>(null);
@@ -350,7 +349,6 @@ export default function SupplyRequestsPage() {
             {openedOrder.items.map((item: any) => {
               const e = edit[item.id] ?? { status: normalizeStatus(item.status), supply_comment: "", dirty: false };
               const color = normalizeStatus(item.status);
-              const isExpanded = !!expanded[item.id];
               return (
                 <Card key={item.id} className="border-l-4" style={{ borderLeftColor: color === "pending" ? "hsl(var(--status-red))" : "hsl(var(--status-green))" }}>
                   <CardContent className="p-4 space-y-3">
@@ -418,46 +416,42 @@ export default function SupplyRequestsPage() {
                       </div>
                     )}
 
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 px-1.5 text-[11px] text-muted-foreground"
-                        onClick={() => setExpanded({ ...expanded, [item.id]: !isExpanded })}
-                      >
-                        <MessageSquare className="h-3 w-3 mr-1" /> {isExpanded ? "Yopish" : "Izoh / Batafsil"}
-                      </Button>
-                      {!isExpanded && item.supply_comment && (
-                        <span className="text-[11px] text-muted-foreground truncate max-w-sm">Ta'minot: {item.supply_comment}</span>
-                      )}
-                    </div>
-                    {isExpanded && (
-                      <div className="space-y-1">
-                        {item.comment && (
-                          <div className="text-[11px] text-muted-foreground border-l-2 border-primary/40 pl-1.5 italic">
-                            So'rov izohi: {item.comment}
-                          </div>
-                        )}
-                        {canEdit ? (
-                          <div className="flex items-center gap-1.5">
-                            <Textarea
-                              rows={1}
-                              className="min-h-7 text-xs flex-1 py-1"
-                              placeholder="Ta'minot izohi..."
-                              value={e.supply_comment}
-                              onChange={(ev) => setEdit({ ...edit, [item.id]: { ...e, supply_comment: ev.target.value, dirty: true } })}
-                            />
-                            {e.dirty && (
-                              <Button size="sm" className="h-7 px-2 text-xs" onClick={() => saveComment(item)}>
-                                <Save className="h-3 w-3 mr-1" /> Saqlash
-                              </Button>
-                            )}
-                          </div>
-                        ) : item.supply_comment ? (
-                          <div className="text-[11px] text-muted-foreground">Ta'minot: {item.supply_comment}</div>
-                        ) : null}
+                    {item.comment && (
+                      <div className="text-[11px] text-muted-foreground border-l-2 border-primary/40 pl-1.5 italic">
+                        So'rov izohi: {item.comment}
                       </div>
                     )}
+
+                    {canEdit ? (
+                      <div className="flex items-start gap-1.5">
+                        <MessageSquare className="h-3.5 w-3.5 mt-2 shrink-0 text-muted-foreground" />
+                        <Textarea
+                          rows={1}
+                          className="min-h-8 text-xs flex-1 py-1.5"
+                          placeholder="Ta'minot izohi — yozing va Enter bosing..."
+                          value={e.supply_comment}
+                          onChange={(ev) => setEdit({ ...edit, [item.id]: { ...e, supply_comment: ev.target.value, dirty: true } })}
+                          onKeyDown={(ev) => {
+                            if (ev.key === "Enter" && !ev.shiftKey) {
+                              ev.preventDefault();
+                              if (e.dirty) saveComment(item);
+                            }
+                          }}
+                          onBlur={() => { if (e.dirty) saveComment(item); }}
+                        />
+                        {e.dirty && (
+                          <Button size="sm" className="h-8 px-2 text-xs shrink-0" onClick={() => saveComment(item)}>
+                            <Save className="h-3 w-3 mr-1" /> Saqlash
+                          </Button>
+                        )}
+                      </div>
+                    ) : item.supply_comment ? (
+                      <div className="text-[11px] text-muted-foreground flex items-start gap-1">
+                        <MessageSquare className="h-3 w-3 mt-0.5 shrink-0" />
+                        <span>Ta'minot: {item.supply_comment}</span>
+                      </div>
+                    ) : null}
+
                   </CardContent>
                 </Card>
               );

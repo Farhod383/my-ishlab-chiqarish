@@ -1078,30 +1078,71 @@ export default function WarehousePage() {
         })}
       </div>
 
-      {/* Reorder list (only yellow + red) */}
+      {/* Reorder cards (only yellow + red) */}
       {lowStock.length > 0 && (
         <Card className="border-status-red/30 bg-status-red/5">
           <CardHeader className="py-3">
-            <CardTitle className="text-sm flex items-center gap-2 text-status-red"><AlertTriangle className="h-4 w-4" />{t.supply.reorderTitle}</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-2 text-status-red">
+              <AlertTriangle className="h-4 w-4" />{t.supply.reorderTitle} ({lowStock.length})
+            </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="grid sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {lowStock.map(g => {
                 const meta = stockStatusMeta[g.status];
+                const need = Math.max(Number(g.minLim) - Number(g.totalQty), 1);
                 return (
-                  <div key={g.first.id} className={`p-2 bg-background rounded border flex items-center justify-between text-sm ${meta.border}`}>
-                    <span className="font-medium flex items-center gap-2">
-                      <StockDot status={g.status} />
-                      {g.first.name}
-                    </span>
-                    <span className={`font-mono font-semibold ${meta.text}`}>{g.totalQty}/{g.minLim} {g.first.unit}</span>
-                  </div>
+                  <button
+                    key={g.first.id}
+                    type="button"
+                    disabled={!canRequest}
+                    onClick={() => {
+                      setPrMode("factory");
+                      setPrPid(g.first.id);
+                      setPrPname(g.first.name);
+                      setPrQty(need);
+                      setPrUnit(g.first.unit || "dona");
+                      setPrOrderId("");
+                      setPrOpen(true);
+                    }}
+                    className={`text-left rounded-xl border-2 bg-background p-3 space-y-2 transition-all hover:shadow-md hover:-translate-y-0.5 disabled:cursor-default disabled:hover:translate-y-0 disabled:hover:shadow-none ${meta.border}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="font-semibold text-sm flex items-center gap-2 min-w-0">
+                        <StockDot status={g.status} />
+                        <span className="truncate">{g.first.name}</span>
+                      </span>
+                      <span className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${meta.bg} ${meta.border} ${meta.text}`}>
+                        {meta.label}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-[11px]">
+                      <div>
+                        <div className="text-muted-foreground">Qoldiq</div>
+                        <div className={`font-mono font-bold text-sm ${meta.text}`}>{fmt(g.totalQty)}</div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground">Min. limit</div>
+                        <div className="font-mono font-semibold text-sm">{fmt(g.minLim)}</div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground">Kerak</div>
+                        <div className="font-mono font-bold text-sm text-primary">{fmt(need)} {g.first.unit}</div>
+                      </div>
+                    </div>
+                    {canRequest && (
+                      <div className="text-[11px] text-primary font-medium flex items-center gap-1">
+                        <ShoppingCart className="h-3 w-3" /> Buyurtma berish
+                      </div>
+                    )}
+                  </button>
                 );
               })}
             </div>
           </CardContent>
         </Card>
       )}
+
 
 
       <Tabs defaultValue="stock">
