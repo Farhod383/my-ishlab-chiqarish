@@ -22,6 +22,8 @@ import { useLocalize } from "@/i18n/context";
 import { notify } from "@/lib/notify";
 import { recalcOrderStatus } from "@/lib/orderStatus";
 import OrderSupplyRequests from "@/components/OrderSupplyRequests";
+import { useNotifications } from "@/notifications/NotificationsContext";
+
 
 export default function OrderDetail() {
   const { id } = useParams();
