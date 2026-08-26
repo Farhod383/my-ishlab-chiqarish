@@ -188,6 +188,39 @@ export default function OrderDetail() {
     return "red";
   };
 
+  // Merged change history from every department that touched this order.
+  const changeTimeline = [
+    ...logs.map((l: any) => ({
+      key: `a-${l.id}`,
+      at: l.created_at,
+      actor: l.actor_name as string | null,
+      action: l.action as string,
+      details: l.details as string | null,
+      dept: l.entity === "stage" ? "Ishlab chiqarish"
+        : l.entity === "supply_request" ? "Ta'minot"
+        : l.entity === "stock_movement" ? "Sklad"
+        : l.entity === "order" ? "Zakaz" : "Tizim",
+    })),
+    ...movements.map((m: any) => ({
+      key: `m-${m.id}`,
+      at: m.created_at,
+      actor: (m.recipient_name as string | null) ?? null,
+      action: m.direction === "in" ? "Skladga kirim" : "Skladdan chiqim",
+      details: `${m.product?.name ?? "—"} · ${m.quantity} ${m.product?.unit ?? ""}${m.comment ? ` · ${m.comment}` : ""}`,
+      dept: "Sklad",
+    })),
+    ...supplyRows.map((s: any) => ({
+      key: `s-${s.id}`,
+      at: s.fulfilled_at ?? s.updated_at ?? s.created_at,
+      actor: null as string | null,
+      action: s.status === "fulfilled" ? "Ta'minot bajarildi" : "Ta'minot so'rovi",
+      details: `${s.product_name} · ${s.quantity} ${s.unit ?? ""}${s.supply_comment ? ` · ${s.supply_comment}` : ""}`,
+      dept: "Ta'minot",
+    })),
+  ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+
+
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
