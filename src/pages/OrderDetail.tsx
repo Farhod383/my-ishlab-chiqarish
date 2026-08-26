@@ -22,7 +22,7 @@ import { useLocalize } from "@/i18n/context";
 import { notify } from "@/lib/notify";
 import { recalcOrderStatus } from "@/lib/orderStatus";
 import OrderSupplyRequests from "@/components/OrderSupplyRequests";
-import { useNotifications } from "@/notifications/NotificationsContext";
+import { useNotifications, notifOrderId } from "@/notifications/NotificationsContext";
 
 
 export default function OrderDetail() {
@@ -44,19 +44,24 @@ export default function OrderDetail() {
   const [otkEdit, setOtkEdit] = useState<Record<string, string>>({});
   const [tab, setTab] = useState("timeline");
   const [openStageId, setOpenStageId] = useState<string | null>(null);
-  const { items: notifItems, markRead } = useNotifications();
+  const { items: notifItems, markRead, markOrderRead } = useNotifications();
+  const [orderNotifSnapshot, setOrderNotifSnapshot] = useState<any[]>([]);
 
   // Unread notifications tied to this order (any department).
   const orderUnread = useMemo(
-    () => notifItems.filter(n => !n.read_at && (n.entity_id === id || (n.link ?? "").includes(`/orders/${id}`))),
+    () => notifItems.filter(n => !n.read_at && notifOrderId(n) === id),
     [notifItems, id],
   );
 
-  // Telegram-style: opening the Bosqichlar tab marks this order's updates as read.
+  // Telegram-style: opening the order marks its own updates as read (other orders untouched).
   useEffect(() => {
-    if (tab !== "timeline" || orderUnread.length === 0) return;
-    (async () => { for (const n of orderUnread) await markRead(n); })();
-  }, [tab, orderUnread.length]);
+    if (!id || orderUnread.length === 0) return;
+    setOrderNotifSnapshot(prev => {
+      const seen = new Set(prev.map((x: any) => x.id));
+      return [...orderUnread.filter(n => !seen.has(n.id)), ...prev];
+    });
+    void markOrderRead(id);
+  }, [id, orderUnread.length]);
 
 
   const load = async () => {

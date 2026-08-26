@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { OrderUnreadBadge } from "@/components/OrderUnreadBadge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge, PriorityBadge, HealthDot } from "@/components/StatusBadge";
 import { orderHealth, type OrderRow } from "@/types/erp";
@@ -140,7 +141,12 @@ export default function Orders() {
                     <TableRow key={o.id} className="cursor-pointer hover:bg-muted/50" onClick={() => nav(`/orders/${o.id}`)}>
                       <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
                       <TableCell><HealthDot color={orderHealth(o)} /></TableCell>
-                      <TableCell className="font-mono text-sm">{o.order_number}</TableCell>
+                      <TableCell className="font-mono text-sm">
+                        <span className="inline-flex items-center gap-1.5">
+                          {o.order_number}
+                          <OrderUnreadBadge orderId={o.id} />
+                        </span>
+                      </TableCell>
                       <TableCell className="text-sm">{localize((o as any).client?.name) || "—"}</TableCell>
                       <TableCell className="text-sm font-medium">
                         <div>{localize(o.product_name)}</div>
