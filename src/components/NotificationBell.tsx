@@ -18,6 +18,8 @@ const TYPE_DOT: Record<string, string> = {
   order_created: "bg-primary",
   low_stock: "bg-status-yellow",
   instrument_overdue: "bg-status-red",
+  supply_request: "bg-status-red",
+  supply_fulfilled: "bg-status-green",
   info: "bg-muted-foreground",
 };
 
