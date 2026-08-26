@@ -44,7 +44,7 @@ export default function OrderDetail() {
   const [otkEdit, setOtkEdit] = useState<Record<string, string>>({});
   const [tab, setTab] = useState("timeline");
   const [openStageId, setOpenStageId] = useState<string | null>(null);
-  const { items: notifItems, markOrderRead, markStageRead, unreadByStage } = useNotifications();
+  const { items: notifItems, markStageRead, unreadByStage } = useNotifications();
 
   // Notifications tied to this order (any department) — used only as a general history.
   const orderNotifs = useMemo(
@@ -62,6 +62,12 @@ export default function OrderDetail() {
     }
     return map;
   }, [notifItems]);
+
+  // Total unread across this order's stages (tab indicator).
+  const stagesUnread = useMemo(
+    () => stages.reduce((sum, st: any) => sum + (unreadByStage[st.id] ?? 0), 0),
+    [stages, unreadByStage],
+  );
 
   // Opening a stage marks only that stage's updates as read.
   useEffect(() => {
@@ -369,9 +375,9 @@ export default function OrderDetail() {
         <TabsList>
           <TabsTrigger value="timeline">
             {t.orderDetail.tabs.stages}
-            {orderUnread.length > 0 && (
+            {stagesUnread > 0 && (
               <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-status-red px-1.5 text-[11px] font-bold text-status-red-foreground">
-                {orderUnread.length}
+                {stagesUnread > 99 ? "99+" : stagesUnread}
               </span>
             )}
           </TabsTrigger>
