@@ -43,6 +43,22 @@ const CURRENCIES = ["UZS", "USD", "EUR", "RUB", "CNY", "KZT", "TRY", "GBP", "AED
 type CurForm = { currency: string; exchange_rate: number };
 const defaultCur: CurForm = { currency: "UZS", exchange_rate: 1 };
 
+// --- Davr (oy) yordamchilari ---
+const MONTH_NAMES_UZ = ["Yanvar","Fevral","Mart","Aprel","May","Iyun","Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"];
+function currentMonth(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+function monthBounds(ym: string): { from: string; to: string } {
+  const [y, m] = ym.split("-").map(Number);
+  const last = new Date(y, m, 0).getDate();
+  return { from: `${ym}-01`, to: `${ym}-${String(last).padStart(2, "0")}` };
+}
+function monthLabel(ym: string): string {
+  const [y, m] = ym.split("-").map(Number);
+  return `${MONTH_NAMES_UZ[m - 1]} ${y}`;
+}
+
 export default function KassaPage() {
   const { user, hasRole, profile, roles } = useAuth() as any;
   const { t, locale } = useI18n();
@@ -61,9 +77,16 @@ export default function KassaPage() {
   const [empOpen, setEmpOpen] = useState(false);
   const [empEditId, setEmpEditId] = useState<string | null>(null);
   const [empForm, setEmpForm] = useState({ full_name: "", position: "", department: "", phone: "", salary: 0, hire_date: new Date().toISOString().slice(0,10), leave_date: "", status: "active" });
-  const [filterFrom, setFilterFrom] = useState("");
-  const [filterTo, setFilterTo] = useState("");
+  const [filterFrom, setFilterFrom] = useState(() => monthBounds(currentMonth()).from);
+  const [filterTo, setFilterTo] = useState(() => monthBounds(currentMonth()).to);
   const [searchQ, setSearchQ] = useState("");
+  // Tanlangan oy — faqat sana oralig'i to'liq bir oyni qamrasa ko'rsatiladi.
+  const selectedMonth = useMemo(() => {
+    if (!filterFrom || !filterTo) return "";
+    const ym = filterFrom.slice(0, 7);
+    const b = monthBounds(ym);
+    return b.from === filterFrom && b.to === filterTo ? ym : "";
+  }, [filterFrom, filterTo]);
 
   // expense form
   const [openExp, setOpenExp] = useState(false);
@@ -439,10 +462,32 @@ export default function KassaPage() {
       </div>
 
       <div className="space-y-4">
-        <div className="text-xs text-muted-foreground">
-          {filterFrom || filterTo
-            ? `Tanlangan davr: ${filterFrom || "…"} → ${filterTo || "…"}`
-            : "Barcha davr ko'rsatilmoqda — sana oralig'ini tanlang"}
+        <div className="flex flex-wrap items-center gap-2">
+          <Label className="text-xs">Davr (oy)</Label>
+          <Input
+            type="month"
+            className="w-[170px]"
+            value={selectedMonth}
+            onChange={(e) => {
+              const ym = e.target.value;
+              if (!ym) { setFilterFrom(""); setFilterTo(""); return; }
+              const b = monthBounds(ym);
+              setFilterFrom(b.from); setFilterTo(b.to);
+            }}
+          />
+          <Button variant="outline" size="sm" onClick={() => { const b = monthBounds(currentMonth()); setFilterFrom(b.from); setFilterTo(b.to); }}>
+            Joriy oy
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => { setFilterFrom(""); setFilterTo(""); }}>
+            Barcha davr
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {selectedMonth
+              ? `Ko'rsatilmoqda: ${monthLabel(selectedMonth)}`
+              : (filterFrom || filterTo)
+                ? `Tanlangan davr: ${filterFrom || "…"} → ${filterTo || "…"}`
+                : "Barcha davr ko'rsatilmoqda"}
+          </span>
         </div>
         <div className="grid sm:grid-cols-3 gap-4">
           <Card><CardContent className="p-4 space-y-2">
@@ -496,7 +541,7 @@ export default function KassaPage() {
         </div>
         <div><Label className="text-xs">{k.from ?? "Dan"}</Label><Input type="date" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} /></div>
         <div><Label className="text-xs">{k.to ?? "Gacha"}</Label><Input type="date" value={filterTo} onChange={e => setFilterTo(e.target.value)} /></div>
-        {(filterFrom || filterTo || searchQ) && <Button variant="outline" onClick={() => { setFilterFrom(""); setFilterTo(""); setSearchQ(""); }}>{k.reset ?? "Tozalash"}</Button>}
+        {(selectedMonth !== currentMonth() || searchQ) && <Button variant="outline" onClick={() => { const b = monthBounds(currentMonth()); setFilterFrom(b.from); setFilterTo(b.to); setSearchQ(""); }}>{k.reset ?? "Tozalash"}</Button>}
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
