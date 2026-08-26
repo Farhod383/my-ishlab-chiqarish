@@ -356,9 +356,16 @@ export default function OrderDetail() {
         </Card>
       )}
 
-      <Tabs defaultValue="timeline">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="timeline">{t.orderDetail.tabs.stages}</TabsTrigger>
+          <TabsTrigger value="timeline">
+            {t.orderDetail.tabs.stages}
+            {orderUnread.length > 0 && (
+              <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-status-red px-1.5 text-[11px] font-bold text-status-red-foreground">
+                {orderUnread.length}
+              </span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="warehouse">{t.orderDetail.tabs.warehouse}</TabsTrigger>
           <TabsTrigger value="movements">{t.orderDetail.tabs.movements}</TabsTrigger>
           <TabsTrigger value="changes">O'zgarishlar tarixi</TabsTrigger>
@@ -367,7 +374,31 @@ export default function OrderDetail() {
         </TabsList>
 
         <TabsContent value="timeline" className="space-y-3 mt-4">
+          {/* Live progress of this order */}
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-end justify-between gap-4 flex-wrap">
+                <div>
+                  <div className="text-xs text-muted-foreground">Bajarilgan bosqichlar</div>
+                  <div className="text-2xl font-bold tracking-tight">{doneStages} / {totalStages} bosqich</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-muted-foreground">Hozirgi bosqich</div>
+                  <div className="text-lg font-bold uppercase">{currentStage ? currentStage.name : "Barcha bosqichlar tugadi"}</div>
+                  <div className="mt-1 flex justify-end">
+                    {currentStage ? <StatusBadge status={currentStage.status as any} /> : <StatusBadge status={"completed" as any} />}
+                  </div>
+                </div>
+              </div>
+              <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
+                <div className="h-full rounded-full bg-status-green transition-all" style={{ width: `${progressPct}%` }} />
+              </div>
+              <div className="text-xs text-muted-foreground">{progressPct}% bajarildi</div>
+            </CardContent>
+          </Card>
+
           {stages.map((s) => {
+
             // Parallel execution: any pending stage may be started independently of the others.
             const color = otkColor(s);
             return (
