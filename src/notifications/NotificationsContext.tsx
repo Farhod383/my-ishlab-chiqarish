@@ -27,6 +27,11 @@ export function notifOrderId(n: Notif): string | null {
   return null;
 }
 
+/** Extract the production stage id a notification belongs to (entity `stage`). */
+export function notifStageId(n: Notif): string | null {
+  return n.entity === "stage" && n.entity_id ? n.entity_id : null;
+}
+
 interface Ctx {
   items: Notif[];
   loading: boolean;
@@ -35,7 +40,10 @@ interface Ctx {
   unreadByUrl: Record<string, number>;
   /** Unread count per order id — each order counts only its own updates. */
   unreadByOrder: Record<string, number>;
+  /** Unread count per production stage id. */
+  unreadByStage: Record<string, number>;
   markOrderRead: (orderId: string) => Promise<void>;
+  markStageRead: (stageId: string) => Promise<void>;
   markRead: (n: Notif) => Promise<void>;
   markModuleRead: (key: NotifModuleKey) => Promise<void>;
   markAll: () => Promise<void>;
