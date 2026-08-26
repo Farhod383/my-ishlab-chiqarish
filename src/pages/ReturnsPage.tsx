@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { RotateCcw, Plus } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
@@ -144,8 +144,10 @@ export default function ReturnsPage() {
                 <div><Label>{r.reason ?? "Sabab"}</Label><Input value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })} /></div>
                 <div><Label>{r.comment ?? "Izoh"}</Label><Textarea value={form.comment} onChange={e => setForm({ ...form, comment: e.target.value })} /></div>
                 <div><Label>{r.image ?? "Rasm"}</Label><Input type="file" accept="image/*" onChange={e => setForm({ ...form, image: e.target.files?.[0] ?? null })} /></div>
-                <Button className="w-full" onClick={save}>{t.common.save}</Button>
               </div>
+              <DialogFooter>
+                <Button className="w-full sm:w-auto" onClick={save}>{t.common.save}</Button>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         )}
