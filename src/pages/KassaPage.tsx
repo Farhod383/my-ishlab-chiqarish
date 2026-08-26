@@ -43,6 +43,22 @@ const CURRENCIES = ["UZS", "USD", "EUR", "RUB", "CNY", "KZT", "TRY", "GBP", "AED
 type CurForm = { currency: string; exchange_rate: number };
 const defaultCur: CurForm = { currency: "UZS", exchange_rate: 1 };
 
+// --- Davr (oy) yordamchilari ---
+const MONTH_NAMES_UZ = ["Yanvar","Fevral","Mart","Aprel","May","Iyun","Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"];
+function currentMonth(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+function monthBounds(ym: string): { from: string; to: string } {
+  const [y, m] = ym.split("-").map(Number);
+  const last = new Date(y, m, 0).getDate();
+  return { from: `${ym}-01`, to: `${ym}-${String(last).padStart(2, "0")}` };
+}
+function monthLabel(ym: string): string {
+  const [y, m] = ym.split("-").map(Number);
+  return `${MONTH_NAMES_UZ[m - 1]} ${y}`;
+}
+
 export default function KassaPage() {
   const { user, hasRole, profile, roles } = useAuth() as any;
   const { t, locale } = useI18n();
