@@ -19,12 +19,23 @@ export interface Notif {
   created_at: string;
 }
 
+/** Extract the order id a notification belongs to (link `/orders/<id>` or entity `order`). */
+export function notifOrderId(n: Notif): string | null {
+  const m = (n.link ?? "").match(/\/orders\/([0-9a-fA-F-]{36})/);
+  if (m) return m[1];
+  if (n.entity === "order" && n.entity_id) return n.entity_id;
+  return null;
+}
+
 interface Ctx {
   items: Notif[];
   loading: boolean;
   unreadTotal: number;
   unreadByModule: Record<string, number>;
   unreadByUrl: Record<string, number>;
+  /** Unread count per order id — each order counts only its own updates. */
+  unreadByOrder: Record<string, number>;
+  markOrderRead: (orderId: string) => Promise<void>;
   markRead: (n: Notif) => Promise<void>;
   markModuleRead: (key: NotifModuleKey) => Promise<void>;
   markAll: () => Promise<void>;
@@ -36,8 +47,8 @@ const NotificationsContext = createContext<Ctx | null>(null);
 export function useNotifications(): Ctx {
   return (
     useContext(NotificationsContext) ?? {
-      items: [], loading: false, unreadTotal: 0, unreadByModule: {}, unreadByUrl: {},
-      markRead: async () => {}, markModuleRead: async () => {}, markAll: async () => {}, refresh: async () => {},
+      items: [], loading: false, unreadTotal: 0, unreadByModule: {}, unreadByUrl: {}, unreadByOrder: {},
+      markOrderRead: async () => {}, markRead: async () => {}, markModuleRead: async () => {}, markAll: async () => {}, refresh: async () => {},
     }
   );
 }
@@ -193,26 +204,32 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 
   const markAll = async () => markIds(items.filter((n) => !n.read_at).map((n) => n.id));
 
-  const { unreadByModule, unreadByUrl, unreadTotal } = useMemo(() => {
+  const markOrderRead = async (orderId: string) =>
+    markIds(items.filter((n) => !n.read_at && notifOrderId(n) === orderId).map((n) => n.id));
+
+  const { unreadByModule, unreadByUrl, unreadTotal, unreadByOrder } = useMemo(() => {
     const byModule: Record<string, number> = {};
+    const byOrder: Record<string, number> = {};
     let total = 0;
     for (const n of items) {
       if (n.read_at) continue;
       total++;
       const k = resolveModule(n);
       byModule[k] = (byModule[k] ?? 0) + 1;
+      const oid = notifOrderId(n);
+      if (oid) byOrder[oid] = (byOrder[oid] ?? 0) + 1;
     }
     const byUrl: Record<string, number> = {};
     for (const [k, count] of Object.entries(byModule)) {
       const url = MODULE_BY_KEY[k as NotifModuleKey]?.url;
       if (url) byUrl[url] = (byUrl[url] ?? 0) + count;
     }
-    return { unreadByModule: byModule, unreadByUrl: byUrl, unreadTotal: total };
+    return { unreadByModule: byModule, unreadByUrl: byUrl, unreadTotal: total, unreadByOrder: byOrder };
   }, [items]);
 
   const value: Ctx = {
-    items, loading, unreadTotal, unreadByModule, unreadByUrl,
-    markRead, markModuleRead, markAll, refresh,
+    items, loading, unreadTotal, unreadByModule, unreadByUrl, unreadByOrder,
+    markOrderRead, markRead, markModuleRead, markAll, refresh,
   };
 
   return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>;
