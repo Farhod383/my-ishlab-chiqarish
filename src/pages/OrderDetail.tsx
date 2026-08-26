@@ -40,6 +40,22 @@ export default function OrderDetail() {
   const [loading, setLoading] = useState(true);
   const [reportOpen, setReportOpen] = useState(false);
   const [otkEdit, setOtkEdit] = useState<Record<string, string>>({});
+  const [tab, setTab] = useState("timeline");
+  const [openStageId, setOpenStageId] = useState<string | null>(null);
+  const { items: notifItems, markRead } = useNotifications();
+
+  // Unread notifications tied to this order (any department).
+  const orderUnread = useMemo(
+    () => notifItems.filter(n => !n.read_at && (n.entity_id === id || (n.link ?? "").includes(`/orders/${id}`))),
+    [notifItems, id],
+  );
+
+  // Telegram-style: opening the Bosqichlar tab marks this order's updates as read.
+  useEffect(() => {
+    if (tab !== "timeline" || orderUnread.length === 0) return;
+    (async () => { for (const n of orderUnread) await markRead(n); })();
+  }, [tab, orderUnread.length]);
+
 
   const load = async () => {
     if (!id) { setLoading(false); return; }
