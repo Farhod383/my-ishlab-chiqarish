@@ -31,6 +31,7 @@ export const uz = {
     otk: "OTK",
     hr: "HR",
     cashier: "Kassir",
+    chief_accountant: "Glavniy buxgalter",
   },
   nachalnik: {
     title: "Nachalnik paneli",
@@ -371,7 +372,7 @@ export const ru: Translations = {
     service: "Ремонт (Сервис)",
     signOut: "Выход",
   },
-  roles: { admin: "Администратор", marketing: "Маркетинг", manager: "Начальник", warehouse: "Кладовщик", supply: "Снабжение", otk: "ОТК", hr: "HR", cashier: "Кассир" },
+  roles: { admin: "Администратор", marketing: "Маркетинг", manager: "Начальник", warehouse: "Кладовщик", supply: "Снабжение", otk: "ОТК", hr: "HR", cashier: "Кассир", chief_accountant: "Главный бухгалтер" },
   nachalnik: {
     title: "Панель начальника",
     subtitle: "Назначение работников, сроков и передача смены",
@@ -634,7 +635,7 @@ export const uzc: Translations = {
     service: "Ремонт (Сервис)",
     signOut: "Чиқиш",
   },
-  roles: { admin: "Администратор", marketing: "Маркетинг", manager: "Начальник", warehouse: "Складчи", supply: "Таъминот", otk: "ОТК", hr: "HR", cashier: "Кассир" },
+  roles: { admin: "Администратор", marketing: "Маркетинг", manager: "Начальник", warehouse: "Складчи", supply: "Таъминот", otk: "ОТК", hr: "HR", cashier: "Кассир", chief_accountant: "Главный бухгалтер" },
   nachalnik: {
     title: "Начальник панели",
     subtitle: "Босқичларга ишчи тайинлаш, муддат белгилаш ва смена топшириш",
