@@ -13,24 +13,19 @@ import { useAuth } from "@/auth/AuthContext";
 import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
 import { notify } from "@/lib/notify";
+import {
+  type SupplyStatus as Status,
+  normalizeSupplyStatus,
+  supplyStatusLabel as statusLabel,
+  supplyStatusCls as statusCls,
+  supplyStatusDotCls as dotCls,
+  supplyStatusActiveBtnCls as activeBtnCls,
+  supplyStatusOutlineBtnCls as outlineBtnCls,
+} from "@/lib/supplyStatus";
 
-type Status = "pending" | "fulfilled";
 type Filter = "all" | Status;
 
-const statusLabel: Record<Status, string> = {
-  pending: "Kutilmoqda",
-  fulfilled: "Ta'minlandi",
-};
-const statusCls: Record<Status, string> = {
-  pending: "text-status-red border-status-red/30 bg-status-red/10",
-  fulfilled: "text-status-green border-status-green/30 bg-status-green/10",
-};
-const dotCls: Record<Status, string> = {
-  pending: "bg-status-red",
-  fulfilled: "bg-status-green",
-};
-
-const normalizeStatus = (s: string): Status => (s === "fulfilled" ? "fulfilled" : "pending");
+const normalizeStatus = normalizeSupplyStatus;
 
 export default function SupplyRequestsPage() {
   const { hasRole, user } = useAuth();
