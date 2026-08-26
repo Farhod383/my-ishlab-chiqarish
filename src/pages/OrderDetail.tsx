@@ -22,7 +22,7 @@ import { useLocalize } from "@/i18n/context";
 import { notify } from "@/lib/notify";
 import { recalcOrderStatus } from "@/lib/orderStatus";
 import OrderSupplyRequests from "@/components/OrderSupplyRequests";
-import { useNotifications, notifOrderId } from "@/notifications/NotificationsContext";
+import { useNotifications, notifStageId } from "@/notifications/NotificationsContext";
 
 
 export default function OrderDetail() {
@@ -44,25 +44,30 @@ export default function OrderDetail() {
   const [otkEdit, setOtkEdit] = useState<Record<string, string>>({});
   const [tab, setTab] = useState("timeline");
   const [openStageId, setOpenStageId] = useState<string | null>(null);
-  const { items: notifItems, markOrderRead } = useNotifications();
-  const [orderNotifSnapshot, setOrderNotifSnapshot] = useState<any[]>([]);
+  const { items: notifItems, markStageRead, unreadByStage } = useNotifications();
 
-  // Unread notifications tied to this order (any department).
-  const orderUnread = useMemo(
-    () => notifItems.filter(n => !n.read_at && notifOrderId(n) === id),
-    [notifItems, id],
+
+  // Per-stage notification history, keyed by stage id.
+  const notifsByStage = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    for (const n of notifItems) {
+      const sid = notifStageId(n);
+      if (!sid) continue;
+      (map[sid] ??= []).push(n);
+    }
+    return map;
+  }, [notifItems]);
+
+  // Total unread across this order's stages (tab indicator).
+  const stagesUnread = useMemo(
+    () => stages.reduce((sum, st: any) => sum + (unreadByStage[st.id] ?? 0), 0),
+    [stages, unreadByStage],
   );
 
-  // Telegram-style: opening the order marks its own updates as read (other orders untouched).
+  // Opening a stage marks only that stage's updates as read.
   useEffect(() => {
-    if (!id || orderUnread.length === 0) return;
-    setOrderNotifSnapshot(prev => {
-      const seen = new Set(prev.map((x: any) => x.id));
-      return [...orderUnread.filter(n => !seen.has(n.id)), ...prev];
-    });
-    void markOrderRead(id);
-  }, [id, orderUnread.length]);
-
+    if (openStageId) void markStageRead(openStageId);
+  }, [openStageId]);
 
   const load = async () => {
     if (!id) { setLoading(false); return; }
@@ -365,9 +370,9 @@ export default function OrderDetail() {
         <TabsList>
           <TabsTrigger value="timeline">
             {t.orderDetail.tabs.stages}
-            {orderUnread.length > 0 && (
+            {stagesUnread > 0 && (
               <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-status-red px-1.5 text-[11px] font-bold text-status-red-foreground">
-                {orderUnread.length}
+                {stagesUnread > 99 ? "99+" : stagesUnread}
               </span>
             )}
           </TabsTrigger>
@@ -379,30 +384,6 @@ export default function OrderDetail() {
         </TabsList>
 
         <TabsContent value="timeline" className="space-y-3 mt-4">
-          {orderNotifSnapshot.length > 0 && (
-            <Card className="border-status-red/30 bg-status-red/5">
-              <CardContent className="p-4 space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-status-red px-1.5 text-[11px] font-bold text-status-red-foreground">
-                    {orderNotifSnapshot.length > 99 ? "99+" : orderNotifSnapshot.length}
-                  </span>
-                  <span className="text-sm font-semibold">Shu zakaz bo'yicha yangi o'zgarishlar</span>
-                </div>
-                <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
-                  {orderNotifSnapshot.map((n: any) => (
-                    <div key={n.id} className="rounded-md border bg-background p-2.5">
-                      <div className="text-sm font-medium">{n.title}</div>
-                      {n.body && <div className="text-xs text-muted-foreground whitespace-pre-wrap">{n.body}</div>}
-                      <div className="mt-1 text-[11px] text-muted-foreground">
-                        {n.sender_name ?? "Tizim"} · {new Date(n.created_at).toLocaleString("uz-UZ")}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Live progress of this order */}
           <Card className="border-primary/20 bg-primary/5">
             <CardContent className="p-4 space-y-3">
@@ -455,6 +436,11 @@ export default function OrderDetail() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-semibold">{s.name}</span>
                           <StatusBadge status={s.status as any} />
+                          {(unreadByStage[s.id] ?? 0) > 0 && (
+                            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-status-red px-1.5 text-[11px] font-bold text-status-red-foreground">
+                              {unreadByStage[s.id] > 99 ? "99+" : unreadByStage[s.id]}
+                            </span>
+                          )}
                           {s.qc_required && (
                             <Badge variant="outline" className={`border ${
                               color === "green" ? "border-status-green/40 text-status-green bg-status-green/10" :
@@ -497,6 +483,22 @@ export default function OrderDetail() {
                           <div><div className="text-muted-foreground">OTK</div><div className="font-medium">{s.qc_passed ? "Tasdiqlangan" : "Kutilmoqda"}{(s as any).otk_checked_at ? ` · ${new Date((s as any).otk_checked_at).toLocaleString()}` : ""}</div></div>
                         )}
                       </div>
+                      {(notifsByStage[s.id]?.length ?? 0) > 0 && (
+                        <div>
+                          <div className="text-xs font-semibold mb-1">{s.name} bo'yicha bildirishnomalar ({notifsByStage[s.id].length})</div>
+                          <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1">
+                            {notifsByStage[s.id].map((n: any) => (
+                              <div key={n.id} className="rounded-md border bg-background p-2">
+                                <div className="text-xs font-medium">{n.title}</div>
+                                {n.body && <div className="text-[11px] text-muted-foreground whitespace-pre-wrap">{n.body}</div>}
+                                <div className="mt-0.5 text-[11px] text-muted-foreground">
+                                  {n.sender_name ?? "Tizim"} · {new Date(n.created_at).toLocaleString("uz-UZ")}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       <div>
                         <div className="text-xs font-semibold mb-1">Shu bosqich bo'yicha o'zgarishlar ({evs.length})</div>
                         {evs.length === 0 ? (
