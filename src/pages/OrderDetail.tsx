@@ -401,11 +401,21 @@ export default function OrderDetail() {
 
             // Parallel execution: any pending stage may be started independently of the others.
             const color = otkColor(s);
+            const expanded = openStageId === s.id;
+            const evs = stageEvents(s.name);
+            const actualMs = s.started_at ? (new Date(s.finished_at ?? Date.now()).getTime() - new Date(s.started_at).getTime()) : 0;
+            const actualTxt = s.started_at
+              ? `${Math.floor(actualMs / 86400000)} kun ${Math.floor((actualMs % 86400000) / 3600000)} soat`
+              : "—";
             return (
               <Card key={s.id} className={s.status === "delayed" ? "border-status-red/50" : s.status === "in_progress" ? "border-status-blue/50" : ""}>
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div
+                    className="flex items-start justify-between gap-4 flex-wrap cursor-pointer"
+                    onClick={() => setOpenStageId(expanded ? null : s.id)}
+                  >
                     <div className="flex items-start gap-3 min-w-0 flex-1">
+
                       <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
                         s.status === "completed" ? "bg-status-green text-status-green-foreground" :
                         s.status === "in_progress" ? "bg-status-blue text-status-blue-foreground" :
