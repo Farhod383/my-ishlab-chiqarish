@@ -8,6 +8,7 @@ import { AuthProvider } from "@/auth/AuthContext";
 import { ProtectedRoute } from "@/auth/ProtectedRoute";
 import { Layout } from "@/components/Layout";
 import OnlineGuard from "@/components/OnlineGuard";
+import { NotificationsProvider } from "@/notifications/NotificationsContext";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Orders from "./pages/Orders";
@@ -44,6 +45,7 @@ const App = () => (
       <Sonner />
       <I18nProvider>
         <AuthProvider>
+          <NotificationsProvider>
           <OnlineGuard>
           <BrowserRouter>
             <Routes>
@@ -85,6 +87,7 @@ const App = () => (
             </Routes>
           </BrowserRouter>
           </OnlineGuard>
+          </NotificationsProvider>
         </AuthProvider>
       </I18nProvider>
     </TooltipProvider>
