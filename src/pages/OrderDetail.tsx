@@ -297,7 +297,9 @@ export default function OrderDetail() {
           <TabsTrigger value="timeline">{t.orderDetail.tabs.stages}</TabsTrigger>
           <TabsTrigger value="warehouse">{t.orderDetail.tabs.warehouse}</TabsTrigger>
           <TabsTrigger value="movements">{t.orderDetail.tabs.movements}</TabsTrigger>
+          <TabsTrigger value="changes">O'zgarishlar tarixi</TabsTrigger>
           <TabsTrigger value="log">{t.orderDetail.tabs.log}</TabsTrigger>
+
         </TabsList>
 
         <TabsContent value="timeline" className="space-y-3 mt-4">
