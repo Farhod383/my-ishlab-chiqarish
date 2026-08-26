@@ -368,19 +368,22 @@ export default function SupplyRequestsPage() {
                       </div>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {canEdit ? (
-                          (["pending", "fulfilled"] as Status[]).map((s) => (
-                            <Button
-                              key={s}
-                              size="sm"
-                              className="h-9 px-3 text-sm"
-                              variant={color === s ? "default" : "outline"}
-                              disabled={!!savingStatus[item.id]}
-                              onClick={() => markStatus(item, s)}
-                            >
-                              {savingStatus[item.id] && color !== s ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : s === "fulfilled" && <Check className="h-3.5 w-3.5 mr-1" />}
-                              {statusLabel[s]}
-                            </Button>
-                          ))
+                          (["pending", "fulfilled"] as Status[]).map((s) => {
+                            const selected = color === s;
+                            return (
+                              <Button
+                                key={s}
+                                size="sm"
+                                className={`h-9 px-3 text-sm border ${selected ? activeBtnCls[s] : outlineBtnCls[s]}`}
+                                variant="outline"
+                                disabled={!!savingStatus[item.id]}
+                                onClick={() => markStatus(item, s)}
+                              >
+                                {savingStatus[item.id] && !selected ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : s === "fulfilled" && <Check className="h-3.5 w-3.5 mr-1" />}
+                                {statusLabel[s]}
+                              </Button>
+                            );
+                          })
                         ) : (
                           <div className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold ${statusCls[color]}`}>
                             <span className={`h-2 w-2 rounded-full ${dotCls[color]}`} />
