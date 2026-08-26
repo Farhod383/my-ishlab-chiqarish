@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
 import { Bell, BellRing, CheckCheck, ChevronLeft } from "lucide-react";
@@ -63,8 +63,16 @@ export function NotificationBell() {
     [items, active],
   );
 
-  const openOne = (n: Notif) => {
-    markRead(n);
+  useEffect(() => {
+    if (!open || !active) return;
+    const unread = activeList.filter((n) => !n.read_at);
+    if (unread.length === 0) return;
+    const frame = window.requestAnimationFrame(() => { void markModuleRead(active); });
+    return () => window.cancelAnimationFrame(frame);
+  }, [open, active, activeList, markModuleRead]);
+
+  const openOne = async (n: Notif) => {
+    await markRead(n);
     setOpen(false);
     const link = resolveLink(n);
     if (link) nav(link);
