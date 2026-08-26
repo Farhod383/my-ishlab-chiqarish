@@ -1830,6 +1830,7 @@ export type Database = {
         | "hr"
         | "cashier"
         | "engineer"
+        | "chief_accountant"
       defect_resolution: "rework" | "write_off" | "pending"
       movement_direction: "in" | "out"
       order_priority: "normal" | "exception"
@@ -1979,6 +1980,7 @@ export const Constants = {
         "hr",
         "cashier",
         "engineer",
+        "chief_accountant",
       ],
       defect_resolution: ["rework", "write_off", "pending"],
       movement_direction: ["in", "out"],
