@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Wallet, Plus, ArrowDownCircle, ArrowUpCircle, Users, Edit2, Search } from "lucide-react";
+import { Wallet, Plus, ArrowDownCircle, ArrowUpCircle, Users, Edit2, Search, UserCog } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ import { logAudit } from "@/types/erp";
 import { notify } from "@/lib/notify";
 import { fmtKassaAmount, fmtNum } from "@/lib/format";
 import EmployeeDetailDialog, { SALARY_KINDS, SALARY_KIND_LABELS, type SalaryKind } from "@/components/kassa/EmployeeDetailDialog";
+import UsersTab from "@/components/kassa/UsersTab";
 
 const PAYMENT_TYPES = ["cash", "corporate_card", "transfer", "other"] as const;
 type PaymentType = typeof PAYMENT_TYPES[number];
@@ -43,7 +44,7 @@ type CurForm = { currency: string; exchange_rate: number };
 const defaultCur: CurForm = { currency: "UZS", exchange_rate: 1 };
 
 export default function KassaPage() {
-  const { user, hasRole, profile } = useAuth() as any;
+  const { user, hasRole, profile, roles } = useAuth() as any;
   const { t, locale } = useI18n();
   const localize = useLocalize();
   const k = (t as any).kassa ?? {};
@@ -106,6 +107,8 @@ export default function KassaPage() {
   }, []);
 
   const canManage = hasRole(["cashier", "admin"]);
+  // Glavniy buxgalter (chief accountant) and admin can manage users / cashiers.
+  const canManageUsers = roles.includes("admin") || roles.includes("chief_accountant");
   const fmt = (n: number) => fmtNum(n);
   const fmtCash = (n: number, currency?: string | null) => fmtKassaAmount(n, currency);
   const computeUzs = (amount: number, currency: string, rate: number) =>
@@ -501,6 +504,7 @@ export default function KassaPage() {
           <TabsTrigger value="income"><ArrowDownCircle className="h-4 w-4 mr-1 text-status-green" />{k.income ?? "Kirim"}</TabsTrigger>
           <TabsTrigger value="expense"><ArrowUpCircle className="h-4 w-4 mr-1 text-status-red" />{k.expense ?? "Chiqim"}</TabsTrigger>
           <TabsTrigger value="employees"><Users className="h-4 w-4 mr-1" />{k.employees ?? "Xodimlar"}</TabsTrigger>
+          {canManageUsers && <TabsTrigger value="users"><UserCog className="h-4 w-4 mr-1" />Foydalanuvchilar</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="income" className="space-y-3">
@@ -756,6 +760,12 @@ export default function KassaPage() {
             </div>
           </CardContent></Card>
         </TabsContent>
+
+        {canManageUsers && (
+          <TabsContent value="users" className="space-y-3">
+            <UsersTab />
+          </TabsContent>
+        )}
       </Tabs>
 
       <EmployeeDetailDialog
