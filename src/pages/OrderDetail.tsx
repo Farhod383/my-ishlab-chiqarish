@@ -22,6 +22,8 @@ import { useLocalize } from "@/i18n/context";
 import { notify } from "@/lib/notify";
 import { recalcOrderStatus } from "@/lib/orderStatus";
 import OrderSupplyRequests from "@/components/OrderSupplyRequests";
+import { useNotifications } from "@/notifications/NotificationsContext";
+
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -40,6 +42,22 @@ export default function OrderDetail() {
   const [loading, setLoading] = useState(true);
   const [reportOpen, setReportOpen] = useState(false);
   const [otkEdit, setOtkEdit] = useState<Record<string, string>>({});
+  const [tab, setTab] = useState("timeline");
+  const [openStageId, setOpenStageId] = useState<string | null>(null);
+  const { items: notifItems, markRead } = useNotifications();
+
+  // Unread notifications tied to this order (any department).
+  const orderUnread = useMemo(
+    () => notifItems.filter(n => !n.read_at && (n.entity_id === id || (n.link ?? "").includes(`/orders/${id}`))),
+    [notifItems, id],
+  );
+
+  // Telegram-style: opening the Bosqichlar tab marks this order's updates as read.
+  useEffect(() => {
+    if (tab !== "timeline" || orderUnread.length === 0) return;
+    (async () => { for (const n of orderUnread) await markRead(n); })();
+  }, [tab, orderUnread.length]);
+
 
   const load = async () => {
     if (!id) { setLoading(false); return; }
@@ -219,6 +237,19 @@ export default function OrderDetail() {
     })),
   ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
 
+  // Real progress from the database stages.
+  const totalStages = stages.length;
+  const doneStages = stages.filter(s => s.status === "completed").length;
+  const currentStage = stages.find(s => s.status === "in_progress")
+    ?? stages.find(s => s.status === "delayed")
+    ?? stages.find(s => s.status === "pending")
+    ?? null;
+  const progressPct = totalStages ? Math.round((doneStages / totalStages) * 100) : 0;
+  const stageEvents = (name: string) =>
+    changeTimeline.filter(ev => (ev.details ?? "").includes(name) || (ev.action ?? "").includes(name));
+
+
+
 
 
   return (
@@ -325,9 +356,16 @@ export default function OrderDetail() {
         </Card>
       )}
 
-      <Tabs defaultValue="timeline">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="timeline">{t.orderDetail.tabs.stages}</TabsTrigger>
+          <TabsTrigger value="timeline">
+            {t.orderDetail.tabs.stages}
+            {orderUnread.length > 0 && (
+              <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-status-red px-1.5 text-[11px] font-bold text-status-red-foreground">
+                {orderUnread.length}
+              </span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="warehouse">{t.orderDetail.tabs.warehouse}</TabsTrigger>
           <TabsTrigger value="movements">{t.orderDetail.tabs.movements}</TabsTrigger>
           <TabsTrigger value="changes">O'zgarishlar tarixi</TabsTrigger>
@@ -336,14 +374,48 @@ export default function OrderDetail() {
         </TabsList>
 
         <TabsContent value="timeline" className="space-y-3 mt-4">
+          {/* Live progress of this order */}
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-end justify-between gap-4 flex-wrap">
+                <div>
+                  <div className="text-xs text-muted-foreground">Bajarilgan bosqichlar</div>
+                  <div className="text-2xl font-bold tracking-tight">{doneStages} / {totalStages} bosqich</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-muted-foreground">Hozirgi bosqich</div>
+                  <div className="text-lg font-bold uppercase">{currentStage ? currentStage.name : "Barcha bosqichlar tugadi"}</div>
+                  <div className="mt-1 flex justify-end">
+                    {currentStage ? <StatusBadge status={currentStage.status as any} /> : <StatusBadge status={"completed" as any} />}
+                  </div>
+                </div>
+              </div>
+              <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
+                <div className="h-full rounded-full bg-status-green transition-all" style={{ width: `${progressPct}%` }} />
+              </div>
+              <div className="text-xs text-muted-foreground">{progressPct}% bajarildi</div>
+            </CardContent>
+          </Card>
+
           {stages.map((s) => {
+
             // Parallel execution: any pending stage may be started independently of the others.
             const color = otkColor(s);
+            const expanded = openStageId === s.id;
+            const evs = stageEvents(s.name);
+            const actualMs = s.started_at ? (new Date(s.finished_at ?? Date.now()).getTime() - new Date(s.started_at).getTime()) : 0;
+            const actualTxt = s.started_at
+              ? `${Math.floor(actualMs / 86400000)} kun ${Math.floor((actualMs % 86400000) / 3600000)} soat`
+              : "—";
             return (
               <Card key={s.id} className={s.status === "delayed" ? "border-status-red/50" : s.status === "in_progress" ? "border-status-blue/50" : ""}>
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div
+                    className="flex items-start justify-between gap-4 flex-wrap cursor-pointer"
+                    onClick={() => setOpenStageId(expanded ? null : s.id)}
+                  >
                     <div className="flex items-start gap-3 min-w-0 flex-1">
+
                       <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
                         s.status === "completed" ? "bg-status-green text-status-green-foreground" :
                         s.status === "in_progress" ? "bg-status-blue text-status-blue-foreground" :
@@ -367,7 +439,7 @@ export default function OrderDetail() {
                         {s.finished_at && <div className="text-xs text-muted-foreground">{t.orderDetail.finished2}: {new Date(s.finished_at).toLocaleString()}</div>}
                       </div>
                     </div>
-                    <div className="flex flex-col gap-2 shrink-0 min-w-[220px]">
+                    <div className="flex flex-col gap-2 shrink-0 min-w-[220px]" onClick={(e) => e.stopPropagation()}>
                       <div className="flex gap-2 flex-wrap">
                         {s.status === "pending" && hasRole(["manager", "admin"]) && (
                           <StageStartDialog stage={s} onStart={(workers, startedAtIso) => startStage(s, workers, startedAtIso)} />
@@ -382,7 +454,44 @@ export default function OrderDetail() {
                       <StageWorkersDisplay stage={s} />
                     </div>
                   </div>
+
+                  {expanded && (
+                    <div className="mt-4 pt-3 border-t space-y-3">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                        <div><div className="text-muted-foreground">Holati</div><div className="mt-0.5"><StatusBadge status={s.status as any} /></div></div>
+                        <div><div className="text-muted-foreground">Boshlangan</div><div className="font-medium">{s.started_at ? new Date(s.started_at).toLocaleString() : "—"}</div></div>
+                        <div><div className="text-muted-foreground">Tugagan</div><div className="font-medium">{s.finished_at ? new Date(s.finished_at).toLocaleString() : "—"}</div></div>
+                        <div><div className="text-muted-foreground">Norma</div><div className="font-medium">{s.norm_days} {t.common.days}</div></div>
+                        <div><div className="text-muted-foreground">Haqiqiy vaqt</div><div className="font-medium">{actualTxt}</div></div>
+                        <div className="col-span-2"><div className="text-muted-foreground">Xodimlar</div><div className="font-medium">{(s as any).worker_name || "—"}</div></div>
+                        {s.qc_required && (
+                          <div><div className="text-muted-foreground">OTK</div><div className="font-medium">{s.qc_passed ? "Tasdiqlangan" : "Kutilmoqda"}{(s as any).otk_checked_at ? ` · ${new Date((s as any).otk_checked_at).toLocaleString()}` : ""}</div></div>
+                        )}
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold mb-1">Shu bosqich bo'yicha o'zgarishlar ({evs.length})</div>
+                        {evs.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">{t.common.noRecords}</p>
+                        ) : (
+                          <div className="space-y-1.5">
+                            {evs.slice(0, 10).map(ev => (
+                              <div key={ev.key} className="text-xs border-l-2 border-primary/30 pl-2">
+                                <span className="text-muted-foreground">{new Date(ev.at).toLocaleString()}</span>
+                                {" — "}
+                                <span className="font-medium">{ev.dept}</span>
+                                {" · "}
+                                <span>{ev.action}</span>
+                                {ev.actor && <span className="text-muted-foreground"> · {localize(ev.actor)}</span>}
+                                {ev.details && <div className="text-muted-foreground">{ev.details}</div>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
+
               </Card>
             );
           })}
