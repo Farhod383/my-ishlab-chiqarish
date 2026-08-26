@@ -379,6 +379,30 @@ export default function OrderDetail() {
         </TabsList>
 
         <TabsContent value="timeline" className="space-y-3 mt-4">
+          {orderNotifSnapshot.length > 0 && (
+            <Card className="border-status-red/30 bg-status-red/5">
+              <CardContent className="p-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-status-red px-1.5 text-[11px] font-bold text-status-red-foreground">
+                    {orderNotifSnapshot.length > 99 ? "99+" : orderNotifSnapshot.length}
+                  </span>
+                  <span className="text-sm font-semibold">Shu zakaz bo'yicha yangi o'zgarishlar</span>
+                </div>
+                <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+                  {orderNotifSnapshot.map((n: any) => (
+                    <div key={n.id} className="rounded-md border bg-background p-2.5">
+                      <div className="text-sm font-medium">{n.title}</div>
+                      {n.body && <div className="text-xs text-muted-foreground whitespace-pre-wrap">{n.body}</div>}
+                      <div className="mt-1 text-[11px] text-muted-foreground">
+                        {n.sender_name ?? "Tizim"} · {new Date(n.created_at).toLocaleString("uz-UZ")}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Live progress of this order */}
           <Card className="border-primary/20 bg-primary/5">
             <CardContent className="p-4 space-y-3">
