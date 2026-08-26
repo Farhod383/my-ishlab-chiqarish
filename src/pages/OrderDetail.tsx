@@ -400,6 +400,34 @@ export default function OrderDetail() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="changes" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <ClipboardList className="h-4 w-4" /> O'zgarishlar tarixi ({changeTimeline.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {changeTimeline.length === 0 && <p className="text-sm text-muted-foreground">{t.common.noRecords}</p>}
+              {changeTimeline.map((ev) => (
+                <div key={ev.key} className="flex gap-3 border-l-2 pl-3 py-2 border-primary/30">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="outline" className="text-[10px]">{ev.dept}</Badge>
+                      <span className="font-semibold text-sm">{ev.action}</span>
+                    </div>
+                    {ev.details && <div className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">{ev.details}</div>}
+                    <div className="text-[11px] text-muted-foreground/80 mt-1">
+                      {new Date(ev.at).toLocaleString()} · {ev.actor ? localize(ev.actor) : t.common.system}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+
         <TabsContent value="log" className="mt-4">
           <Card>
             <CardHeader><CardTitle className="text-base flex items-center gap-2"><ClipboardList className="h-4 w-4" /> {t.orderDetail.tabs.log}</CardTitle></CardHeader>
