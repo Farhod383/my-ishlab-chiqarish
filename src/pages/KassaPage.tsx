@@ -44,7 +44,7 @@ type CurForm = { currency: string; exchange_rate: number };
 const defaultCur: CurForm = { currency: "UZS", exchange_rate: 1 };
 
 export default function KassaPage() {
-  const { user, hasRole, profile } = useAuth() as any;
+  const { user, hasRole, profile, roles } = useAuth() as any;
   const { t, locale } = useI18n();
   const localize = useLocalize();
   const k = (t as any).kassa ?? {};
