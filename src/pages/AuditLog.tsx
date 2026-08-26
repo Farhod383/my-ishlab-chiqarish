@@ -108,7 +108,7 @@ export default function AuditLog() {
             <SelectTrigger><SelectValue placeholder={(t.audit as any).role} /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{(t.audit as any).allRoles}</SelectItem>
-              {["admin","marketing","manager","warehouse","supply","otk","hr","cashier","engineer"].map(r => (
+              {["admin","marketing","manager","warehouse","supply","otk","hr","cashier","chief_accountant","engineer"].map(r => (
                 <SelectItem key={r} value={r}>{(t.roles as any)[r] ?? r}</SelectItem>
               ))}
             </SelectContent>
