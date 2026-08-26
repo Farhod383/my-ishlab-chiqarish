@@ -46,11 +46,6 @@ export default function OrderDetail() {
   const [openStageId, setOpenStageId] = useState<string | null>(null);
   const { items: notifItems, markStageRead, unreadByStage } = useNotifications();
 
-  // Notifications tied to this order (any department) — used only as a general history.
-  const orderNotifs = useMemo(
-    () => notifItems.filter(n => notifOrderId(n) === id),
-    [notifItems, id],
-  );
 
   // Per-stage notification history, keyed by stage id.
   const notifsByStage = useMemo(() => {
