@@ -170,15 +170,19 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     if (!ids.length || !user) return;
     const now = new Date().toISOString();
     setItems((prev) => prev.map((x) => (ids.includes(x.id) && !x.read_at ? { ...x, read_at: now } : x)));
-    const { error } = await supabase
-      .from("notification_user_states")
-      .update({ is_read: true, read_at: now })
-      .eq("user_id", user.id)
-      .in("notification_id", ids)
-      .eq("is_read", false);
-    if (error) {
-      console.warn("Bildirishnomani o'qilgan deb belgilashda xato", error);
-      await refresh();
+    for (let start = 0; start < ids.length; start += 200) {
+      const batch = ids.slice(start, start + 200);
+      const { error } = await supabase
+        .from("notification_user_states")
+        .update({ is_read: true, read_at: now })
+        .eq("user_id", user.id)
+        .in("notification_id", batch)
+        .eq("is_read", false);
+      if (error) {
+        console.warn("Bildirishnomani o'qilgan deb belgilashda xato", error);
+        await refresh();
+        return;
+      }
     }
   };
 
