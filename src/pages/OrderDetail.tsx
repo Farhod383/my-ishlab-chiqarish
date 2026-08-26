@@ -41,13 +41,14 @@ export default function OrderDetail() {
 
   const load = async () => {
     if (!id) { setLoading(false); return; }
-    const [o, s, p, l, mv, of] = await Promise.all([
+    const [o, s, p, l, mv, of, sr] = await Promise.all([
       supabase.from("orders").select("*, client:clients(*)").eq("id", id).maybeSingle(),
       supabase.from("order_stages").select("*").eq("order_id", id).order("stage_order"),
       supabase.from("order_parts").select("*").eq("order_id", id),
       supabase.from("audit_log").select("*").eq("order_id", id).order("created_at", { ascending: false }),
       supabase.from("stock_movements").select("*, product:products(name, unit)").eq("order_id", id).order("created_at", { ascending: false }),
       supabase.from("order_files").select("*").eq("order_id", id).order("created_at"),
+      supabase.from("order_supply_requests").select("*").eq("order_id", id).order("created_at", { ascending: false }),
     ]);
     setOrder(o.data as any);
     setStages(s.data ?? []);
@@ -55,6 +56,8 @@ export default function OrderDetail() {
     setLogs(l.data ?? []);
     setMovements(mv.data ?? []);
     setOrderFiles(of.data ?? []);
+    setSupplyRows(sr.data ?? []);
+
     const map: Record<string, string> = {};
     (s.data ?? []).forEach((st: any) => { map[st.id] = st.otk_comment ?? ""; });
     setOtkEdit(map);
