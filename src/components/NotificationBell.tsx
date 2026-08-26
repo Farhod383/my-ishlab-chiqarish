@@ -1,29 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { AppRole } from "@/auth/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/auth/AuthContext";
-import { Bell, BellRing, Check, CheckCheck } from "lucide-react";
+import { Bell, BellRing, CheckCheck, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
-
-interface Notif {
-  id: string;
-  type: string;
-  title: string;
-  body: string | null;
-  link: string | null;
-  entity: string | null;
-  entity_id: string | null;
-  recipient_id: string | null;
-  recipient_role: string | null;
-  sender_name: string | null;
-  read_at: string | null;
-  created_at: string;
-}
+import { useNotifications, type Notif } from "@/notifications/NotificationsContext";
+import { NOTIF_MODULES, MODULE_BY_KEY, resolveModule, resolveLink, type NotifModuleKey } from "@/lib/notifModules";
 
 const TYPE_DOT: Record<string, string> = {
   otk_approved: "bg-status-green",
@@ -37,90 +21,57 @@ const TYPE_DOT: Record<string, string> = {
   info: "bg-muted-foreground",
 };
 
+const fmtTime = (iso: string) => {
+  const d = new Date(iso);
+  const today = new Date();
+  const sameDay = d.toDateString() === today.toDateString();
+  return sameDay
+    ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+};
+
 export function NotificationBell() {
-  const { user, roles } = useAuth();
-  const isAdmin = roles.includes("admin" as AppRole);
-  const myRoles = roles as string[];
+  const { user } = useAuth();
   const nav = useNavigate();
-  const [items, setItems] = useState<Notif[]>([]);
+  const { items, unreadTotal, unreadByModule, markRead, markAll, markModuleRead } = useNotifications();
   const [open, setOpen] = useState(false);
-  const askedRef = useRef(false);
+  const [active, setActive] = useState<NotifModuleKey | null>(null);
 
-  // Does this notification belong in my bell?
-  const belongsToMe = (n: Notif): boolean => {
-    if (isAdmin) return true;
-    if (n.recipient_id && n.recipient_id === user?.id) return true;
-    if (n.recipient_role && myRoles.includes(n.recipient_role)) return true;
-    // Fully broadcast (no user, no role) → only admins.
-    return false;
-  };
-
-  const load = async () => {
-    if (!user) return;
-    let query = supabase.from("notifications").select("*");
-    if (!isAdmin) {
-      const roleList = myRoles.map((r) => `"${r}"`).join(",");
-      const orParts = [`recipient_id.eq.${user.id}`];
-      if (myRoles.length) orParts.push(`recipient_role.in.(${roleList})`);
-      query = query.or(orParts.join(","));
+  const grouped = useMemo(() => {
+    const map = new Map<NotifModuleKey, Notif[]>();
+    for (const n of items) {
+      const k = resolveModule(n);
+      const arr = map.get(k) ?? [];
+      arr.push(n);
+      map.set(k, arr);
     }
-    const { data } = await query.order("created_at", { ascending: false }).limit(50);
-    setItems((data as any) ?? []);
-  };
+    return NOTIF_MODULES
+      .map((m) => ({ mod: m, list: map.get(m.key) ?? [] }))
+      .filter((g) => g.list.length > 0)
+      .sort((a, b) => {
+        const ua = unreadByModule[a.mod.key] ?? 0;
+        const ub = unreadByModule[b.mod.key] ?? 0;
+        if (ua !== ub) return ub - ua;
+        return new Date(b.list[0].created_at).getTime() - new Date(a.list[0].created_at).getTime();
+      });
+  }, [items, unreadByModule]);
 
-  useEffect(() => {
-    if (!user) return;
-    load();
-
-    // Ask for browser-notification permission once per session.
-    if (!askedRef.current && typeof Notification !== "undefined" && Notification.permission === "default") {
-      askedRef.current = true;
-      Notification.requestPermission().catch(() => {});
-    }
-
-    const ch = supabase
-      .channel("notifications-bell")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications" }, (payload) => {
-        const n = payload.new as Notif;
-        if (!belongsToMe(n)) return;
-        setItems((prev) => [n, ...prev].slice(0, 50));
-        toast(n.title, { description: n.body ?? undefined });
-        if (typeof Notification !== "undefined" && Notification.permission === "granted" && document.hidden) {
-          try {
-            const native = new Notification(`MCITY ERP — ${n.title}`, { body: n.body ?? "", tag: n.id });
-            native.onclick = () => { window.focus(); if (n.link) nav(n.link); };
-          } catch {}
-        }
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [user?.id, isAdmin, myRoles.join(",")]);
-
-  const unread = items.filter((n) => !n.read_at).length;
-
-  const markRead = async (n: Notif) => {
-    if (!n.read_at) {
-      await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", n.id);
-      setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, read_at: new Date().toISOString() } : x)));
-    }
-  };
-
-  const markAll = async () => {
-    const ids = items.filter((n) => !n.read_at).map((n) => n.id);
-    if (!ids.length) return;
-    await supabase.from("notifications").update({ read_at: new Date().toISOString() }).in("id", ids);
-    setItems((prev) => prev.map((x) => (x.read_at ? x : { ...x, read_at: new Date().toISOString() })));
-  };
+  const activeList = useMemo(
+    () => (active ? items.filter((n) => resolveModule(n) === active) : []),
+    [items, active],
+  );
 
   const openOne = (n: Notif) => {
     markRead(n);
     setOpen(false);
-    if (n.link) nav(n.link);
+    const link = resolveLink(n);
+    if (link) nav(link);
   };
 
   if (!user) return null;
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) setActive(null); }}>
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
@@ -128,59 +79,99 @@ export function NotificationBell() {
           aria-label="Bildirishnomalar"
           className="relative h-14 w-14 rounded-full [&_svg]:!size-9"
         >
-          {unread > 0 ? (
-            <BellRing
-              className="animate-bell-shake origin-top text-primary"
-              strokeWidth={2.2}
-            />
+          {unreadTotal > 0 ? (
+            <BellRing className="animate-bell-shake origin-top text-primary" strokeWidth={2.2} />
           ) : (
             <Bell strokeWidth={2.2} />
           )}
-          {unread > 0 && (
+          {unreadTotal > 0 && (
             <Badge
               variant="destructive"
               className="absolute -top-1 -right-1 h-7 min-w-[1.75rem] px-2 text-sm font-bold flex items-center justify-center rounded-full ring-2 ring-background shadow-lg"
             >
-              {unread > 99 ? "99+" : unread}
+              {unreadTotal > 99 ? "99+" : unreadTotal}
             </Badge>
           )}
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align="end" className="w-96 p-0">
-        <div className="flex items-center justify-between px-3 py-2 border-b">
-          <div className="text-sm font-semibold">Bildirishnomalar</div>
-          {unread > 0 && (
-            <Button size="sm" variant="ghost" onClick={markAll} className="h-7 text-xs">
-              <CheckCheck className="h-3 w-3 mr-1" /> Barchasini o'qildi
+      <PopoverContent align="end" className="w-[min(96vw,26rem)] p-0">
+        <div className="flex items-center justify-between px-3 py-2 border-b gap-2">
+          {active ? (
+            <button onClick={() => setActive(null)} className="flex items-center gap-1 text-sm font-semibold min-w-0">
+              <ChevronLeft className="h-4 w-4 shrink-0" />
+              <span className="truncate">{MODULE_BY_KEY[active].label}</span>
+            </button>
+          ) : (
+            <div className="text-sm font-semibold">Bildirishnomalar</div>
+          )}
+          {(active ? (unreadByModule[active] ?? 0) > 0 : unreadTotal > 0) && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => (active ? markModuleRead(active) : markAll())}
+              className="h-7 text-xs shrink-0"
+            >
+              <CheckCheck className="h-3 w-3 mr-1" /> O'qildi
             </Button>
           )}
         </div>
+
         <ScrollArea className="h-[min(70vh,460px)]">
-          {items.length === 0 && (
+          {!active && grouped.length === 0 && (
             <div className="text-sm text-muted-foreground text-center py-8">Bildirishnomalar yo'q</div>
           )}
-          {items.map((n) => (
-            <button
-              key={n.id}
-              onClick={() => openOne(n)}
-              className={`w-full text-left px-3 py-2 border-b last:border-b-0 hover:bg-muted/50 transition-colors flex gap-3 ${n.read_at ? "" : "bg-primary/5"}`}
-            >
-              <span className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${TYPE_DOT[n.type] ?? "bg-muted-foreground"}`} />
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-semibold truncate">{n.title}</div>
-                {n.body && <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{n.body}</div>}
-                <div className="text-[11px] text-muted-foreground/80 mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                  <span>
-                    {new Date(n.created_at).toLocaleDateString()}{" "}
-                    {new Date(n.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+
+          {!active &&
+            grouped.map(({ mod, list }) => {
+              const unread = unreadByModule[mod.key] ?? 0;
+              const last = list[0];
+              const Icon = mod.icon;
+              return (
+                <button
+                  key={mod.key}
+                  onClick={() => setActive(mod.key)}
+                  className={`w-full text-left px-3 py-2.5 border-b last:border-b-0 hover:bg-muted/50 transition-colors flex gap-3 items-center ${unread ? "bg-primary/5" : ""}`}
+                >
+                  <span className="h-10 w-10 rounded-full bg-muted flex items-center justify-center shrink-0">
+                    <Icon className="h-5 w-5 text-foreground/80" />
                   </span>
-                  {n.sender_name && <span>· {n.sender_name}</span>}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <div className={`text-sm truncate flex-1 ${unread ? "font-bold" : "font-semibold"}`}>{mod.label}</div>
+                      <span className="text-[11px] text-muted-foreground shrink-0">{fmtTime(last.created_at)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <div className="text-xs text-muted-foreground truncate flex-1">{last.title}</div>
+                      {unread > 0 && (
+                        <Badge variant="destructive" className="h-5 min-w-[1.25rem] px-1.5 text-[11px] rounded-full shrink-0">
+                          {unread > 99 ? "99+" : unread}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+
+          {active &&
+            activeList.map((n) => (
+              <button
+                key={n.id}
+                onClick={() => openOne(n)}
+                className={`w-full text-left px-3 py-2 border-b last:border-b-0 hover:bg-muted/50 transition-colors flex gap-3 ${n.read_at ? "" : "bg-primary/5"}`}
+              >
+                <span className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${TYPE_DOT[n.type] ?? "bg-muted-foreground"}`} />
+                <div className="min-w-0 flex-1">
+                  <div className={`text-sm truncate ${n.read_at ? "font-medium" : "font-semibold"}`}>{n.title}</div>
+                  {n.body && <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{n.body}</div>}
+                  <div className="text-[11px] text-muted-foreground/80 mt-1.5 flex flex-wrap items-center gap-x-2">
+                    <span>{fmtTime(n.created_at)}</span>
+                    {n.sender_name && <span>· {n.sender_name}</span>}
+                  </div>
                 </div>
-              </div>
-              {!n.read_at && <Check className="h-3 w-3 text-primary mt-1 shrink-0 opacity-60" />}
-            </button>
-          ))}
+              </button>
+            ))}
         </ScrollArea>
       </PopoverContent>
     </Popover>
