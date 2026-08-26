@@ -302,6 +302,14 @@ export default function KassaPage() {
       const { error } = await supabase.from("cash_expenses").insert({ ...payload, created_by: user?.id });
       if (error) { toast.error(error.message); return; }
       await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: "kassa.expense.create", entity: "cash_expenses", details: `${payload.amount} ${payload.currency} = ${fmt(total_uzs)} UZS · ${payload.reason}` });
+      await notify({
+        type: "info",
+        title: `Kassa chiqimi — ${payload.reason}`,
+        body: `${fmtKassaAmount(payload.amount, payload.currency)} ${payload.currency}${recipientName ? ` · ${recipientName}` : ""}`,
+        link: "/kassa", entity: "cash_expense",
+        recipient_role: ["cashier", "manager"],
+        sender_id: user?.id, sender_name: actorName,
+      });
     }
     toast.success(k.saved ?? "Saqlandi");
     setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash", salary_kind: "" });
