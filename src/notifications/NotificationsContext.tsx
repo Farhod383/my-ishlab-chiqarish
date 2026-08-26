@@ -52,6 +52,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   const [items, setItems] = useState<Notif[]>([]);
   const [loading, setLoading] = useState(false);
   const askedRef = useRef(false);
+  const refreshTimerRef = useRef<number | null>(null);
 
   const belongsToMe = useCallback(
     (n: Notif) => {
@@ -66,17 +67,50 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   const refresh = useCallback(async () => {
     if (!user) { setItems([]); return; }
     setLoading(true);
-    let query = supabase.from("notifications").select("*");
-    if (!seesAll) {
-      const roleList = myRoles.map((r) => `"${r}"`).join(",");
-      const orParts = [`recipient_id.eq.${user.id}`];
-      if (myRoles.length) orParts.push(`recipient_role.in.(${roleList})`);
-      query = query.or(orParts.join(","));
+    const loaded: Notif[] = [];
+    const pageSize = 1000;
+    let from = 0;
+    let failed = false;
+
+    while (true) {
+      const { data, error } = await supabase
+        .from("notification_user_states")
+        .select("notification_id,is_read,read_at,created_at,notifications(*)")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .range(from, from + pageSize - 1);
+
+      if (error) {
+        console.warn("Bildirishnomalarni yuklashda xato", error);
+        failed = true;
+        break;
+      }
+
+      const rows = (data ?? []) as any[];
+      for (const row of rows) {
+        const notification = Array.isArray(row.notifications) ? row.notifications[0] : row.notifications;
+        if (!notification) continue;
+        loaded.push({
+          ...notification,
+          read_at: row.is_read ? (row.read_at ?? row.created_at) : null,
+        } as Notif);
+      }
+
+      if (rows.length < pageSize) break;
+      from += pageSize;
     }
-    const { data } = await query.order("created_at", { ascending: false }).limit(300);
-    setItems(((data as any) ?? []) as Notif[]);
+
+    if (!failed) setItems(loaded);
     setLoading(false);
-  }, [user?.id, seesAll, myRoles.join(",")]);
+  }, [user?.id]);
+
+  const scheduleRefresh = useCallback(() => {
+    if (refreshTimerRef.current !== null) window.clearTimeout(refreshTimerRef.current);
+    refreshTimerRef.current = window.setTimeout(() => {
+      refreshTimerRef.current = null;
+      void refresh();
+    }, 100);
+  }, [refresh]);
 
   useEffect(() => {
     if (!user) { setItems([]); return; }
@@ -87,21 +121,35 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       Notification.requestPermission().catch(() => {});
     }
 
-    const ch = supabase
+    const notificationsChannel = supabase
       .channel("notifications-center")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications" }, (payload) => {
         const n = payload.new as Notif;
         if (!belongsToMe(n)) return;
-        setItems((prev) => (prev.some((x) => x.id === n.id) ? prev : [n, ...prev].slice(0, 300)));
         toast(n.title, { description: n.body ?? undefined });
         if (typeof Notification !== "undefined" && Notification.permission === "granted" && document.hidden) {
           try { new Notification(`MCITY ERP — ${n.title}`, { body: n.body ?? "", tag: n.id }); } catch {}
         }
       })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "notifications" }, (payload) => {
-        const n = payload.new as Notif;
-        setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, ...n } : x)));
-      })
+      .subscribe();
+
+    const statesChannel = supabase
+      .channel(`notification-user-states-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "notification_user_states", filter: `user_id=eq.${user.id}` },
+        scheduleRefresh,
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "notification_user_states", filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const state = payload.new as { notification_id: string; is_read: boolean; read_at: string | null };
+          setItems((prev) => prev.map((item) => item.id === state.notification_id
+            ? { ...item, read_at: state.is_read ? (state.read_at ?? new Date().toISOString()) : null }
+            : item));
+        },
+      )
       .subscribe();
 
     // Safety net if the socket drops.
@@ -110,17 +158,28 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     document.addEventListener("visibilitychange", onVisible);
 
     return () => {
-      supabase.removeChannel(ch);
+      supabase.removeChannel(notificationsChannel);
+      supabase.removeChannel(statesChannel);
       window.clearInterval(poll);
+      if (refreshTimerRef.current !== null) window.clearTimeout(refreshTimerRef.current);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [user?.id, seesAll, myRoles.join(",")]);
+  }, [user?.id, seesAll, myRoles.join(","), belongsToMe, refresh, scheduleRefresh]);
 
   const markIds = async (ids: string[]) => {
-    if (!ids.length) return;
+    if (!ids.length || !user) return;
     const now = new Date().toISOString();
     setItems((prev) => prev.map((x) => (ids.includes(x.id) && !x.read_at ? { ...x, read_at: now } : x)));
-    await supabase.from("notifications").update({ read_at: now }).in("id", ids);
+    const { error } = await supabase
+      .from("notification_user_states")
+      .update({ is_read: true, read_at: now })
+      .eq("user_id", user.id)
+      .in("notification_id", ids)
+      .eq("is_read", false);
+    if (error) {
+      console.warn("Bildirishnomani o'qilgan deb belgilashda xato", error);
+      await refresh();
+    }
   };
 
   const markRead = async (n: Notif) => { if (!n.read_at) await markIds([n.id]); };
