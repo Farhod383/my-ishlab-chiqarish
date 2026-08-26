@@ -237,6 +237,19 @@ export default function OrderDetail() {
     })),
   ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
 
+  // Real progress from the database stages.
+  const totalStages = stages.length;
+  const doneStages = stages.filter(s => s.status === "completed").length;
+  const currentStage = stages.find(s => s.status === "in_progress")
+    ?? stages.find(s => s.status === "delayed")
+    ?? stages.find(s => s.status === "pending")
+    ?? null;
+  const progressPct = totalStages ? Math.round((doneStages / totalStages) * 100) : 0;
+  const stageEvents = (name: string) =>
+    changeTimeline.filter(ev => (ev.details ?? "").includes(name) || (ev.action ?? "").includes(name));
+
+
+
 
 
   return (
