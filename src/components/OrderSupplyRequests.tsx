@@ -14,20 +14,15 @@ import { useAuth } from "@/auth/AuthContext";
 import { toast } from "sonner";
 import { notify } from "@/lib/notify";
 import { logAudit } from "@/types/erp";
+import {
+  supplyStatusLabel as statusLabel,
+  supplyStatusCls as statusCls,
+} from "@/lib/supplyStatus";
 
 interface Props {
   orderId: string;
   orderNumber: string;
 }
-
-const statusLabel: Record<string, string> = {
-  pending: "Kutilmoqda",
-  fulfilled: "Ta'minlandi",
-};
-const statusCls: Record<string, string> = {
-  pending: "text-status-red border-status-red/30 bg-status-red/10",
-  fulfilled: "text-status-green border-status-green/30 bg-status-green/10",
-};
 
 export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
   const { roles } = useAuth() as any;
