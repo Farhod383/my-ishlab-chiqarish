@@ -37,7 +37,6 @@ export default function SupplyRequestsPage() {
   const [q, setQ] = useState("");
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
   const [edit, setEdit] = useState<Record<string, { status: Status; supply_comment: string; dirty: boolean }>>({});
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [savingStatus, setSavingStatus] = useState<Record<string, boolean>>({});
 
   const [lateItem, setLateItem] = useState<any | null>(null);
@@ -350,7 +349,6 @@ export default function SupplyRequestsPage() {
             {openedOrder.items.map((item: any) => {
               const e = edit[item.id] ?? { status: normalizeStatus(item.status), supply_comment: "", dirty: false };
               const color = normalizeStatus(item.status);
-              const isExpanded = !!expanded[item.id];
               return (
                 <Card key={item.id} className="border-l-4" style={{ borderLeftColor: color === "pending" ? "hsl(var(--status-red))" : "hsl(var(--status-green))" }}>
                   <CardContent className="p-4 space-y-3">
