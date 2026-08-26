@@ -439,7 +439,7 @@ export default function OrderDetail() {
                         {s.finished_at && <div className="text-xs text-muted-foreground">{t.orderDetail.finished2}: {new Date(s.finished_at).toLocaleString()}</div>}
                       </div>
                     </div>
-                    <div className="flex flex-col gap-2 shrink-0 min-w-[220px]">
+                    <div className="flex flex-col gap-2 shrink-0 min-w-[220px]" onClick={(e) => e.stopPropagation()}>
                       <div className="flex gap-2 flex-wrap">
                         {s.status === "pending" && hasRole(["manager", "admin"]) && (
                           <StageStartDialog stage={s} onStart={(workers, startedAtIso) => startStage(s, workers, startedAtIso)} />
@@ -454,7 +454,44 @@ export default function OrderDetail() {
                       <StageWorkersDisplay stage={s} />
                     </div>
                   </div>
+
+                  {expanded && (
+                    <div className="mt-4 pt-3 border-t space-y-3">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                        <div><div className="text-muted-foreground">Holati</div><div className="mt-0.5"><StatusBadge status={s.status as any} /></div></div>
+                        <div><div className="text-muted-foreground">Boshlangan</div><div className="font-medium">{s.started_at ? new Date(s.started_at).toLocaleString() : "—"}</div></div>
+                        <div><div className="text-muted-foreground">Tugagan</div><div className="font-medium">{s.finished_at ? new Date(s.finished_at).toLocaleString() : "—"}</div></div>
+                        <div><div className="text-muted-foreground">Norma</div><div className="font-medium">{s.norm_days} {t.common.days}</div></div>
+                        <div><div className="text-muted-foreground">Haqiqiy vaqt</div><div className="font-medium">{actualTxt}</div></div>
+                        <div className="col-span-2"><div className="text-muted-foreground">Xodimlar</div><div className="font-medium">{(s as any).worker_name || "—"}</div></div>
+                        {s.qc_required && (
+                          <div><div className="text-muted-foreground">OTK</div><div className="font-medium">{s.qc_passed ? "Tasdiqlangan" : "Kutilmoqda"}{(s as any).otk_checked_at ? ` · ${new Date((s as any).otk_checked_at).toLocaleString()}` : ""}</div></div>
+                        )}
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold mb-1">Shu bosqich bo'yicha o'zgarishlar ({evs.length})</div>
+                        {evs.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">{t.common.noRecords}</p>
+                        ) : (
+                          <div className="space-y-1.5">
+                            {evs.slice(0, 10).map(ev => (
+                              <div key={ev.key} className="text-xs border-l-2 border-primary/30 pl-2">
+                                <span className="text-muted-foreground">{new Date(ev.at).toLocaleString()}</span>
+                                {" — "}
+                                <span className="font-medium">{ev.dept}</span>
+                                {" · "}
+                                <span>{ev.action}</span>
+                                {ev.actor && <span className="text-muted-foreground"> · {localize(ev.actor)}</span>}
+                                {ev.details && <div className="text-muted-foreground">{ev.details}</div>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
+
               </Card>
             );
           })}
