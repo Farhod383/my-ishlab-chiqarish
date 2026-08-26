@@ -94,12 +94,13 @@ export default function ReportsPage() {
           <div className="flex items-center justify-between flex-wrap gap-3">
             <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
               <TabsList>
-                <TabsTrigger value="all">{t.common.all}</TabsTrigger>
-                <TabsTrigger value="in_progress">{r.inProgress}</TabsTrigger>
-                <TabsTrigger value="completed">{r.completed}</TabsTrigger>
-                <TabsTrigger value="delayed">{r.delayed}</TabsTrigger>
+                <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">{t.common.all} ({totals.total})</TabsTrigger>
+                <TabsTrigger value="in_progress" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">{r.inProgress} ({totals.in_progress})</TabsTrigger>
+                <TabsTrigger value="completed" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">{r.completed} ({totals.completed})</TabsTrigger>
+                <TabsTrigger value="delayed" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">{r.delayed} ({totals.delayed})</TabsTrigger>
               </TabsList>
             </Tabs>
+
             <div className="flex gap-2 flex-wrap">
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
