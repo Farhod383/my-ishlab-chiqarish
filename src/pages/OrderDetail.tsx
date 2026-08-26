@@ -22,7 +22,7 @@ import { useLocalize } from "@/i18n/context";
 import { notify } from "@/lib/notify";
 import { recalcOrderStatus } from "@/lib/orderStatus";
 import OrderSupplyRequests from "@/components/OrderSupplyRequests";
-import { useNotifications } from "@/notifications/NotificationsContext";
+import { useNotifications, notifOrderId } from "@/notifications/NotificationsContext";
 
 
 export default function OrderDetail() {
@@ -44,19 +44,24 @@ export default function OrderDetail() {
   const [otkEdit, setOtkEdit] = useState<Record<string, string>>({});
   const [tab, setTab] = useState("timeline");
   const [openStageId, setOpenStageId] = useState<string | null>(null);
-  const { items: notifItems, markRead } = useNotifications();
+  const { items: notifItems, markOrderRead } = useNotifications();
+  const [orderNotifSnapshot, setOrderNotifSnapshot] = useState<any[]>([]);
 
   // Unread notifications tied to this order (any department).
   const orderUnread = useMemo(
-    () => notifItems.filter(n => !n.read_at && (n.entity_id === id || (n.link ?? "").includes(`/orders/${id}`))),
+    () => notifItems.filter(n => !n.read_at && notifOrderId(n) === id),
     [notifItems, id],
   );
 
-  // Telegram-style: opening the Bosqichlar tab marks this order's updates as read.
+  // Telegram-style: opening the order marks its own updates as read (other orders untouched).
   useEffect(() => {
-    if (tab !== "timeline" || orderUnread.length === 0) return;
-    (async () => { for (const n of orderUnread) await markRead(n); })();
-  }, [tab, orderUnread.length]);
+    if (!id || orderUnread.length === 0) return;
+    setOrderNotifSnapshot(prev => {
+      const seen = new Set(prev.map((x: any) => x.id));
+      return [...orderUnread.filter(n => !seen.has(n.id)), ...prev];
+    });
+    void markOrderRead(id);
+  }, [id, orderUnread.length]);
 
 
   const load = async () => {
@@ -374,6 +379,30 @@ export default function OrderDetail() {
         </TabsList>
 
         <TabsContent value="timeline" className="space-y-3 mt-4">
+          {orderNotifSnapshot.length > 0 && (
+            <Card className="border-status-red/30 bg-status-red/5">
+              <CardContent className="p-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-status-red px-1.5 text-[11px] font-bold text-status-red-foreground">
+                    {orderNotifSnapshot.length > 99 ? "99+" : orderNotifSnapshot.length}
+                  </span>
+                  <span className="text-sm font-semibold">Shu zakaz bo'yicha yangi o'zgarishlar</span>
+                </div>
+                <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+                  {orderNotifSnapshot.map((n: any) => (
+                    <div key={n.id} className="rounded-md border bg-background p-2.5">
+                      <div className="text-sm font-medium">{n.title}</div>
+                      {n.body && <div className="text-xs text-muted-foreground whitespace-pre-wrap">{n.body}</div>}
+                      <div className="mt-1 text-[11px] text-muted-foreground">
+                        {n.sender_name ?? "Tizim"} · {new Date(n.created_at).toLocaleString("uz-UZ")}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Live progress of this order */}
           <Card className="border-primary/20 bg-primary/5">
             <CardContent className="p-4 space-y-3">
