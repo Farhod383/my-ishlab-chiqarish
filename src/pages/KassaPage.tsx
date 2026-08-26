@@ -19,6 +19,7 @@ import { logAudit } from "@/types/erp";
 import { notify } from "@/lib/notify";
 import { fmtKassaAmount, fmtNum } from "@/lib/format";
 import EmployeeDetailDialog, { SALARY_KINDS, SALARY_KIND_LABELS, type SalaryKind } from "@/components/kassa/EmployeeDetailDialog";
+import UsersTab from "@/components/kassa/UsersTab";
 
 const PAYMENT_TYPES = ["cash", "corporate_card", "transfer", "other"] as const;
 type PaymentType = typeof PAYMENT_TYPES[number];
