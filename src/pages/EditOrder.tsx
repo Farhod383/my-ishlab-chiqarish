@@ -166,7 +166,19 @@ export default function EditOrder() {
         details: `${orderNumber}`,
       });
 
+      const { notify } = await import("@/lib/notify");
+      await notify({
+        type: "info",
+        title: `Zakaz o'zgardi — ${orderNumber}`,
+        body: `${productName} · ${quantity} dona · muddat: ${deadline}`,
+        link: `/orders/${id}`,
+        entity: "order", entity_id: id!,
+        recipient_role: ["manager", "marketing", "warehouse", "supply", "otk", "engineer"],
+        sender_id: user?.id, sender_name: user?.email,
+      });
+
       toast.success(t.editOrder?.saved ?? "Zakaz yangilandi");
+
       nav(`/orders/${id}`);
     } catch (e: any) {
       const msg = e?.message || "";
