@@ -541,7 +541,7 @@ export default function KassaPage() {
         </div>
         <div><Label className="text-xs">{k.from ?? "Dan"}</Label><Input type="date" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} /></div>
         <div><Label className="text-xs">{k.to ?? "Gacha"}</Label><Input type="date" value={filterTo} onChange={e => setFilterTo(e.target.value)} /></div>
-        {(filterFrom || filterTo || searchQ) && <Button variant="outline" onClick={() => { setFilterFrom(""); setFilterTo(""); setSearchQ(""); }}>{k.reset ?? "Tozalash"}</Button>}
+        {(selectedMonth !== currentMonth() || searchQ) && <Button variant="outline" onClick={() => { const b = monthBounds(currentMonth()); setFilterFrom(b.from); setFilterTo(b.to); setSearchQ(""); }}>{k.reset ?? "Tozalash"}</Button>}
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
