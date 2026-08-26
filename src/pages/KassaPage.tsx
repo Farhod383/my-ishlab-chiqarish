@@ -760,6 +760,12 @@ export default function KassaPage() {
             </div>
           </CardContent></Card>
         </TabsContent>
+
+        {canManageUsers && (
+          <TabsContent value="users" className="space-y-3">
+            <UsersTab />
+          </TabsContent>
+        )}
       </Tabs>
 
       <EmployeeDetailDialog
