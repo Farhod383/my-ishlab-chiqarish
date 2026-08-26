@@ -77,7 +77,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hasRole = (r: AppRole | AppRole[]) => {
     const arr = Array.isArray(r) ? r : [r];
     if (roles.includes("admin")) return true;
-    return arr.some((x) => roles.includes(x));
+    const effective = expandRoles(roles);
+    return arr.some((x) => effective.includes(x));
   };
 
   const refreshRoles = async () => { if (user) await loadRoles(user.id); };
