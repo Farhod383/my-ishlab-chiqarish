@@ -80,6 +80,13 @@ export default function KassaPage() {
   const [filterFrom, setFilterFrom] = useState(() => monthBounds(currentMonth()).from);
   const [filterTo, setFilterTo] = useState(() => monthBounds(currentMonth()).to);
   const [searchQ, setSearchQ] = useState("");
+  // Tanlangan oy — faqat sana oralig'i to'liq bir oyni qamrasa ko'rsatiladi.
+  const selectedMonth = useMemo(() => {
+    if (!filterFrom || !filterTo) return "";
+    const ym = filterFrom.slice(0, 7);
+    const b = monthBounds(ym);
+    return b.from === filterFrom && b.to === filterTo ? ym : "";
+  }, [filterFrom, filterTo]);
 
   // expense form
   const [openExp, setOpenExp] = useState(false);
