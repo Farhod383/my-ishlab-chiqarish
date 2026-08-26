@@ -16,6 +16,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
+import { notify } from "@/lib/notify";
 import { fmtKassaAmount, fmtNum } from "@/lib/format";
 import EmployeeDetailDialog, { SALARY_KINDS, SALARY_KIND_LABELS, type SalaryKind } from "@/components/kassa/EmployeeDetailDialog";
 
@@ -302,6 +303,14 @@ export default function KassaPage() {
       const { error } = await supabase.from("cash_expenses").insert({ ...payload, created_by: user?.id });
       if (error) { toast.error(error.message); return; }
       await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: "kassa.expense.create", entity: "cash_expenses", details: `${payload.amount} ${payload.currency} = ${fmt(total_uzs)} UZS · ${payload.reason}` });
+      await notify({
+        type: "info",
+        title: `Kassa chiqimi — ${payload.reason}`,
+        body: `${fmtKassaAmount(payload.amount, payload.currency)} ${payload.currency}${recipientName ? ` · ${recipientName}` : ""}`,
+        link: "/kassa", entity: "cash_expense",
+        recipient_role: ["cashier", "manager"],
+        sender_id: user?.id, sender_name: actorName,
+      });
     }
     toast.success(k.saved ?? "Saqlandi");
     setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash", salary_kind: "" });
@@ -362,6 +371,14 @@ export default function KassaPage() {
       const { error } = await (supabase.from as any)("cash_incomes").insert({ ...payload, created_by: user?.id });
       if (error) { toast.error(error.message); return; }
       await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: "kassa.income.create", entity: "cash_incomes", details: `${payload.amount} ${payload.currency} = ${fmt(total_uzs)} UZS · ${payload.source}` });
+      await notify({
+        type: "info",
+        title: `Kassa kirimi — ${payload.source}`,
+        body: `${fmtKassaAmount(payload.amount, payload.currency)} ${payload.currency}`,
+        link: "/kassa", entity: "cash_income",
+        recipient_role: ["cashier", "manager"],
+        sender_id: user?.id, sender_name: actorName,
+      });
     }
     toast.success(k.saved ?? "Saqlandi");
     setIncForm({ amount: 0, source: "", payment_type: "cash", comment: "", currency: "UZS", exchange_rate: 1 });

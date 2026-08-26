@@ -8,12 +8,15 @@ import {
 import { useAuth, type AppRole } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useNotifications } from "@/notifications/NotificationsContext";
 import logo from "@/assets/logo.png"
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const { user, signOut, hasRole, roles } = useAuth();
   const { t } = useI18n();
+  const { unreadByUrl } = useNotifications();
   const collapsed = state === "collapsed";
   const loc = useLocation();
 
@@ -89,16 +92,29 @@ export function AppSidebar() {
           <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {visible.map((item) => (
+              {visible.map((item) => {
+                const unread = unreadByUrl[item.url] ?? 0;
+                return (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild isActive={loc.pathname === item.url || (item.url !== "/" && loc.pathname.startsWith(item.url))}>
                     <NavLink to={item.url} end={item.url === "/"} className="flex items-center gap-2" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium">
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      {!collapsed && <span>{item.title}</span>}
+                      <span className="relative shrink-0">
+                        <item.icon className="h-4 w-4" />
+                        {collapsed && unread > 0 && (
+                          <span className="absolute -top-1.5 -right-1.5 h-2 w-2 rounded-full bg-destructive" />
+                        )}
+                      </span>
+                      {!collapsed && <span className="flex-1 truncate">{item.title}</span>}
+                      {!collapsed && unread > 0 && (
+                        <Badge variant="destructive" className="h-5 min-w-[1.25rem] px-1.5 text-[11px] rounded-full justify-center">
+                          {unread > 99 ? "99+" : unread}
+                        </Badge>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              ))}
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
