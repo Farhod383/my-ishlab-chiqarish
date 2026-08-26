@@ -455,10 +455,32 @@ export default function KassaPage() {
       </div>
 
       <div className="space-y-4">
-        <div className="text-xs text-muted-foreground">
-          {filterFrom || filterTo
-            ? `Tanlangan davr: ${filterFrom || "…"} → ${filterTo || "…"}`
-            : "Barcha davr ko'rsatilmoqda — sana oralig'ini tanlang"}
+        <div className="flex flex-wrap items-center gap-2">
+          <Label className="text-xs">Davr (oy)</Label>
+          <Input
+            type="month"
+            className="w-[170px]"
+            value={selectedMonth}
+            onChange={(e) => {
+              const ym = e.target.value;
+              if (!ym) { setFilterFrom(""); setFilterTo(""); return; }
+              const b = monthBounds(ym);
+              setFilterFrom(b.from); setFilterTo(b.to);
+            }}
+          />
+          <Button variant="outline" size="sm" onClick={() => { const b = monthBounds(currentMonth()); setFilterFrom(b.from); setFilterTo(b.to); }}>
+            Joriy oy
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => { setFilterFrom(""); setFilterTo(""); }}>
+            Barcha davr
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {selectedMonth
+              ? `Ko'rsatilmoqda: ${monthLabel(selectedMonth)}`
+              : (filterFrom || filterTo)
+                ? `Tanlangan davr: ${filterFrom || "…"} → ${filterTo || "…"}`
+                : "Barcha davr ko'rsatilmoqda"}
+          </span>
         </div>
         <div className="grid sm:grid-cols-3 gap-4">
           <Card><CardContent className="p-4 space-y-2">
