@@ -155,6 +155,7 @@ export default function VacanciesTab() {
     };
     const { data: emp, error } = await supabase.from("employees").insert(empPayload).select("id").single();
     if (error) { toast.error(error.message); return; }
+    refreshEmployees();
 
     await (supabase as any).from("vacancies").update({
       status: "hired",
