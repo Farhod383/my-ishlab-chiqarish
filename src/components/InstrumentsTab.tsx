@@ -18,6 +18,7 @@ import NumberInput from "@/components/NumberInput";
 import SearchableSelect from "@/components/SearchableSelect";
 import SmartAutocomplete, { rememberFormValue } from "@/components/SmartAutocomplete";
 import { ensureOnline } from "@/components/OnlineGuard";
+import { useEmployees } from "@/hooks/useEmployees";
 
 type Instrument = {
   id: string;
@@ -74,7 +75,6 @@ export default function InstrumentsTab() {
 
   const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
   const [search, setSearch] = useState("");
 
   // add/edit single batch
@@ -95,19 +95,19 @@ export default function InstrumentsTab() {
   const [returnAssignment, setReturnAssignment] = useState("");
   const [returnComment, setReturnComment] = useState("");
 
+  const { employees } = useEmployees({ activeOnly: true });
+
   const load = async () => {
-    const [inst, asg, emp] = await Promise.all([
+    const [inst, asg] = await Promise.all([
       supabase.from("instruments").select("*").order("name").order("created_at"),
       supabase
         .from("instrument_assignments")
         .select("*, instrument:instruments(name, inventory_number), employee:employees(full_name)")
         .order("issued_at", { ascending: false })
         .limit(2000),
-      supabase.from("employees").select("id, full_name, department").eq("status", "active").order("full_name"),
     ]);
     setInstruments((inst.data as any) ?? []);
     setAssignments((asg.data as any) ?? []);
-    setEmployees(emp.data ?? []);
     ((inst.data as any[]) ?? []).forEach(i => {
       const cat = (i.category ?? "").trim();
       if (cat) rememberFormValue("instrument_category", cat);

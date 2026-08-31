@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { matchesAcrossScripts } from "@/lib/translit";
 import { logAudit } from "@/types/erp";
 import { notify } from "@/lib/notify";
+import { useEmployees } from "@/hooks/useEmployees";
 
 type ItemType = "product" | "instrument";
 
@@ -30,7 +31,6 @@ export default function DefectsPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [instruments, setInstruments] = useState<any[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -47,19 +47,19 @@ export default function DefectsPage() {
     image: null as File | null,
   });
 
+  const { employees } = useEmployees({ activeOnly: true });
+
   const load = async () => {
-    const [{ data: def }, { data: ord }, { data: prod }, { data: instr }, { data: emp }] = await Promise.all([
+    const [{ data: def }, { data: ord }, { data: prod }, { data: instr }] = await Promise.all([
       supabase.from("defects").select("*, product:products(name, unit), detected_by:employees(full_name), order:orders(order_number, product_name)").order("created_at", { ascending: false }),
       supabase.from("orders").select("id, order_number, product_name").order("order_number", { ascending: false }),
       supabase.from("products").select("id, name, unit").order("name"),
       supabase.from("instruments").select("id, name, quantity").order("name"),
-      supabase.from("employees").select("id, full_name").eq("status", "active").order("full_name"),
     ]);
     setDefects(def ?? []);
     setOrders(ord ?? []);
     setProducts(prod ?? []);
     setInstruments(instr ?? []);
-    setEmployees(emp ?? []);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);

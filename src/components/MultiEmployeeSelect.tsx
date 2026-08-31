@@ -8,6 +8,7 @@ import { Check, ChevronsUpDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { searchNorm, localizeName } from "@/lib/translit";
 import { useI18n } from "@/i18n/context";
+import { useEmployees } from "@/hooks/useEmployees";
 
 interface Employee { id: string; full_name: string; position: string; status: string; }
 
@@ -28,14 +29,7 @@ export default function MultiEmployeeSelect({ value, onChange, placeholder, clas
   const { locale } = useI18n();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [employees, setEmployees] = useState<Employee[]>([]);
-
-  useEffect(() => {
-    supabase.from("employees").select("id, full_name, position, status")
-      .eq("status", "active")
-      .order("full_name")
-      .then(({ data }) => setEmployees((data as any) ?? []));
-  }, []);
+  const { employees } = useEmployees({ activeOnly: true });
 
   const filtered = employees.filter(e =>
     !query.trim() || searchNorm(e.full_name + " " + (e.position ?? "")).includes(searchNorm(query))

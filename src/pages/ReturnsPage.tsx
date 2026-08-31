@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import ProductPicker from "@/components/ProductPicker";
 import { logAudit } from "@/types/erp";
 import { notify } from "@/lib/notify";
+import { useEmployees } from "@/hooks/useEmployees";
 
 export default function ReturnsPage() {
   const { user, hasRole } = useAuth();
@@ -26,22 +27,21 @@ export default function ReturnsPage() {
   const r = (t as any).returns ?? {};
   const [returns, setReturns] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ product_id: "", quantity: 1, returned_by_id: "", return_type: "worker_to_warehouse" as string, reason: "", comment: "", image: null as File | null, order_id: "" });
 
+  const { employees } = useEmployees({ activeOnly: true });
+
   const load = async () => {
-    const [{ data: ret }, { data: prod }, { data: emp }, { data: ord }] = await Promise.all([
+    const [{ data: ret }, { data: prod }, { data: ord }] = await Promise.all([
       supabase.from("returns").select("*, product:products(name, unit), returned_by:employees(full_name), order:orders(order_number)").order("created_at", { ascending: false }),
       supabase.from("products").select("id, name, unit, stock_qty").order("name"),
-      supabase.from("employees").select("id, full_name").eq("status", "active").order("full_name"),
       supabase.from("orders").select("id, order_number, product_name").order("created_at", { ascending: false }).limit(200),
     ]);
     setReturns(ret ?? []);
     setProducts(prod ?? []);
-    setEmployees(emp ?? []);
     setOrders(ord ?? []);
     setLoading(false);
   };

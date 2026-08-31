@@ -27,6 +27,7 @@ import NumberInput from "@/components/NumberInput";
 import SearchableSelect from "@/components/SearchableSelect";
 import { PriorityDot, PRIORITY_OPTIONS } from "@/components/PriorityDot";
 import { getStockStatus, stockStatusMeta, StockDot, type StockStatus } from "@/lib/stockStatus";
+import { useEmployees } from "@/hooks/useEmployees";
 
 const UNITS = ["dona", "kg", "metr", "litr", "rulon", "komplekt"] as const;
 const CURRENCIES = ["UZS", "USD"] as const;
@@ -38,7 +39,7 @@ export default function WarehousePage() {
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [movements, setMovements] = useState<any[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
+  const { employees } = useEmployees({ activeOnly: true });
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [groupModal, setGroupModal] = useState<{ name: string; batches: any[] } | null>(null);
@@ -113,13 +114,12 @@ export default function WarehousePage() {
   const [emComment, setEmComment] = useState(""); const [emSource, setEmSource] = useState("");
 
   const load = async () => {
-    const [p, o, m, e] = await Promise.all([
+    const [p, o, m] = await Promise.all([
       supabase.from("products").select("*").order("name"),
       supabase.from("orders").select("id, order_number, product_name").neq("status", "completed"),
       supabase.from("stock_movements").select("*, product:products(name, unit), order:orders(order_number, product_name)").order("created_at", { ascending: false }).limit(200),
-      supabase.from("employees").select("id, full_name, department").eq("status", "active").order("full_name"),
     ]);
-    setProducts(p.data ?? []); setOrders(o.data ?? []); setMovements(m.data ?? []); setEmployees(e.data ?? []);
+    setProducts(p.data ?? []); setOrders(o.data ?? []); setMovements(m.data ?? []);
     const ids = Array.from(new Set((m.data ?? []).map((x: any) => x.created_by).filter(Boolean)));
     if (ids.length) {
       const { data: profs } = await supabase.from("profiles").select("id, full_name, email").in("id", ids);
