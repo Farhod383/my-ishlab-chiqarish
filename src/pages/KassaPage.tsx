@@ -182,8 +182,8 @@ export default function KassaPage() {
 
   const toggleEmpStatus = async (e: any) => {
     const newStatus = e.status === "active" ? "inactive" : "active";
-    refreshEmployees();
     const { error } = await supabase.from("employees").update({ status: newStatus, leave_date: newStatus === "inactive" ? new Date().toISOString().slice(0,10) : null }).eq("id", e.id);
+    refreshEmployees();
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: "kassa.employee.status", entity: "employees", details: `${e.full_name}: status ${e.status} → ${newStatus}` });
     toast.success(k.saved ?? "Saqlandi"); load();
