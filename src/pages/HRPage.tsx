@@ -19,6 +19,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
 import { toast } from "sonner";
+import { useEmployees, refreshEmployees } from "@/hooks/useEmployees";
 
 // Uzbek phone format validator: +998 XX XXX XX XX  or XX XXX XX XX  (spaces optional)
 const PHONE_RE = /^(\+?998)?\s*\d{2}\s*\d{3}\s*\d{2}\s*\d{2}$/;
@@ -38,7 +39,7 @@ export default function HRPage() {
   const { t } = useI18n();
   const localize = useLocalize();
   const hr = (t as any).hr ?? {};
-  const [employees, setEmployees] = useState<any[]>([]);
+  const { allEmployees: employees, loading: empLoading } = useEmployees();
   const [heldMap, setHeldMap] = useState<Record<string, { id: string; name: string; quantity: number; issued_at: string }[]>>({});
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
@@ -47,13 +48,11 @@ export default function HRPage() {
   const [attEmp, setAttEmp] = useState<{ id: string; full_name: string } | null>(null);
 
   const load = async () => {
-    const [eRes, aRes] = await Promise.all([
-      supabase.from("employees").select("*").order("full_name"),
+    const [aRes] = await Promise.all([
       supabase.from("instrument_assignments")
         .select("id, employee_id, quantity, issued_at, instrument:instruments(name)")
         .is("returned_at", null),
     ]);
-    setEmployees(eRes.data ?? []);
     const m: Record<string, any[]> = {};
     (aRes.data ?? []).forEach((a: any) => {
       (m[a.employee_id] ||= []).push({ id: a.id, name: a.instrument?.name ?? "?", quantity: a.quantity, issued_at: a.issued_at });
@@ -170,7 +169,7 @@ export default function HRPage() {
       });
     }
     toast.success(hr.saved ?? "Saqlandi");
-    setAddOpen(false); setEditId(null); resetForm(); load();
+    setAddOpen(false); setEditId(null); resetForm(); refreshEmployees(); load();
   };
 
   // "Yangi" marker — employees added within the last 7 days (real created_at).
@@ -223,6 +222,7 @@ export default function HRPage() {
       entity: "employee", details: emp.full_name,
     });
     toast.success(goingInactive ? "Xodim bo'shatildi" : "Xodim faollashtirildi");
+    refreshEmployees();
     load();
   };
 

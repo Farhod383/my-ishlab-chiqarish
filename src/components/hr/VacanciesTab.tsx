@@ -13,6 +13,7 @@ import { Briefcase, Plus, Edit2, UserCheck, ExternalLink, FileText } from "lucid
 import { useAuth } from "@/auth/AuthContext";
 import { logAudit } from "@/types/erp";
 import { toast } from "sonner";
+import { refreshEmployees } from "@/hooks/useEmployees";
 
 type VacancyStatus = "new" | "invited" | "interviewed" | "hired" | "rejected" | "reserve";
 
