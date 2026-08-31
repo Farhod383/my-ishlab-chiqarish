@@ -12,6 +12,7 @@ import { useLocalize } from "@/i18n/context";
 import { matchesAcrossScripts } from "@/lib/translit";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { useEmployees } from "@/hooks/useEmployees";
 
 type Employee = {
   id: string;
@@ -44,22 +45,21 @@ export default function EmployeesView() {
   const { hasRole } = useAuth();
   const canExport = hasRole(["admin", "hr", "warehouse", "cashier"]);
   const localize = useLocalize();
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const { allEmployees } = useEmployees();
+  const employees = allEmployees as any as Employee[];
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
   const [active, setActive] = useState<Employee | null>(null);
 
   const load = async () => {
-    const [eRes, aRes] = await Promise.all([
-      supabase.from("employees").select("*").order("full_name"),
+    const [aRes] = await Promise.all([
       supabase
         .from("instrument_assignments")
         .select("*, instrument:instruments(name, inventory_number, price, currency)")
         .order("issued_at", { ascending: false })
         .limit(1000),
     ]);
-    setEmployees((eRes.data as any) ?? []);
     setAssignments((aRes.data as any) ?? []);
     const ids = Array.from(new Set(((aRes.data ?? []) as any[]).flatMap(a => [a.issued_by, a.returned_by]).filter(Boolean)));
     if (ids.length) {

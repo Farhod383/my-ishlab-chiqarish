@@ -20,6 +20,7 @@ import { notify } from "@/lib/notify";
 import { fmtKassaAmount, fmtNum } from "@/lib/format";
 import EmployeeDetailDialog, { SALARY_KINDS, SALARY_KIND_LABELS, type SalaryKind } from "@/components/kassa/EmployeeDetailDialog";
 import UsersTab from "@/components/kassa/UsersTab";
+import { useEmployees, refreshEmployees } from "@/hooks/useEmployees";
 
 const PAYMENT_TYPES = ["cash", "corporate_card", "transfer", "other"] as const;
 type PaymentType = typeof PAYMENT_TYPES[number];
@@ -67,10 +68,9 @@ export default function KassaPage() {
   const ptLabel = (pt: unknown) => PAYMENT_LABELS[locale]?.[normalizePT(pt)] ?? PAYMENT_LABELS.uz[normalizePT(pt)];
   const [expenses, setExpenses] = useState<any[]>([]);
   const [incomes, setIncomes] = useState<any[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
+  const { employees, allEmployees } = useEmployees({ activeOnly: true });
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"income" | "expense" | "employees">("income");
-  const [allEmployees, setAllEmployees] = useState<any[]>([]);
   const [empSearch, setEmpSearch] = useState("");
   const [empStatusFilter, setEmpStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [empDeptFilter, setEmpDeptFilter] = useState("all");
@@ -107,16 +107,12 @@ export default function KassaPage() {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: exp }, { data: inc }, { data: emp }, { data: allEmp }] = await Promise.all([
+    const [{ data: exp }, { data: inc }] = await Promise.all([
       supabase.from("cash_expenses").select("*, recipient:employees(full_name)").order("expense_date", { ascending: false }),
       (supabase.from as any)("cash_incomes").select("*").order("income_date", { ascending: false }),
-      supabase.from("employees").select("id, full_name, department").eq("status", "active").order("full_name"),
-      supabase.from("employees").select("*").order("full_name"),
     ]);
     setExpenses(exp ?? []);
     setIncomes(inc ?? []);
-    setEmployees(emp ?? []);
-    setAllEmployees(allEmp ?? []);
     setLoading(false);
   };
   useEffect(() => {
@@ -160,11 +156,13 @@ export default function KassaPage() {
     if (empEditId) {
       const orig = allEmployees.find((x) => x.id === empEditId);
       const { error } = await supabase.from("employees").update(payload).eq("id", empEditId);
+      refreshEmployees();
       if (error) { toast.error(error.message); return; }
       const summary = diffSummary(orig, payload, ["full_name", "position", "department", "phone", "salary", "hire_date", "leave_date", "status"]);
       await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: "kassa.employee.update", entity: "employees", details: `${payload.full_name}: ${summary || "no changes"}` });
     } else {
       const { error } = await supabase.from("employees").insert(payload);
+      refreshEmployees();
       if (error) { toast.error(error.message); return; }
       await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: "kassa.employee.create", entity: "employees", details: `Created: ${payload.full_name}` });
     }
@@ -185,6 +183,7 @@ export default function KassaPage() {
   const toggleEmpStatus = async (e: any) => {
     const newStatus = e.status === "active" ? "inactive" : "active";
     const { error } = await supabase.from("employees").update({ status: newStatus, leave_date: newStatus === "inactive" ? new Date().toISOString().slice(0,10) : null }).eq("id", e.id);
+    refreshEmployees();
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: "kassa.employee.status", entity: "employees", details: `${e.full_name}: status ${e.status} → ${newStatus}` });
     toast.success(k.saved ?? "Saqlandi"); load();
