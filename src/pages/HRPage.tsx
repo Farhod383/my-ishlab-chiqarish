@@ -41,7 +41,7 @@ export default function HRPage() {
   const hr = (t as any).hr ?? {};
   const { allEmployees: employees, loading: empLoading } = useEmployees();
   const [heldMap, setHeldMap] = useState<Record<string, { id: string; name: string; quantity: number; issued_at: string }[]>>({});
-  const [loading, setLoading] = useState(true);
+  const [assignLoading, setAssignLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm());
@@ -58,7 +58,7 @@ export default function HRPage() {
       (m[a.employee_id] ||= []).push({ id: a.id, name: a.instrument?.name ?? "?", quantity: a.quantity, issued_at: a.issued_at });
     });
     setHeldMap(m);
-    setLoading(false);
+    setAssignLoading(false);
   };
   useEffect(() => {
     load();
@@ -68,6 +68,7 @@ export default function HRPage() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
+  const loading = assignLoading || empLoading;
   const canManage = hasRole(["hr", "admin", "cashier"]);
   const canDeactivate = hasRole(["admin", "cashier"]);
   const canExport = hasRole(["hr"]); // admin ham avtomatik kiradi
