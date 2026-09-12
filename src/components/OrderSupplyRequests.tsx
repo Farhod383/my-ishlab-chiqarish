@@ -151,6 +151,15 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
       order_id: orderId,
       details: `${target?.product_name ?? id} · ${target?.quantity ?? ""} ${target?.unit ?? ""}`,
     });
+    await logSupplyChange({
+      requestId: id,
+      orderId,
+      productName: target?.product_name ?? null,
+      action: "Ta'minot so'rovi o'chirildi",
+      before: { quantity: `${target?.quantity ?? ""} ${target?.unit ?? ""}`.trim() },
+      after: { quantity: "—" },
+      actorId: user?.id, actorName: user?.email, role: primaryRole || null,
+    });
     load();
   };
 
