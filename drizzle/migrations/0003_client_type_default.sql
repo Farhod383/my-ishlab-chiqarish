@@ -1,0 +1,2 @@
+ALTER TABLE public.clients ALTER COLUMN client_type SET DEFAULT 'Mijoz';
+UPDATE public.clients SET client_type = 'Mijoz' WHERE client_type IS NULL OR btrim(client_type) = '' OR client_type NOT IN ('Mijoz','Diler');
