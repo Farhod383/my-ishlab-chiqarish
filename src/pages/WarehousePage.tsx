@@ -180,7 +180,8 @@ export default function WarehousePage() {
       type: "supply_request",
       title: `Yangi ta'minot so'rovi${prMode === "order" ? "" : " (zavod uchun)"}`,
       body: `${name} · ${prQty} ${prUnit ?? ""}${prDate ? ` · kerak: ${prDate}` : ""}`,
-      link: `/supply`,
+      // Zakaz bilan bog'langan so'rov — bildirishnoma o'sha zakazga tegishli bo'ladi.
+      link: prMode === "order" && prOrderId ? `/orders/${prOrderId}` : `/supply`,
       entity: "supply_request",
       recipient_role: ["supply", "warehouse"],
       sender_id: user?.id,

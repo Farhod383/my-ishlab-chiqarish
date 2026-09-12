@@ -18,6 +18,9 @@ import {
   supplyStatusLabel as statusLabel,
   supplyStatusCls as statusCls,
 } from "@/lib/supplyStatus";
+import { useNotifications, notifOrderId } from "@/notifications/NotificationsContext";
+import { resolveModule } from "@/lib/notifModules";
+import { fmtDateTime24 } from "@/lib/format";
 
 interface Props {
   orderId: string;
@@ -39,6 +42,21 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
   const [unit, setUnit] = useState("");
   const [date, setDate] = useState("");
   const [comment, setComment] = useState("");
+
+  // Shu zakazga tegishli ta'minot bildirishnomalari (umumiy mexanizmdan foydalanadi).
+  const { items: notifItems, markRead } = useNotifications();
+  const supplyNotifs = notifItems
+    .filter((n) => notifOrderId(n) === orderId && resolveModule(n) === "supply")
+    .slice(0, 20);
+  const unreadNotifs = supplyNotifs.filter((n) => !n.read_at);
+
+  // Zakaz ochilganda shu zakazning ta'minot bildirishnomalari o'qilgan deb belgilanadi.
+  useEffect(() => {
+    if (!unreadNotifs.length) return;
+    const t = window.setTimeout(() => { unreadNotifs.forEach((n) => { void markRead(n); }); }, 1200);
+    return () => window.clearTimeout(t);
+  }, [unreadNotifs.map((n) => n.id).join(",")]);
+
 
   const load = async () => {
     const [{ data: reqs }, { data: prods }] = await Promise.all([
@@ -92,7 +110,7 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
       type: "supply_request",
       title: `Yangi ta'minot so'rovi — ${orderNumber}`,
       body: `${name} · ${qty} ${unit ?? ""}${date ? ` · kerak: ${date}` : ""}`,
-      link: `/supply`,
+      link: `/orders/${orderId}`,
       entity: "supply_request",
       recipient_role: ["supply", "warehouse"],
       sender_id: user?.id,
@@ -127,7 +145,14 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3">
-        <CardTitle className="text-sm flex items-center gap-2"><Package className="h-4 w-4" /> Kerakli mahsulotlar</CardTitle>
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Package className="h-4 w-4" /> Kerakli mahsulotlar
+          {unreadNotifs.length > 0 && (
+            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-status-red px-1.5 text-[11px] font-bold leading-none text-status-red-foreground">
+              {unreadNotifs.length}
+            </span>
+          )}
+        </CardTitle>
         {canAdd && (
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
             <DialogTrigger asChild>
@@ -185,6 +210,24 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
             )}
           </div>
         ))}
+
+        {supplyNotifs.length > 0 && (
+          <div className="pt-2 mt-2 border-t space-y-1">
+            <div className="text-[11px] font-semibold text-muted-foreground">Ta'minot o'zgarishlari</div>
+            {supplyNotifs.map((n) => (
+              <div
+                key={n.id}
+                className={`rounded border p-1.5 text-[11px] leading-tight ${n.read_at ? "" : "bg-muted/60 border-primary/40"}`}
+              >
+                <div className="font-medium truncate">{n.title}</div>
+                {n.body && <div className="text-muted-foreground truncate">{n.body}</div>}
+                <div className="text-[10px] text-muted-foreground">
+                  {n.sender_name ?? "Tizim"} · {fmtDateTime24(n.created_at)}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

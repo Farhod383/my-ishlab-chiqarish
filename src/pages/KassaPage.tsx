@@ -92,7 +92,7 @@ export default function KassaPage() {
   const [openExp, setOpenExp] = useState(false);
   const [expEditId, setExpEditId] = useState<string | null>(null);
   const [expOrig, setExpOrig] = useState<any>(null);
-  const [expForm, setExpForm] = useState({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash" as PaymentType, salary_kind: "" as "" | SalaryKind });
+  const [expForm, setExpForm] = useState({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash" as PaymentType, salary_kind: "" as "" | SalaryKind, is_supply: false });
   const [recipientMode, setRecipientMode] = useState<"employee" | "manual">("employee");
   const [empDetailId, setEmpDetailId] = useState<string | null>(null);
 
@@ -318,6 +318,8 @@ export default function KassaPage() {
       total_uzs,
       payment_type: expForm.payment_type,
       salary_kind: recipientMode === "employee" && expForm.salary_kind ? expForm.salary_kind : null,
+      // Ta'minot bo'limiga ajratilgan pul — Ta'minot moliya sahifasida kirim sifatida ko'rinadi.
+      purpose: expForm.is_supply ? "supply" : null,
     };
     if (expEditId) {
       const { error } = await supabase.from("cash_expenses").update(payload).eq("id", expEditId);
@@ -338,7 +340,7 @@ export default function KassaPage() {
       });
     }
     toast.success(k.saved ?? "Saqlandi");
-    setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash", salary_kind: "" });
+    setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash", salary_kind: "", is_supply: false });
     setRecipientMode("employee");
     setExpEditId(null); setExpOrig(null);
     setOpenExp(false);
@@ -358,6 +360,7 @@ export default function KassaPage() {
       exchange_rate: Number(e.exchange_rate) || 1,
       payment_type: normalizePT(e.payment_type),
       salary_kind: (e.salary_kind ?? "") as any,
+      is_supply: e.purpose === "supply",
     });
     setRecipientMode(e.recipient_id ? "employee" : "manual");
     setOpenExp(true);
@@ -616,7 +619,7 @@ export default function KassaPage() {
 
         <TabsContent value="expense" className="space-y-3">
           {canManage && (
-            <Dialog open={openExp} onOpenChange={(o) => { setOpenExp(o); if (!o) { setExpEditId(null); setExpOrig(null); setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash", salary_kind: "" }); setRecipientMode("employee"); } }}>
+            <Dialog open={openExp} onOpenChange={(o) => { setOpenExp(o); if (!o) { setExpEditId(null); setExpOrig(null); setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash", salary_kind: "", is_supply: false }); setRecipientMode("employee"); } }}>
               <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{k.addExpense ?? "Xarajat qo'shish"}</Button></DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>{expEditId ? ((t as any).kassaExtra?.editExpense ?? "Xarajatni tahrirlash") : (k.addExpense ?? "Xarajat qo'shish")}</DialogTitle></DialogHeader>
@@ -659,6 +662,10 @@ export default function KassaPage() {
                     </Select>
                   </div>
                   <div><Label>{k.comment ?? "Izoh"}</Label><Textarea value={expForm.comment} onChange={e => setExpForm({ ...expForm, comment: e.target.value })} /></div>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" className="h-4 w-4 accent-primary" checked={expForm.is_supply} onChange={e => setExpForm({ ...expForm, is_supply: e.target.checked })} />
+                    Ta'minot bo'limiga ajratilgan pul
+                  </label>
                   <Button className="w-full" onClick={saveExpense}>{t.common.save}</Button>
                 </div>
               </DialogContent>

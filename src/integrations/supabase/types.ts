@@ -247,6 +247,7 @@ export type Database = {
           expense_date: string
           id: string
           payment_type: string
+          purpose: string | null
           reason: string
           recipient_id: string | null
           recipient_name: string | null
@@ -263,6 +264,7 @@ export type Database = {
           expense_date?: string
           id?: string
           payment_type?: string
+          purpose?: string | null
           reason?: string
           recipient_id?: string | null
           recipient_name?: string | null
@@ -279,6 +281,7 @@ export type Database = {
           expense_date?: string
           id?: string
           payment_type?: string
+          purpose?: string | null
           reason?: string
           recipient_id?: string | null
           recipient_name?: string | null
