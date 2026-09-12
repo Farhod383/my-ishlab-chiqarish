@@ -20,7 +20,6 @@ import {
 } from "@/lib/supplyStatus";
 import { useNotifications, notifOrderId } from "@/notifications/NotificationsContext";
 import { resolveModule } from "@/lib/notifModules";
-import { fmtDateTime24 } from "@/lib/format";
 import SupplyOrderHistory from "@/components/SupplyOrderHistory";
 import { logSupplyChange } from "@/lib/supplyHistory";
 
