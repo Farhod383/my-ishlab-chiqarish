@@ -48,6 +48,34 @@ export default function SupplyRequestsPage() {
   const [lateReason, setLateReason] = useState("");
 
   const [profiles, setProfiles] = useState<Record<string, { full_name: string | null; email: string | null }>>({});
+  const [qtyEdit, setQtyEdit] = useState<Record<string, string>>({});
+  const { roles } = useAuth() as any;
+  const myRole = (Array.isArray(roles) && roles[0]) || null;
+
+  // Ta'minot bildirishnomalari — har bir zakaz uchun alohida o'qilmagan soni.
+  const { items: notifItems, markRead } = useNotifications();
+  const supplyUnreadByOrder = useMemo(() => {
+    const m: Record<string, number> = {};
+    notifItems.forEach((n) => {
+      if (n.read_at) return;
+      if (resolveModule(n) !== "supply") return;
+      const oid = notifOrderId(n);
+      if (oid) m[oid] = (m[oid] ?? 0) + 1;
+    });
+    return m;
+  }, [notifItems]);
+
+  // Zakaz ochilganda shu zakazning ta'minot bildirishnomalari o'qilgan bo'ladi.
+  useEffect(() => {
+    if (!openOrderId) return;
+    const unread = notifItems.filter(
+      (n) => !n.read_at && resolveModule(n) === "supply" && notifOrderId(n) === openOrderId,
+    );
+    if (!unread.length) return;
+    const t = window.setTimeout(() => { unread.forEach((n) => { void markRead(n); }); }, 800);
+    return () => window.clearTimeout(t);
+  }, [openOrderId, notifItems]);
+
 
   const load = async () => {
     setLoading(true);
