@@ -273,6 +273,13 @@ export default function SupplyRequestsPage() {
       order_id: item.order_id ?? null,
       details: `${item.product_name} · ${item.quantity} ${item.unit ?? ""}${late_reason ? ` · Kechikish sababi: ${late_reason}` : ""}`,
     });
+    await logSupplyChange({
+      requestId: item.id, orderId: item.order_id ?? null, productName: item.product_name,
+      action: status === "fulfilled" ? "Mahsulot ta'minlandi" : "Holat qaytarildi",
+      before: { status: normalizeStatus(item.status) },
+      after: { status },
+      actorId: user?.id, actorName: user?.email, role: myRole,
+    });
     await notify({
       type: status === "fulfilled" ? "supply_fulfilled" : "supply_request",
       title: status === "fulfilled" ? `Ta'minlandi — ${item.product_name}` : `Ta'minot qayta ochildi — ${item.product_name}`,
