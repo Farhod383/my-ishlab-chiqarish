@@ -219,15 +219,27 @@ export default function ClientDetail() {
       <Card>
         <CardContent className="p-6 flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold">{client.name}</h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-3xl font-bold">{client.name}</h1>
+              {client.client_type && <span className="rounded-full border border-primary/30 bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-medium">{client.client_type}</span>}
+              <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${(client.status ?? "active") === "active" ? "border-status-green/30 bg-status-green/10 text-status-green" : "border-status-red/30 bg-status-red/10 text-status-red"}`}>
+                {(client.status ?? "active") === "active" ? "Faol" : "Bo'shagan"}
+              </span>
+            </div>
             <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
               {client.contact_person && <span className="flex items-center gap-1.5"><UserIcon className="h-4 w-4" />{client.contact_person}</span>}
               {client.phone && <span className="flex items-center gap-1.5"><Phone className="h-4 w-4" />{client.phone}</span>}
+              {client.phone2 && <span className="flex items-center gap-1.5"><Phone className="h-4 w-4" />{client.phone2}</span>}
               {client.email && <span className="flex items-center gap-1.5"><Mail className="h-4 w-4" />{client.email}</span>}
               {client.address && <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" />{client.address}</span>}
+              {client.responsible_employee_id && <span className="flex items-center gap-1.5"><Briefcase className="h-4 w-4" />{employees.find((e) => e.id === client.responsible_employee_id)?.full_name ?? "—"}</span>}
+              {client.partnership_start && <span className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4" />Hamkorlik: {fmtD(client.partnership_start)}</span>}
             </div>
           </div>
-          <Button variant="outline" onClick={openEdit}><Pencil className="h-4 w-4 mr-1" /> Tahrirlash</Button>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => nav(`/orders/new?client=${client.id}`)}><Plus className="h-4 w-4 mr-1" /> Yangi zakaz</Button>
+            <Button variant="outline" onClick={openEdit}><Pencil className="h-4 w-4 mr-1" /> Tahrirlash</Button>
+          </div>
         </CardContent>
       </Card>
 
