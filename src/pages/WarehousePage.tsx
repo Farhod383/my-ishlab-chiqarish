@@ -1854,7 +1854,31 @@ export default function WarehousePage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!delTarget} onOpenChange={(o) => { if (!o) setDelTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mahsulotni o'chirish</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="font-semibold">{delTarget?.name}</span> o'chirilsinmi?
+              {delTarget && delTarget.ids.length > 1 ? ` Barcha ${delTarget.ids.length} partiya o'chiriladi.` : ""}
+              {" "}Joriy qoldiq: {delTarget?.qty} {delTarget?.unit}. Bu amalni ortga qaytarib bo'lmaydi, harakatlar tarixi saqlanadi.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={delBusy}>Bekor qilish</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={delBusy}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => { e.preventDefault(); confirmDeleteProduct(); }}
+            >
+              O'chirish
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+
   );
 }
 
