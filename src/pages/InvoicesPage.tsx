@@ -21,15 +21,12 @@ import {
 const fmt = (n: number) => fmtNum(n);
 
 export default function InvoicesPage() {
-  const { user } = useAuth() as any;
   const [sessions, setSessions] = useState<IntakeSession[]>([]);
   const [items, setItems] = useState<IntakeItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"all" | IntakeStatus>("all");
   const [q, setQ] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
-  const [imgFile, setImgFile] = useState<File | null>(null);
-  const [busy, setBusy] = useState(false);
+
 
   const load = async () => {
     setLoading(true);
@@ -73,42 +70,11 @@ export default function InvoicesPage() {
         list.some((i) => i.product_name.toLowerCase().includes(term))
       );
     });
-  }, [sessions, tab, q, itemsBySession]);
+  }, [sessions, q, itemsBySession]);
 
   const current = sessions.find((s) => s.id === openId) ?? null;
   const currentItems = openId ? (itemsBySession[openId] ?? []) : [];
 
-  const uploadImage = async () => {
-    if (!current || !imgFile) return;
-    setBusy(true);
-    try {
-      const ext = imgFile.name.split(".").pop();
-      const path = `nakladnoy/${crypto.randomUUID()}.${ext}`;
-      const up = await supabase.storage.from("product-images").upload(path, imgFile);
-      if (up.error) throw up.error;
-      const url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
-      const { error } = await supabase.from("intake_sessions").update({ image_url: url } as any).eq("id", current.id);
-      if (error) throw error;
-      setImgFile(null);
-      toast.success("Nakladnoy rasmi yuklandi");
-      await load();
-    } catch (e: any) {
-      toast.error(e.message ?? "Rasm yuklashda xatolik");
-    } finally { setBusy(false); }
-  };
-
-  const doFinalize = async () => {
-    if (!current) return;
-    if (!current.image_url) { toast.error("Avval nakladnoy rasmini yuklang"); return; }
-    setBusy(true);
-    try {
-      await finalizeSession(current.id);
-      toast.success("Nakladnoy yakunlandi — mahsulotlar skladga kirim qilindi");
-      await load();
-    } catch (e: any) {
-      toast.error(e.message ?? "Yakunlashda xatolik");
-    } finally { setBusy(false); }
-  };
 
   return (
     <div className="space-y-4">
