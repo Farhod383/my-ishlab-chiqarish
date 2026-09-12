@@ -33,16 +33,26 @@ export default function InvoicesPage() {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: s }, { data: it }] = await Promise.all([
-      supabase.from("intake_sessions").select("*").order("started_at", { ascending: false }).limit(300),
-      supabase.from("intake_items").select("*").order("created_at", { ascending: true }),
-    ]);
-    setSessions((s as any) ?? []);
-    setItems((it as any) ?? []);
+    // Faqat haqiqiy yakunlangan Nakladnoylar — draft/vaqtinchalik kirimlar ko'rsatilmaydi
+    const { data: s } = await supabase
+      .from("intake_sessions").select("*")
+      .eq("status", "finalized")
+      .order("finalized_at", { ascending: false })
+      .limit(300);
+    const list = ((s as any[]) ?? []) as IntakeSession[];
+    const ids = list.map((x) => x.id);
+    let it: any[] = [];
+    if (ids.length) {
+      const { data } = await supabase.from("intake_items").select("*").in("session_id", ids).order("created_at", { ascending: true });
+      it = (data as any[]) ?? [];
+    }
+    setSessions(list);
+    setItems(it as any);
     setLoading(false);
   };
 
   useEffect(() => { load(); }, []);
+
 
   const itemsBySession = useMemo(() => {
     const m: Record<string, IntakeItem[]> = {};
