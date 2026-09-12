@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "@/hooks/use-toast";
 import { Users, Plus, Loader2, Search, X } from "lucide-react";
 
-export const CLIENT_TYPES = ["KM", "Doimiy", "Yangi", "Bir martalik", "Boshqa"];
+export const CLIENT_TYPES = ["Mijoz", "Diler"];
 
 interface ClientRow {
   id: string; name: string; phone: string | null; phone2?: string | null; address: string | null;
@@ -24,7 +24,7 @@ interface ClientRow {
 
 const emptyForm = {
   name: "", phone: "", phone2: "", contact_person: "", address: "", email: "", note: "",
-  client_type: "", status: "active", partnership_start: "", responsible_employee_id: "",
+  client_type: "Mijoz", status: "active", partnership_start: "", responsible_employee_id: "",
 };
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -147,6 +147,7 @@ export default function ClientsPage() {
   const save = async () => {
     const name = form.name.trim();
     if (!name) { toast({ title: "Klient nomi majburiy", variant: "destructive" }); return; }
+    if (!form.client_type) { toast({ title: "Klient turi majburiy", variant: "destructive" }); return; }
     const dup = clients.find((c) => c.name.trim().toLowerCase() === name.toLowerCase());
     if (dup) { toast({ title: "Bunday klient allaqachon mavjud", description: dup.name, variant: "destructive" }); nav(`/clients/${dup.id}`); return; }
     setSaving(true);
@@ -323,7 +324,10 @@ export default function ClientsPage() {
                       style={{ display: "grid", gridTemplateColumns: "48px 1fr 140px 150px 130px 110px 110px 90px 90px 90px" }}
                     >
                       <div className="text-center font-semibold text-muted-foreground">{i + 1}</div>
-                      <div className="font-medium truncate">{c.name}</div>
+                      <div className="font-medium truncate flex items-center gap-2">
+                        <span className="truncate">{c.name}</span>
+                        <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] ${(c.client_type ?? "Mijoz") === "Diler" ? "border-status-blue/30 bg-status-blue/10 text-status-blue" : "border-primary/30 bg-primary/10 text-primary"}`}>{c.client_type || "Mijoz"}</span>
+                      </div>
                       <div className="truncate text-muted-foreground">{c.phone || "—"}</div>
                       <div className="truncate text-muted-foreground">{empName(c.responsible_employee_id)}</div>
                       <div className="flex flex-wrap gap-1">
@@ -370,7 +374,7 @@ export default function ClientsPage() {
               </Select>
             </div>
             <div>
-              <Label>Klient turi</Label>
+              <Label>Klient turi *</Label>
               <Select value={form.client_type} onValueChange={(v) => setForm({ ...form, client_type: v })}>
                 <SelectTrigger><SelectValue placeholder="Tanlang" /></SelectTrigger>
                 <SelectContent>{CLIENT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>

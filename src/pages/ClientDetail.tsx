@@ -147,7 +147,7 @@ export default function ClientDetail() {
       name: nm,
       phone: edit.phone || null, phone2: edit.phone2 || null, address: edit.address || null,
       contact_person: edit.contact_person || null, email: edit.email || null, note: edit.note || null,
-      client_type: edit.client_type || null, status: edit.status || "active",
+      client_type: edit.client_type || "Mijoz", status: edit.status || "active",
       partnership_start: edit.partnership_start || null,
       responsible_employee_id: edit.responsible_employee_id || null,
     };
@@ -221,7 +221,7 @@ export default function ClientDetail() {
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-3xl font-bold">{client.name}</h1>
-              {client.client_type && <span className="rounded-full border border-primary/30 bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-medium">{client.client_type}</span>}
+              <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${(client.client_type ?? "Mijoz") === "Diler" ? "border-status-blue/30 bg-status-blue/10 text-status-blue" : "border-primary/30 bg-primary/10 text-primary"}`}>{client.client_type || "Mijoz"}</span>
               <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${(client.status ?? "active") === "active" ? "border-status-green/30 bg-status-green/10 text-status-green" : "border-status-red/30 bg-status-red/10 text-status-red"}`}>
                 {(client.status ?? "active") === "active" ? "Faol" : "Bo'shagan"}
               </span>
@@ -276,7 +276,7 @@ export default function ClientDetail() {
                 <div><span className="text-muted-foreground">Telefon: </span>{client.phone || "—"}</div>
                 <div><span className="text-muted-foreground">Qo'shimcha telefon: </span>{client.phone2 || "—"}</div>
                 <div><span className="text-muted-foreground">Mas'ul xodim: </span>{employees.find((e) => e.id === client.responsible_employee_id)?.full_name || "—"}</div>
-                <div><span className="text-muted-foreground">Klient turi: </span>{client.client_type || "—"}</div>
+                <div><span className="text-muted-foreground">Klient turi: </span>{client.client_type || "Mijoz"}</div>
                 <div><span className="text-muted-foreground">Hamkorlik boshlangan: </span>{fmtD(client.partnership_start)}</div>
                 <div><span className="text-muted-foreground">Email: </span>{client.email || "—"}</div>
                 <div><span className="text-muted-foreground">Manzil: </span>{client.address || "—"}</div>
@@ -447,7 +447,7 @@ export default function ClientDetail() {
             </div>
             <div>
               <Label>Klient turi</Label>
-              <Select value={edit.client_type ?? ""} onValueChange={(v) => setEdit({ ...edit, client_type: v })}>
+              <Select value={edit.client_type || "Mijoz"} onValueChange={(v) => setEdit({ ...edit, client_type: v })}>
                 <SelectTrigger><SelectValue placeholder="Tanlang" /></SelectTrigger>
                 <SelectContent>{CLIENT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
               </Select>
