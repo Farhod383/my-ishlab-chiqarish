@@ -29,6 +29,7 @@ export default function NewOrder() {
   const [orderNumber, setOrderNumber] = useState("");
   const [products, setProducts] = useState<any[]>([]);
   const [clientName, setClientName] = useState<string>("");
+  const [lockedClientId, setLockedClientId] = useState<string | null>(null);
   const [productName, setProductName] = useState("");
   const [quantity, setQuantity] = useState<number>(1);
   const [priority, setPriority] = useState<"normal" | "exception">("normal");
@@ -95,6 +96,11 @@ export default function NewOrder() {
           await applyTemplate(fromQuery);
         }
       } catch { /* noop */ }
+      const cid = searchParams.get("client");
+      if (cid) {
+        const { data: c } = await supabase.from("clients").select("id, name").eq("id", cid).maybeSingle();
+        if (c) { setLockedClientId(c.id); setClientName(c.name); }
+      }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -158,14 +164,18 @@ export default function NewOrder() {
         }
       }
 
-      let clientId: string | null = null;
-      if (clientName.trim()) {
+      let clientId: string | null = lockedClientId;
+      if (!clientId && clientName.trim()) {
         const trimmed = clientName.trim();
         const { data: existingClient } = await supabase.from("clients").select("id").ilike("name", trimmed).maybeSingle();
         if (existingClient) {
           clientId = existingClient.id;
         } else {
-          const { data: newClient, error: cErr } = await supabase.from("clients").insert({ name: trimmed }).select().single();
+          const { data: newClient, error: cErr } = await supabase
+            .from("clients")
+            .insert({ name: trimmed, created_by: user?.id ?? null } as any)
+            .select()
+            .single();
           if (cErr) throw cErr;
           clientId = newClient.id;
         }
@@ -280,7 +290,8 @@ export default function NewOrder() {
             <div><Label>{t.newOrder.orderNumber}</Label><Input value={orderNumber} onChange={(e) => setOrderNumber(e.target.value)} /></div>
             <div>
               <Label>{t.newOrder.clientName}</Label>
-              <Input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder={t.newOrder.clientPlaceholder} />
+              <Input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder={t.newOrder.clientPlaceholder} disabled={!!lockedClientId} />
+              {lockedClientId && <p className="mt-1 text-xs text-muted-foreground">Klient CRM kartasidan tanlandi</p>}
             </div>
             <div className="sm:col-span-2"><Label>{t.newOrder.productType}</Label><Input value={productName} onChange={(e) => setProductName(e.target.value)} placeholder={t.newOrder.productPlaceholder} /></div>
             <div><Label>{t.newOrder.quantity}</Label><Input type="number" min={1} value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} /></div>

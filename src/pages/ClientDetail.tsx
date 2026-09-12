@@ -13,9 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/StatusBadge";
 import { toast } from "@/hooks/use-toast";
+import { useEmployees } from "@/hooks/useEmployees";
+import { CLIENT_TYPES } from "@/pages/ClientsPage";
 import {
   ArrowLeft, Phone, MapPin, Mail, User as UserIcon, Loader2, Plus, MessageSquare,
-  FileText, History, Pencil, Upload, ExternalLink,
+  FileText, History, Pencil, Upload, ExternalLink, Briefcase, CalendarDays,
 } from "lucide-react";
 
 const KINDS: Record<string, string> = { phone: "Telefon", telegram: "Telegram", meeting: "Uchrashuv", other: "Boshqa" };
@@ -28,11 +30,34 @@ const DOC_STATUS: Record<string, { label: string; cls: string }> = {
 const fmt = (d?: string | null) => (d ? new Date(d).toLocaleString("uz-UZ", { dateStyle: "short", timeStyle: "short" }) : "—");
 const fmtD = (d?: string | null) => (d ? new Date(d).toLocaleDateString("uz-UZ") : "—");
 
+const FIELD_LABELS: Record<string, string> = {
+  name: "Nomi", phone: "Telefon", phone2: "Qo'shimcha telefon", contact_person: "Kontakt shaxs",
+  email: "Email", address: "Manzil", note: "Izoh", client_type: "Klient turi",
+  status: "Holati", partnership_start: "Hamkorlik sanasi", responsible_employee_id: "Mas'ul xodim",
+};
+
 export default function ClientDetail() {
   const { id } = useParams();
   const nav = useNavigate();
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
+  const { employees } = useEmployees({ activeOnly: true });
   const [loading, setLoading] = useState(true);
+
+  // Klient nomi o'zgarsa yangi nom hammaga ko'rinadi; boshqa maydonlarning
+  // eski/yangi qiymatlari faqat Admin uchun ochiladi.
+  const auditDetails = (r: any) => {
+    const oldV = r.old_value ?? {};
+    const newV = r.new_value ?? {};
+    const keys = Object.keys(newV).filter((k) => JSON.stringify(oldV?.[k]) !== JSON.stringify(newV?.[k]));
+    if (!keys.length) return "";
+    return keys.map((k) => {
+      const label = FIELD_LABELS[k] ?? k;
+      if (k === "name") return isAdmin ? `${label}: ${oldV?.[k] ?? "—"} → ${newV?.[k] ?? "—"}` : `${label}: ${newV?.[k] ?? "—"}`;
+      return isAdmin ? `${label}: ${oldV?.[k] ?? "—"} → ${newV?.[k] ?? "—"}` : `${label} o'zgartirildi`;
+    }).join("; ");
+  };
+
   const [client, setClient] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [interactions, setInteractions] = useState<any[]>([]);
@@ -71,7 +96,7 @@ export default function ClientDetail() {
     setInteractions(ints ?? []);
     setDocs(dcs ?? []);
     setAudit([
-      ...(ea ?? []).map((r: any) => ({ at: r.created_at, who: r.actor_name, action: r.action, details: r.new_value ? JSON.stringify(r.new_value) : "" })),
+      ...(ea ?? []).map((r: any) => ({ at: r.created_at, who: r.actor_name, action: r.action, details: auditDetails(r) })),
       ...oa.map((r: any) => ({ at: r.created_at, who: r.actor_name, action: r.action, details: r.details ?? "" })),
       ...(ints ?? []).map((r: any) => ({ at: r.occurred_at, who: r.actor_name, action: `Aloqa: ${KINDS[r.kind] ?? r.kind}`, details: r.content })),
     ].sort((a, b) => (b.at ?? "").localeCompare(a.at ?? "")));
@@ -115,11 +140,16 @@ export default function ClientDetail() {
   const openEdit = () => { setEdit({ ...client }); setEditOpen(true); };
 
   const saveClient = async () => {
+    const nm = (edit.name ?? "").trim();
+    if (!nm) { toast({ title: "Klient nomi majburiy", variant: "destructive" }); return; }
     setSaving(true);
-    const patch = {
-      name: (edit.name ?? "").trim(),
-      phone: edit.phone || null, address: edit.address || null,
+    const patch: any = {
+      name: nm,
+      phone: edit.phone || null, phone2: edit.phone2 || null, address: edit.address || null,
       contact_person: edit.contact_person || null, email: edit.email || null, note: edit.note || null,
+      client_type: edit.client_type || null, status: edit.status || "active",
+      partnership_start: edit.partnership_start || null,
+      responsible_employee_id: edit.responsible_employee_id || null,
     };
     const { error } = await supabase.from("clients").update(patch).eq("id", id!);
     setSaving(false);
@@ -189,15 +219,27 @@ export default function ClientDetail() {
       <Card>
         <CardContent className="p-6 flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold">{client.name}</h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-3xl font-bold">{client.name}</h1>
+              {client.client_type && <span className="rounded-full border border-primary/30 bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-medium">{client.client_type}</span>}
+              <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${(client.status ?? "active") === "active" ? "border-status-green/30 bg-status-green/10 text-status-green" : "border-status-red/30 bg-status-red/10 text-status-red"}`}>
+                {(client.status ?? "active") === "active" ? "Faol" : "Bo'shagan"}
+              </span>
+            </div>
             <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
               {client.contact_person && <span className="flex items-center gap-1.5"><UserIcon className="h-4 w-4" />{client.contact_person}</span>}
               {client.phone && <span className="flex items-center gap-1.5"><Phone className="h-4 w-4" />{client.phone}</span>}
+              {client.phone2 && <span className="flex items-center gap-1.5"><Phone className="h-4 w-4" />{client.phone2}</span>}
               {client.email && <span className="flex items-center gap-1.5"><Mail className="h-4 w-4" />{client.email}</span>}
               {client.address && <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" />{client.address}</span>}
+              {client.responsible_employee_id && <span className="flex items-center gap-1.5"><Briefcase className="h-4 w-4" />{employees.find((e) => e.id === client.responsible_employee_id)?.full_name ?? "—"}</span>}
+              {client.partnership_start && <span className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4" />Hamkorlik: {fmtD(client.partnership_start)}</span>}
             </div>
           </div>
-          <Button variant="outline" onClick={openEdit}><Pencil className="h-4 w-4 mr-1" /> Tahrirlash</Button>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => nav(`/orders/new?client=${client.id}`)}><Plus className="h-4 w-4 mr-1" /> Yangi zakaz</Button>
+            <Button variant="outline" onClick={openEdit}><Pencil className="h-4 w-4 mr-1" /> Tahrirlash</Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -232,6 +274,10 @@ export default function ClientDetail() {
                 <div><span className="text-muted-foreground">Nomi: </span>{client.name}</div>
                 <div><span className="text-muted-foreground">Kontakt shaxs: </span>{client.contact_person || "—"}</div>
                 <div><span className="text-muted-foreground">Telefon: </span>{client.phone || "—"}</div>
+                <div><span className="text-muted-foreground">Qo'shimcha telefon: </span>{client.phone2 || "—"}</div>
+                <div><span className="text-muted-foreground">Mas'ul xodim: </span>{employees.find((e) => e.id === client.responsible_employee_id)?.full_name || "—"}</div>
+                <div><span className="text-muted-foreground">Klient turi: </span>{client.client_type || "—"}</div>
+                <div><span className="text-muted-foreground">Hamkorlik boshlangan: </span>{fmtD(client.partnership_start)}</div>
                 <div><span className="text-muted-foreground">Email: </span>{client.email || "—"}</div>
                 <div><span className="text-muted-foreground">Manzil: </span>{client.address || "—"}</div>
                 <div><span className="text-muted-foreground">Izoh: </span>{client.note || "—"}</div>
@@ -388,9 +434,35 @@ export default function ClientDetail() {
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="sm:col-span-2"><Label>Klient nomi *</Label><Input value={edit.name ?? ""} onChange={(e) => setEdit({ ...edit, name: e.target.value })} /></div>
             <div><Label>Telefon</Label><Input value={edit.phone ?? ""} onChange={(e) => setEdit({ ...edit, phone: e.target.value })} /></div>
+            <div><Label>Qo'shimcha telefon</Label><Input value={edit.phone2 ?? ""} onChange={(e) => setEdit({ ...edit, phone2: e.target.value })} /></div>
             <div><Label>Kontakt shaxs</Label><Input value={edit.contact_person ?? ""} onChange={(e) => setEdit({ ...edit, contact_person: e.target.value })} /></div>
             <div><Label>Email</Label><Input value={edit.email ?? ""} onChange={(e) => setEdit({ ...edit, email: e.target.value })} /></div>
             <div><Label>Manzil</Label><Input value={edit.address ?? ""} onChange={(e) => setEdit({ ...edit, address: e.target.value })} /></div>
+            <div>
+              <Label>Mas'ul xodim</Label>
+              <Select value={edit.responsible_employee_id ?? ""} onValueChange={(v) => setEdit({ ...edit, responsible_employee_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Tanlang" /></SelectTrigger>
+                <SelectContent>{employees.map((e) => <SelectItem key={e.id} value={e.id}>{e.full_name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Klient turi</Label>
+              <Select value={edit.client_type ?? ""} onValueChange={(v) => setEdit({ ...edit, client_type: v })}>
+                <SelectTrigger><SelectValue placeholder="Tanlang" /></SelectTrigger>
+                <SelectContent>{CLIENT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Holati</Label>
+              <Select value={edit.status ?? "active"} onValueChange={(v) => setEdit({ ...edit, status: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Faol</SelectItem>
+                  <SelectItem value="inactive">Bo'shagan</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>Hamkorlik boshlangan sana</Label><Input type="date" value={edit.partnership_start ?? ""} onChange={(e) => setEdit({ ...edit, partnership_start: e.target.value })} /></div>
             <div className="sm:col-span-2"><Label>Izoh</Label><Textarea value={edit.note ?? ""} onChange={(e) => setEdit({ ...edit, note: e.target.value })} /></div>
           </div>
           <DialogFooter>
