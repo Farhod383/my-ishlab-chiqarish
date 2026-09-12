@@ -989,7 +989,16 @@ export default function WarehousePage() {
             </>
           )}
           {canImport && (
-            <Dialog open={importOpen} onOpenChange={setImportOpen}>
+            <Dialog open={importOpen} onOpenChange={(o) => {
+              setImportOpen(o);
+              if (o) {
+                // Har safar toza holatdan: eski draft/cache tozalanadi, sessiya qayta o'qiladi
+                setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice("");
+                setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId("");
+                setNaklFile(null);
+                loadSession();
+              }
+            }}>
               <DialogTrigger asChild><Button variant="secondary"><ArrowUpCircle className="h-4 w-4 mr-2" />{t.supply.receive}</Button></DialogTrigger>
               <DialogContent className="max-w-lg max-h-[90vh] flex flex-col p-0 gap-0">
                 <DialogHeader className="px-6 pt-6 pb-3 border-b shrink-0"><DialogTitle>{t.supply.receiveTitle}</DialogTitle></DialogHeader>
