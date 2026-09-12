@@ -461,19 +461,50 @@ export default function WarehousePage() {
     loadSession();
   };
 
+  /** Nakladnoy rasmini shu oynaning o'zida yuklash */
+  const uploadNaklImage = async () => {
+    if (!openSession || !naklFile) return;
+    setNaklBusy(true);
+    try {
+      const ext = naklFile.name.split(".").pop();
+      const path = `nakladnoy/${crypto.randomUUID()}.${ext}`;
+      const up = await supabase.storage.from("product-images").upload(path, naklFile);
+      if (up.error) throw up.error;
+      const url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+      const { error } = await supabase.from("intake_sessions").update({ image_url: url } as any).eq("id", openSession.id);
+      if (error) throw error;
+      setNaklFile(null);
+      toast.success("Nakladnoy rasmi yuklandi");
+      await loadSession();
+    } catch (e: any) {
+      toast.error(e.message ?? "Rasm yuklashda xatolik");
+    } finally { setNaklBusy(false); }
+  };
+
+  /** Tugatish — rasm majburiy; sessiya yopiladi va skladga kirim qilinadi */
   const doFinishSession = async () => {
     if (!openSession) return;
     if (sessionItems.length === 0) { toast.error("Avval mahsulot qo'shing"); return; }
+    if (!openSession.image_url) { toast.error("Avval nakladnoy rasmini yuklang"); return; }
+    setNaklBusy(true);
     try {
       await finishSession(openSession.id);
+      await finalizeSession(openSession.id);
       await logAudit(supabase, {
         actor_id: user?.id, actor_name: user?.email,
-        action: "Kirim tugatildi", entity: "intake_session",
+        action: "Nakladnoy yakunlandi", entity: "intake_session",
         details: `Nakladnoy ${intakeCode(openSession)} · ${sessionItems.length} mahsulot · ${fmt(itemsTotal(sessionItems as any))}`,
       });
-      toast.success("Kirim tugatildi — Nakladnoy bo'limida rasm yuklang va yakunlang");
-      loadSession();
+      toast.success("Nakladnoy yakunlandi — mahsulotlar skladga kirim qilindi");
+      // vaqtinchalik ma'lumotlarni tozalash
+      setOpenSession(null); setSessionItems([]); setNaklFile(null);
+      setImpProductId(""); setImpProductName(""); setImpQty(""); setImpPrice("");
+      setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId(""); setImpSupplier("");
+      setImportOpen(false);
+      await loadSession();
+      await load();
     } catch (e: any) { toast.error(e.message ?? "Xatolik"); }
+    finally { setNaklBusy(false); }
   };
 
   const openEditProduct = (p: any) => {
