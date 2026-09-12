@@ -299,7 +299,7 @@ export default function ClientsPage() {
         <div className="rounded-xl border border-border bg-card overflow-hidden">
           <div className="overflow-x-auto">
             <div className="min-w-[900px]">
-              <div className="grid grid-cols-24 gap-3 bg-muted/60 px-4 py-3 text-sm font-semibold text-muted-foreground border-b border-border" style={{ gridTemplateColumns: "48px 1fr 140px 150px 130px 110px 110px 90px 90px 90px" , display: "grid" }}>
+              <div className="gap-3 bg-muted/60 px-4 py-3 text-sm font-semibold text-muted-foreground border-b border-border" style={{ gridTemplateColumns: "48px 1fr 140px 150px 130px 110px 110px 90px 90px 90px", display: "grid" }}>
                 <div className="text-center">№</div>
                 <div>Klient nomi</div>
                 <div>Telefon</div>
