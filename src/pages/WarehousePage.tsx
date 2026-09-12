@@ -1243,7 +1243,7 @@ export default function WarehousePage() {
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" asChild><Link to="/invoices">Nakladnoy bo'limi</Link></Button>
-                <Button size="sm" onClick={doFinishSession} disabled={sessionItems.length === 0}>Kirimni tugatish</Button>
+                <Button size="sm" onClick={() => setImportOpen(true)}>Nakladnoyni tugatish</Button>
               </div>
             </div>
           </CardHeader>
