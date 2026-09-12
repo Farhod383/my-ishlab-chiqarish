@@ -157,6 +157,7 @@ export default function InvoicesPage() {
                           <TableCell className="whitespace-nowrap text-sm">{s.finished_at ? fmtDateTime24(s.finished_at) : "—"}</TableCell>
                           <TableCell className="whitespace-nowrap text-sm">{intakeDuration(s)}</TableCell>
                           <TableCell className="text-sm">{s.created_by_name ?? "—"}</TableCell>
+                          <TableCell className="text-sm">{s.supplier ?? "—"}</TableCell>
                           <TableCell>{s.image_url ? <ImageIcon className="h-4 w-4 text-status-green" /> : <Clock className="h-4 w-4 text-muted-foreground" />}</TableCell>
                         </TableRow>
                       );
