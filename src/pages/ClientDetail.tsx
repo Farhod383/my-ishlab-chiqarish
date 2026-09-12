@@ -274,6 +274,10 @@ export default function ClientDetail() {
                 <div><span className="text-muted-foreground">Nomi: </span>{client.name}</div>
                 <div><span className="text-muted-foreground">Kontakt shaxs: </span>{client.contact_person || "—"}</div>
                 <div><span className="text-muted-foreground">Telefon: </span>{client.phone || "—"}</div>
+                <div><span className="text-muted-foreground">Qo'shimcha telefon: </span>{client.phone2 || "—"}</div>
+                <div><span className="text-muted-foreground">Mas'ul xodim: </span>{employees.find((e) => e.id === client.responsible_employee_id)?.full_name || "—"}</div>
+                <div><span className="text-muted-foreground">Klient turi: </span>{client.client_type || "—"}</div>
+                <div><span className="text-muted-foreground">Hamkorlik boshlangan: </span>{fmtD(client.partnership_start)}</div>
                 <div><span className="text-muted-foreground">Email: </span>{client.email || "—"}</div>
                 <div><span className="text-muted-foreground">Manzil: </span>{client.address || "—"}</div>
                 <div><span className="text-muted-foreground">Izoh: </span>{client.note || "—"}</div>
@@ -430,9 +434,35 @@ export default function ClientDetail() {
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="sm:col-span-2"><Label>Klient nomi *</Label><Input value={edit.name ?? ""} onChange={(e) => setEdit({ ...edit, name: e.target.value })} /></div>
             <div><Label>Telefon</Label><Input value={edit.phone ?? ""} onChange={(e) => setEdit({ ...edit, phone: e.target.value })} /></div>
+            <div><Label>Qo'shimcha telefon</Label><Input value={edit.phone2 ?? ""} onChange={(e) => setEdit({ ...edit, phone2: e.target.value })} /></div>
             <div><Label>Kontakt shaxs</Label><Input value={edit.contact_person ?? ""} onChange={(e) => setEdit({ ...edit, contact_person: e.target.value })} /></div>
             <div><Label>Email</Label><Input value={edit.email ?? ""} onChange={(e) => setEdit({ ...edit, email: e.target.value })} /></div>
             <div><Label>Manzil</Label><Input value={edit.address ?? ""} onChange={(e) => setEdit({ ...edit, address: e.target.value })} /></div>
+            <div>
+              <Label>Mas'ul xodim</Label>
+              <Select value={edit.responsible_employee_id ?? ""} onValueChange={(v) => setEdit({ ...edit, responsible_employee_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Tanlang" /></SelectTrigger>
+                <SelectContent>{employees.map((e) => <SelectItem key={e.id} value={e.id}>{e.full_name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Klient turi</Label>
+              <Select value={edit.client_type ?? ""} onValueChange={(v) => setEdit({ ...edit, client_type: v })}>
+                <SelectTrigger><SelectValue placeholder="Tanlang" /></SelectTrigger>
+                <SelectContent>{CLIENT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Holati</Label>
+              <Select value={edit.status ?? "active"} onValueChange={(v) => setEdit({ ...edit, status: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Faol</SelectItem>
+                  <SelectItem value="inactive">Bo'shagan</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>Hamkorlik boshlangan sana</Label><Input type="date" value={edit.partnership_start ?? ""} onChange={(e) => setEdit({ ...edit, partnership_start: e.target.value })} /></div>
             <div className="sm:col-span-2"><Label>Izoh</Label><Textarea value={edit.note ?? ""} onChange={(e) => setEdit({ ...edit, note: e.target.value })} /></div>
           </div>
           <DialogFooter>
