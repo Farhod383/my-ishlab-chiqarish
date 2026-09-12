@@ -92,6 +92,10 @@ export default function WarehousePage() {
   const [impOrderId, setImpOrderId] = useState<string>("");
   const [locations, setLocations] = useState<{ id: string; name: string }[]>([]);
 
+  // Kirim sessiyasi (Nakladnoy)
+  const [openSession, setOpenSession] = useState<IntakeSession | null>(null);
+  const [sessionItems, setSessionItems] = useState<IntakeItem[]>([]);
+
   // Cross-order release confirmation
   const [crossOpen, setCrossOpen] = useState(false);
   const [crossReason, setCrossReason] = useState("");
