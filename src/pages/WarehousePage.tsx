@@ -439,7 +439,7 @@ export default function WarehousePage() {
       details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${impCurrency}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
     });
     toast.success("Nakladnoyga qo'shildi — kirim tugatilgach skladga tushadi");
-    setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId(""); setImportOpen(false);
+    setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId("");
     loadSession();
     load();
   };
