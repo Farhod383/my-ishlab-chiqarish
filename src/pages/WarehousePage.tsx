@@ -975,7 +975,18 @@ export default function WarehousePage() {
                     </div>
                   )}
                   <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={impSource} onChange={e => setImpSource(e.target.value)} placeholder={(t.warehouse as any).sourcePh} /></div>
-                  <div><Label>{t.supply.bringer}</Label><SupplierAutocomplete value={impSupplier} onChange={setImpSupplier} options={supplierOptions} placeholder={t.supply.bringerPh} /></div>
+                  <div>
+                    <Label>{t.supply.bringer}</Label>
+                    <Select value={impSupplier} onValueChange={setImpSupplier}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Tanlang" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Davronxo'ja">Davronxo'ja</SelectItem>
+                        <SelectItem value="Sanjar">Sanjar</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div><Label>{t.supply.phone}</Label><Input list="dl-phones" value={impPhone} onChange={e => setImpPhone(e.target.value)} placeholder={t.supply.phonePh} /></div>
                   <div><Label>{t.supply.image}</Label><Input type="file" accept="image/*" onChange={e => setImpImage(e.target.files?.[0] ?? null)} /></div>
                 </div>
@@ -1686,43 +1697,3 @@ function ProductSearchBox({ movements, value, onChange, placeholder }: {
   );
 }
 
-function SupplierAutocomplete({ value, onChange, options, placeholder }: {
-  value: string; onChange: (v: string) => void; options: string[]; placeholder?: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const onDoc = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, []);
-  const q = value.trim().toLowerCase();
-  const list = q ? options.filter(o => o.toLowerCase().includes(q)) : options;
-  const suggestions = list.slice(0, 10);
-  return (
-    <div ref={ref} className="relative">
-      <Input
-        value={value}
-        placeholder={placeholder}
-        onChange={(e) => { onChange(e.target.value); setOpen(true); }}
-        onFocus={() => setOpen(true)}
-      />
-      {open && suggestions.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full bg-popover border rounded-md shadow-md max-h-56 overflow-auto">
-          {suggestions.map(s => (
-            <button
-              key={s}
-              type="button"
-              className="block w-full text-left px-3 py-1.5 text-sm hover:bg-accent"
-              onMouseDown={(e) => { e.preventDefault(); onChange(s); setOpen(false); }}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
