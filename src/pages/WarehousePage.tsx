@@ -1081,9 +1081,54 @@ export default function WarehousePage() {
                   </div>
                   <div><Label>{t.supply.phone}</Label><Input list="dl-phones" value={impPhone} onChange={e => setImpPhone(e.target.value)} placeholder={t.supply.phonePh} /></div>
                   <div><Label>{t.supply.image}</Label><Input type="file" accept="image/*" onChange={e => setImpImage(e.target.files?.[0] ?? null)} /></div>
+
+                  {openSession && (
+                    <div className="rounded-lg border border-status-yellow/40 bg-status-yellow/5 p-3 space-y-3">
+                      <div className="text-sm font-semibold">
+                        Ochiq Nakladnoy <span className="font-mono">{intakeCode(openSession)}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Boshlangan: {fmtDateTime24(openSession.started_at)} · {sessionItems.length} mahsulot · Jami: {fmt(itemsTotal(sessionItems as any))}
+                        {openSession.supplier ? ` · Olib keldi: ${openSession.supplier}` : ""}
+                      </div>
+                      <div className="max-h-40 overflow-y-auto rounded border bg-background divide-y">
+                        {sessionItems.length === 0 && <div className="p-2 text-xs text-muted-foreground text-center">Mahsulot qo'shing</div>}
+                        {sessionItems.map((i, idx) => (
+                          <div key={i.id} className="flex items-center gap-2 px-2 py-1.5 text-sm">
+                            <span className="text-muted-foreground text-xs w-4">{idx + 1}</span>
+                            <span className="flex-1 truncate">{i.product_name}</span>
+                            <span className="font-mono text-xs whitespace-nowrap">{fmt(Number(i.quantity))} {i.unit} × {fmt(Number(i.unit_price))} {i.currency}</span>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeSessionItem(i.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Nakladnoy rasmi <span className="text-destructive">*</span></Label>
+                        {openSession.image_url ? (
+                          <a href={openSession.image_url} target="_blank" rel="noreferrer">
+                            <img src={openSession.image_url} alt={`Nakladnoy ${intakeCode(openSession)}`} className="max-h-32 rounded border" />
+                          </a>
+                        ) : (
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <Input type="file" accept="image/*" onChange={e => setNaklFile(e.target.files?.[0] ?? null)} />
+                            <Button variant="outline" disabled={!naklFile || naklBusy} onClick={uploadNaklImage}>Rasmni yuklash</Button>
+                          </div>
+                        )}
+                        {!openSession.image_url && <p className="text-xs text-muted-foreground">Rasm yuklanmaguncha "Tugatish" ishlamaydi</p>}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="px-6 py-4 border-t bg-background shrink-0">
-                  <Button className="w-full" onClick={doImport}>{t.supply.saveIn}</Button>
+                <div className="px-6 py-4 border-t bg-background shrink-0 flex flex-col sm:flex-row gap-2">
+                  <Button className="flex-1" onClick={doImport}>{t.supply.saveIn}</Button>
+                  <Button
+                    className="flex-1"
+                    variant="default"
+                    disabled={!openSession || sessionItems.length === 0 || !openSession?.image_url || naklBusy}
+                    onClick={doFinishSession}
+                  >
+                    Tugatish (skladga kirim)
+                  </Button>
                 </div>
               </DialogContent>
             </Dialog>
