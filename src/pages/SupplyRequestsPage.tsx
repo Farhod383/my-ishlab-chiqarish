@@ -195,9 +195,51 @@ export default function SupplyRequestsPage() {
       order_id: item.order_id ?? null,
       details: `${item.product_name}: ${e.supply_comment || "—"}`,
     });
+    await logSupplyChange({
+      requestId: item.id, orderId: item.order_id ?? null, productName: item.product_name,
+      action: "Ta'minot izohi o'zgartirildi",
+      before: { supply_comment: item.supply_comment ?? "" },
+      after: { supply_comment: e.supply_comment || "" },
+      actorId: user?.id, actorName: user?.email, role: myRole,
+    });
     toast.success("Izoh saqlandi");
     load();
   };
+
+  const saveQty = async (item: any) => {
+    const next = Number(qtyEdit[item.id]);
+    if (!next || next === Number(item.quantity)) { setQtyEdit((p) => ({ ...p, [item.id]: "" })); return; }
+    const { error } = await supabase.from("order_supply_requests").update({ quantity: next }).eq("id", item.id);
+    if (error) { toast.error(error.message); return; }
+    await logSupplyChange({
+      requestId: item.id, orderId: item.order_id ?? null, productName: item.product_name,
+      action: "Miqdor o'zgartirildi",
+      before: { quantity: `${item.quantity} ${item.unit ?? ""}`.trim() },
+      after: { quantity: `${next} ${item.unit ?? ""}`.trim() },
+      actorId: user?.id, actorName: user?.email, role: myRole,
+    });
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: "Ta'minot miqdori o'zgartirildi", entity: "supply_request",
+      order_id: item.order_id ?? null,
+      details: `${item.product_name}: ${item.quantity} → ${next} ${item.unit ?? ""}`,
+    });
+    await notify({
+      type: "supply_request",
+      title: `Miqdor o'zgardi — ${item.product_name}`,
+      body: `${item.quantity} → ${next} ${item.unit ?? ""}`,
+      link: item.order_id ? `/orders/${item.order_id}` : "/supply",
+      entity: "supply_request",
+      entity_id: item.id,
+      recipient_role: ["supply", "warehouse", "manager"],
+      sender_id: user?.id,
+      sender_name: user?.email,
+    });
+    setQtyEdit((p) => ({ ...p, [item.id]: "" }));
+    toast.success("Miqdor yangilandi");
+    load();
+  };
+
 
   const isLate = (item: any) => {
     if (!item?.required_date) return false;
