@@ -35,6 +35,7 @@ import ClientDetail from "./pages/ClientDetail";
 import FaceIdPage from "./pages/FaceIdPage";
 import BusinessTripsPage from "./pages/BusinessTripsPage";
 import SupplyFinancePage from "./pages/SupplyFinancePage";
+import InvoicesPage from "./pages/InvoicesPage";
 import NotFound from "./pages/NotFound";
 
 
