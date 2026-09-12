@@ -45,7 +45,14 @@ export function AppSidebar() {
   ];
 
   const engineerAllowed = new Set(["/", "/orders", "/production", "/warehouse", "/supply", "/chat"]);
-  const items = isEngineerOnly ? allItems.filter((i) => engineerAllowed.has(i.url)) : allItems;
+  // Oddiy xodim faqat o'ziga tegishli bo'limlarni ko'radi.
+  const isWorkerOnly = roles.length > 0 && roles.every((r) => r === "worker");
+  const workerAllowed = new Set(["/trips", "/chat"]);
+  const items = isEngineerOnly
+    ? allItems.filter((i) => engineerAllowed.has(i.url))
+    : isWorkerOnly
+      ? allItems.filter((i) => workerAllowed.has(i.url))
+      : allItems;
 
   // Per-role sidebar visibility overrides (does not affect permissions/routes)
   const isAdmin = roles.includes("admin");
