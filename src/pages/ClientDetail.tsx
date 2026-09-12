@@ -13,9 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/StatusBadge";
 import { toast } from "@/hooks/use-toast";
+import { useEmployees } from "@/hooks/useEmployees";
+import { CLIENT_TYPES } from "@/pages/ClientsPage";
 import {
   ArrowLeft, Phone, MapPin, Mail, User as UserIcon, Loader2, Plus, MessageSquare,
-  FileText, History, Pencil, Upload, ExternalLink,
+  FileText, History, Pencil, Upload, ExternalLink, Briefcase, CalendarDays,
 } from "lucide-react";
 
 const KINDS: Record<string, string> = { phone: "Telefon", telegram: "Telegram", meeting: "Uchrashuv", other: "Boshqa" };
@@ -31,7 +33,9 @@ const fmtD = (d?: string | null) => (d ? new Date(d).toLocaleDateString("uz-UZ")
 export default function ClientDetail() {
   const { id } = useParams();
   const nav = useNavigate();
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
+  const { employees } = useEmployees({ activeOnly: true });
   const [loading, setLoading] = useState(true);
   const [client, setClient] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
