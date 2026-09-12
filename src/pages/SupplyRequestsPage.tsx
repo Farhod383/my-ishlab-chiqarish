@@ -453,6 +453,25 @@ export default function SupplyRequestsPage() {
                             <span>· {requesterName(item.created_by)}</span>
                             {item.department && <span className="uppercase">· {item.department}</span>}
                           </div>
+                          {canEdit && (
+                            <div className="mt-2 flex items-center gap-1.5">
+                              <span className="text-xs text-muted-foreground">Miqdorni o'zgartirish:</span>
+                              <NumberInput
+                                className="h-8 w-24 text-sm"
+                                min={0.01}
+                                step={0.01}
+                                value={qtyEdit[item.id] ?? ""}
+                                placeholder={String(item.quantity)}
+                                onChange={(ev) => setQtyEdit((p) => ({ ...p, [item.id]: ev.target.value }))}
+                                onKeyDown={(ev) => { if (ev.key === "Enter") { ev.preventDefault(); void saveQty(item); } }}
+                              />
+                              {!!qtyEdit[item.id] && (
+                                <Button size="sm" className="h-8 px-2 text-xs" onClick={() => saveQty(item)}>
+                                  <Save className="h-3 w-3 mr-1" /> Saqlash
+                                </Button>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5 flex-wrap">
