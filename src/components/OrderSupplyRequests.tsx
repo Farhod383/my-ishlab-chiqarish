@@ -18,6 +18,9 @@ import {
   supplyStatusLabel as statusLabel,
   supplyStatusCls as statusCls,
 } from "@/lib/supplyStatus";
+import { useNotifications, notifOrderId } from "@/notifications/NotificationsContext";
+import { resolveModule } from "@/lib/notifModules";
+import { fmtDateTime24 } from "@/lib/format";
 
 interface Props {
   orderId: string;
