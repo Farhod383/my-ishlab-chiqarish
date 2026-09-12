@@ -23,7 +23,7 @@ import { notify } from "@/lib/notify";
 import { recalcOrderStatus } from "@/lib/orderStatus";
 import OrderSupplyRequests from "@/components/OrderSupplyRequests";
 import { useNotifications, notifStageId } from "@/notifications/NotificationsContext";
-import { fmtDateTime24, fmtDuration } from "@/lib/format";
+import { fmtDateTime24, fmtDuration, fmtLegacyDurations } from "@/lib/format";
 
 
 export default function OrderDetail() {
@@ -489,7 +489,7 @@ export default function OrderDetail() {
                             {notifsByStage[s.id].map((n: any) => (
                               <div key={n.id} className="rounded-md border bg-background p-2">
                                 <div className="text-xs font-medium">{n.title}</div>
-                                {n.body && <div className="text-[11px] text-muted-foreground whitespace-pre-wrap">{n.body}</div>}
+                                {n.body && <div className="text-[11px] text-muted-foreground whitespace-pre-wrap">{fmtLegacyDurations(n.body)}</div>}
                                 <div className="mt-0.5 text-[11px] text-muted-foreground">
                                   {n.sender_name ?? "Tizim"} · {fmtDateTime24(n.created_at)}
                                 </div>
@@ -512,7 +512,7 @@ export default function OrderDetail() {
                                 {" · "}
                                 <span>{ev.action}</span>
                                 {ev.actor && <span className="text-muted-foreground"> · {localize(ev.actor)}</span>}
-                                {ev.details && <div className="text-muted-foreground">{ev.details}</div>}
+                                {ev.details && <div className="text-muted-foreground">{fmtLegacyDurations(ev.details)}</div>}
                               </div>
                             ))}
                           </div>
@@ -588,7 +588,7 @@ export default function OrderDetail() {
                       <Badge variant="outline" className="text-[10px]">{ev.dept}</Badge>
                       <span className="font-semibold text-sm">{ev.action}</span>
                     </div>
-                    {ev.details && <div className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">{ev.details}</div>}
+                    {ev.details && <div className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">{fmtLegacyDurations(ev.details)}</div>}
                     <div className="text-[11px] text-muted-foreground/80 mt-1">
                       {fmtDateTime24(ev.at)} · {ev.actor ? localize(ev.actor) : t.common.system}
                     </div>
@@ -607,7 +607,7 @@ export default function OrderDetail() {
               {logs.map((l) => (
                 <div key={l.id} className="text-sm border-l-2 border-border pl-3 py-1">
                   <div><span className="font-semibold">{l.action}</span> — <span className="text-muted-foreground">{l.actor_name ? localize(l.actor_name) : t.common.system}</span></div>
-                  {l.details && <div className="text-xs text-muted-foreground">{l.details}</div>}
+                  {l.details && <div className="text-xs text-muted-foreground">{fmtLegacyDurations(l.details)}</div>}
                   <div className="text-[10px] text-muted-foreground">{fmtDateTime24(l.created_at)}</div>
                 </div>
               ))}
