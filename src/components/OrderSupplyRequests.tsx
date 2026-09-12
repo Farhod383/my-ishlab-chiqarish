@@ -21,6 +21,8 @@ import {
 import { useNotifications, notifOrderId } from "@/notifications/NotificationsContext";
 import { resolveModule } from "@/lib/notifModules";
 import { fmtDateTime24 } from "@/lib/format";
+import SupplyOrderHistory from "@/components/SupplyOrderHistory";
+import { logSupplyChange } from "@/lib/supplyHistory";
 
 interface Props {
   orderId: string;
@@ -122,7 +124,17 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
       order_id: orderId,
       details: `${name} · ${qty} ${unit ?? ""}`,
     });
+    await logSupplyChange({
+      requestId: crypto.randomUUID(),
+      orderId,
+      productName: name,
+      action: "Yangi ta'minot so'rovi qo'shildi",
+      before: { quantity: "—" },
+      after: { quantity: `${qty} ${unit ?? ""}`.trim() },
+      actorId: user?.id, actorName: user?.email, role: primaryRole || null,
+    });
     toast.success("Qo'shildi");
+
     reset();
     setOpen(false);
     load();
