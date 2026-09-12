@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/auth/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -117,7 +116,7 @@ export default function InvoicesPage() {
                       const list = itemsBySession[s.id] ?? [];
                       const meta = INTAKE_STATUS_META[s.status];
                       return (
-                        <TableRow key={s.id} className="cursor-pointer hover:bg-muted/50" onClick={() => { setOpenId(s.id); setImgFile(null); }}>
+                        <TableRow key={s.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setOpenId(s.id)}>
                           <TableCell className="font-mono font-semibold whitespace-nowrap">{intakeCode(s)}</TableCell>
                           <TableCell><Badge variant="outline" className={meta.cls}>{meta.label}</Badge></TableCell>
                           <TableCell className="text-right">{list.length}</TableCell>
@@ -140,7 +139,7 @@ export default function InvoicesPage() {
 
 
 
-      <Dialog open={!!openId} onOpenChange={(o) => { if (!o) { setOpenId(null); setImgFile(null); } }}>
+      <Dialog open={!!openId} onOpenChange={(o) => { if (!o) setOpenId(null); }}>
         <DialogContent className="max-w-3xl p-0 gap-0">
           {current && (
             <>
