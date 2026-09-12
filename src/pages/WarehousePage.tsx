@@ -1397,6 +1397,13 @@ export default function WarehousePage() {
                         onClick={canManage ? () => openEditMovement(m) : undefined}
                       >
                         <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
+                        <TableCell className="text-xs whitespace-nowrap font-mono">
+                          {m.intake_session?.started_at ? (
+                            <Link to="/invoices" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+                              {fmtDateTime24(m.intake_session.started_at)}
+                            </Link>
+                          ) : <span className="text-muted-foreground">—</span>}
+                        </TableCell>
                         <TableCell className="text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</TableCell>
                         <TableCell>
                           {m.direction === "out"
