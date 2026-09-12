@@ -389,38 +389,72 @@ export default function WarehousePage() {
     }
 
     const orderLabel = impOrderId ? (orders.find(o => o.id === impOrderId)?.order_number ?? "") : "";
-    const { error } = await supabase.from("stock_movements").insert({
-      product_id: productId, direction: "in", quantity: qtyN,
+
+    // Kirim sessiyasi (Nakladnoy) — ochiq bo'lmasa avtomatik boshlanadi
+    let session: any;
+    try {
+      session = await getOrStartSession(user?.id, user?.email ?? null, impSupplier || null);
+    } catch (e: any) { toast.error(e.message ?? "Kirim sessiyasini ochib bo'lmadi"); return; }
+
+    const { error } = await supabase.from("intake_items").insert({
+      session_id: session.id,
+      product_id: productId,
+      product_name: trimmedName,
+      unit: impUnit || "dona",
+      quantity: qtyN,
       unit_price: priceN,
-      recipient_name: impSupplier || null, created_by: user?.id,
-      phone: impPhone || null, image_url: imgUrl,
-      source: impSource.trim() || null,
-      location: impLocation || "Asosiy zavod",
       currency: impCurrency || "UZS",
-      source_order_id: impOrderId || null,
-      comment: `${t.supply.title}${impSupplier ? `: ${impSupplier}` : ""}${priceN ? ` · ${fmt(priceN)} ${impCurrency}/${t.common.pieces}` : ""} · ${impLocation}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
+      location: impLocation || "Asosiy zavod",
+      order_id: impOrderId || null,
+      source: impSource.trim() || null,
+      phone: impPhone || null,
+      image_url: imgUrl,
+      created_by: user?.id,
+      comment: `Nakladnoy${impSupplier ? ` · ${impSupplier}` : ""} · ${impLocation}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
     } as any);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: user?.email,
-      action: "Mahsulot keltirildi", entity: "stock_movement",
+      action: "Nakladnoyga mahsulot qo'shildi", entity: "intake_item",
       order_id: impOrderId || null,
-      details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${t.common.sum}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
+      details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${impCurrency}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
     });
-    {
-      const { notify } = await import("@/lib/notify");
-      await notify({
-        type: "info",
-        title: `Sklad kirimi — ${trimmedName}`,
-        body: `+${qtyN} ${impUnit}${impSupplier ? ` · ${impSupplier}` : ""}`,
-        link: "/warehouse", entity: "stock_movement",
-        recipient_role: ["warehouse", "manager", "supply"],
-        sender_id: user?.id, sender_name: user?.email,
-      });
-    }
-    toast.success(t.warehouse.inRecorded);
-    setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpSupplier(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId(""); setImportOpen(false);
+    toast.success("Nakladnoyga qo'shildi — kirim tugatilgach skladga tushadi");
+    setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId(""); setImportOpen(false);
+    loadSession();
     load();
+  };
+
+  // ===== Kirim sessiyasi (Nakladnoy) =====
+  const loadSession = async () => {
+    if (!user?.id) return;
+    const s = await getOpenSession(user.id);
+    setOpenSession(s);
+    if (s) {
+      const { data } = await supabase.from("intake_items").select("*").eq("session_id", s.id).order("created_at");
+      setSessionItems((data as any) ?? []);
+    } else setSessionItems([]);
+  };
+
+  const removeSessionItem = async (id: string) => {
+    const { error } = await supabase.from("intake_items").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    loadSession();
+  };
+
+  const doFinishSession = async () => {
+    if (!openSession) return;
+    if (sessionItems.length === 0) { toast.error("Avval mahsulot qo'shing"); return; }
+    try {
+      await finishSession(openSession.id);
+      await logAudit(supabase, {
+        actor_id: user?.id, actor_name: user?.email,
+        action: "Kirim tugatildi", entity: "intake_session",
+        details: `Nakladnoy ${intakeCode(openSession)} · ${sessionItems.length} mahsulot · ${fmt(itemsTotal(sessionItems as any))}`,
+      });
+      toast.success("Kirim tugatildi — Nakladnoy bo'limida rasm yuklang va yakunlang");
+      loadSession();
+    } catch (e: any) { toast.error(e.message ?? "Xatolik"); }
   };
 
   const openEditProduct = (p: any) => {
