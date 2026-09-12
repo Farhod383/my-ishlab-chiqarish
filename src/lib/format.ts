@@ -43,6 +43,19 @@ export function fmtDuration(minutes: number | null | undefined): string {
   return parts.join(" ");
 }
 
+/**
+ * Display-only: rewrites legacy raw-minute strings like "2541 daq." or
+ * "90 daqiqa" inside stored notification/audit text to the readable
+ * "1 kun 18 soat 21 daqiqa" form. Stored values are never changed.
+ */
+export function fmtLegacyDurations(text: string | null | undefined): string {
+  if (!text) return "";
+  return String(text).replace(/(\d[\d\s.,]*)\s*daq\.?/gi, (_, raw) => {
+    const n = Number(String(raw).replace(/[\s.,]/g, ""));
+    return Number.isFinite(n) ? fmtDuration(n) : raw;
+  });
+}
+
 
 export function fmtNum(n: number | string | null | undefined, opts?: { decimals?: number }): string {
   if (n === null || n === undefined || n === "") return "0";
