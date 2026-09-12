@@ -103,6 +103,11 @@ export default function WarehousePage() {
   const [naklFile, setNaklFile] = useState<File | null>(null);
   const [naklBusy, setNaklBusy] = useState(false);
 
+  // Mahsulotni o'chirish tasdig'i
+  const [delTarget, setDelTarget] = useState<{ ids: string[]; name: string; qty: number; unit: string } | null>(null);
+  const [delBusy, setDelBusy] = useState(false);
+
+
   // Cross-order release confirmation
   const [crossOpen, setCrossOpen] = useState(false);
   const [crossReason, setCrossReason] = useState("");
