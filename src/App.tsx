@@ -33,6 +33,7 @@ import ServicePage from "./pages/ServicePage";
 import ClientsPage from "./pages/ClientsPage";
 import ClientDetail from "./pages/ClientDetail";
 import FaceIdPage from "./pages/FaceIdPage";
+import BusinessTripsPage from "./pages/BusinessTripsPage";
 import NotFound from "./pages/NotFound";
 
 
@@ -78,6 +79,7 @@ const App = () => (
                       <Route path="/reports" element={<ProtectedRoute roles={["admin"]}><ReportsPage /></ProtectedRoute>} />
                       <Route path="/supply" element={<ProtectedRoute><SupplyRequestsPage /></ProtectedRoute>} />
                       <Route path="/low-stock" element={<LowStockPage />} />
+                      <Route path="/trips" element={<BusinessTripsPage />} />
                       
                       <Route path="*" element={<NotFound />} />
                     </Routes>
