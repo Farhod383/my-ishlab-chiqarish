@@ -14,6 +14,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { AlertTriangle, Package, ArrowDownToLine, ArrowUpFromLine, ArrowDownCircle, ArrowUpCircle, History, Plus, PackageMinus, Pencil, Check, ChevronsUpDown, Trash2, Search, ChevronDown, Factory, ClipboardList, ShoppingCart } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n, useLocalize } from "@/i18n/context";
@@ -100,6 +102,11 @@ export default function WarehousePage() {
   const [sessionItems, setSessionItems] = useState<IntakeItem[]>([]);
   const [naklFile, setNaklFile] = useState<File | null>(null);
   const [naklBusy, setNaklBusy] = useState(false);
+
+  // Mahsulotni o'chirish tasdig'i
+  const [delTarget, setDelTarget] = useState<{ ids: string[]; name: string; qty: number; unit: string } | null>(null);
+  const [delBusy, setDelBusy] = useState(false);
+
 
   // Cross-order release confirmation
   const [crossOpen, setCrossOpen] = useState(false);
@@ -613,19 +620,25 @@ export default function WarehousePage() {
     setEditMovOpen(false); setEditMov(null); load();
   };
 
-  const deleteProduct = async (p: any) => {
-    if (!window.confirm(`${t.common.delete ?? "O'chirish"}: ${p.name}?`)) return;
-    const { error } = await supabase.from("products").delete().eq("id", p.id);
+  const confirmDeleteProduct = async () => {
+    if (!delTarget) return;
+    if (!ensureOnline((m) => toast.error(m))) return;
+    setDelBusy(true);
+    const { error } = await supabase.from("products").delete().in("id", delTarget.ids);
+    setDelBusy(false);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: user?.email,
       action: "Mahsulot o'chirildi", entity: "product",
-      details: `${p.name} (stock: ${p.stock_qty} ${p.unit})`,
+      details: `${delTarget.name} (${delTarget.ids.length} partiya, qoldiq: ${delTarget.qty} ${delTarget.unit})`,
     });
-    toast.success(t.common.delete ?? "O'chirildi");
-    if (selectedProduct?.id === p.id) setSelectedProduct(null);
-    load();
+    toast.success("Mahsulot o'chirildi");
+    if (delTarget.ids.includes(selectedProduct?.id)) setSelectedProduct(null);
+    setProducts((prev) => prev.filter((p: any) => !delTarget.ids.includes(p.id)));
+    setDelTarget(null);
+    await load();
   };
+
 
   const deleteMovement = async (m: any) => {
     if (!window.confirm(`${t.common.delete ?? "O'chirish"}: ${m.product?.name ?? ""} ${m.direction === "in" ? "+" : "-"}${m.quantity}?`)) return;
@@ -976,7 +989,16 @@ export default function WarehousePage() {
             </>
           )}
           {canImport && (
-            <Dialog open={importOpen} onOpenChange={setImportOpen}>
+            <Dialog open={importOpen} onOpenChange={(o) => {
+              setImportOpen(o);
+              if (o) {
+                // Har safar toza holatdan: eski draft/cache tozalanadi, sessiya qayta o'qiladi
+                setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice("");
+                setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId("");
+                setNaklFile(null);
+                loadSession();
+              }
+            }}>
               <DialogTrigger asChild><Button variant="secondary"><ArrowUpCircle className="h-4 w-4 mr-2" />{t.supply.receive}</Button></DialogTrigger>
               <DialogContent className="max-w-lg max-h-[90vh] flex flex-col p-0 gap-0">
                 <DialogHeader className="px-6 pt-6 pb-3 border-b shrink-0"><DialogTitle>{t.supply.receiveTitle}</DialogTitle></DialogHeader>
@@ -1435,9 +1457,10 @@ export default function WarehousePage() {
                                 <Button size="sm" variant="ghost" title={t.common.edit ?? "Tahrirlash"} onClick={() => openEditProduct(r.first)}>
                                   <Pencil className="h-3.5 w-3.5" />
                                 </Button>
-                                <Button size="sm" variant="ghost" title={t.common.delete ?? "O'chirish"} onClick={() => deleteProduct(r.first)}>
+                                <Button size="sm" variant="ghost" title={t.common.delete ?? "O'chirish"} onClick={() => setDelTarget({ ids: r.batches.map((b: any) => b.id), name: r.first.name, qty: r.totalQty, unit: r.first.unit })}>
                                   <Trash2 className="h-3.5 w-3.5 text-status-red" />
                                 </Button>
+
                               </div>
                             </TableCell>
                           )}
@@ -1840,7 +1863,31 @@ export default function WarehousePage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!delTarget} onOpenChange={(o) => { if (!o) setDelTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mahsulotni o'chirish</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="font-semibold">{delTarget?.name}</span> o'chirilsinmi?
+              {delTarget && delTarget.ids.length > 1 ? ` Barcha ${delTarget.ids.length} partiya o'chiriladi.` : ""}
+              {" "}Joriy qoldiq: {delTarget?.qty} {delTarget?.unit}. Bu amalni ortga qaytarib bo'lmaydi, harakatlar tarixi saqlanadi.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={delBusy}>Bekor qilish</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={delBusy}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => { e.preventDefault(); confirmDeleteProduct(); }}
+            >
+              O'chirish
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+
   );
 }
 
