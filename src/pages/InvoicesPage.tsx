@@ -115,7 +115,7 @@ export default function InvoicesPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2"><FileText className="h-6 w-6 text-primary" /> Nakladnoy</h1>
-          <p className="text-sm text-muted-foreground">Kirim sessiyalari — rasm yuklanib yakunlangandan keyin skladga kirim bo'ladi</p>
+          <p className="text-sm text-muted-foreground">Yakunlangan Nakladnoylar tarixi ({sessions.length})</p>
         </div>
         <div className="relative w-full sm:w-72">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -123,15 +123,8 @@ export default function InvoicesPage() {
         </div>
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
-        <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="all">Barchasi ({sessions.length})</TabsTrigger>
-          <TabsTrigger value="open">Kirim davom etmoqda ({sessions.filter(s => s.status === "open").length})</TabsTrigger>
-          <TabsTrigger value="pending_photo">Rasm kutilmoqda ({sessions.filter(s => s.status === "pending_photo").length})</TabsTrigger>
-          <TabsTrigger value="finalized">Yakunlangan ({sessions.filter(s => s.status === "finalized").length})</TabsTrigger>
-        </TabsList>
+      <div className="mt-4">
 
-        <TabsContent value={tab} className="mt-4">
           <Card>
             <CardHeader className="pb-3"><CardTitle className="text-base">Nakladnoylar ro'yxati</CardTitle></CardHeader>
             <CardContent className="p-0">
@@ -177,8 +170,6 @@ export default function InvoicesPage() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
 
       <Dialog open={!!openId} onOpenChange={(o) => { if (!o) { setOpenId(null); setImgFile(null); } }}>
         <DialogContent className="max-w-3xl p-0 gap-0">
