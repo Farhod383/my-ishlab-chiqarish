@@ -118,6 +118,124 @@ export type Database = {
           },
         ]
       }
+      business_trip_expenses: {
+        Row: {
+          amount: number
+          comment: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          id: string
+          item_name: string
+          receipt_url: string | null
+          spent_at: string
+          trip_id: string
+        }
+        Insert: {
+          amount?: number
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          item_name: string
+          receipt_url?: string | null
+          spent_at?: string
+          trip_id: string
+        }
+        Update: {
+          amount?: number
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          item_name?: string
+          receipt_url?: string | null
+          spent_at?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_trip_expenses_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "business_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_trips: {
+        Row: {
+          assignee_user_id: string | null
+          cash_expense_id: string | null
+          comment: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          destination: string
+          distance_km: number
+          employee_id: string | null
+          employee_name: string
+          end_date: string | null
+          given_amount: number
+          id: string
+          purpose: string | null
+          returned_amount: number
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_user_id?: string | null
+          cash_expense_id?: string | null
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          destination: string
+          distance_km?: number
+          employee_id?: string | null
+          employee_name: string
+          end_date?: string | null
+          given_amount?: number
+          id?: string
+          purpose?: string | null
+          returned_amount?: number
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_user_id?: string | null
+          cash_expense_id?: string | null
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          destination?: string
+          distance_km?: number
+          employee_id?: string | null
+          employee_name?: string
+          end_date?: string | null
+          given_amount?: number
+          id?: string
+          purpose?: string | null
+          returned_amount?: number
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_trips_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cash_expenses: {
         Row: {
           amount: number
@@ -1866,6 +1984,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_manage_trips: { Args: { _user_id: string }; Returns: boolean }
       has_any_role: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
@@ -1878,6 +1997,7 @@ export type Database = {
         Args: { _conv: string; _user: string }
         Returns: boolean
       }
+      is_my_trip: { Args: { _trip: string; _user: string }; Returns: boolean }
     }
     Enums: {
       app_role:

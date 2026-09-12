@@ -1,4 +1,4 @@
-import { LayoutDashboard, ClipboardList, Factory, Warehouse, ShieldCheck, LogOut, MessageSquare, History, UserCog, Users, Wallet, RotateCcw, AlertOctagon, FileBarChart, Truck, Wrench, Contact, ScanFace } from "lucide-react";
+import { LayoutDashboard, ClipboardList, Factory, Warehouse, ShieldCheck, LogOut, MessageSquare, History, UserCog, Users, Wallet, RotateCcw, AlertOctagon, FileBarChart, Truck, Wrench, Contact, ScanFace, Plane } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -38,13 +38,21 @@ export function AppSidebar() {
     { title: t.nav.hr, url: "/hr", icon: Users, roles: ["hr", "admin", "cashier"] },
     { title: (t.nav as any).faceId ?? "Face_id (Davomat)", url: "/face-id", icon: ScanFace, roles: ["hr", "admin"] },
     { title: t.nav.kassa, url: "/kassa", icon: Wallet, roles: ["cashier", "admin"] },
+    { title: "Kamandirovka", url: "/trips", icon: Plane },
     { title: t.nav.chat, url: "/chat", icon: MessageSquare },
     { title: t.nav.reports, url: "/reports", icon: FileBarChart, roles: ["admin"] },
     { title: t.nav.audit, url: "/audit", icon: History, roles: ["admin"] },
   ];
 
   const engineerAllowed = new Set(["/", "/orders", "/production", "/warehouse", "/supply", "/chat"]);
-  const items = isEngineerOnly ? allItems.filter((i) => engineerAllowed.has(i.url)) : allItems;
+  // Oddiy xodim faqat o'ziga tegishli bo'limlarni ko'radi.
+  const isWorkerOnly = roles.length > 0 && roles.every((r) => r === "worker");
+  const workerAllowed = new Set(["/trips", "/chat"]);
+  const items = isEngineerOnly
+    ? allItems.filter((i) => engineerAllowed.has(i.url))
+    : isWorkerOnly
+      ? allItems.filter((i) => workerAllowed.has(i.url))
+      : allItems;
 
   // Per-role sidebar visibility overrides (does not affect permissions/routes)
   const isAdmin = roles.includes("admin");
