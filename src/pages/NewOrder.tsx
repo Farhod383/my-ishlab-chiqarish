@@ -290,7 +290,8 @@ export default function NewOrder() {
             <div><Label>{t.newOrder.orderNumber}</Label><Input value={orderNumber} onChange={(e) => setOrderNumber(e.target.value)} /></div>
             <div>
               <Label>{t.newOrder.clientName}</Label>
-              <Input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder={t.newOrder.clientPlaceholder} />
+              <Input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder={t.newOrder.clientPlaceholder} disabled={!!lockedClientId} />
+              {lockedClientId && <p className="mt-1 text-xs text-muted-foreground">Klient CRM kartasidan tanlandi</p>}
             </div>
             <div className="sm:col-span-2"><Label>{t.newOrder.productType}</Label><Input value={productName} onChange={(e) => setProductName(e.target.value)} placeholder={t.newOrder.productPlaceholder} /></div>
             <div><Label>{t.newOrder.quantity}</Label><Input type="number" min={1} value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} /></div>
