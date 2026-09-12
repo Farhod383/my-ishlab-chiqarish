@@ -170,6 +170,9 @@ export default function InvoicesPage() {
               </div>
             </CardContent>
           </Card>
+      </div>
+
+
 
       <Dialog open={!!openId} onOpenChange={(o) => { if (!o) { setOpenId(null); setImgFile(null); } }}>
         <DialogContent className="max-w-3xl p-0 gap-0">
