@@ -1374,6 +1374,7 @@ export default function WarehousePage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-12 text-right">№</TableHead>
+                      <TableHead>Nakladnoy</TableHead>
                       <TableHead>{t.warehouse.cols.datetime}</TableHead>
                       <TableHead>{t.warehouse.cols.direction}</TableHead>
                       <TableHead>{t.warehouse.cols.product}</TableHead>
