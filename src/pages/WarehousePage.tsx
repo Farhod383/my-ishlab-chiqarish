@@ -1132,6 +1132,66 @@ export default function WarehousePage() {
         })}
       </div>
 
+      {openSession && (
+        <Card className="border-status-yellow/40 bg-status-yellow/5">
+          <CardHeader className="pb-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ArrowDownToLine className="h-4 w-4 text-status-yellow" />
+                  Ochiq kirim — Nakladnoy <span className="font-mono">{intakeCode(openSession)}</span>
+                </CardTitle>
+                <CardDescription>
+                  Boshlangan: {fmtDateTime24(openSession.started_at)} · {sessionItems.length} mahsulot · Jami: {fmt(itemsTotal(sessionItems as any))}
+                  {openSession.supplier ? ` · Olib keldi: ${openSession.supplier}` : ""}
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" asChild><Link to="/invoices">Nakladnoy bo'limi</Link></Button>
+                <Button size="sm" onClick={doFinishSession} disabled={sessionItems.length === 0}>Kirimni tugatish</Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto max-h-[40vh] overflow-y-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>№</TableHead>
+                    <TableHead>Mahsulot</TableHead>
+                    <TableHead className="text-right">Miqdor</TableHead>
+                    <TableHead className="text-right">Narx</TableHead>
+                    <TableHead>Valyuta</TableHead>
+                    <TableHead className="text-right">Jami</TableHead>
+                    <TableHead>Vaqt</TableHead>
+                    <TableHead />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sessionItems.length === 0 && (
+                    <TableRow><TableCell colSpan={8} className="text-center py-6 text-muted-foreground">Mahsulot qo'shing — "Mahsulot kirimi"</TableCell></TableRow>
+                  )}
+                  {sessionItems.map((i, idx) => (
+                    <TableRow key={i.id}>
+                      <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
+                      <TableCell className="font-medium">{i.product_name}</TableCell>
+                      <TableCell className="text-right font-mono">{fmt(Number(i.quantity))} {i.unit}</TableCell>
+                      <TableCell className="text-right font-mono">{fmt(Number(i.unit_price))}</TableCell>
+                      <TableCell>{i.currency}</TableCell>
+                      <TableCell className="text-right font-mono font-semibold">{fmt(Number(i.quantity) * Number(i.unit_price))}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{fmtDateTime24(i.created_at)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => removeSessionItem(i.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Tabs defaultValue="stock">
         <TabsList>
           <TabsTrigger value="stock">{t.warehouse.tabs.stock}</TabsTrigger>
