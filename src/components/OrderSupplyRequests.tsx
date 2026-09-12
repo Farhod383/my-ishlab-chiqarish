@@ -145,7 +145,14 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3">
-        <CardTitle className="text-sm flex items-center gap-2"><Package className="h-4 w-4" /> Kerakli mahsulotlar</CardTitle>
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Package className="h-4 w-4" /> Kerakli mahsulotlar
+          {unreadNotifs.length > 0 && (
+            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-status-red px-1.5 text-[11px] font-bold leading-none text-status-red-foreground">
+              {unreadNotifs.length}
+            </span>
+          )}
+        </CardTitle>
         {canAdd && (
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
             <DialogTrigger asChild>
