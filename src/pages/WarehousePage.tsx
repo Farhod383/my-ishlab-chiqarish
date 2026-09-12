@@ -324,9 +324,10 @@ export default function WarehousePage() {
       action: "Mahsulot qo'shildi", entity: "product",
       details: `${newName.trim()}${qtyN > 0 ? `: +${qtyN} ${newUnit}` : ""}`,
     });
-    toast.success(t.warehouse.productAdded);
+    toast.success(qtyN > 0 ? "Mahsulot qo'shildi — miqdor Nakladnoyga yozildi" : t.warehouse.productAdded);
     setNewName(""); setNewQty(""); setNewUnit("dona"); setNewPrice(""); setNewMin(""); setNewPhone(""); setNewSource(""); setNewSupplier(""); setNewImage(null);
     setAddOpen(false);
+    loadSession();
     load();
   };
 

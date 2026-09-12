@@ -137,6 +137,7 @@ export default function InvoicesPage() {
                       <TableHead>Tugagan</TableHead>
                       <TableHead>Davomiyligi</TableHead>
                       <TableHead>Kim kiritgan</TableHead>
+                      <TableHead>Yetkazib beruvchi</TableHead>
                       <TableHead>Rasm</TableHead>
                     </TableRow>
                   </TableHeader>
