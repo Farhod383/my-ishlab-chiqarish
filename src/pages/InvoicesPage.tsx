@@ -1,48 +1,51 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/auth/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FileText, Image as ImageIcon, CheckCircle2, Clock, Search } from "lucide-react";
-import { toast } from "sonner";
 import { fmtNum } from "@/lib/format";
 import { fmtDateTime24 } from "@/lib/format";
 import {
-  INTAKE_STATUS_META, finalizeSession, intakeCode, intakeDuration, itemsTotal,
-  type IntakeItem, type IntakeSession, type IntakeStatus,
+  INTAKE_STATUS_META, intakeCode, intakeDuration, itemsTotal,
+  type IntakeItem, type IntakeSession,
 } from "@/lib/intake";
 
 const fmt = (n: number) => fmtNum(n);
 
 export default function InvoicesPage() {
-  const { user } = useAuth() as any;
   const [sessions, setSessions] = useState<IntakeSession[]>([]);
   const [items, setItems] = useState<IntakeItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"all" | IntakeStatus>("all");
   const [q, setQ] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
-  const [imgFile, setImgFile] = useState<File | null>(null);
-  const [busy, setBusy] = useState(false);
+
 
   const load = async () => {
     setLoading(true);
-    const [{ data: s }, { data: it }] = await Promise.all([
-      supabase.from("intake_sessions").select("*").order("started_at", { ascending: false }).limit(300),
-      supabase.from("intake_items").select("*").order("created_at", { ascending: true }),
-    ]);
-    setSessions((s as any) ?? []);
-    setItems((it as any) ?? []);
+    // Faqat haqiqiy yakunlangan Nakladnoylar — draft/vaqtinchalik kirimlar ko'rsatilmaydi
+    const { data: s } = await supabase
+      .from("intake_sessions").select("*")
+      .eq("status", "finalized")
+      .order("finalized_at", { ascending: false })
+      .limit(300);
+    const list = ((s as any[]) ?? []) as IntakeSession[];
+    const ids = list.map((x) => x.id);
+    let it: any[] = [];
+    if (ids.length) {
+      const { data } = await supabase.from("intake_items").select("*").in("session_id", ids).order("created_at", { ascending: true });
+      it = (data as any[]) ?? [];
+    }
+    setSessions(list);
+    setItems(it as any);
     setLoading(false);
   };
 
   useEffect(() => { load(); }, []);
+
 
   const itemsBySession = useMemo(() => {
     const m: Record<string, IntakeItem[]> = {};
@@ -53,8 +56,8 @@ export default function InvoicesPage() {
   const rows = useMemo(() => {
     const term = q.trim().toLowerCase();
     return sessions.filter((s) => {
-      if (tab !== "all" && s.status !== tab) return false;
       if (!term) return true;
+
       const list = itemsBySession[s.id] ?? [];
       return (
         intakeCode(s).toLowerCase().includes(term) ||
@@ -63,49 +66,18 @@ export default function InvoicesPage() {
         list.some((i) => i.product_name.toLowerCase().includes(term))
       );
     });
-  }, [sessions, tab, q, itemsBySession]);
+  }, [sessions, q, itemsBySession]);
 
   const current = sessions.find((s) => s.id === openId) ?? null;
   const currentItems = openId ? (itemsBySession[openId] ?? []) : [];
 
-  const uploadImage = async () => {
-    if (!current || !imgFile) return;
-    setBusy(true);
-    try {
-      const ext = imgFile.name.split(".").pop();
-      const path = `nakladnoy/${crypto.randomUUID()}.${ext}`;
-      const up = await supabase.storage.from("product-images").upload(path, imgFile);
-      if (up.error) throw up.error;
-      const url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
-      const { error } = await supabase.from("intake_sessions").update({ image_url: url } as any).eq("id", current.id);
-      if (error) throw error;
-      setImgFile(null);
-      toast.success("Nakladnoy rasmi yuklandi");
-      await load();
-    } catch (e: any) {
-      toast.error(e.message ?? "Rasm yuklashda xatolik");
-    } finally { setBusy(false); }
-  };
-
-  const doFinalize = async () => {
-    if (!current) return;
-    if (!current.image_url) { toast.error("Avval nakladnoy rasmini yuklang"); return; }
-    setBusy(true);
-    try {
-      await finalizeSession(current.id);
-      toast.success("Nakladnoy yakunlandi — mahsulotlar skladga kirim qilindi");
-      await load();
-    } catch (e: any) {
-      toast.error(e.message ?? "Yakunlashda xatolik");
-    } finally { setBusy(false); }
-  };
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2"><FileText className="h-6 w-6 text-primary" /> Nakladnoy</h1>
-          <p className="text-sm text-muted-foreground">Kirim sessiyalari — rasm yuklanib yakunlangandan keyin skladga kirim bo'ladi</p>
+          <p className="text-sm text-muted-foreground">Yakunlangan Nakladnoylar tarixi ({sessions.length})</p>
         </div>
         <div className="relative w-full sm:w-72">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -113,15 +85,8 @@ export default function InvoicesPage() {
         </div>
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
-        <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="all">Barchasi ({sessions.length})</TabsTrigger>
-          <TabsTrigger value="open">Kirim davom etmoqda ({sessions.filter(s => s.status === "open").length})</TabsTrigger>
-          <TabsTrigger value="pending_photo">Rasm kutilmoqda ({sessions.filter(s => s.status === "pending_photo").length})</TabsTrigger>
-          <TabsTrigger value="finalized">Yakunlangan ({sessions.filter(s => s.status === "finalized").length})</TabsTrigger>
-        </TabsList>
+      <div className="mt-4">
 
-        <TabsContent value={tab} className="mt-4">
           <Card>
             <CardHeader className="pb-3"><CardTitle className="text-base">Nakladnoylar ro'yxati</CardTitle></CardHeader>
             <CardContent className="p-0">
@@ -148,7 +113,7 @@ export default function InvoicesPage() {
                       const list = itemsBySession[s.id] ?? [];
                       const meta = INTAKE_STATUS_META[s.status];
                       return (
-                        <TableRow key={s.id} className="cursor-pointer hover:bg-muted/50" onClick={() => { setOpenId(s.id); setImgFile(null); }}>
+                        <TableRow key={s.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setOpenId(s.id)}>
                           <TableCell className="font-mono font-semibold whitespace-nowrap">{intakeCode(s)}</TableCell>
                           <TableCell><Badge variant="outline" className={meta.cls}>{meta.label}</Badge></TableCell>
                           <TableCell className="text-right">{list.length}</TableCell>
@@ -167,10 +132,11 @@ export default function InvoicesPage() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+      </div>
 
-      <Dialog open={!!openId} onOpenChange={(o) => { if (!o) { setOpenId(null); setImgFile(null); } }}>
+
+
+      <Dialog open={!!openId} onOpenChange={(o) => { if (!o) setOpenId(null); }}>
         <DialogContent className="max-w-3xl p-0 gap-0">
           {current && (
             <>
@@ -227,32 +193,21 @@ export default function InvoicesPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Nakladnoy rasmi {current.status !== "finalized" && <span className="text-destructive">*</span>}</Label>
+                  <Label>Nakladnoy rasmi</Label>
                   {current.image_url ? (
                     <a href={current.image_url} target="_blank" rel="noreferrer">
                       <img src={current.image_url} alt={`Nakladnoy ${intakeCode(current)}`} className="max-h-48 rounded border" />
                     </a>
                   ) : (
-                    <p className="text-xs text-muted-foreground">Rasm yuklanmagan — yakunlash uchun majburiy</p>
-                  )}
-                  {current.status !== "finalized" && (
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <Input type="file" accept="image/*" onChange={(e) => setImgFile(e.target.files?.[0] ?? null)} />
-                      <Button variant="outline" disabled={!imgFile || busy} onClick={uploadImage}>Rasmni yuklash</Button>
-                    </div>
+                    <p className="text-xs text-muted-foreground">Rasm yo'q</p>
                   )}
                 </div>
               </div>
 
-              <div className="px-6 py-4 border-t bg-background shrink-0 flex flex-col sm:flex-row gap-2 justify-end">
-                {current.status === "finalized" ? (
-                  <div className="flex items-center gap-2 text-status-green text-sm"><CheckCircle2 className="h-4 w-4" /> Skladga kirim qilingan</div>
-                ) : (
-                  <Button disabled={!current.image_url || busy || current.status === "open" || currentItems.length === 0} onClick={doFinalize}>
-                    {current.status === "open" ? "Avval kirimni tugating" : "Yakunlash (skladga kirim)"}
-                  </Button>
-                )}
+              <div className="px-6 py-4 border-t bg-background shrink-0 flex justify-end">
+                <div className="flex items-center gap-2 text-status-green text-sm"><CheckCircle2 className="h-4 w-4" /> Skladga kirim qilingan</div>
               </div>
+
             </>
           )}
         </DialogContent>

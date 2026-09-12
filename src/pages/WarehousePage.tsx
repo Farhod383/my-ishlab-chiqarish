@@ -32,7 +32,7 @@ import { getStockStatus, stockStatusMeta, StockDot, type StockStatus } from "@/l
 import { useEmployees } from "@/hooks/useEmployees";
 import { Link } from "react-router-dom";
 import { fmtDateTime24 } from "@/lib/format";
-import { getOpenSession, getOrStartSession, finishSession, finalizeSession, intakeCode, itemsTotal, type IntakeSession, type IntakeItem } from "@/lib/intake";
+import { getOpenSession, getOrStartSession, finishSession, finalizeSession, discardDraftSessions, intakeCode, itemsTotal, type IntakeSession, type IntakeItem } from "@/lib/intake";
 
 const UNITS = ["dona", "kg", "metr", "litr", "rulon", "komplekt"] as const;
 const CURRENCIES = ["UZS", "USD"] as const;
@@ -148,7 +148,8 @@ export default function WarehousePage() {
     load();
     supabase.from("locations").select("id, name").order("name").then(({ data }) => setLocations(data ?? []));
   }, []);
-  useEffect(() => { loadSession(); }, [user?.id]);
+  // Sahifa ochilganda/refreshda eski draft Nakladnoylar to'liq tozalanadi
+  useEffect(() => { purgeDrafts(); }, [user?.id]);
 
   const canManage = hasRole(["warehouse", "admin"]);
   const canImport = hasRole(["warehouse", "admin"]);
@@ -461,6 +462,14 @@ export default function WarehousePage() {
       setSessionItems((data as any) ?? []);
     } else setSessionItems([]);
   };
+
+  /** Tugatilmagan draft Nakladnoylarni o'chirib, toza holatdan boshlash */
+  const purgeDrafts = async () => {
+    if (!user?.id) return;
+    try { await discardDraftSessions(user.id); } catch { /* ignore */ }
+    setOpenSession(null); setSessionItems([]); setNaklFile(null);
+  };
+
 
   const removeSessionItem = async (id: string) => {
     const { error } = await supabase.from("intake_items").delete().eq("id", id);
@@ -991,14 +1000,13 @@ export default function WarehousePage() {
           {canImport && (
             <Dialog open={importOpen} onOpenChange={(o) => {
               setImportOpen(o);
-              if (o) {
-                // Har safar toza holatdan: eski draft/cache tozalanadi, sessiya qayta o'qiladi
-                setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice("");
-                setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId("");
-                setNaklFile(null);
-                loadSession();
-              }
+              setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice("");
+              setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId("");
+              setNaklFile(null);
+              // Ochilganda ham, yopilganda ham tugatilmagan draft Nakladnoy tozalanadi
+              purgeDrafts();
             }}>
+
               <DialogTrigger asChild><Button variant="secondary"><ArrowUpCircle className="h-4 w-4 mr-2" />{t.supply.receive}</Button></DialogTrigger>
               <DialogContent className="max-w-lg max-h-[90vh] flex flex-col p-0 gap-0">
                 <DialogHeader className="px-6 pt-6 pb-3 border-b shrink-0"><DialogTitle>{t.supply.receiveTitle}</DialogTitle></DialogHeader>
