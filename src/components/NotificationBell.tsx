@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useNotifications, type Notif } from "@/notifications/NotificationsContext";
 import { NOTIF_MODULES, MODULE_BY_KEY, resolveModule, resolveLink, type NotifModuleKey } from "@/lib/notifModules";
+import { fmtTime24, fmtDateTime24, fmtLegacyDurations } from "@/lib/format";
 
 const TYPE_DOT: Record<string, string> = {
   otk_approved: "bg-status-green",
@@ -27,9 +28,7 @@ const fmtTime = (iso: string) => {
   const d = new Date(iso);
   const today = new Date();
   const sameDay = d.toDateString() === today.toDateString();
-  return sameDay
-    ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    : `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+  return sameDay ? fmtTime24(iso) : fmtDateTime24(iso);
 };
 
 export function NotificationBell() {
@@ -174,7 +173,7 @@ export function NotificationBell() {
                 <span className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${TYPE_DOT[n.type] ?? "bg-muted-foreground"}`} />
                 <div className="min-w-0 flex-1">
                   <div className={`text-sm truncate ${n.read_at ? "font-medium" : "font-semibold"}`}>{n.title}</div>
-                  {n.body && <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{n.body}</div>}
+                  {n.body && <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{fmtLegacyDurations(n.body)}</div>}
                   <div className="text-[11px] text-muted-foreground/80 mt-1.5 flex flex-wrap items-center gap-x-2">
                     <span>{fmtTime(n.created_at)}</span>
                     {n.sender_name && <span>· {n.sender_name}</span>}
