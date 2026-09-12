@@ -69,6 +69,7 @@ const App = () => (
                       <Route path="/production" element={<ProductionBoard />} />
                       <Route path="/otk" element={<ProtectedRoute roles={["otk","admin"]}><OtkPage /></ProtectedRoute>} />
                       <Route path="/warehouse" element={<WarehousePage />} />
+                      <Route path="/invoices" element={<ProtectedRoute roles={["admin","warehouse","supply"]}><InvoicesPage /></ProtectedRoute>} />
                       <Route path="/chat" element={<ChatPage />} />
                       <Route path="/nachalnik" element={<ProtectedRoute roles={["manager","admin"]}><NachalnikPage /></ProtectedRoute>} />
                       <Route path="/service" element={<ProtectedRoute roles={["manager","admin"]}><ServicePage /></ProtectedRoute>} />
