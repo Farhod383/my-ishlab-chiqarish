@@ -98,6 +98,8 @@ export default function WarehousePage() {
   // Kirim sessiyasi (Nakladnoy)
   const [openSession, setOpenSession] = useState<IntakeSession | null>(null);
   const [sessionItems, setSessionItems] = useState<IntakeItem[]>([]);
+  const [naklFile, setNaklFile] = useState<File | null>(null);
+  const [naklBusy, setNaklBusy] = useState(false);
 
   // Cross-order release confirmation
   const [crossOpen, setCrossOpen] = useState(false);
