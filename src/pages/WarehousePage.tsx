@@ -124,7 +124,7 @@ export default function WarehousePage() {
     const [p, o, m] = await Promise.all([
       supabase.from("products").select("*").order("name"),
       supabase.from("orders").select("id, order_number, product_name").neq("status", "completed"),
-      supabase.from("stock_movements").select("*, product:products(name, unit), order:orders(order_number, product_name)").order("created_at", { ascending: false }).limit(200),
+      supabase.from("stock_movements").select("*, product:products(name, unit), order:orders(order_number, product_name), intake_session:intake_sessions(id, started_at, finished_at, supplier, created_by_name)").order("created_at", { ascending: false }).limit(200),
     ]);
     setProducts(p.data ?? []); setOrders(o.data ?? []); setMovements(m.data ?? []);
     const ids = Array.from(new Set((m.data ?? []).map((x: any) => x.created_by).filter(Boolean)));
