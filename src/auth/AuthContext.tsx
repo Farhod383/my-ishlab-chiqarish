@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "admin" | "marketing" | "manager" | "warehouse" | "supply" | "otk" | "hr" | "cashier" | "chief_accountant" | "engineer";
+export type AppRole = "admin" | "marketing" | "manager" | "warehouse" | "supply" | "otk" | "hr" | "cashier" | "chief_accountant" | "engineer" | "worker";
 
 // Role inheritance (mirrors the backend has_role() function):
 // chief_accountant (Glavniy buxgalter) automatically has every cashier permission.
