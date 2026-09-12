@@ -92,7 +92,7 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
       type: "supply_request",
       title: `Yangi ta'minot so'rovi — ${orderNumber}`,
       body: `${name} · ${qty} ${unit ?? ""}${date ? ` · kerak: ${date}` : ""}`,
-      link: `/supply`,
+      link: `/orders/${orderId}`,
       entity: "supply_request",
       recipient_role: ["supply", "warehouse"],
       sender_id: user?.id,
