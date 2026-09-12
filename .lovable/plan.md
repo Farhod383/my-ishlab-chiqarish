@@ -1,43 +1,51 @@
-# Nakladnoy moduli (Sklad kirimi)
+# Nakladnoy moduli (avtomatik kirim sessiyasi)
 
-Sklad kirimi endi nakladnoy orqali yig'iladi: bitta nakladnoyga bir nechta mahsulot qo'shiladi, rasm yuklanadi, "Tugatdim" bosilgandan keyingina barcha mahsulotlar sklad qoldig'iga tushadi.
+Nakladnoy oldindan qo'lda yaratilmaydi. Sklad kirimi boshlanganda sessiya avtomatik ochiladi, tugatilgandan keyin Nakladnoy bo'limida paydo bo'ladi, rasm yuklanib yakunlangandan keyingina qoldiqqa tushadi.
 
-## 1. Chap menyu
-- Sklad ostiga yangi "Nakladnoy" bo'limi qo'shiladi.
-- Faqat Admin, Sklad va Ta'minot ko'radi (menyu + sahifa himoyasi).
+## 1. Kirim sessiyasi avtomatik boshlanadi
+- Sklad → "Mahsulot kirimi" bosilib birinchi mahsulot saqlanganda ochiq sessiya bo'lmasa, yangi sessiya avtomatik boshlanadi va boshlanish vaqti o'sha payt yoziladi (masalan 12.09.2026 10:00).
+- Foydalanuvchi oddiy tarzda kiritadi: mahsulot → miqdor → narx → valyuta (+ mavjud ixtiyoriy maydonlar: zavod, zakaz, manba, telefon).
+- "Kim olib keldi" — faqat Davronxo'ja / Sanjar tanlanadigan ro'yxat.
 
-## 2. Nakladnoy ish jarayoni
-- "Yangi nakladnoy" tugmasi bosilganda nakladnoy ochiladi va boshlangan vaqt avtomatik yoziladi.
-- Ochiq nakladnoy ichiga istalgancha mahsulot qo'shiladi: mahsulot nomi (mavjudlardan tanlash yoki yangi nom), valyuta, narx, miqdor, jami summa avtomatik hisoblanadi.
-- Har bir qo'shilgan mahsulot ro'yxatda ko'rinadi, o'chirish mumkin.
-- "Kim olib keldi" — faqat Davronxo'ja / Sanjar tanlanadigan ro'yxat, bazaga saqlanadi.
+## 2. Bitta kelish = bitta sessiya
+- Ochiq sessiya mavjud bo'lsa, keyingi barcha mahsulotlar o'sha sessiyaga biriktiriladi (10:00, 10:05, 10:12, 10:25 — hammasi bitta sessiya).
+- Sklad sahifasida ochiq sessiya paneli ko'rinadi: boshlangan vaqt, kiritilgan mahsulotlar ro'yxati, jami miqdor va summa, qatorni o'chirish imkoni.
 
-## 3. Yakunlash
-- Nakladnoy rasmi majburiy: rasm yuklanmaguncha "Tugatdim" tugmasi ishlamaydi.
-- "Tugatdim" bosilganda: tugagan vaqt yoziladi, status "Tugatilgan" bo'ladi va barcha mahsulotlar sklad qoldig'iga kirim qilinadi (mavjud mahsulotga qo'shiladi, yangi nom bo'lsa mahsulot yaratiladi).
-- Tugatilmagan nakladnoy sklad qoldig'iga umuman ta'sir qilmaydi.
+## 3. Kirimni tugatish
+- "Kirimni tugatish" bosilganda tugash vaqti avtomatik yoziladi, jami mahsulotlar soni, jami miqdor va jami summa hisoblanadi.
+- Sessiya "Rasm kutilmoqda" holatiga o'tadi va Nakladnoy bo'limida paydo bo'ladi. Qoldiqqa hali tushmaydi.
 
-## 4. Takroriy kirimdan himoya
-- Har bir nakladnoy qatori skladga faqat bir marta tushadi — baza darajasida takrorlanish bloklanadi.
-- Tugatilgan nakladnoyni qayta tugatib bo'lmaydi, ichidagi mahsulotlarni o'zgartirib bo'lmaydi (faqat ko'rish).
+## 4. Nakladnoyda yakunlash
+- Nakladnoy bo'limida sessiya ochiladi: barcha mahsulotlar ko'rinadi, nakladnoy rasmi yuklanadi.
+- Rasm yuklanmaguncha "Yakunlash" tugmasi ishlamaydi.
+- Yakunlangandan keyin mahsulotlar sklad qoldig'iga kirim bo'ladi va Sklad harakatlar tarixida yakunlangan kirim sifatida ko'rinadi. Hech narsa qayta so'ralmaydi.
 
-## 5. Nakladnoy tarixi
-Ro'yxatda: nakladnoy raqami, status (Jarayonda / Tugatilgan), mahsulotlar soni, jami summa, boshlangan va tugagan vaqt, davomiyligi, kim yaratgani, rasm. Ochilganda ichidagi barcha mahsulotlar ko'rinadi.
+## 5. Keyingi kelish — yangi sessiya
+- 10:00 sessiya tugatilgandan keyin 15:00 da kiritilgan birinchi mahsulot yangi sessiyani boshlaydi. Sessiyalar hech qachon aralashmaydi.
 
-Vaqt formati: `12.09.2026 14:31` (24 soat, AM/PM yo'q). Davomiylik: "1 soat 25 daqiqa".
+## 6. Nakladnoy identifikatori
+- Qo'lda nom kiritilmaydi. Identifikator sessiyaning boshlanish vaqtidan shakllanadi: `12.09.2026 10:00` (24 soat, AM/PM yo'q).
 
-## 6. Sklad bilan bog'lanish
-- Sklad harakatlar tarixida nakladnoy raqami ko'rinadi va nakladnoyga havola bo'ladi.
-- Skladda mahsulot nomi, miqdori, narxi, valyutasi, jami summa, prixod boshlangan/tugagan vaqti va kim kiritgani nakladnoydan avtomatik olinadi — qayta so'ralmaydi.
-- Sklad sahifasidagi "Mahsulot kirimi" tugmasi endi nakladnoy oynasini ochadi; mavjud chiqim, korrektura, instrument va boshqa funksiyalar o'zgarmaydi.
+## 7. Nakladnoy ro'yxati va kartasi
+Ko'rinadi: identifikator, status (Kirim davom etmoqda / Rasm kutilmoqda / Yakunlangan), boshlangan va tugagan vaqt, davomiyligi ("1 soat 25 daqiqa"), kim kiritgani, mahsulotlar soni, jami summa, rasm. Ochilganda har bir mahsulot: nomi, miqdori, narxi, valyutasi, jami summasi.
 
-## 7. Responsive
-Nakladnoy oynasi kichik ekranda ham viewport ichida qoladi: balandligi cheklangan, mahsulotlar ro'yxati ichki scroll bilan, sarlavha va tugmalar doim ko'rinib turadi.
+## 8. Chap menyu
+- Sklad ostiga "Nakladnoy" bo'limi qo'shiladi; faqat Admin, Sklad va Ta'minot ko'radi (menyu + sahifa himoyasi).
+
+## 9. Takroriy kirimdan himoya
+- Bitta sessiya faqat bir marta yakunlanadi va har bir qator faqat bir marta skladga tushadi — baza darajasida bloklanadi.
+- Yakunlangan sessiyaning mahsulotlarini o'zgartirib bo'lmaydi.
+
+## 10. Responsive
+Kirim oynasi va mahsulotlar ro'yxati kichik laptopda ham viewport ichida qoladi: balandligi cheklangan, ro'yxat ichki scroll bilan, sarlavha va tugmalar doim ko'rinib turadi.
+
+Mavjud sklad funksiyalari (chiqim, korrektura, instrumentlar, qaytarish, qayta zakaz) va mavjud ma'lumotlar tegilmaydi.
 
 ## Texnik tafsilotlar
-- Yangi jadvallar: `invoices` (raqam, status, started_at, finished_at, image_url, supplier, location, order_id, created_by) va `invoice_items` (invoice_id, product_id yoki nomi, unit, quantity, unit_price, currency).
-- `stock_movements` ga nullable `invoice_id` va `invoice_item_id` qo'shiladi; `invoice_item_id` bo'yicha unique index duplicate kirimni bloklaydi. Mavjud ustunlar va ma'lumotlar tegilmaydi.
-- Yakunlash bitta `finalize_invoice` SECURITY DEFINER funksiyasi ichida: status tekshiruvi, rasm tekshiruvi, mahsulot yaratish/topish, `stock_movements` yozuvlari (mavjud trigger orqali qoldiq va last_price yangilanadi).
-- RLS: `invoices`/`invoice_items` uchun admin/warehouse/supply o'qish-yozish; tugatilgan nakladnoyni UPDATE qilish policy darajasida cheklanadi. GRANT'lar migration ichida.
+- Yangi jadvallar: `intake_sessions` (status `open|pending_photo|finalized`, started_at, finished_at, image_url, supplier, created_by) va `intake_items` (session_id, product_id yoki product_name, unit, quantity, unit_price, currency, location, order_id, source, phone, created_at).
+- Ochiq sessiya: `created_by` + `status='open'` bo'yicha partial unique index — bir foydalanuvchida bir vaqtda faqat bitta ochiq sessiya.
+- `stock_movements` ga nullable `intake_session_id` va `intake_item_id`; `intake_item_id` bo'yicha unique index duplicate kirimni bloklaydi.
+- Yakunlash bitta `finalize_intake_session` SECURITY DEFINER funksiyasida: status va rasm tekshiruvi, mahsulotni topish/yaratish, `stock_movements` yozuvlari (mavjud triggerlar qoldiq va last_price'ni yangilaydi), status `finalized`.
+- RLS + GRANT: admin / warehouse / supply uchun; yakunlangan sessiya va uning qatorlari UPDATE/DELETE dan himoyalanadi.
 - Rasm `product-images` bucketiga yuklanadi.
-- Yangi sahifa `src/pages/InvoicesPage.tsx`, route `/invoices`, `AppSidebar` ga element.
+- Yangi sahifa `src/pages/InvoicesPage.tsx`, route `/invoices`, `AppSidebar` elementi; `WarehousePage` kirim oynasi sessiyaga yozadi va ochiq sessiya panelini ko'rsatadi.
