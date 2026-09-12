@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchStageGroups, guessGroupId, type StageGroup } from "@/lib/stageGroups";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +16,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
 
-interface StageDraft { id?: string; name: string; norm_days: number; qc_required: boolean }
+interface StageDraft { id?: string; name: string; norm_days: number; qc_required: boolean; group_id: string | null }
 
 export default function EditOrder() {
   const { id } = useParams();
@@ -37,6 +38,7 @@ export default function EditOrder() {
   const [productImage, setProductImage] = useState<File | null>(null);
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
   const [stages, setStages] = useState<StageDraft[]>([]);
+  const [groups, setGroups] = useState<StageGroup[]>([]);
   const [parts, setParts] = useState<{ id?: string; product_id: string; norm_qty: number }[]>([]);
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false);
@@ -63,9 +65,10 @@ export default function EditOrder() {
       setComment(o.comment ?? "");
       setExistingImageUrl(o.product_image_url);
       setProducts(prodRes.data ?? []);
+      try { setGroups(await fetchStageGroups()); } catch { /* noop */ }
       setExistingFiles(filesRes.data ?? []);
       setStages((stagesRes.data ?? []).map((s: any) => ({
-        id: s.id, name: s.name, norm_days: s.norm_days, qc_required: s.qc_required,
+        id: s.id, name: s.name, norm_days: s.norm_days, qc_required: s.qc_required, group_id: s.group_id ?? null,
       })));
       setParts((partsRes.data ?? []).map((p: any) => ({
         id: p.id, product_id: p.product_id ?? "", norm_qty: p.norm_qty,
@@ -74,7 +77,7 @@ export default function EditOrder() {
     })();
   }, [id]);
 
-  const addStage = () => setStages([...stages, { name: "", norm_days: 1, qc_required: false }]);
+  const addStage = () => setStages([...stages, { name: "", norm_days: 1, qc_required: false, group_id: null }]);
   const updateStage = (i: number, patch: Partial<StageDraft>) => setStages(stages.map((s, idx) => idx === i ? { ...s, ...patch } : s));
   const removeStage = (i: number) => setStages(stages.filter((_, idx) => idx !== i));
 
@@ -143,11 +146,18 @@ export default function EditOrder() {
 
       // Update stages: delete old ones and re-insert
       await supabase.from("order_stages").delete().eq("order_id", id!);
-      const stageRows = stages.map((s, idx) => ({
-        order_id: id!, name: s.name, stage_order: idx + 1,
-        norm_days: s.norm_days, qc_required: s.qc_required, status: "pending" as const,
-      }));
-      if (stageRows.length) await supabase.from("order_stages").insert(stageRows);
+      const perGroup: Record<string, number> = {};
+      const stageRows = stages.map((s, idx) => {
+        const gid = s.group_id ?? guessGroupId(s.name, groups);
+        const key = gid ?? "none";
+        perGroup[key] = (perGroup[key] ?? 0) + 1;
+        return {
+          order_id: id!, name: s.name, stage_order: idx + 1,
+          norm_days: s.norm_days, qc_required: s.qc_required, status: "pending" as const,
+          group_id: gid, group_order: perGroup[key],
+        };
+      });
+      if (stageRows.length) await supabase.from("order_stages").insert(stageRows as any);
 
       // Update parts: delete old and re-insert
       await supabase.from("order_parts").delete().eq("order_id", id!);
@@ -287,12 +297,21 @@ export default function EditOrder() {
           {stages.map((s, i) => (
             <div key={i} className="grid grid-cols-12 gap-2 items-center p-2 border rounded-md">
               <div className="col-span-1 text-center text-sm font-bold text-muted-foreground">{i + 1}</div>
-              <Input className="col-span-5" value={s.name} onChange={(e) => updateStage(i, { name: e.target.value })} placeholder={t.newOrder.stageNamePh} />
-              <div className="col-span-3 flex items-center gap-2">
+              <Input className="col-span-4" value={s.name} onChange={(e) => updateStage(i, { name: e.target.value })} placeholder={t.newOrder.stageNamePh} />
+              <div className="col-span-3">
+                <Select value={s.group_id ?? "none"} onValueChange={(v) => updateStage(i, { group_id: v === "none" ? null : v })}>
+                  <SelectTrigger><SelectValue placeholder="Guruh" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Guruhsiz</SelectItem>
+                    {groups.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="col-span-2 flex items-center gap-1">
                 <Input type="number" min={0.1} step={0.1} value={s.norm_days} onChange={(e) => updateStage(i, { norm_days: Number(e.target.value) })} />
                 <span className="text-xs text-muted-foreground">{t.common.days}</span>
               </div>
-              <label className="col-span-2 flex items-center gap-2 text-sm cursor-pointer">
+              <label className="col-span-1 flex items-center gap-1 text-xs cursor-pointer">
                 <Checkbox checked={s.qc_required} onCheckedChange={(v) => updateStage(i, { qc_required: !!v })} />
                 OTK
               </label>
