@@ -153,11 +153,11 @@ export default function OrderDetail() {
     const finishedTs = Date.now();
     const durationMin = startedTs ? Math.round((finishedTs - startedTs) / 60000) : 0;
     await supabase.from("order_stages").update({ status: "completed", finished_at: new Date(finishedTs).toISOString() }).eq("id", stage.id);
-    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Bosqich tugatildi", entity: "stage", order_id: order!.id, stage_id: stage.id, details: `${stage.name} · ishchi: ${(stage as any).worker_name ?? "—"} · davomiyligi: ${durationMin} daq.` });
+    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Bosqich tugatildi", entity: "stage", order_id: order!.id, stage_id: stage.id, details: `${stage.name} · ishchi: ${(stage as any).worker_name ?? "—"} · davomiyligi: ${fmtDuration(durationMin)}` });
     await notify({
       type: "stage_finished",
       title: `Bosqich tugatildi — ${order?.order_number}`,
-      body: `${stage.name} · ${durationMin} daq.`,
+      body: `${stage.name} · ${fmtDuration(durationMin)}`,
       link: `/orders/${order!.id}`,
       entity: "stage", entity_id: stage.id,
       sender_id: user?.id, sender_name: user?.email,
