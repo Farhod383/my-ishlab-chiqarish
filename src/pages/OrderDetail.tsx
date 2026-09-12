@@ -276,6 +276,9 @@ export default function OrderDetail() {
             </div>
             <p className="text-sm text-muted-foreground">
               <span className="font-mono">#{order.order_number}</span> · {order.quantity} {t.common.pieces} · {t.orderDetail.client}: {order.client?.name ?? "—"}
+              {order.client && (
+                <span className={`ml-2 inline-flex rounded-full border px-2 py-0.5 text-[11px] ${(order.client.client_type ?? "Mijoz") === "Diler" ? "border-status-blue/30 bg-status-blue/10 text-status-blue" : "border-primary/30 bg-primary/10 text-primary"}`}>{order.client.client_type || "Mijoz"}</span>
+              )}
             </p>
           </div>
 

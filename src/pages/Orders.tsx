@@ -47,7 +47,7 @@ export default function Orders() {
     (async () => {
       const { data } = await supabase
         .from("orders")
-        .select("*, client:clients(name), order_stages(stage_order, started_at, status, qc_required, qc_passed), order_parts(part_name)")
+        .select("*, client:clients(name, client_type), order_stages(stage_order, started_at, status, qc_required, qc_passed), order_parts(part_name)")
         .order("priority", { ascending: false })
         .order("queue_position");
       const list = (data as any[]) ?? [];
@@ -147,7 +147,12 @@ export default function Orders() {
                           <OrderUnreadBadge orderId={o.id} />
                         </span>
                       </TableCell>
-                      <TableCell className="text-sm">{localize((o as any).client?.name) || "—"}</TableCell>
+                      <TableCell className="text-sm">
+                        {localize((o as any).client?.name) || "—"}
+                        {(o as any).client && (
+                          <span className={`ml-2 inline-flex rounded-full border px-2 py-0.5 text-[11px] ${((o as any).client.client_type ?? "Mijoz") === "Diler" ? "border-status-blue/30 bg-status-blue/10 text-status-blue" : "border-primary/30 bg-primary/10 text-primary"}`}>{(o as any).client.client_type || "Mijoz"}</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-sm font-medium">
                         <div>{localize(o.product_name)}</div>
                         {(o as any).comment && <div className="text-xs text-muted-foreground italic truncate max-w-[180px]">"{localize((o as any).comment)}"</div>}
