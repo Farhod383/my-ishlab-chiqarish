@@ -2,6 +2,48 @@
 // Uses dot as thousands separator (1.000.000) per project spec.
 // Database keeps real numeric values; this is display-only.
 
+/** 24-hour date+time, e.g. 12.09.2026 15:40 */
+export function fmtDateTime24(v: string | number | Date | null | undefined): string {
+  if (!v) return "—";
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return "—";
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+/** 24-hour time only, e.g. 09:05 */
+export function fmtTime24(v: string | number | Date | null | undefined): string {
+  if (!v) return "—";
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return "—";
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+/** Date only, e.g. 12.09.2026 */
+export function fmtDate(v: string | number | Date | null | undefined): string {
+  if (!v) return "—";
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return "—";
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()}`;
+}
+
+/** Duration in minutes → "2 soat 35 daqiqa" */
+export function fmtDuration(minutes: number | null | undefined): string {
+  const m = Math.max(0, Math.round(Number(minutes ?? 0)));
+  if (!m) return "0 daqiqa";
+  const days = Math.floor(m / 1440);
+  const hours = Math.floor((m % 1440) / 60);
+  const mins = m % 60;
+  const parts: string[] = [];
+  if (days) parts.push(`${days} kun`);
+  if (hours) parts.push(`${hours} soat`);
+  if (mins) parts.push(`${mins} daqiqa`);
+  return parts.join(" ");
+}
+
+
 export function fmtNum(n: number | string | null | undefined, opts?: { decimals?: number }): string {
   if (n === null || n === undefined || n === "") return "0";
   const num = typeof n === "string" ? Number(n) : n;
