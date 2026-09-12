@@ -17,9 +17,11 @@ import { logAudit } from "@/types/erp";
 import { notify } from "@/lib/notify";
 import { listTemplates, loadTemplate, type OrderTemplate } from "@/lib/orderTemplates";
 import SearchableSelect from "@/components/SearchableSelect";
+import { fetchGroupsWithItems, guessGroupId, type StageGroup, type StageGroupItem } from "@/lib/stageGroups";
+import { ChevronDown, ChevronRight, Layers } from "lucide-react";
 import { ClipboardList as TplIcon } from "lucide-react";
 
-interface StageDraft { name: string; norm_days: number; qc_required: boolean }
+interface StageDraft { name: string; norm_days: number; qc_required: boolean; group_id: string | null }
 
 export default function NewOrder() {
   const nav = useNavigate();
@@ -38,7 +40,10 @@ export default function NewOrder() {
   const [activeQueueDays, setActiveQueueDays] = useState<number>(0);
   const [tzFiles, setTzFiles] = useState<File[]>([]);
   const [productImage, setProductImage] = useState<File | null>(null);
-  const [stages, setStages] = useState<StageDraft[]>([{ name: "", norm_days: 1, qc_required: false }]);
+  const [stages, setStages] = useState<StageDraft[]>([]);
+  const [groups, setGroups] = useState<(StageGroup & { items: StageGroupItem[] })[]>([]);
+  const [openGroup, setOpenGroup] = useState<Record<string, boolean>>({});
+  const [groupSearch, setGroupSearch] = useState("");
   const [parts, setParts] = useState<{ product_id: string; norm_qty: number }[]>([]);
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false);
@@ -56,8 +61,8 @@ export default function NewOrder() {
       setQuantity(qty);
       setStages(
         tStages.length
-          ? tStages.map(s => ({ name: s.name, norm_days: Number(s.norm_days) || 1, qc_required: !!s.qc_required }))
-          : [{ name: "", norm_days: 1, qc_required: false }],
+          ? tStages.map(s => ({ name: s.name, norm_days: Number(s.norm_days) || 1, qc_required: !!s.qc_required, group_id: s.group_id ?? null }))
+          : [],
       );
       setParts(
         tParts
@@ -79,6 +84,7 @@ export default function NewOrder() {
         supabase.from("orders").select("id, order_stages(norm_days, status)").neq("status", "completed"),
       ]);
       setProducts(p ?? []);
+      try { setGroups(await fetchGroupsWithItems()); } catch { /* noop */ }
       const num = (count ?? 0) + 1;
       setOrderNumber(`Z-${new Date().getFullYear()}-${String(num).padStart(3, "0")}`);
       let sum = 0;
@@ -115,7 +121,16 @@ export default function NewOrder() {
     setTplSuggest(match ?? null);
   }, [productName, templates, selectedTplId]);
 
-  const addStage = () => setStages([...stages, { name: "", norm_days: 1, qc_required: false }]);
+  const addStage = () => setStages([...stages, { name: "", norm_days: 1, qc_required: false, group_id: null }]);
+
+  const toggleCatalogStage = (g: StageGroup, item: StageGroupItem) => {
+    const exists = stages.some((s) => s.group_id === g.id && s.name.toLowerCase() === item.name.toLowerCase());
+    if (exists) {
+      setStages(stages.filter((s) => !(s.group_id === g.id && s.name.toLowerCase() === item.name.toLowerCase())));
+    } else {
+      setStages([...stages, { name: item.name, norm_days: Number(item.norm_days) || 1, qc_required: !!item.qc_required, group_id: g.id }]);
+    }
+  };
   const updateStage = (i: number, patch: Partial<StageDraft>) => setStages(stages.map((s, idx) => idx === i ? { ...s, ...patch } : s));
   const removeStage = (i: number) => setStages(stages.filter((_, idx) => idx !== i));
 
@@ -197,11 +212,18 @@ export default function NewOrder() {
       }
 
 
-      const stageRows = stages.map((s, idx) => ({
-        order_id: order.id, name: s.name, stage_order: idx + 1,
-        norm_days: s.norm_days, qc_required: s.qc_required, status: "pending" as const,
-      }));
-      await supabase.from("order_stages").insert(stageRows);
+      const perGroup: Record<string, number> = {};
+      const stageRows = stages.map((s, idx) => {
+        const gid = s.group_id ?? guessGroupId(s.name, groups);
+        const key = gid ?? "none";
+        perGroup[key] = (perGroup[key] ?? 0) + 1;
+        return {
+          order_id: order.id, name: s.name, stage_order: idx + 1,
+          norm_days: s.norm_days, qc_required: s.qc_required, status: "pending" as const,
+          group_id: gid, group_order: perGroup[key],
+        };
+      });
+      await supabase.from("order_stages").insert(stageRows as any);
 
       if (parts.length > 0) {
         const partRows = parts.filter((p) => p.product_id).map((p) => {
@@ -349,10 +371,61 @@ export default function NewOrder() {
 
       <Card>
         <CardHeader>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2"><Layers className="h-4 w-4" />Bosqich guruhlari</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">Avval guruhni oching, keyin kerakli bosqichlarni belgilang.</p>
+            </div>
+            <Input className="max-w-xs" placeholder="Bosqich qidirish..." value={groupSearch} onChange={(e) => setGroupSearch(e.target.value)} />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-1.5">
+          {groups.length === 0 && <p className="text-sm text-muted-foreground">Guruhlar topilmadi.</p>}
+          {groups.map((g) => {
+            const q = groupSearch.trim().toLowerCase();
+            const items = q ? g.items.filter((i) => i.name.toLowerCase().includes(q)) : g.items;
+            if (q && items.length === 0 && !g.name.toLowerCase().includes(q)) return null;
+            const expanded = (openGroup[g.id] ?? false) || !!q;
+            const picked = stages.filter((s) => s.group_id === g.id).length;
+            return (
+              <div key={g.id} className="border rounded-md">
+                <div
+                  className="flex items-center gap-2 p-2.5 cursor-pointer hover:bg-muted/40 transition"
+                  onClick={() => setOpenGroup((o) => ({ ...o, [g.id]: !expanded }))}
+                >
+                  {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  <span className="font-semibold uppercase text-sm tracking-wide">{g.name}</span>
+                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-muted px-1.5 text-xs font-bold">{g.items.length}</span>
+                  {picked > 0 && (
+                    <span className="ml-auto inline-flex h-5 items-center rounded-md bg-primary/10 px-2 text-xs font-bold text-primary">{picked} tanlandi</span>
+                  )}
+                </div>
+                {expanded && (
+                  <div className="border-t p-2 grid sm:grid-cols-2 gap-1">
+                    {items.length === 0 && <p className="text-xs text-muted-foreground p-1">Bosqich yo'q</p>}
+                    {items.map((i) => {
+                      const checked = stages.some((s) => s.group_id === g.id && s.name.toLowerCase() === i.name.toLowerCase());
+                      return (
+                        <label key={i.id} className="flex items-center gap-2 text-sm p-1.5 rounded hover:bg-muted/40 cursor-pointer">
+                          <Checkbox checked={checked} onCheckedChange={() => toggleCatalogStage(g, i)} />
+                          <span className="truncate" title={i.name}>{i.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-base">{t.newOrder.stages}</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">{t.newOrder.stagesDesc}</p>
+              <p className="text-sm text-muted-foreground mt-1">Tanlangan bosqichlar tartibi va normalari</p>
             </div>
             <Button size="sm" variant="outline" onClick={addStage}><Plus className="h-4 w-4 mr-1" /> {t.newOrder.addStage}</Button>
           </div>
@@ -361,12 +434,21 @@ export default function NewOrder() {
           {stages.map((s, i) => (
             <div key={i} className="grid grid-cols-12 gap-2 items-center p-2 border rounded-md">
               <div className="col-span-1 text-center text-sm font-bold text-muted-foreground">{i + 1}</div>
-              <Input className="col-span-5" value={s.name} onChange={(e) => updateStage(i, { name: e.target.value })} placeholder={t.newOrder.stageNamePh} />
-              <div className="col-span-3 flex items-center gap-2">
+              <Input className="col-span-4" value={s.name} onChange={(e) => updateStage(i, { name: e.target.value })} placeholder={t.newOrder.stageNamePh} />
+              <div className="col-span-3">
+                <Select value={s.group_id ?? "none"} onValueChange={(v) => updateStage(i, { group_id: v === "none" ? null : v })}>
+                  <SelectTrigger><SelectValue placeholder="Guruh" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Guruhsiz</SelectItem>
+                    {groups.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="col-span-2 flex items-center gap-1">
                 <Input type="number" min={0.1} step={0.1} value={s.norm_days} onChange={(e) => updateStage(i, { norm_days: Number(e.target.value) })} />
                 <span className="text-xs text-muted-foreground">{t.common.days}</span>
               </div>
-              <label className="col-span-2 flex items-center gap-2 text-sm cursor-pointer">
+              <label className="col-span-1 flex items-center gap-1 text-xs cursor-pointer">
                 <Checkbox checked={s.qc_required} onCheckedChange={(v) => updateStage(i, { qc_required: !!v })} />
                 OTK
               </label>
