@@ -22,6 +22,11 @@ import {
   supplyStatusActiveBtnCls as activeBtnCls,
   supplyStatusOutlineBtnCls as outlineBtnCls,
 } from "@/lib/supplyStatus";
+import { useNotifications, notifOrderId } from "@/notifications/NotificationsContext";
+import { resolveModule } from "@/lib/notifModules";
+import SupplyOrderHistory from "@/components/SupplyOrderHistory";
+import { logSupplyChange } from "@/lib/supplyHistory";
+import NumberInput from "@/components/NumberInput";
 
 type Filter = "all" | Status;
 
@@ -43,6 +48,34 @@ export default function SupplyRequestsPage() {
   const [lateReason, setLateReason] = useState("");
 
   const [profiles, setProfiles] = useState<Record<string, { full_name: string | null; email: string | null }>>({});
+  const [qtyEdit, setQtyEdit] = useState<Record<string, string>>({});
+  const { roles } = useAuth() as any;
+  const myRole = (Array.isArray(roles) && roles[0]) || null;
+
+  // Ta'minot bildirishnomalari — har bir zakaz uchun alohida o'qilmagan soni.
+  const { items: notifItems, markRead } = useNotifications();
+  const supplyUnreadByOrder = useMemo(() => {
+    const m: Record<string, number> = {};
+    notifItems.forEach((n) => {
+      if (n.read_at) return;
+      if (resolveModule(n) !== "supply") return;
+      const oid = notifOrderId(n);
+      if (oid) m[oid] = (m[oid] ?? 0) + 1;
+    });
+    return m;
+  }, [notifItems]);
+
+  // Zakaz ochilganda shu zakazning ta'minot bildirishnomalari o'qilgan bo'ladi.
+  useEffect(() => {
+    if (!openOrderId) return;
+    const unread = notifItems.filter(
+      (n) => !n.read_at && resolveModule(n) === "supply" && notifOrderId(n) === openOrderId,
+    );
+    if (!unread.length) return;
+    const t = window.setTimeout(() => { unread.forEach((n) => { void markRead(n); }); }, 800);
+    return () => window.clearTimeout(t);
+  }, [openOrderId, notifItems]);
+
 
   const load = async () => {
     setLoading(true);
@@ -162,9 +195,51 @@ export default function SupplyRequestsPage() {
       order_id: item.order_id ?? null,
       details: `${item.product_name}: ${e.supply_comment || "—"}`,
     });
+    await logSupplyChange({
+      requestId: item.id, orderId: item.order_id ?? null, productName: item.product_name,
+      action: "Ta'minot izohi o'zgartirildi",
+      before: { supply_comment: item.supply_comment ?? "" },
+      after: { supply_comment: e.supply_comment || "" },
+      actorId: user?.id, actorName: user?.email, role: myRole,
+    });
     toast.success("Izoh saqlandi");
     load();
   };
+
+  const saveQty = async (item: any) => {
+    const next = Number(qtyEdit[item.id]);
+    if (!next || next === Number(item.quantity)) { setQtyEdit((p) => ({ ...p, [item.id]: "" })); return; }
+    const { error } = await supabase.from("order_supply_requests").update({ quantity: next }).eq("id", item.id);
+    if (error) { toast.error(error.message); return; }
+    await logSupplyChange({
+      requestId: item.id, orderId: item.order_id ?? null, productName: item.product_name,
+      action: "Miqdor o'zgartirildi",
+      before: { quantity: `${item.quantity} ${item.unit ?? ""}`.trim() },
+      after: { quantity: `${next} ${item.unit ?? ""}`.trim() },
+      actorId: user?.id, actorName: user?.email, role: myRole,
+    });
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: "Ta'minot miqdori o'zgartirildi", entity: "supply_request",
+      order_id: item.order_id ?? null,
+      details: `${item.product_name}: ${item.quantity} → ${next} ${item.unit ?? ""}`,
+    });
+    await notify({
+      type: "supply_request",
+      title: `Miqdor o'zgardi — ${item.product_name}`,
+      body: `${item.quantity} → ${next} ${item.unit ?? ""}`,
+      link: item.order_id ? `/orders/${item.order_id}` : "/supply",
+      entity: "supply_request",
+      entity_id: item.id,
+      recipient_role: ["supply", "warehouse", "manager"],
+      sender_id: user?.id,
+      sender_name: user?.email,
+    });
+    setQtyEdit((p) => ({ ...p, [item.id]: "" }));
+    toast.success("Miqdor yangilandi");
+    load();
+  };
+
 
   const isLate = (item: any) => {
     if (!item?.required_date) return false;
@@ -197,6 +272,13 @@ export default function SupplyRequestsPage() {
       entity: "supply_request",
       order_id: item.order_id ?? null,
       details: `${item.product_name} · ${item.quantity} ${item.unit ?? ""}${late_reason ? ` · Kechikish sababi: ${late_reason}` : ""}`,
+    });
+    await logSupplyChange({
+      requestId: item.id, orderId: item.order_id ?? null, productName: item.product_name,
+      action: status === "fulfilled" ? "Mahsulot ta'minlandi" : "Holat qaytarildi",
+      before: { status: normalizeStatus(item.status) },
+      after: { status },
+      actorId: user?.id, actorName: user?.email, role: myRole,
     });
     await notify({
       type: status === "fulfilled" ? "supply_fulfilled" : "supply_request",
@@ -318,10 +400,19 @@ export default function SupplyRequestsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
+                    {!o.pinned && (supplyUnreadByOrder[o.key] ?? 0) > 0 && (
+                      <span
+                        title={`${supplyUnreadByOrder[o.key]} ta yangi o'zgarish`}
+                        className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-status-red px-1.5 text-xs font-bold leading-none text-status-red-foreground shadow-sm"
+                      >
+                        {supplyUnreadByOrder[o.key] > 99 ? "99+" : supplyUnreadByOrder[o.key]}
+                      </span>
+                    )}
                     {o.counts.pending > 0 && <Badge variant="outline" className={`px-2.5 py-1 text-sm font-semibold ${statusCls.pending}`}>🔴 {o.counts.pending}</Badge>}
                     {o.counts.fulfilled > 0 && <Badge variant="outline" className={`px-2.5 py-1 text-sm font-semibold ${statusCls.fulfilled}`}>🟢 {o.counts.fulfilled}</Badge>}
                     <span className="text-sm text-muted-foreground font-medium">{o.items.length} ta</span>
                   </div>
+
                 </CardContent>
               </Card>
             ))}
@@ -362,6 +453,25 @@ export default function SupplyRequestsPage() {
                             <span>· {requesterName(item.created_by)}</span>
                             {item.department && <span className="uppercase">· {item.department}</span>}
                           </div>
+                          {canEdit && (
+                            <div className="mt-2 flex items-center gap-1.5">
+                              <span className="text-xs text-muted-foreground">Miqdorni o'zgartirish:</span>
+                              <NumberInput
+                                className="h-8 w-24 text-sm"
+                                min={0.01}
+                                step={0.01}
+                                value={qtyEdit[item.id] ?? ""}
+                                placeholder={String(item.quantity)}
+                                onChange={(ev) => setQtyEdit((p) => ({ ...p, [item.id]: ev.target.value }))}
+                                onKeyDown={(ev) => { if (ev.key === "Enter") { ev.preventDefault(); void saveQty(item); } }}
+                              />
+                              {!!qtyEdit[item.id] && (
+                                <Button size="sm" className="h-8 px-2 text-xs" onClick={() => saveQty(item)}>
+                                  <Save className="h-3 w-3 mr-1" /> Saqlash
+                                </Button>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5 flex-wrap">
@@ -456,7 +566,15 @@ export default function SupplyRequestsPage() {
                 </Card>
               );
             })}
+
+            {!isAllOrdersOpen && (
+              <SupplyOrderHistory
+                orderId={isGeneralOpen ? null : openedOrder.order.id}
+                title={isGeneralOpen ? "Umumiy o'zgarishlar tarixi" : `${openedOrder.order.order_number} — o'zgarishlar tarixi`}
+              />
+            )}
           </CardContent>
+
         </Card>
       )}
 

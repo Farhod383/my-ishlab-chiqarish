@@ -20,7 +20,8 @@ import {
 } from "@/lib/supplyStatus";
 import { useNotifications, notifOrderId } from "@/notifications/NotificationsContext";
 import { resolveModule } from "@/lib/notifModules";
-import { fmtDateTime24 } from "@/lib/format";
+import SupplyOrderHistory from "@/components/SupplyOrderHistory";
+import { logSupplyChange } from "@/lib/supplyHistory";
 
 interface Props {
   orderId: string;
@@ -122,7 +123,17 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
       order_id: orderId,
       details: `${name} · ${qty} ${unit ?? ""}`,
     });
+    await logSupplyChange({
+      requestId: crypto.randomUUID(),
+      orderId,
+      productName: name,
+      action: "Yangi ta'minot so'rovi qo'shildi",
+      before: { quantity: "—" },
+      after: { quantity: `${qty} ${unit ?? ""}`.trim() },
+      actorId: user?.id, actorName: user?.email, role: primaryRole || null,
+    });
     toast.success("Qo'shildi");
+
     reset();
     setOpen(false);
     load();
@@ -138,6 +149,15 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
       action: "Ta'minot so'rovi o'chirildi", entity: "supply_request",
       order_id: orderId,
       details: `${target?.product_name ?? id} · ${target?.quantity ?? ""} ${target?.unit ?? ""}`,
+    });
+    await logSupplyChange({
+      requestId: id,
+      orderId,
+      productName: target?.product_name ?? null,
+      action: "Ta'minot so'rovi o'chirildi",
+      before: { quantity: `${target?.quantity ?? ""} ${target?.unit ?? ""}`.trim() },
+      after: { quantity: "—" },
+      actorId: user?.id, actorName: user?.email, role: primaryRole || null,
     });
     load();
   };
@@ -211,23 +231,10 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
           </div>
         ))}
 
-        {supplyNotifs.length > 0 && (
-          <div className="pt-2 mt-2 border-t space-y-1">
-            <div className="text-[11px] font-semibold text-muted-foreground">Ta'minot o'zgarishlari</div>
-            {supplyNotifs.map((n) => (
-              <div
-                key={n.id}
-                className={`rounded border p-1.5 text-[11px] leading-tight ${n.read_at ? "" : "bg-muted/60 border-primary/40"}`}
-              >
-                <div className="font-medium truncate">{n.title}</div>
-                {n.body && <div className="text-muted-foreground truncate">{n.body}</div>}
-                <div className="text-[10px] text-muted-foreground">
-                  {n.sender_name ?? "Tizim"} · {fmtDateTime24(n.created_at)}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="pt-2 mt-2 border-t">
+          <SupplyOrderHistory orderId={orderId} title="Ta'minot o'zgarishlari tarixi" />
+        </div>
+
       </CardContent>
     </Card>
   );
