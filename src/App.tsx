@@ -34,6 +34,7 @@ import ClientsPage from "./pages/ClientsPage";
 import ClientDetail from "./pages/ClientDetail";
 import FaceIdPage from "./pages/FaceIdPage";
 import BusinessTripsPage from "./pages/BusinessTripsPage";
+import SupplyFinancePage from "./pages/SupplyFinancePage";
 import NotFound from "./pages/NotFound";
 
 
@@ -73,6 +74,7 @@ const App = () => (
                       <Route path="/face-id" element={<ProtectedRoute roles={["hr","admin"]}><FaceIdPage /></ProtectedRoute>} />
                       <Route path="/hr" element={<ProtectedRoute roles={["hr","admin","cashier"]}><HRPage /></ProtectedRoute>} />
                       <Route path="/kassa" element={<ProtectedRoute roles={["cashier","admin"]}><KassaPage /></ProtectedRoute>} />
+                      <Route path="/kassa-supply" element={<ProtectedRoute roles={["cashier","admin","supply"]}><SupplyFinancePage /></ProtectedRoute>} />
                       <Route path="/returns" element={<ProtectedRoute roles={["warehouse","admin"]}><ReturnsPage /></ProtectedRoute>} />
                       <Route path="/defects" element={<DefectsPage />} />
                       <Route path="/audit" element={<ProtectedRoute roles={["admin"]}><AuditLog /></ProtectedRoute>} />
