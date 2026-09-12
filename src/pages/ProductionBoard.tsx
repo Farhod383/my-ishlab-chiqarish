@@ -10,10 +10,11 @@ import { StatusBadge, PriorityBadge, HealthDot } from "@/components/StatusBadge"
 import { orderHealth, logAudit, type OrderRow, type StageRow } from "@/types/erp";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
-import { ArrowUp, GripVertical, AlertTriangle } from "lucide-react";
+import { ArrowUp, GripVertical, AlertTriangle, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { OrderUnreadBadge } from "@/components/OrderUnreadBadge";
+import { fetchStageGroups, groupStages, type StageGroup } from "@/lib/stageGroups";
 
 interface OrderWithStages extends OrderRow { stages: StageRow[]; client?: any }
 
@@ -26,6 +27,8 @@ export default function ProductionBoard() {
   const [moveOrder, setMoveOrder] = useState<OrderWithStages | null>(null);
   const [movePos, setMovePos] = useState<string>("1");
   const [saving, setSaving] = useState(false);
+  const [groups, setGroups] = useState<StageGroup[]>([]);
+  const [openGroup, setOpenGroup] = useState<Record<string, boolean>>({});
 
   const load = async () => {
     const { data } = await supabase
@@ -43,6 +46,7 @@ export default function ProductionBoard() {
   };
 
   useEffect(() => { load(); }, []);
+  useEffect(() => { fetchStageGroups().then(setGroups).catch(() => {}); }, []);
 
   const openMoveDialog = (o: OrderWithStages) => {
     if (!hasRole(["manager", "admin"])) { toast.error(t.production.onlyManager); return; }
@@ -137,18 +141,45 @@ export default function ProductionBoard() {
                         <span className="text-muted-foreground">{t.production.progress.replace("{a}", String(completed)).replace("{b}", String(total))}</span>
                       </div>
                       <Progress value={(completed / total) * 100} className="h-2" />
-                      <div className="flex gap-1 mt-2 flex-wrap">
-                        {o.stages.map((s) => (
-                          <div key={s.id} className="flex-1 min-w-[60px]">
-                            <div title={s.name} className={`h-1.5 rounded-full ${
-                              s.status === "completed" ? "bg-status-green" :
-                              s.status === "in_progress" ? "bg-status-blue" :
-                              s.status === "delayed" ? "bg-status-red" :
-                              "bg-muted"
-                            }`} />
-                            <div className="text-[10px] text-muted-foreground mt-1 truncate text-center" title={s.name}>{s.name}</div>
-                          </div>
-                        ))}
+                      <div className="mt-2 space-y-1.5" onClick={(e) => e.stopPropagation()}>
+                        {groupStages(o.stages as any, groups).map((g) => {
+                          const key = `${o.id}:${g.key}`;
+                          const expanded = !!openGroup[key];
+                          const gDone = g.items.filter((s: any) => s.status === "completed").length;
+                          const gActive = g.items.some((s: any) => s.status === "in_progress");
+                          const gLate = g.items.some((s: any) => s.status === "delayed");
+                          return (
+                            <div key={g.key} className="rounded-md border bg-muted/20">
+                              <button
+                                type="button"
+                                className="w-full flex items-center gap-2 px-2 py-1.5 text-left hover:bg-muted/50 rounded-md transition"
+                                onClick={() => setOpenGroup((o2) => ({ ...o2, [key]: !expanded }))}
+                              >
+                                {expanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
+                                <span className="text-xs font-bold uppercase tracking-wide truncate">{g.name}</span>
+                                <span className="inline-flex h-4 min-w-4 items-center justify-center rounded bg-background px-1 text-[10px] font-bold border">{g.items.length}</span>
+                                <span className={`ml-auto text-[11px] font-semibold shrink-0 ${
+                                  gLate ? "text-status-red" : gDone === g.items.length ? "text-status-green" : gActive ? "text-status-blue" : "text-muted-foreground"
+                                }`}>{gDone}/{g.items.length}</span>
+                              </button>
+                              {expanded && (
+                                <div className="px-2 pb-2 grid sm:grid-cols-2 gap-x-3 gap-y-1">
+                                  {g.items.map((s: any) => (
+                                    <div key={s.id} className="flex items-center gap-1.5 min-w-0">
+                                      <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${
+                                        s.status === "completed" ? "bg-status-green" :
+                                        s.status === "in_progress" ? "bg-status-blue" :
+                                        s.status === "delayed" ? "bg-status-red" :
+                                        "bg-muted-foreground/40"
+                                      }`} />
+                                      <span className="text-[11px] text-muted-foreground truncate" title={s.name}>{s.name}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
