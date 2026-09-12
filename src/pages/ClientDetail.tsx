@@ -30,6 +30,12 @@ const DOC_STATUS: Record<string, { label: string; cls: string }> = {
 const fmt = (d?: string | null) => (d ? new Date(d).toLocaleString("uz-UZ", { dateStyle: "short", timeStyle: "short" }) : "—");
 const fmtD = (d?: string | null) => (d ? new Date(d).toLocaleDateString("uz-UZ") : "—");
 
+const FIELD_LABELS: Record<string, string> = {
+  name: "Nomi", phone: "Telefon", phone2: "Qo'shimcha telefon", contact_person: "Kontakt shaxs",
+  email: "Email", address: "Manzil", note: "Izoh", client_type: "Klient turi",
+  status: "Holati", partnership_start: "Hamkorlik sanasi", responsible_employee_id: "Mas'ul xodim",
+};
+
 export default function ClientDetail() {
   const { id } = useParams();
   const nav = useNavigate();
@@ -37,6 +43,21 @@ export default function ClientDetail() {
   const isAdmin = hasRole("admin");
   const { employees } = useEmployees({ activeOnly: true });
   const [loading, setLoading] = useState(true);
+
+  // Klient nomi o'zgarsa yangi nom hammaga ko'rinadi; boshqa maydonlarning
+  // eski/yangi qiymatlari faqat Admin uchun ochiladi.
+  const auditDetails = (r: any) => {
+    const oldV = r.old_value ?? {};
+    const newV = r.new_value ?? {};
+    const keys = Object.keys(newV).filter((k) => JSON.stringify(oldV?.[k]) !== JSON.stringify(newV?.[k]));
+    if (!keys.length) return "";
+    return keys.map((k) => {
+      const label = FIELD_LABELS[k] ?? k;
+      if (k === "name") return isAdmin ? `${label}: ${oldV?.[k] ?? "—"} → ${newV?.[k] ?? "—"}` : `${label}: ${newV?.[k] ?? "—"}`;
+      return isAdmin ? `${label}: ${oldV?.[k] ?? "—"} → ${newV?.[k] ?? "—"}` : `${label} o'zgartirildi`;
+    }).join("; ");
+  };
+
   const [client, setClient] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [interactions, setInteractions] = useState<any[]>([]);
