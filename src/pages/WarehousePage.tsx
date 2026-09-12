@@ -1448,9 +1448,10 @@ export default function WarehousePage() {
                                 <Button size="sm" variant="ghost" title={t.common.edit ?? "Tahrirlash"} onClick={() => openEditProduct(r.first)}>
                                   <Pencil className="h-3.5 w-3.5" />
                                 </Button>
-                                <Button size="sm" variant="ghost" title={t.common.delete ?? "O'chirish"} onClick={() => deleteProduct(r.first)}>
+                                <Button size="sm" variant="ghost" title={t.common.delete ?? "O'chirish"} onClick={() => setDelTarget({ ids: r.batches.map((b: any) => b.id), name: r.first.name, qty: r.totalQty, unit: r.first.unit })}>
                                   <Trash2 className="h-3.5 w-3.5 text-status-red" />
                                 </Button>
+
                               </div>
                             </TableCell>
                           )}
