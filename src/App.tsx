@@ -17,6 +17,7 @@ import EditOrder from "./pages/EditOrder";
 import OrderDetail from "./pages/OrderDetail";
 import OrderReport from "./pages/OrderReport";
 import ProductionBoard from "./pages/ProductionBoard";
+import StageGroupsPage from "./pages/StageGroupsPage";
 import WarehousePage from "./pages/WarehousePage";
 import OtkPage from "./pages/OtkPage";
 import ChatPage from "./pages/ChatPage";
@@ -67,6 +68,7 @@ const App = () => (
                       <Route path="/orders/:id" element={<OrderDetail />} />
                       <Route path="/orders/:id/report" element={<OrderReport />} />
                       <Route path="/production" element={<ProductionBoard />} />
+                      <Route path="/stage-groups" element={<ProtectedRoute roles={["admin","manager"]}><StageGroupsPage /></ProtectedRoute>} />
                       <Route path="/otk" element={<ProtectedRoute roles={["otk","admin"]}><OtkPage /></ProtectedRoute>} />
                       <Route path="/warehouse" element={<WarehousePage />} />
                       <Route path="/invoices" element={<ProtectedRoute roles={["admin","warehouse","supply"]}><InvoicesPage /></ProtectedRoute>} />

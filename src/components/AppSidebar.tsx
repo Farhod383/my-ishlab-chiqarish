@@ -28,6 +28,7 @@ export function AppSidebar() {
     { title: (t.nav as any).clients ?? "Klientlar (CRM)", url: "/clients", icon: Contact },
 
     { title: t.nav.production, url: "/production", icon: Factory },
+    { title: "Bosqich guruhlari", url: "/stage-groups", icon: Layers, roles: ["manager", "admin"] },
     { title: t.nav.nachalnik, url: "/nachalnik", icon: UserCog, roles: ["manager", "admin"] },
     { title: (t.nav as any).service ?? "Remont (Servis)", url: "/service", icon: Wrench, roles: ["manager", "admin"] },
     { title: t.nav.otk, url: "/otk", icon: ShieldCheck },
