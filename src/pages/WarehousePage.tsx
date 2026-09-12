@@ -295,21 +295,29 @@ export default function WarehousePage() {
     } as any).select("id").single();
     if (error || !created) { toast.error(error?.message || "Error"); return; }
     if (qtyN > 0) {
-      await supabase.from("stock_movements").insert({
-        product_id: created.id, direction: "in", quantity: qtyN,
-        unit_price: priceN,
-        recipient_name: newSupplier.trim() || null,
-        source: newSource.trim() || null,
-        phone: newPhone || null, image_url,
-        created_by: user?.id,
-        comment: `${t.warehouse.addProduct}: ${newName.trim()}`,
-      } as any);
-    } else if (newSupplier.trim()) {
-      await supabase.from("stock_movements").insert({
-        product_id: null, direction: "in", quantity: 0,
-        recipient_name: newSupplier.trim(), source: newSource.trim() || null,
-        created_by: user?.id, comment: `${t.warehouse.addProduct}: ${newName.trim()}`,
-      } as any);
+      // Qoldiq faqat Nakladnoy rasm bilan yakunlangandan keyin oshadi —
+      // shuning uchun miqdor kirim sessiyasiga yoziladi
+      try {
+        const session = await getOrStartSession(user?.id, user?.email ?? null, newSupplier || null);
+        await supabase.from("intake_items").insert({
+          session_id: session.id,
+          product_id: created.id,
+          product_name: newName.trim(),
+          unit: newUnit || "dona",
+          quantity: qtyN,
+          unit_price: priceN,
+          currency: newCurrency || "UZS",
+          location: "Asosiy zavod",
+          source: newSource.trim() || null,
+          phone: newPhone || null,
+          image_url,
+          created_by: user?.id,
+          comment: `${t.warehouse.addProduct}${newSupplier ? ` · ${newSupplier}` : ""}`,
+        } as any);
+      } catch (e: any) {
+        toast.error(e.message ?? "Kirim sessiyasini ochib bo'lmadi");
+        return;
+      }
     }
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: user?.email,
@@ -850,7 +858,15 @@ export default function WarehousePage() {
                     </div>
                     <div><Label>{t.warehouse.phone}</Label><Input list="dl-phones" value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+998..." /></div>
                     <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={newSource} onChange={e => setNewSource(e.target.value)} placeholder={(t.warehouse as any).sourcePh} /></div>
-                    <div><Label>{(t.warehouse.cols as any).supplier}</Label><Input list="dl-suppliers" value={newSupplier} onChange={e => setNewSupplier(e.target.value)} placeholder={t.supply.bringerPh} /></div>
+                    <div><Label>{(t.warehouse.cols as any).supplier}</Label>
+                      <Select value={newSupplier} onValueChange={setNewSupplier}>
+                        <SelectTrigger><SelectValue placeholder="Tanlang" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Davronxo'ja">Davronxo'ja</SelectItem>
+                          <SelectItem value="Sanjar">Sanjar</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div><Label>{t.warehouse.image}</Label><Input type="file" accept="image/*" onChange={e => setNewImage(e.target.files?.[0] ?? null)} /></div>
                     <Button className="w-full" onClick={addProduct}>{t.common.save}</Button>
                   </div>
