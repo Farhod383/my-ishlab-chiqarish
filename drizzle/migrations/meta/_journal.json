@@ -15,6 +15,13 @@
       "when": 1789204597026,
       "tag": "0001_create_business_trips",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789205119676,
+      "tag": "0002_add_cash_expense_purpose",
+      "breakpoints": true
     }
   ]
 }
