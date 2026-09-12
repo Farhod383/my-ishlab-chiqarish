@@ -566,7 +566,15 @@ export default function SupplyRequestsPage() {
                 </Card>
               );
             })}
+
+            {!isAllOrdersOpen && (
+              <SupplyOrderHistory
+                orderId={isGeneralOpen ? null : openedOrder.order.id}
+                title={isGeneralOpen ? "Umumiy o'zgarishlar tarixi" : `${openedOrder.order.order_number} — o'zgarishlar tarixi`}
+              />
+            )}
           </CardContent>
+
         </Card>
       )}
 
