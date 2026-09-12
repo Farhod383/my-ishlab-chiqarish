@@ -142,8 +142,8 @@ export default function InvoicesPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {loading && <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Yuklanmoqda...</TableCell></TableRow>}
-                    {!loading && rows.length === 0 && <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Nakladnoy yo'q</TableCell></TableRow>}
+                    {loading && <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Yuklanmoqda...</TableCell></TableRow>}
+                    {!loading && rows.length === 0 && <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Nakladnoy yo'q</TableCell></TableRow>}
                     {rows.map((s) => {
                       const list = itemsBySession[s.id] ?? [];
                       const meta = INTAKE_STATUS_META[s.status];
