@@ -43,6 +43,21 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
   const [date, setDate] = useState("");
   const [comment, setComment] = useState("");
 
+  // Shu zakazga tegishli ta'minot bildirishnomalari (umumiy mexanizmdan foydalanadi).
+  const { items: notifItems, markRead } = useNotifications();
+  const supplyNotifs = notifItems
+    .filter((n) => notifOrderId(n) === orderId && resolveModule(n) === "supply")
+    .slice(0, 20);
+  const unreadNotifs = supplyNotifs.filter((n) => !n.read_at);
+
+  // Zakaz ochilganda shu zakazning ta'minot bildirishnomalari o'qilgan deb belgilanadi.
+  useEffect(() => {
+    if (!unreadNotifs.length) return;
+    const t = window.setTimeout(() => { unreadNotifs.forEach((n) => { void markRead(n); }); }, 1200);
+    return () => window.clearTimeout(t);
+  }, [unreadNotifs.map((n) => n.id).join(",")]);
+
+
   const load = async () => {
     const [{ data: reqs }, { data: prods }] = await Promise.all([
       supabase.from("order_supply_requests").select("*").eq("order_id", orderId).order("created_at"),
