@@ -613,19 +613,25 @@ export default function WarehousePage() {
     setEditMovOpen(false); setEditMov(null); load();
   };
 
-  const deleteProduct = async (p: any) => {
-    if (!window.confirm(`${t.common.delete ?? "O'chirish"}: ${p.name}?`)) return;
-    const { error } = await supabase.from("products").delete().eq("id", p.id);
+  const confirmDeleteProduct = async () => {
+    if (!delTarget) return;
+    if (!ensureOnline((m) => toast.error(m))) return;
+    setDelBusy(true);
+    const { error } = await supabase.from("products").delete().in("id", delTarget.ids);
+    setDelBusy(false);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: user?.email,
       action: "Mahsulot o'chirildi", entity: "product",
-      details: `${p.name} (stock: ${p.stock_qty} ${p.unit})`,
+      details: `${delTarget.name} (${delTarget.ids.length} partiya, qoldiq: ${delTarget.qty} ${delTarget.unit})`,
     });
-    toast.success(t.common.delete ?? "O'chirildi");
-    if (selectedProduct?.id === p.id) setSelectedProduct(null);
-    load();
+    toast.success("Mahsulot o'chirildi");
+    if (delTarget.ids.includes(selectedProduct?.id)) setSelectedProduct(null);
+    setProducts((prev) => prev.filter((p: any) => !delTarget.ids.includes(p.id)));
+    setDelTarget(null);
+    await load();
   };
+
 
   const deleteMovement = async (m: any) => {
     if (!window.confirm(`${t.common.delete ?? "O'chirish"}: ${m.product?.name ?? ""} ${m.direction === "in" ? "+" : "-"}${m.quantity}?`)) return;
