@@ -400,10 +400,19 @@ export default function SupplyRequestsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
+                    {!o.pinned && (supplyUnreadByOrder[o.key] ?? 0) > 0 && (
+                      <span
+                        title={`${supplyUnreadByOrder[o.key]} ta yangi o'zgarish`}
+                        className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-status-red px-1.5 text-xs font-bold leading-none text-status-red-foreground shadow-sm"
+                      >
+                        {supplyUnreadByOrder[o.key] > 99 ? "99+" : supplyUnreadByOrder[o.key]}
+                      </span>
+                    )}
                     {o.counts.pending > 0 && <Badge variant="outline" className={`px-2.5 py-1 text-sm font-semibold ${statusCls.pending}`}>🔴 {o.counts.pending}</Badge>}
                     {o.counts.fulfilled > 0 && <Badge variant="outline" className={`px-2.5 py-1 text-sm font-semibold ${statusCls.fulfilled}`}>🟢 {o.counts.fulfilled}</Badge>}
                     <span className="text-sm text-muted-foreground font-medium">{o.items.length} ta</span>
                   </div>
+
                 </CardContent>
               </Card>
             ))}
