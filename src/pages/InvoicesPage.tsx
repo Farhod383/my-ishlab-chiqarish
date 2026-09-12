@@ -137,12 +137,13 @@ export default function InvoicesPage() {
                       <TableHead>Tugagan</TableHead>
                       <TableHead>Davomiyligi</TableHead>
                       <TableHead>Kim kiritgan</TableHead>
+                      <TableHead>Yetkazib beruvchi</TableHead>
                       <TableHead>Rasm</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {loading && <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Yuklanmoqda...</TableCell></TableRow>}
-                    {!loading && rows.length === 0 && <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Nakladnoy yo'q</TableCell></TableRow>}
+                    {loading && <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Yuklanmoqda...</TableCell></TableRow>}
+                    {!loading && rows.length === 0 && <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Nakladnoy yo'q</TableCell></TableRow>}
                     {rows.map((s) => {
                       const list = itemsBySession[s.id] ?? [];
                       const meta = INTAKE_STATUS_META[s.status];
@@ -156,6 +157,7 @@ export default function InvoicesPage() {
                           <TableCell className="whitespace-nowrap text-sm">{s.finished_at ? fmtDateTime24(s.finished_at) : "—"}</TableCell>
                           <TableCell className="whitespace-nowrap text-sm">{intakeDuration(s)}</TableCell>
                           <TableCell className="text-sm">{s.created_by_name ?? "—"}</TableCell>
+                          <TableCell className="text-sm">{s.supplier ?? "—"}</TableCell>
                           <TableCell>{s.image_url ? <ImageIcon className="h-4 w-4 text-status-green" /> : <Clock className="h-4 w-4 text-muted-foreground" />}</TableCell>
                         </TableRow>
                       );
