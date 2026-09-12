@@ -23,6 +23,7 @@ import { notify } from "@/lib/notify";
 import { recalcOrderStatus } from "@/lib/orderStatus";
 import OrderSupplyRequests from "@/components/OrderSupplyRequests";
 import { useNotifications, notifStageId } from "@/notifications/NotificationsContext";
+import { fmtDateTime24, fmtDuration } from "@/lib/format";
 
 
 export default function OrderDetail() {
@@ -132,7 +133,7 @@ export default function OrderDetail() {
       actor_id: user?.id, actor_name: user?.email,
       action: "Bosqich boshlandi", entity: "stage",
       order_id: order!.id, stage_id: stage.id,
-      details: `${stage.name} · Ishchilar: ${workerStr} · ${new Date(startedAtIso).toLocaleString()}`,
+      details: `${stage.name} · Ishchilar: ${workerStr} · ${fmtDateTime24(startedAtIso)}`,
     });
     await notify({
       type: "stage_started",
@@ -152,11 +153,11 @@ export default function OrderDetail() {
     const finishedTs = Date.now();
     const durationMin = startedTs ? Math.round((finishedTs - startedTs) / 60000) : 0;
     await supabase.from("order_stages").update({ status: "completed", finished_at: new Date(finishedTs).toISOString() }).eq("id", stage.id);
-    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Bosqich tugatildi", entity: "stage", order_id: order!.id, stage_id: stage.id, details: `${stage.name} · ishchi: ${(stage as any).worker_name ?? "—"} · davomiyligi: ${durationMin} daq.` });
+    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Bosqich tugatildi", entity: "stage", order_id: order!.id, stage_id: stage.id, details: `${stage.name} · ishchi: ${(stage as any).worker_name ?? "—"} · davomiyligi: ${fmtDuration(durationMin)}` });
     await notify({
       type: "stage_finished",
       title: `Bosqich tugatildi — ${order?.order_number}`,
-      body: `${stage.name} · ${durationMin} daq.`,
+      body: `${stage.name} · ${fmtDuration(durationMin)}`,
       link: `/orders/${order!.id}`,
       entity: "stage", entity_id: stage.id,
       sender_id: user?.id, sender_name: user?.email,
@@ -414,9 +415,7 @@ export default function OrderDetail() {
             const expanded = openStageId === s.id;
             const evs = stageEvents(s.name);
             const actualMs = s.started_at ? (new Date(s.finished_at ?? Date.now()).getTime() - new Date(s.started_at).getTime()) : 0;
-            const actualTxt = s.started_at
-              ? `${Math.floor(actualMs / 86400000)} kun ${Math.floor((actualMs % 86400000) / 3600000)} soat`
-              : "—";
+            const actualTxt = s.started_at ? fmtDuration(actualMs / 60000) : "—";
             return (
               <Card key={s.id} className={s.status === "delayed" ? "border-status-red/50" : s.status === "in_progress" ? "border-status-blue/50" : ""}>
                 <CardContent className="p-4">
@@ -450,8 +449,8 @@ export default function OrderDetail() {
                           )}
                         </div>
                         <div className="text-xs text-muted-foreground mt-1">{t.orderDetail.norm}: {s.norm_days} {t.common.days}</div>
-                        {s.started_at && <div className="text-xs text-muted-foreground mt-1">{t.orderDetail.started2}: {new Date(s.started_at).toLocaleString()}</div>}
-                        {s.finished_at && <div className="text-xs text-muted-foreground">{t.orderDetail.finished2}: {new Date(s.finished_at).toLocaleString()}</div>}
+                        {s.started_at && <div className="text-xs text-muted-foreground mt-1">{t.orderDetail.started2}: {fmtDateTime24(s.started_at)}</div>}
+                        {s.finished_at && <div className="text-xs text-muted-foreground">{t.orderDetail.finished2}: {fmtDateTime24(s.finished_at)}</div>}
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 shrink-0 min-w-[220px]" onClick={(e) => e.stopPropagation()}>
@@ -474,13 +473,13 @@ export default function OrderDetail() {
                     <div className="mt-4 pt-3 border-t space-y-3">
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                         <div><div className="text-muted-foreground">Holati</div><div className="mt-0.5"><StatusBadge status={s.status as any} /></div></div>
-                        <div><div className="text-muted-foreground">Boshlangan</div><div className="font-medium">{s.started_at ? new Date(s.started_at).toLocaleString() : "—"}</div></div>
-                        <div><div className="text-muted-foreground">Tugagan</div><div className="font-medium">{s.finished_at ? new Date(s.finished_at).toLocaleString() : "—"}</div></div>
+                        <div><div className="text-muted-foreground">Boshlangan</div><div className="font-medium">{fmtDateTime24(s.started_at)}</div></div>
+                        <div><div className="text-muted-foreground">Tugagan</div><div className="font-medium">{fmtDateTime24(s.finished_at)}</div></div>
                         <div><div className="text-muted-foreground">Norma</div><div className="font-medium">{s.norm_days} {t.common.days}</div></div>
                         <div><div className="text-muted-foreground">Haqiqiy vaqt</div><div className="font-medium">{actualTxt}</div></div>
                         <div className="col-span-2"><div className="text-muted-foreground">Xodimlar</div><div className="font-medium">{(s as any).worker_name || "—"}</div></div>
                         {s.qc_required && (
-                          <div><div className="text-muted-foreground">OTK</div><div className="font-medium">{s.qc_passed ? "Tasdiqlangan" : "Kutilmoqda"}{(s as any).otk_checked_at ? ` · ${new Date((s as any).otk_checked_at).toLocaleString()}` : ""}</div></div>
+                          <div><div className="text-muted-foreground">OTK</div><div className="font-medium">{s.qc_passed ? "Tasdiqlangan" : "Kutilmoqda"}{(s as any).otk_checked_at ? ` · ${fmtDateTime24((s as any).otk_checked_at)}` : ""}</div></div>
                         )}
                       </div>
                       {(notifsByStage[s.id]?.length ?? 0) > 0 && (
@@ -492,7 +491,7 @@ export default function OrderDetail() {
                                 <div className="text-xs font-medium">{n.title}</div>
                                 {n.body && <div className="text-[11px] text-muted-foreground whitespace-pre-wrap">{n.body}</div>}
                                 <div className="mt-0.5 text-[11px] text-muted-foreground">
-                                  {n.sender_name ?? "Tizim"} · {new Date(n.created_at).toLocaleString("uz-UZ")}
+                                  {n.sender_name ?? "Tizim"} · {fmtDateTime24(n.created_at)}
                                 </div>
                               </div>
                             ))}
@@ -507,7 +506,7 @@ export default function OrderDetail() {
                           <div className="space-y-1.5">
                             {evs.slice(0, 10).map(ev => (
                               <div key={ev.key} className="text-xs border-l-2 border-primary/30 pl-2">
-                                <span className="text-muted-foreground">{new Date(ev.at).toLocaleString()}</span>
+                                <span className="text-muted-foreground">{fmtDateTime24(ev.at)}</span>
                                 {" — "}
                                 <span className="font-medium">{ev.dept}</span>
                                 {" · "}
@@ -565,7 +564,7 @@ export default function OrderDetail() {
               {movements.map((m) => (
                 <div key={m.id} className="text-sm border-l-2 border-primary/40 pl-3 py-1">
                   <div><span className="font-medium">{m.product?.name}</span> — <span className="font-mono">{m.direction === "out" ? "-" : "+"}{m.quantity} {m.product?.unit}</span></div>
-                  <div className="text-xs text-muted-foreground">{t.orderDetail.receivedBy}: {localize(m.recipient_name) || "—"} · {new Date(m.created_at).toLocaleString()}</div>
+                  <div className="text-xs text-muted-foreground">{t.orderDetail.receivedBy}: {localize(m.recipient_name) || "—"} · {fmtDateTime24(m.created_at)}</div>
                   {m.comment && <div className="text-xs text-muted-foreground italic">"{m.comment}"</div>}
                 </div>
               ))}
@@ -591,7 +590,7 @@ export default function OrderDetail() {
                     </div>
                     {ev.details && <div className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">{ev.details}</div>}
                     <div className="text-[11px] text-muted-foreground/80 mt-1">
-                      {new Date(ev.at).toLocaleString()} · {ev.actor ? localize(ev.actor) : t.common.system}
+                      {fmtDateTime24(ev.at)} · {ev.actor ? localize(ev.actor) : t.common.system}
                     </div>
                   </div>
                 </div>
@@ -609,7 +608,7 @@ export default function OrderDetail() {
                 <div key={l.id} className="text-sm border-l-2 border-border pl-3 py-1">
                   <div><span className="font-semibold">{l.action}</span> — <span className="text-muted-foreground">{l.actor_name ? localize(l.actor_name) : t.common.system}</span></div>
                   {l.details && <div className="text-xs text-muted-foreground">{l.details}</div>}
-                  <div className="text-[10px] text-muted-foreground">{new Date(l.created_at).toLocaleString()}</div>
+                  <div className="text-[10px] text-muted-foreground">{fmtDateTime24(l.created_at)}</div>
                 </div>
               ))}
               {logs.length === 0 && <p className="text-sm text-muted-foreground">{t.common.noRecords}</p>}
