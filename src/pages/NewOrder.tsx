@@ -29,6 +29,7 @@ export default function NewOrder() {
   const [orderNumber, setOrderNumber] = useState("");
   const [products, setProducts] = useState<any[]>([]);
   const [clientName, setClientName] = useState<string>("");
+  const [lockedClientId, setLockedClientId] = useState<string | null>(null);
   const [productName, setProductName] = useState("");
   const [quantity, setQuantity] = useState<number>(1);
   const [priority, setPriority] = useState<"normal" | "exception">("normal");
@@ -95,6 +96,11 @@ export default function NewOrder() {
           await applyTemplate(fromQuery);
         }
       } catch { /* noop */ }
+      const cid = searchParams.get("client");
+      if (cid) {
+        const { data: c } = await supabase.from("clients").select("id, name").eq("id", cid).maybeSingle();
+        if (c) { setLockedClientId(c.id); setClientName(c.name); }
+      }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -158,14 +164,18 @@ export default function NewOrder() {
         }
       }
 
-      let clientId: string | null = null;
-      if (clientName.trim()) {
+      let clientId: string | null = lockedClientId;
+      if (!clientId && clientName.trim()) {
         const trimmed = clientName.trim();
         const { data: existingClient } = await supabase.from("clients").select("id").ilike("name", trimmed).maybeSingle();
         if (existingClient) {
           clientId = existingClient.id;
         } else {
-          const { data: newClient, error: cErr } = await supabase.from("clients").insert({ name: trimmed }).select().single();
+          const { data: newClient, error: cErr } = await supabase
+            .from("clients")
+            .insert({ name: trimmed, created_by: user?.id ?? null } as any)
+            .select()
+            .single();
           if (cErr) throw cErr;
           clientId = newClient.id;
         }
