@@ -63,8 +63,8 @@ export default function InvoicesPage() {
   const rows = useMemo(() => {
     const term = q.trim().toLowerCase();
     return sessions.filter((s) => {
-      if (tab !== "all" && s.status !== tab) return false;
       if (!term) return true;
+
       const list = itemsBySession[s.id] ?? [];
       return (
         intakeCode(s).toLowerCase().includes(term) ||
@@ -231,32 +231,21 @@ export default function InvoicesPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Nakladnoy rasmi {current.status !== "finalized" && <span className="text-destructive">*</span>}</Label>
+                  <Label>Nakladnoy rasmi</Label>
                   {current.image_url ? (
                     <a href={current.image_url} target="_blank" rel="noreferrer">
                       <img src={current.image_url} alt={`Nakladnoy ${intakeCode(current)}`} className="max-h-48 rounded border" />
                     </a>
                   ) : (
-                    <p className="text-xs text-muted-foreground">Rasm yuklanmagan — yakunlash uchun majburiy</p>
-                  )}
-                  {current.status !== "finalized" && (
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <Input type="file" accept="image/*" onChange={(e) => setImgFile(e.target.files?.[0] ?? null)} />
-                      <Button variant="outline" disabled={!imgFile || busy} onClick={uploadImage}>Rasmni yuklash</Button>
-                    </div>
+                    <p className="text-xs text-muted-foreground">Rasm yo'q</p>
                   )}
                 </div>
               </div>
 
-              <div className="px-6 py-4 border-t bg-background shrink-0 flex flex-col sm:flex-row gap-2 justify-end">
-                {current.status === "finalized" ? (
-                  <div className="flex items-center gap-2 text-status-green text-sm"><CheckCircle2 className="h-4 w-4" /> Skladga kirim qilingan</div>
-                ) : (
-                  <Button disabled={!current.image_url || busy || current.status === "open" || currentItems.length === 0} onClick={doFinalize}>
-                    {current.status === "open" ? "Avval kirimni tugating" : "Yakunlash (skladga kirim)"}
-                  </Button>
-                )}
+              <div className="px-6 py-4 border-t bg-background shrink-0 flex justify-end">
+                <div className="flex items-center gap-2 text-status-green text-sm"><CheckCircle2 className="h-4 w-4" /> Skladga kirim qilingan</div>
               </div>
+
             </>
           )}
         </DialogContent>
