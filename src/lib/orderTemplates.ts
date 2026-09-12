@@ -20,6 +20,7 @@ export type TemplateStage = {
   name: string;
   norm_days: number;
   qc_required: boolean;
+  group_id: string | null;
 };
 
 export type TemplatePart = {
@@ -51,7 +52,7 @@ export async function listTemplates(limit = 200): Promise<OrderTemplate[]> {
 export async function loadTemplate(orderId: string) {
   const [o, stages, parts] = await Promise.all([
     supabase.from("orders").select("id, order_number, product_name, quantity, created_at").eq("id", orderId).maybeSingle(),
-    supabase.from("order_stages").select("name, stage_order, norm_days, qc_required").eq("order_id", orderId).order("stage_order"),
+    supabase.from("order_stages").select("name, stage_order, norm_days, qc_required, group_id").eq("order_id", orderId).order("stage_order"),
     supabase.from("order_parts").select("product_id, part_name, unit, norm_qty").eq("order_id", orderId),
   ]);
   const src = o.data as any;
@@ -69,6 +70,7 @@ export async function loadTemplate(orderId: string) {
     name: s.name,
     norm_days: Number(s.norm_days) || 1,
     qc_required: !!s.qc_required,
+    group_id: s.group_id ?? null,
   }));
   const tParts: TemplatePart[] = (parts.data ?? []).map((p: any) => ({
     product_id: p.product_id,
