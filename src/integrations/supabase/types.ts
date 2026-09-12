@@ -1049,6 +1049,127 @@ export type Database = {
         }
         Relationships: []
       }
+      intake_items: {
+        Row: {
+          comment: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          id: string
+          image_url: string | null
+          location: string | null
+          order_id: string | null
+          phone: string | null
+          product_id: string | null
+          product_name: string
+          quantity: number
+          session_id: string
+          source: string | null
+          unit: string
+          unit_price: number
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          image_url?: string | null
+          location?: string | null
+          order_id?: string | null
+          phone?: string | null
+          product_id?: string | null
+          product_name: string
+          quantity?: number
+          session_id: string
+          source?: string | null
+          unit?: string
+          unit_price?: number
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          image_url?: string | null
+          location?: string | null
+          order_id?: string | null
+          phone?: string | null
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          session_id?: string
+          source?: string | null
+          unit?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intake_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intake_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intake_items_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "intake_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intake_sessions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          finalized_at: string | null
+          finished_at: string | null
+          id: string
+          image_url: string | null
+          started_at: string
+          status: string
+          supplier: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          finalized_at?: string | null
+          finished_at?: string | null
+          id?: string
+          image_url?: string | null
+          started_at?: string
+          status?: string
+          supplier?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          finalized_at?: string | null
+          finished_at?: string | null
+          id?: string
+          image_url?: string | null
+          started_at?: string
+          status?: string
+          supplier?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       locations: {
         Row: {
           created_at: string
@@ -1799,6 +1920,8 @@ export type Database = {
           direction: Database["public"]["Enums"]["movement_direction"]
           id: string
           image_url: string | null
+          intake_item_id: string | null
+          intake_session_id: string | null
           location: string
           order_id: string | null
           phone: string | null
@@ -1821,6 +1944,8 @@ export type Database = {
           direction: Database["public"]["Enums"]["movement_direction"]
           id?: string
           image_url?: string | null
+          intake_item_id?: string | null
+          intake_session_id?: string | null
           location?: string
           order_id?: string | null
           phone?: string | null
@@ -1843,6 +1968,8 @@ export type Database = {
           direction?: Database["public"]["Enums"]["movement_direction"]
           id?: string
           image_url?: string | null
+          intake_item_id?: string | null
+          intake_session_id?: string | null
           location?: string
           order_id?: string | null
           phone?: string | null
@@ -1857,6 +1984,20 @@ export type Database = {
           unit_price?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "stock_movements_intake_item_id_fkey"
+            columns: ["intake_item_id"]
+            isOneToOne: false
+            referencedRelation: "intake_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_intake_session_id_fkey"
+            columns: ["intake_session_id"]
+            isOneToOne: false
+            referencedRelation: "intake_sessions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "stock_movements_order_id_fkey"
             columns: ["order_id"]
@@ -1988,6 +2129,10 @@ export type Database = {
     }
     Functions: {
       can_manage_trips: { Args: { _user_id: string }; Returns: boolean }
+      finalize_intake_session: {
+        Args: { _session_id: string }
+        Returns: undefined
+      }
       has_any_role: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {

@@ -28,6 +28,9 @@ import SearchableSelect from "@/components/SearchableSelect";
 import { PriorityDot, PRIORITY_OPTIONS } from "@/components/PriorityDot";
 import { getStockStatus, stockStatusMeta, StockDot, type StockStatus } from "@/lib/stockStatus";
 import { useEmployees } from "@/hooks/useEmployees";
+import { Link } from "react-router-dom";
+import { fmtDateTime24 } from "@/lib/format";
+import { getOpenSession, getOrStartSession, finishSession, intakeCode, itemsTotal, type IntakeSession, type IntakeItem } from "@/lib/intake";
 
 const UNITS = ["dona", "kg", "metr", "litr", "rulon", "komplekt"] as const;
 const CURRENCIES = ["UZS", "USD"] as const;
@@ -92,6 +95,10 @@ export default function WarehousePage() {
   const [impOrderId, setImpOrderId] = useState<string>("");
   const [locations, setLocations] = useState<{ id: string; name: string }[]>([]);
 
+  // Kirim sessiyasi (Nakladnoy)
+  const [openSession, setOpenSession] = useState<IntakeSession | null>(null);
+  const [sessionItems, setSessionItems] = useState<IntakeItem[]>([]);
+
   // Cross-order release confirmation
   const [crossOpen, setCrossOpen] = useState(false);
   const [crossReason, setCrossReason] = useState("");
@@ -117,7 +124,7 @@ export default function WarehousePage() {
     const [p, o, m] = await Promise.all([
       supabase.from("products").select("*").order("name"),
       supabase.from("orders").select("id, order_number, product_name").neq("status", "completed"),
-      supabase.from("stock_movements").select("*, product:products(name, unit), order:orders(order_number, product_name)").order("created_at", { ascending: false }).limit(200),
+      supabase.from("stock_movements").select("*, product:products(name, unit), order:orders(order_number, product_name), intake_session:intake_sessions(id, started_at, finished_at, supplier, created_by_name)").order("created_at", { ascending: false }).limit(200),
     ]);
     setProducts(p.data ?? []); setOrders(o.data ?? []); setMovements(m.data ?? []);
     const ids = Array.from(new Set((m.data ?? []).map((x: any) => x.created_by).filter(Boolean)));
@@ -132,6 +139,7 @@ export default function WarehousePage() {
     load();
     supabase.from("locations").select("id, name").order("name").then(({ data }) => setLocations(data ?? []));
   }, []);
+  useEffect(() => { loadSession(); }, [user?.id]);
 
   const canManage = hasRole(["warehouse", "admin"]);
   const canImport = hasRole(["warehouse", "admin"]);
@@ -389,38 +397,72 @@ export default function WarehousePage() {
     }
 
     const orderLabel = impOrderId ? (orders.find(o => o.id === impOrderId)?.order_number ?? "") : "";
-    const { error } = await supabase.from("stock_movements").insert({
-      product_id: productId, direction: "in", quantity: qtyN,
+
+    // Kirim sessiyasi (Nakladnoy) — ochiq bo'lmasa avtomatik boshlanadi
+    let session: any;
+    try {
+      session = await getOrStartSession(user?.id, user?.email ?? null, impSupplier || null);
+    } catch (e: any) { toast.error(e.message ?? "Kirim sessiyasini ochib bo'lmadi"); return; }
+
+    const { error } = await supabase.from("intake_items").insert({
+      session_id: session.id,
+      product_id: productId,
+      product_name: trimmedName,
+      unit: impUnit || "dona",
+      quantity: qtyN,
       unit_price: priceN,
-      recipient_name: impSupplier || null, created_by: user?.id,
-      phone: impPhone || null, image_url: imgUrl,
-      source: impSource.trim() || null,
-      location: impLocation || "Asosiy zavod",
       currency: impCurrency || "UZS",
-      source_order_id: impOrderId || null,
-      comment: `${t.supply.title}${impSupplier ? `: ${impSupplier}` : ""}${priceN ? ` · ${fmt(priceN)} ${impCurrency}/${t.common.pieces}` : ""} · ${impLocation}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
+      location: impLocation || "Asosiy zavod",
+      order_id: impOrderId || null,
+      source: impSource.trim() || null,
+      phone: impPhone || null,
+      image_url: imgUrl,
+      created_by: user?.id,
+      comment: `Nakladnoy${impSupplier ? ` · ${impSupplier}` : ""} · ${impLocation}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
     } as any);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: user?.email,
-      action: "Mahsulot keltirildi", entity: "stock_movement",
+      action: "Nakladnoyga mahsulot qo'shildi", entity: "intake_item",
       order_id: impOrderId || null,
-      details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${t.common.sum}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
+      details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${impCurrency}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
     });
-    {
-      const { notify } = await import("@/lib/notify");
-      await notify({
-        type: "info",
-        title: `Sklad kirimi — ${trimmedName}`,
-        body: `+${qtyN} ${impUnit}${impSupplier ? ` · ${impSupplier}` : ""}`,
-        link: "/warehouse", entity: "stock_movement",
-        recipient_role: ["warehouse", "manager", "supply"],
-        sender_id: user?.id, sender_name: user?.email,
-      });
-    }
-    toast.success(t.warehouse.inRecorded);
-    setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpSupplier(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId(""); setImportOpen(false);
+    toast.success("Nakladnoyga qo'shildi — kirim tugatilgach skladga tushadi");
+    setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId(""); setImportOpen(false);
+    loadSession();
     load();
+  };
+
+  // ===== Kirim sessiyasi (Nakladnoy) =====
+  const loadSession = async () => {
+    if (!user?.id) return;
+    const s = await getOpenSession(user.id);
+    setOpenSession(s);
+    if (s) {
+      const { data } = await supabase.from("intake_items").select("*").eq("session_id", s.id).order("created_at");
+      setSessionItems((data as any) ?? []);
+    } else setSessionItems([]);
+  };
+
+  const removeSessionItem = async (id: string) => {
+    const { error } = await supabase.from("intake_items").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    loadSession();
+  };
+
+  const doFinishSession = async () => {
+    if (!openSession) return;
+    if (sessionItems.length === 0) { toast.error("Avval mahsulot qo'shing"); return; }
+    try {
+      await finishSession(openSession.id);
+      await logAudit(supabase, {
+        actor_id: user?.id, actor_name: user?.email,
+        action: "Kirim tugatildi", entity: "intake_session",
+        details: `Nakladnoy ${intakeCode(openSession)} · ${sessionItems.length} mahsulot · ${fmt(itemsTotal(sessionItems as any))}`,
+      });
+      toast.success("Kirim tugatildi — Nakladnoy bo'limida rasm yuklang va yakunlang");
+      loadSession();
+    } catch (e: any) { toast.error(e.message ?? "Xatolik"); }
   };
 
   const openEditProduct = (p: any) => {
@@ -1090,6 +1132,66 @@ export default function WarehousePage() {
         })}
       </div>
 
+      {openSession && (
+        <Card className="border-status-yellow/40 bg-status-yellow/5">
+          <CardHeader className="pb-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ArrowDownToLine className="h-4 w-4 text-status-yellow" />
+                  Ochiq kirim — Nakladnoy <span className="font-mono">{intakeCode(openSession)}</span>
+                </CardTitle>
+                <CardDescription>
+                  Boshlangan: {fmtDateTime24(openSession.started_at)} · {sessionItems.length} mahsulot · Jami: {fmt(itemsTotal(sessionItems as any))}
+                  {openSession.supplier ? ` · Olib keldi: ${openSession.supplier}` : ""}
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" asChild><Link to="/invoices">Nakladnoy bo'limi</Link></Button>
+                <Button size="sm" onClick={doFinishSession} disabled={sessionItems.length === 0}>Kirimni tugatish</Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto max-h-[40vh] overflow-y-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>№</TableHead>
+                    <TableHead>Mahsulot</TableHead>
+                    <TableHead className="text-right">Miqdor</TableHead>
+                    <TableHead className="text-right">Narx</TableHead>
+                    <TableHead>Valyuta</TableHead>
+                    <TableHead className="text-right">Jami</TableHead>
+                    <TableHead>Vaqt</TableHead>
+                    <TableHead />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sessionItems.length === 0 && (
+                    <TableRow><TableCell colSpan={8} className="text-center py-6 text-muted-foreground">Mahsulot qo'shing — "Mahsulot kirimi"</TableCell></TableRow>
+                  )}
+                  {sessionItems.map((i, idx) => (
+                    <TableRow key={i.id}>
+                      <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
+                      <TableCell className="font-medium">{i.product_name}</TableCell>
+                      <TableCell className="text-right font-mono">{fmt(Number(i.quantity))} {i.unit}</TableCell>
+                      <TableCell className="text-right font-mono">{fmt(Number(i.unit_price))}</TableCell>
+                      <TableCell>{i.currency}</TableCell>
+                      <TableCell className="text-right font-mono font-semibold">{fmt(Number(i.quantity) * Number(i.unit_price))}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{fmtDateTime24(i.created_at)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => removeSessionItem(i.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Tabs defaultValue="stock">
         <TabsList>
           <TabsTrigger value="stock">{t.warehouse.tabs.stock}</TabsTrigger>
@@ -1272,6 +1374,7 @@ export default function WarehousePage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-12 text-right">№</TableHead>
+                      <TableHead>Nakladnoy</TableHead>
                       <TableHead>{t.warehouse.cols.datetime}</TableHead>
                       <TableHead>{t.warehouse.cols.direction}</TableHead>
                       <TableHead>{t.warehouse.cols.product}</TableHead>
@@ -1294,6 +1397,13 @@ export default function WarehousePage() {
                         onClick={canManage ? () => openEditMovement(m) : undefined}
                       >
                         <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
+                        <TableCell className="text-xs whitespace-nowrap font-mono">
+                          {m.intake_session?.started_at ? (
+                            <Link to="/invoices" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+                              {fmtDateTime24(m.intake_session.started_at)}
+                            </Link>
+                          ) : <span className="text-muted-foreground">—</span>}
+                        </TableCell>
                         <TableCell className="text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</TableCell>
                         <TableCell>
                           {m.direction === "out"
