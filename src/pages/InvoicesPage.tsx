@@ -1,20 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FileText, Image as ImageIcon, CheckCircle2, Clock, Search } from "lucide-react";
-import { toast } from "sonner";
 import { fmtNum } from "@/lib/format";
 import { fmtDateTime24 } from "@/lib/format";
 import {
-  INTAKE_STATUS_META, finalizeSession, intakeCode, intakeDuration, itemsTotal,
-  type IntakeItem, type IntakeSession, type IntakeStatus,
+  INTAKE_STATUS_META, intakeCode, intakeDuration, itemsTotal,
+  type IntakeItem, type IntakeSession,
 } from "@/lib/intake";
 
 const fmt = (n: number) => fmtNum(n);
