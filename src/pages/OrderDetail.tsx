@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchStageGroups, groupStages, type StageGroup } from "@/lib/stageGroups";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { logAudit, type OrderRow, type StageRow, type OrderPartRow, type AuditLogRow } from "@/types/erp";
-import { ArrowLeft, CheckCircle2, Play, FileText, Image as ImageIcon, AlertTriangle, ShieldCheck, Loader2, ClipboardList, Receipt, UserCog, MessageCircle, Download, Trash2, Upload, Pencil } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Play, FileText, Image as ImageIcon, AlertTriangle, ShieldCheck, Loader2, ClipboardList, Receipt, UserCog, MessageCircle, Download, Trash2, Upload, Pencil, ChevronDown, ChevronRight } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -34,6 +35,8 @@ export default function OrderDetail() {
   const localize = useLocalize();
   const [order, setOrder] = useState<(OrderRow & { client?: any }) | null>(null);
   const [stages, setStages] = useState<StageRow[]>([]);
+  const [stageGroups, setStageGroups] = useState<StageGroup[]>([]);
+  const [openGroupKey, setOpenGroupKey] = useState<Record<string, boolean>>({});
   const [parts, setParts] = useState<OrderPartRow[]>([]);
   const [logs, setLogs] = useState<AuditLogRow[]>([]);
   const [movements, setMovements] = useState<any[]>([]);
@@ -104,6 +107,7 @@ export default function OrderDetail() {
   };
 
   useEffect(() => { load(); }, [id]);
+  useEffect(() => { fetchStageGroups().then(setStageGroups).catch(() => {}); }, []);
 
   // Realtime: keep Admin / Nachalnik in sync when either side changes a stage.
   useEffect(() => {
@@ -411,7 +415,30 @@ export default function OrderDetail() {
             </CardContent>
           </Card>
 
-          {stages.map((s) => {
+          {groupStages(stages as any, stageGroups).map((grp) => {
+            const gDone = grp.items.filter((x: any) => x.status === "completed").length;
+            const gUnread = grp.items.reduce((n: number, x: any) => n + (unreadByStage[x.id] ?? 0), 0);
+            const gExpanded = openGroupKey[grp.key] ?? false;
+            return (
+            <div key={grp.key} className="rounded-lg border bg-muted/20">
+              <button
+                type="button"
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-muted/40 rounded-lg transition"
+                onClick={() => setOpenGroupKey((o) => ({ ...o, [grp.key]: !gExpanded }))}
+              >
+                {gExpanded ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
+                <span className="font-bold uppercase tracking-wide text-sm">{grp.name}</span>
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-md border bg-background px-1.5 text-xs font-bold">{grp.items.length}</span>
+                {gUnread > 0 && (
+                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-status-red px-1.5 text-[11px] font-bold text-status-red-foreground">
+                    {gUnread > 99 ? "99+" : gUnread}
+                  </span>
+                )}
+                <span className="ml-auto text-xs font-semibold text-muted-foreground">{gDone}/{grp.items.length} bajarildi</span>
+              </button>
+              {gExpanded && (
+              <div className="p-2 pt-0 space-y-2">
+              {grp.items.map((s: any) => {
 
             // Parallel execution: any pending stage may be started independently of the others.
             const color = otkColor(s);
@@ -526,6 +553,11 @@ export default function OrderDetail() {
                 </CardContent>
 
               </Card>
+            );
+          })}
+              </div>
+              )}
+            </div>
             );
           })}
         </TabsContent>

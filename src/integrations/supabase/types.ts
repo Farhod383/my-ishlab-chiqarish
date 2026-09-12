@@ -1350,6 +1350,8 @@ export type Database = {
         Row: {
           created_at: string
           finished_at: string | null
+          group_id: string | null
+          group_order: number | null
           handover_comment: string | null
           id: string
           name: string
@@ -1371,6 +1373,8 @@ export type Database = {
         Insert: {
           created_at?: string
           finished_at?: string | null
+          group_id?: string | null
+          group_order?: number | null
           handover_comment?: string | null
           id?: string
           name: string
@@ -1392,6 +1396,8 @@ export type Database = {
         Update: {
           created_at?: string
           finished_at?: string | null
+          group_id?: string | null
+          group_order?: number | null
           handover_comment?: string | null
           id?: string
           name?: string
@@ -1411,6 +1417,13 @@ export type Database = {
           worker_name?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "order_stages_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "stage_groups"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "order_stages_order_id_fkey"
             columns: ["order_id"]
@@ -1906,6 +1919,68 @@ export type Database = {
           problem_description?: string
           received_at?: string
           status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stage_group_items: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          item_order: number
+          name: string
+          norm_days: number
+          qc_required: boolean
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          item_order?: number
+          name: string
+          norm_days?: number
+          qc_required?: boolean
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          item_order?: number
+          name?: string
+          norm_days?: number
+          qc_required?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stage_group_items_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "stage_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stage_groups: {
+        Row: {
+          created_at: string
+          group_order: number
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          group_order?: number
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          group_order?: number
+          id?: string
+          name?: string
           updated_at?: string
         }
         Relationships: []
