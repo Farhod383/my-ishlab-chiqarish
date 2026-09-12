@@ -75,7 +75,7 @@ export default function ClientDetail() {
     setInteractions(ints ?? []);
     setDocs(dcs ?? []);
     setAudit([
-      ...(ea ?? []).map((r: any) => ({ at: r.created_at, who: r.actor_name, action: r.action, details: r.new_value ? JSON.stringify(r.new_value) : "" })),
+      ...(ea ?? []).map((r: any) => ({ at: r.created_at, who: r.actor_name, action: r.action, details: auditDetails(r) })),
       ...oa.map((r: any) => ({ at: r.created_at, who: r.actor_name, action: r.action, details: r.details ?? "" })),
       ...(ints ?? []).map((r: any) => ({ at: r.occurred_at, who: r.actor_name, action: `Aloqa: ${KINDS[r.kind] ?? r.kind}`, details: r.content })),
     ].sort((a, b) => (b.at ?? "").localeCompare(a.at ?? "")));
@@ -119,11 +119,16 @@ export default function ClientDetail() {
   const openEdit = () => { setEdit({ ...client }); setEditOpen(true); };
 
   const saveClient = async () => {
+    const nm = (edit.name ?? "").trim();
+    if (!nm) { toast({ title: "Klient nomi majburiy", variant: "destructive" }); return; }
     setSaving(true);
-    const patch = {
-      name: (edit.name ?? "").trim(),
-      phone: edit.phone || null, address: edit.address || null,
+    const patch: any = {
+      name: nm,
+      phone: edit.phone || null, phone2: edit.phone2 || null, address: edit.address || null,
       contact_person: edit.contact_person || null, email: edit.email || null, note: edit.note || null,
+      client_type: edit.client_type || null, status: edit.status || "active",
+      partnership_start: edit.partnership_start || null,
+      responsible_employee_id: edit.responsible_employee_id || null,
     };
     const { error } = await supabase.from("clients").update(patch).eq("id", id!);
     setSaving(false);
