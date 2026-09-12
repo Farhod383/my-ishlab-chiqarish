@@ -109,3 +109,23 @@ export async function finalizeSession(sessionId: string) {
 export function itemsTotal(items: { quantity: number; unit_price: number }[]): number {
   return items.reduce((s, i) => s + Number(i.quantity || 0) * Number(i.unit_price || 0), 0);
 }
+
+/**
+ * Tugatilmagan (draft) kirim sessiyalarini to'liq o'chiradi:
+ * vaqtinchalik mahsulotlar + sessiyaning o'zi. Yakunlangan (finalized)
+ * Nakladnoylarga umuman tegilmaydi — tarix saqlanadi.
+ */
+export async function discardDraftSessions(userId: string): Promise<number> {
+  if (!userId) return 0;
+  const { data } = await supabase
+    .from("intake_sessions")
+    .select("id")
+    .eq("created_by", userId)
+    .in("status", ["open", "pending_photo"]);
+  const ids = ((data as any[]) ?? []).map((s) => s.id);
+  if (!ids.length) return 0;
+  await supabase.from("intake_items").delete().in("session_id", ids);
+  await supabase.from("intake_sessions").delete().in("id", ids).neq("status", "finalized");
+  return ids.length;
+}
+
