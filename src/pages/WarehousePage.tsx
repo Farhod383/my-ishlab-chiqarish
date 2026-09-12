@@ -30,7 +30,7 @@ import { getStockStatus, stockStatusMeta, StockDot, type StockStatus } from "@/l
 import { useEmployees } from "@/hooks/useEmployees";
 import { Link } from "react-router-dom";
 import { fmtDateTime24 } from "@/lib/format";
-import { getOpenSession, getOrStartSession, finishSession, intakeCode, itemsTotal, type IntakeSession, type IntakeItem } from "@/lib/intake";
+import { getOpenSession, getOrStartSession, finishSession, finalizeSession, intakeCode, itemsTotal, type IntakeSession, type IntakeItem } from "@/lib/intake";
 
 const UNITS = ["dona", "kg", "metr", "litr", "rulon", "komplekt"] as const;
 const CURRENCIES = ["UZS", "USD"] as const;
