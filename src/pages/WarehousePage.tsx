@@ -309,8 +309,7 @@ export default function WarehousePage() {
       // shuning uchun miqdor kirim sessiyasiga yoziladi
       try {
         const session = await getOrStartSession(user?.id, user?.email ?? null, newSupplier || null);
-        await supabase.from("intake_items").insert({
-          session_id: session.id,
+        await addOrMergeItem(session.id, {
           product_id: created.id,
           product_name: newName.trim(),
           unit: newUnit || "dona",
@@ -448,7 +447,9 @@ export default function WarehousePage() {
       order_id: impOrderId || null,
       details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${impCurrency}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
     });
-    toast.success("Nakladnoyga qo'shildi — kirim tugatilgach skladga tushadi");
+    toast.success(merged
+      ? "Nakladnoyda mavjud mahsulotga jamlandi"
+      : "Nakladnoyga qo'shildi — kirim tugatilgach skladga tushadi");
     setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId("");
     loadSession();
     load();
