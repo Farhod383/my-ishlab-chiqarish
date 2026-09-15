@@ -2203,7 +2203,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_edit_intake: { Args: { _user_id: string }; Returns: boolean }
       can_manage_trips: { Args: { _user_id: string }; Returns: boolean }
+      delete_intake_invoice: {
+        Args: { _session_id: string }
+        Returns: undefined
+      }
+      delete_intake_invoice_item: {
+        Args: { _item_id: string }
+        Returns: undefined
+      }
       finalize_intake_session: {
         Args: { _session_id: string }
         Returns: undefined
@@ -2221,6 +2230,19 @@ export type Database = {
         Returns: boolean
       }
       is_my_trip: { Args: { _trip: string; _user: string }; Returns: boolean }
+      update_intake_invoice: {
+        Args: { _image_url?: string; _session_id: string; _supplier?: string }
+        Returns: undefined
+      }
+      update_intake_invoice_item: {
+        Args: {
+          _currency?: string
+          _item_id: string
+          _quantity: number
+          _unit_price: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role:
