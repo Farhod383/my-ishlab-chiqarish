@@ -423,23 +423,25 @@ export default function WarehousePage() {
       session = await getOrStartSession(user?.id, user?.email ?? null, impSupplier || null);
     } catch (e: any) { toast.error(e.message ?? "Kirim sessiyasini ochib bo'lmadi"); return; }
 
-    const { error } = await supabase.from("intake_items").insert({
-      session_id: session.id,
-      product_id: productId,
-      product_name: trimmedName,
-      unit: impUnit || "dona",
-      quantity: qtyN,
-      unit_price: priceN,
-      currency: impCurrency || "UZS",
-      location: impLocation || "Asosiy zavod",
-      order_id: impOrderId || null,
-      source: impSource.trim() || null,
-      phone: impPhone || null,
-      image_url: imgUrl,
-      created_by: user?.id,
-      comment: `Nakladnoy${impSupplier ? ` · ${impSupplier}` : ""} · ${impLocation}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
-    } as any);
-    if (error) { toast.error(error.message); return; }
+    let merged = false;
+    try {
+      const res = await addOrMergeItem(session.id, {
+        product_id: productId,
+        product_name: trimmedName,
+        unit: impUnit || "dona",
+        quantity: qtyN,
+        unit_price: priceN,
+        currency: impCurrency || "UZS",
+        location: impLocation || "Asosiy zavod",
+        order_id: impOrderId || null,
+        source: impSource.trim() || null,
+        phone: impPhone || null,
+        image_url: imgUrl,
+        created_by: user?.id,
+        comment: `Nakladnoy${impSupplier ? ` · ${impSupplier}` : ""} · ${impLocation}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
+      });
+      merged = res.merged;
+    } catch (e: any) { toast.error(e.message ?? "Xatolik"); return; }
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: user?.email,
       action: "Nakladnoyga mahsulot qo'shildi", entity: "intake_item",
