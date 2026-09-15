@@ -106,6 +106,59 @@ export async function finalizeSession(sessionId: string) {
   if (error) throw error;
 }
 
+/**
+ * Kirim sessiyasiga mahsulot qo'shadi. Agar shu sessiyada xuddi shu mahsulot
+ * allaqachon bo'lsa — yangi qator yaratilmaydi, miqdor jamlanadi
+ * (narx o'rtacha og'irlikli qilib hisoblanadi).
+ */
+export async function addOrMergeItem(
+  sessionId: string,
+  payload: {
+    product_id?: string | null;
+    product_name: string;
+    unit: string;
+    quantity: number;
+    unit_price: number;
+    currency: string;
+    [k: string]: any;
+  },
+) {
+  const { data } = await supabase
+    .from("intake_items")
+    .select("*")
+    .eq("session_id", sessionId)
+    .order("created_at", { ascending: true });
+  const list = ((data as any[]) ?? []) as IntakeItem[];
+  const name = payload.product_name.trim().toLowerCase();
+  const existing = list.find((i) =>
+    payload.product_id
+      ? i.product_id === payload.product_id
+      : (i.product_name ?? "").trim().toLowerCase() === name,
+  );
+
+  if (existing && (existing.currency ?? "UZS") === (payload.currency ?? "UZS")) {
+    const oldQty = Number(existing.quantity) || 0;
+    const addQty = Number(payload.quantity) || 0;
+    const newQty = oldQty + addQty;
+    const newPrice =
+      newQty > 0
+        ? (oldQty * Number(existing.unit_price || 0) + addQty * Number(payload.unit_price || 0)) / newQty
+        : Number(payload.unit_price || 0);
+    const { error } = await supabase
+      .from("intake_items")
+      .update({ quantity: newQty, unit_price: newPrice } as any)
+      .eq("id", existing.id);
+    if (error) throw error;
+    return { merged: true };
+  }
+
+  const { error } = await supabase
+    .from("intake_items")
+    .insert({ session_id: sessionId, ...payload } as any);
+  if (error) throw error;
+  return { merged: false };
+}
+
 export function itemsTotal(items: { quantity: number; unit_price: number }[]): number {
   return items.reduce((s, i) => s + Number(i.quantity || 0) * Number(i.unit_price || 0), 0);
 }

@@ -32,7 +32,7 @@ import { getStockStatus, stockStatusMeta, StockDot, type StockStatus } from "@/l
 import { useEmployees } from "@/hooks/useEmployees";
 import { Link } from "react-router-dom";
 import { fmtDateTime24 } from "@/lib/format";
-import { getOpenSession, getOrStartSession, finishSession, finalizeSession, discardDraftSessions, intakeCode, itemsTotal, type IntakeSession, type IntakeItem } from "@/lib/intake";
+import { getOpenSession, getOrStartSession, finishSession, finalizeSession, discardDraftSessions, addOrMergeItem, intakeCode, itemsTotal, type IntakeSession, type IntakeItem } from "@/lib/intake";
 
 const UNITS = ["dona", "kg", "metr", "litr", "rulon", "komplekt"] as const;
 const CURRENCIES = ["UZS", "USD"] as const;
@@ -309,8 +309,7 @@ export default function WarehousePage() {
       // shuning uchun miqdor kirim sessiyasiga yoziladi
       try {
         const session = await getOrStartSession(user?.id, user?.email ?? null, newSupplier || null);
-        await supabase.from("intake_items").insert({
-          session_id: session.id,
+        await addOrMergeItem(session.id, {
           product_id: created.id,
           product_name: newName.trim(),
           unit: newUnit || "dona",
@@ -423,30 +422,34 @@ export default function WarehousePage() {
       session = await getOrStartSession(user?.id, user?.email ?? null, impSupplier || null);
     } catch (e: any) { toast.error(e.message ?? "Kirim sessiyasini ochib bo'lmadi"); return; }
 
-    const { error } = await supabase.from("intake_items").insert({
-      session_id: session.id,
-      product_id: productId,
-      product_name: trimmedName,
-      unit: impUnit || "dona",
-      quantity: qtyN,
-      unit_price: priceN,
-      currency: impCurrency || "UZS",
-      location: impLocation || "Asosiy zavod",
-      order_id: impOrderId || null,
-      source: impSource.trim() || null,
-      phone: impPhone || null,
-      image_url: imgUrl,
-      created_by: user?.id,
-      comment: `Nakladnoy${impSupplier ? ` · ${impSupplier}` : ""} · ${impLocation}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
-    } as any);
-    if (error) { toast.error(error.message); return; }
+    let merged = false;
+    try {
+      const res = await addOrMergeItem(session.id, {
+        product_id: productId,
+        product_name: trimmedName,
+        unit: impUnit || "dona",
+        quantity: qtyN,
+        unit_price: priceN,
+        currency: impCurrency || "UZS",
+        location: impLocation || "Asosiy zavod",
+        order_id: impOrderId || null,
+        source: impSource.trim() || null,
+        phone: impPhone || null,
+        image_url: imgUrl,
+        created_by: user?.id,
+        comment: `Nakladnoy${impSupplier ? ` · ${impSupplier}` : ""} · ${impLocation}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
+      });
+      merged = res.merged;
+    } catch (e: any) { toast.error(e.message ?? "Xatolik"); return; }
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: user?.email,
       action: "Nakladnoyga mahsulot qo'shildi", entity: "intake_item",
       order_id: impOrderId || null,
       details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${impCurrency}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
     });
-    toast.success("Nakladnoyga qo'shildi — kirim tugatilgach skladga tushadi");
+    toast.success(merged
+      ? "Nakladnoyda mavjud mahsulotga jamlandi"
+      : "Nakladnoyga qo'shildi — kirim tugatilgach skladga tushadi");
     setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId("");
     loadSession();
     load();
