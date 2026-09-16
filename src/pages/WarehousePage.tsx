@@ -149,7 +149,7 @@ export default function WarehousePage() {
     supabase.from("locations").select("id, name").order("name").then(({ data }) => setLocations(data ?? []));
   }, []);
   // Sahifa ochilganda/refreshda eski draft Nakladnoylar to'liq tozalanadi
-  useEffect(() => { purgeDrafts(); }, [user?.id]);
+  useEffect(() => { loadSession(); }, [user?.id]);
 
   const canManage = hasRole(["warehouse", "admin"]);
   const canImport = hasRole(["warehouse", "admin"]);
@@ -1006,8 +1006,8 @@ export default function WarehousePage() {
               setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice("");
               setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId("");
               setNaklFile(null);
-              // Ochilganda ham, yopilganda ham tugatilmagan draft Nakladnoy tozalanadi
-              purgeDrafts();
+              // Ochiq Nakladnoy saqlanib qoladi — barcha kirimlar unga yig'iladi
+              loadSession();
             }}>
 
               <DialogTrigger asChild><Button variant="secondary"><ArrowUpCircle className="h-4 w-4 mr-2" />{t.supply.receive}</Button></DialogTrigger>
@@ -1113,7 +1113,7 @@ export default function WarehousePage() {
                     </Select>
                   </div>
                   <div><Label>{t.supply.phone}</Label><Input list="dl-phones" value={impPhone} onChange={e => setImpPhone(e.target.value)} placeholder={t.supply.phonePh} /></div>
-                  <div><Label>{t.supply.image}</Label><Input type="file" accept="image/*" onChange={e => setImpImage(e.target.files?.[0] ?? null)} /></div>
+
 
                   {openSession && (
                     <div className="rounded-lg border border-status-yellow/40 bg-status-yellow/5 p-3 space-y-3">
@@ -1135,33 +1135,14 @@ export default function WarehousePage() {
                           </div>
                         ))}
                       </div>
-                      <div className="space-y-2">
-                        <Label>Nakladnoy rasmi <span className="text-destructive">*</span></Label>
-                        {openSession.image_url ? (
-                          <a href={openSession.image_url} target="_blank" rel="noreferrer">
-                            <img src={openSession.image_url} alt={`Nakladnoy ${intakeCode(openSession)}`} className="max-h-32 rounded border" />
-                          </a>
-                        ) : (
-                          <div className="flex flex-col sm:flex-row gap-2">
-                            <Input type="file" accept="image/*" onChange={e => setNaklFile(e.target.files?.[0] ?? null)} />
-                            <Button variant="outline" disabled={!naklFile || naklBusy} onClick={uploadNaklImage}>Rasmni yuklash</Button>
-                          </div>
-                        )}
-                        {!openSession.image_url && <p className="text-xs text-muted-foreground">Rasm yuklanmaguncha "Tugatish" ishlamaydi</p>}
-                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Barcha kirimlar shu Nakladnoyga yig'iladi. Rasm yuklash va yakunlash — "Nakladnoy" bo'limida.
+                      </p>
                     </div>
                   )}
                 </div>
-                <div className="px-6 py-4 border-t bg-background shrink-0 flex flex-col sm:flex-row gap-2">
-                  <Button className="flex-1" onClick={doImport}>{t.supply.saveIn}</Button>
-                  <Button
-                    className="flex-1"
-                    variant="default"
-                    disabled={!openSession || sessionItems.length === 0 || !openSession?.image_url || naklBusy}
-                    onClick={doFinishSession}
-                  >
-                    Tugatish (skladga kirim)
-                  </Button>
+                <div className="px-6 py-4 border-t bg-background shrink-0">
+                  <Button className="w-full" onClick={doImport}>Kirimni saqlash</Button>
                 </div>
               </DialogContent>
             </Dialog>
