@@ -1113,7 +1113,7 @@ export default function WarehousePage() {
                     </Select>
                   </div>
                   <div><Label>{t.supply.phone}</Label><Input list="dl-phones" value={impPhone} onChange={e => setImpPhone(e.target.value)} placeholder={t.supply.phonePh} /></div>
-                  <div><Label>{t.supply.image}</Label><Input type="file" accept="image/*" onChange={e => setImpImage(e.target.files?.[0] ?? null)} /></div>
+
 
                   {openSession && (
                     <div className="rounded-lg border border-status-yellow/40 bg-status-yellow/5 p-3 space-y-3">
