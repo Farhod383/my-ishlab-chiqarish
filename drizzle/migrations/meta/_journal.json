@@ -57,6 +57,13 @@
       "when": 1789456927240,
       "tag": "0007_intake_invoice_edit_delete",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789558317329,
+      "tag": "0008_create_metal_module",
+      "breakpoints": true
     }
   ]
 }

@@ -37,6 +37,7 @@ import FaceIdPage from "./pages/FaceIdPage";
 import BusinessTripsPage from "./pages/BusinessTripsPage";
 import SupplyFinancePage from "./pages/SupplyFinancePage";
 import InvoicesPage from "./pages/InvoicesPage";
+import MetalPage from "./pages/MetalPage";
 import NotFound from "./pages/NotFound";
 
 
@@ -72,6 +73,7 @@ const App = () => (
                       <Route path="/otk" element={<ProtectedRoute roles={["otk","admin"]}><OtkPage /></ProtectedRoute>} />
                       <Route path="/warehouse" element={<WarehousePage />} />
                       <Route path="/invoices" element={<ProtectedRoute roles={["admin","warehouse","supply"]}><InvoicesPage /></ProtectedRoute>} />
+                      <Route path="/metal" element={<ProtectedRoute roles={["admin","warehouse","engineer"]}><MetalPage /></ProtectedRoute>} />
                       <Route path="/chat" element={<ChatPage />} />
                       <Route path="/nachalnik" element={<ProtectedRoute roles={["manager","admin"]}><NachalnikPage /></ProtectedRoute>} />
                       <Route path="/service" element={<ProtectedRoute roles={["manager","admin"]}><ServicePage /></ProtectedRoute>} />
