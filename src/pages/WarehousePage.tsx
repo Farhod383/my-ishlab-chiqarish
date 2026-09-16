@@ -73,6 +73,13 @@ export default function WarehousePage() {
   const [newImage, setNewImage] = useState<File | null>(null);
   const [newPriority, setNewPriority] = useState<string>("green");
   const [newCurrency, setNewCurrency] = useState<string>("UZS");
+  // Metall o'lchamlari (majburiy emas)
+  const [metalTypes, setMetalTypes] = useState<string[]>([]);
+  const [newMetalType, setNewMetalType] = useState("");
+  const [newThick, setNewThick] = useState<string>("");
+  const [newWidth, setNewWidth] = useState<string>("");
+  const [newLength, setNewLength] = useState<string>("");
+  const [newWeightKg, setNewWeightKg] = useState<string>("");
 
   // Other output (no order)
   const [otherOpen, setOtherOpen] = useState(false);
