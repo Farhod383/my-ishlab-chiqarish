@@ -19,6 +19,7 @@ import { fmtNum } from "@/lib/format";
 import { fmtDateTime24 } from "@/lib/format";
 import {
   INTAKE_STATUS_META, intakeCode, intakeDuration, itemsTotal,
+  finishSession, finalizeSession,
   type IntakeItem, type IntakeSession,
 } from "@/lib/intake";
 
