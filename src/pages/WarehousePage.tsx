@@ -159,6 +159,22 @@ export default function WarehousePage() {
   // Sahifa ochilganda/refreshda eski draft Nakladnoylar to'liq tozalanadi
   useEffect(() => { loadSession(); }, [user?.id]);
 
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("metal_norms").select("metal_type");
+      const uniq = Array.from(new Set((data ?? []).map((r: any) => String(r.metal_type)).filter(Boolean)));
+      setMetalTypes(uniq);
+    })();
+  }, []);
+
+  const METAL_KEYWORDS = ["metall", "metal", "nerj", "nerjaveyka", "list", "po'lat", "polat", "temir", "alyumin", "chyorniy", "profil", "truba", "turba", "shveller", "ugolok", "armatura"];
+  const isMetalProduct = useMemo(() => {
+    const n = newName.trim().toLowerCase();
+    if (!n) return false;
+    if (metalTypes.some(mt => n.includes(mt.toLowerCase()))) return true;
+    return METAL_KEYWORDS.some(k => n.includes(k));
+  }, [newName, metalTypes]);
+
   const canManage = hasRole(["warehouse", "admin"]);
   const canImport = hasRole(["warehouse", "admin"]);
   const canOut = hasRole(["warehouse", "admin", "engineer"]);
