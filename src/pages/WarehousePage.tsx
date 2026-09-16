@@ -389,6 +389,7 @@ export default function WarehousePage() {
     });
     toast.success(qtyN > 0 ? "Mahsulot qo'shildi — miqdor Nakladnoyga yozildi" : t.warehouse.productAdded);
     setNewName(""); setNewQty(""); setNewUnit("dona"); setNewPrice(""); setNewMin(""); setNewPhone(""); setNewSource(""); setNewSupplier(""); setNewImage(null);
+    setNewMetalType(""); setNewThick(""); setNewWidth(""); setNewLength(""); setNewWeightKg("");
     setAddOpen(false);
     loadSession();
     load();
