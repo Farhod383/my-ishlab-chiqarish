@@ -1006,8 +1006,8 @@ export default function WarehousePage() {
               setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice("");
               setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId("");
               setNaklFile(null);
-              // Ochilganda ham, yopilganda ham tugatilmagan draft Nakladnoy tozalanadi
-              purgeDrafts();
+              // Ochiq Nakladnoy saqlanib qoladi — barcha kirimlar unga yig'iladi
+              loadSession();
             }}>
 
               <DialogTrigger asChild><Button variant="secondary"><ArrowUpCircle className="h-4 w-4 mr-2" />{t.supply.receive}</Button></DialogTrigger>
