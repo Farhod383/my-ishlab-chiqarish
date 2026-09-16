@@ -943,6 +943,23 @@ export default function WarehousePage() {
                   <DialogHeader><DialogTitle>{t.warehouse.addProduct}</DialogTitle></DialogHeader>
                   <div className="space-y-3">
                     <div><Label>{t.warehouse.productName} *</Label><Input list="dl-product-names" value={newName} onChange={e => setNewName(e.target.value)} /></div>
+                    {isMetalProduct && (
+                      <div className="rounded-md border p-3 space-y-3">
+                        <div className="text-sm font-medium">Metall o'lchamlari <span className="text-muted-foreground font-normal">(majburiy emas)</span></div>
+                        <div><Label>Metall turi</Label>
+                          <Input list="dl-metal-types" value={newMetalType} onChange={e => setNewMetalType(e.target.value)} placeholder="Nerj" />
+                          <datalist id="dl-metal-types">{metalTypes.map(m => <option key={m} value={m} />)}</datalist>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div><Label>Qalinligi S (mm)</Label><Input inputMode="decimal" value={newThick} onChange={e => setNewThick(e.target.value.replace(/[^0-9.,]/g, ""))} placeholder="1.8" /></div>
+                          <div><Label>Eni (mm)</Label><Input inputMode="decimal" value={newWidth} onChange={e => setNewWidth(e.target.value.replace(/[^0-9.,]/g, ""))} placeholder="1500" /></div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div><Label>Bo'yi (mm)</Label><Input inputMode="decimal" value={newLength} onChange={e => setNewLength(e.target.value.replace(/[^0-9.,]/g, ""))} placeholder="6000" /></div>
+                          <div><Label>1 dona og'irligi (kg)</Label><Input inputMode="decimal" value={newWeightKg} onChange={e => setNewWeightKg(e.target.value.replace(/[^0-9.,]/g, ""))} placeholder="282.6" /></div>
+                        </div>
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-3">
                       <div><Label>{t.warehouse.qty} *</Label><NumberInput min={0} step="any" value={newQty} onChange={e => setNewQty(e.target.value.replace(/[^0-9.]/g, ""))} placeholder="0" /></div>
                       <div><Label>{t.warehouse.unit} *</Label>
