@@ -73,6 +73,13 @@ export default function WarehousePage() {
   const [newImage, setNewImage] = useState<File | null>(null);
   const [newPriority, setNewPriority] = useState<string>("green");
   const [newCurrency, setNewCurrency] = useState<string>("UZS");
+  // Metall o'lchamlari (majburiy emas)
+  const [metalTypes, setMetalTypes] = useState<string[]>([]);
+  const [newMetalType, setNewMetalType] = useState("");
+  const [newThick, setNewThick] = useState<string>("");
+  const [newWidth, setNewWidth] = useState<string>("");
+  const [newLength, setNewLength] = useState<string>("");
+  const [newWeightKg, setNewWeightKg] = useState<string>("");
 
   // Other output (no order)
   const [otherOpen, setOtherOpen] = useState(false);
@@ -151,6 +158,22 @@ export default function WarehousePage() {
   }, []);
   // Sahifa ochilganda/refreshda eski draft Nakladnoylar to'liq tozalanadi
   useEffect(() => { loadSession(); }, [user?.id]);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("metal_norms").select("metal_type");
+      const uniq = Array.from(new Set((data ?? []).map((r: any) => String(r.metal_type)).filter(Boolean)));
+      setMetalTypes(uniq);
+    })();
+  }, []);
+
+  const METAL_KEYWORDS = ["metall", "metal", "nerj", "nerjaveyka", "list", "po'lat", "polat", "temir", "alyumin", "chyorniy", "profil", "truba", "turba", "shveller", "ugolok", "armatura"];
+  const isMetalProduct = useMemo(() => {
+    const n = newName.trim().toLowerCase();
+    if (!n) return false;
+    if (metalTypes.some(mt => n.includes(mt.toLowerCase()))) return true;
+    return METAL_KEYWORDS.some(k => n.includes(k));
+  }, [newName, metalTypes]);
 
   const canManage = hasRole(["warehouse", "admin"]);
   const canImport = hasRole(["warehouse", "admin"]);
@@ -298,13 +321,43 @@ export default function WarehousePage() {
     }
     const priceN = Number(newPrice) || 0;
     const minN = newMin === "" ? 0 : Number(newMin);
+    const num = (v: string) => (v.trim() === "" ? null : Number(v.replace(",", ".")));
+    const metalFields = isMetalProduct
+      ? {
+          metal_type: newMetalType.trim() || null,
+          thickness_mm: num(newThick),
+          width_mm: num(newWidth),
+          length_mm: num(newLength),
+          weight_kg: num(newWeightKg),
+        }
+      : {};
     const { data: created, error } = await supabase.from("products").insert({
       name: newName.trim(), unit: newUnit || "dona", last_price: priceN,
       min_limit: minN, phone: newPhone || null, image_url,
       source: newSource.trim() || null,
       priority: newPriority, currency: newCurrency,
+      ...metalFields,
     } as any).select("id").single();
     if (error || !created) { toast.error(error?.message || "Error"); return; }
+    // Metall normativi: Konstruktor sarfida ishlatilishi uchun saqlanadi
+    if (isMetalProduct && newMetalType.trim() && num(newThick) && num(newWidth) && num(newLength) && num(newWeightKg)) {
+      const mt = newMetalType.trim();
+      const { data: existing } = await supabase.from("metal_norms").select("id")
+        .eq("metal_type", mt).eq("thickness_mm", num(newThick) as number)
+        .eq("width_mm", num(newWidth) as number).eq("length_mm", num(newLength) as number)
+        .maybeSingle();
+      if (!existing) {
+        await supabase.from("metal_norms").insert({
+          metal_type: mt,
+          thickness_mm: num(newThick) as number,
+          width_mm: num(newWidth) as number,
+          length_mm: num(newLength) as number,
+          weight_kg: num(newWeightKg) as number,
+          created_by: user?.id ?? null,
+        } as any);
+        setMetalTypes(prev => (prev.includes(mt) ? prev : [...prev, mt]));
+      }
+    }
     if (qtyN > 0) {
       // Qoldiq faqat Nakladnoy rasm bilan yakunlangandan keyin oshadi —
       // shuning uchun miqdor kirim sessiyasiga yoziladi
@@ -336,6 +389,7 @@ export default function WarehousePage() {
     });
     toast.success(qtyN > 0 ? "Mahsulot qo'shildi — miqdor Nakladnoyga yozildi" : t.warehouse.productAdded);
     setNewName(""); setNewQty(""); setNewUnit("dona"); setNewPrice(""); setNewMin(""); setNewPhone(""); setNewSource(""); setNewSupplier(""); setNewImage(null);
+    setNewMetalType(""); setNewThick(""); setNewWidth(""); setNewLength(""); setNewWeightKg("");
     setAddOpen(false);
     loadSession();
     load();
@@ -889,6 +943,23 @@ export default function WarehousePage() {
                   <DialogHeader><DialogTitle>{t.warehouse.addProduct}</DialogTitle></DialogHeader>
                   <div className="space-y-3">
                     <div><Label>{t.warehouse.productName} *</Label><Input list="dl-product-names" value={newName} onChange={e => setNewName(e.target.value)} /></div>
+                    {isMetalProduct && (
+                      <div className="rounded-md border p-3 space-y-3">
+                        <div className="text-sm font-medium">Metall o'lchamlari <span className="text-muted-foreground font-normal">(majburiy emas)</span></div>
+                        <div><Label>Metall turi</Label>
+                          <Input list="dl-metal-types" value={newMetalType} onChange={e => setNewMetalType(e.target.value)} placeholder="Nerj" />
+                          <datalist id="dl-metal-types">{metalTypes.map(m => <option key={m} value={m} />)}</datalist>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div><Label>Qalinligi S (mm)</Label><Input inputMode="decimal" value={newThick} onChange={e => setNewThick(e.target.value.replace(/[^0-9.,]/g, ""))} placeholder="1.8" /></div>
+                          <div><Label>Eni (mm)</Label><Input inputMode="decimal" value={newWidth} onChange={e => setNewWidth(e.target.value.replace(/[^0-9.,]/g, ""))} placeholder="1500" /></div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div><Label>Bo'yi (mm)</Label><Input inputMode="decimal" value={newLength} onChange={e => setNewLength(e.target.value.replace(/[^0-9.,]/g, ""))} placeholder="6000" /></div>
+                          <div><Label>1 dona og'irligi (kg)</Label><Input inputMode="decimal" value={newWeightKg} onChange={e => setNewWeightKg(e.target.value.replace(/[^0-9.,]/g, ""))} placeholder="282.6" /></div>
+                        </div>
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-3">
                       <div><Label>{t.warehouse.qty} *</Label><NumberInput min={0} step="any" value={newQty} onChange={e => setNewQty(e.target.value.replace(/[^0-9.]/g, ""))} placeholder="0" /></div>
                       <div><Label>{t.warehouse.unit} *</Label>
