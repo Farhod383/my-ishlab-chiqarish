@@ -185,18 +185,126 @@ export default function InvoicesPage() {
     await load();
   };
 
+  /** Ochiq Nakladnoyga rasm yuklash */
+  const uploadActiveImage = async () => {
+    if (!active || !actFile) return;
+    setActBusy(true);
+    try {
+      const ext = actFile.name.split(".").pop();
+      const path = `nakladnoy/${crypto.randomUUID()}.${ext}`;
+      const up = await supabase.storage.from("product-images").upload(path, actFile);
+      if (up.error) throw up.error;
+      const url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+      const { error } = await supabase.from("intake_sessions").update({ image_url: url } as any).eq("id", active.id);
+      if (error) throw error;
+      setActFile(null);
+      toast.success("Rasm yuklandi");
+      await load();
+    } catch (e: any) { toast.error(e.message ?? "Rasm yuklashda xatolik"); }
+    finally { setActBusy(false); }
+  };
+
+  /** Nakladnoyni tugatish — barcha mahsulotlar bir martada skladga kirim qilinadi */
+  const finishActive = async () => {
+    if (!active) return;
+    if (activeItems.length === 0) { toast.error("Nakladnoyda mahsulot yo'q"); return; }
+    if (!active.image_url) { toast.error("Avval nakladnoy rasmini yuklang"); return; }
+    setActBusy(true);
+    try {
+      if (active.status === "open") await finishSession(active.id);
+      await finalizeSession(active.id);
+      toast.success("Nakladnoy yakunlandi — mahsulotlar skladga kirim qilindi");
+      await load();
+    } catch (e: any) { toast.error(e.message ?? "Xatolik"); }
+    finally { setActBusy(false); }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2"><FileText className="h-6 w-6 text-primary" /> Nakladnoy</h1>
-          <p className="text-sm text-muted-foreground">Yakunlangan Nakladnoylar tarixi ({sessions.length})</p>
+          <p className="text-sm text-muted-foreground">Yakunlangan Nakladnoylar tarixi ({rows.length})</p>
         </div>
         <div className="relative w-full sm:w-72">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input className="pl-8" placeholder="Nakladnoy, mahsulot, xodim..." value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
       </div>
+
+      {active && (
+        <Card className="border-status-yellow/50 bg-status-yellow/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex flex-wrap items-center gap-2">
+              <span className="font-mono">Ochiq Nakladnoy {intakeCode(active)}</span>
+              <Badge variant="outline" className={INTAKE_STATUS_META[active.status].cls}>{INTAKE_STATUS_META[active.status].label}</Badge>
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Boshlangan: {fmtDateTime24(active.started_at)}
+              {active.finished_at ? ` · Tugagan: ${fmtDateTime24(active.finished_at)}` : ""}
+              {active.supplier ? ` · Olib keldi: ${active.supplier}` : ""}
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded border bg-background overflow-hidden">
+              <div className="overflow-x-auto max-h-[40vh] overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>№</TableHead>
+                      <TableHead>Mahsulot</TableHead>
+                      <TableHead className="text-right">Miqdor</TableHead>
+                      <TableHead className="text-right">Narx</TableHead>
+                      <TableHead>Valyuta</TableHead>
+                      <TableHead className="text-right">Jami</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {activeItems.map((i, idx) => (
+                      <TableRow key={i.id}>
+                        <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
+                        <TableCell className="font-medium">{i.product_name}</TableCell>
+                        <TableCell className="text-right font-mono">{fmt(Number(i.quantity))} {i.unit}</TableCell>
+                        <TableCell className="text-right font-mono">{fmt(Number(i.unit_price))}</TableCell>
+                        <TableCell>{i.currency}</TableCell>
+                        <TableCell className="text-right font-mono font-semibold">{fmt(Number(i.quantity) * Number(i.unit_price))}</TableCell>
+                      </TableRow>
+                    ))}
+                    {activeItems.length === 0 && <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">Mahsulot yo'q</TableCell></TableRow>}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="flex justify-between px-4 py-2 bg-muted/40 text-sm">
+                <span className="text-muted-foreground">Jami summa ({activeItems.length} mahsulot)</span>
+                <span className="font-mono font-bold">{fmt(itemsTotal(activeItems))}</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Nakladnoy rasmi <span className="text-destructive">*</span></Label>
+              {active.image_url ? (
+                <a href={active.image_url} target="_blank" rel="noreferrer">
+                  <img src={active.image_url} alt={`Nakladnoy ${intakeCode(active)}`} className="max-h-40 rounded border" />
+                </a>
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Input type="file" accept="image/*" onChange={(e) => setActFile(e.target.files?.[0] ?? null)} />
+                  <Button variant="outline" disabled={!actFile || actBusy} onClick={uploadActiveImage}>Rasm yuklash</Button>
+                </div>
+              )}
+            </div>
+
+            <Button
+              className="w-full"
+              disabled={!active.image_url || activeItems.length === 0 || actBusy}
+              onClick={finishActive}
+            >
+              <CheckCircle2 className="h-4 w-4 mr-2" /> Nakladnoyni tugatish
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
 
       <div className="mt-4">
           <Card>
