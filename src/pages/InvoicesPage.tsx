@@ -73,10 +73,15 @@ export default function InvoicesPage() {
     return m;
   }, [items]);
 
+  const active = useMemo(() => sessions.find((s) => s.status !== "finalized") ?? null, [sessions]);
+  const activeItems = active ? (itemsBySession[active.id] ?? []) : [];
+
   const rows = useMemo(() => {
     const term = q.trim().toLowerCase();
     return sessions.filter((s) => {
+      if (s.status !== "finalized") return false;
       if (!term) return true;
+
 
       const list = itemsBySession[s.id] ?? [];
       return (
