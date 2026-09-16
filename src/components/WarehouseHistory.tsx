@@ -78,18 +78,29 @@ export default function WarehouseHistory({
     setLoading(true);
     // 1000 satrdan ko'p bo'lishi mumkin — sahifalab olamiz
     const pageSize = 1000;
+    const FULL =
+      "*, product:products(name, unit), order:orders!stock_movements_order_id_fkey(order_number, product_name), intake_session:intake_sessions(id, started_at, finished_at, supplier, created_by_name)";
     let all: any[] = [];
+    let cols = FULL;
     for (let page = 0; page < 6; page++) {
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from("stock_movements")
-        .select(
-          "*, product:products(name, unit), order:orders(order_number, product_name), intake_session:intake_sessions(id, started_at, finished_at, supplier, created_by_name)"
-        )
+        .select(cols)
         .order("created_at", { ascending: false })
         .range(page * pageSize, page * pageSize + pageSize - 1);
-      if (error) break;
-      all = all.concat(data ?? []);
-      if (!data || data.length < pageSize) break;
+      if (error) {
+        // embed muammosi bo'lsa — tarixni baribir ko'rsatamiz
+        cols = "*";
+        const retry = await supabase
+          .from("stock_movements")
+          .select(cols)
+          .order("created_at", { ascending: false })
+          .range(page * pageSize, page * pageSize + pageSize - 1);
+        if (retry.error) break;
+        data = retry.data as any;
+      }
+      all = all.concat((data as any[]) ?? []);
+      if (!data || (data as any[]).length < pageSize) break;
     }
 
     const [{ data: metal }, { data: normData }] = await Promise.all([
@@ -110,6 +121,29 @@ export default function WarehouseHistory({
       const { data } = await supabase.from("profiles").select("id, full_name, email").in("id", ids);
       (data ?? []).forEach((p: any) => { profs[p.id] = p.full_name || p.email || ""; });
     }
+
+    // embed ishlamagan bo'lsa — nomlarni alohida so'rov bilan to'ldiramiz
+    if (all.some((m: any) => !m.product)) {
+      const pIds = Array.from(new Set(all.map((m: any) => m.product_id).filter(Boolean)));
+      const oIds = Array.from(new Set(all.map((m: any) => m.order_id).filter(Boolean)));
+      const sIds = Array.from(new Set(all.map((m: any) => m.intake_session_id).filter(Boolean)));
+      const [pr, or_, se] = await Promise.all([
+        pIds.length ? supabase.from("products").select("id, name, unit").in("id", pIds) : Promise.resolve({ data: [] as any[] }),
+        oIds.length ? supabase.from("orders").select("id, order_number, product_name").in("id", oIds) : Promise.resolve({ data: [] as any[] }),
+        sIds.length ? supabase.from("intake_sessions").select("id, started_at, finished_at, supplier, created_by_name").in("id", sIds) : Promise.resolve({ data: [] as any[] }),
+      ]);
+      const pMap = new Map((pr.data ?? []).map((x: any) => [x.id, x]));
+      const oMap = new Map((or_.data ?? []).map((x: any) => [x.id, x]));
+      const sMap = new Map((se.data ?? []).map((x: any) => [x.id, x]));
+      all = all.map((m: any) => ({
+        ...m,
+        product: m.product ?? pMap.get(m.product_id) ?? null,
+        order: m.order ?? oMap.get(m.order_id) ?? null,
+        intake_session: m.intake_session ?? sMap.get(m.intake_session_id) ?? null,
+      }));
+    }
+
+
 
     const productRows: Row[] = all.map((m: any) => ({
       id: m.id,
