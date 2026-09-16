@@ -48,7 +48,7 @@ export function AppSidebar() {
     { title: t.nav.audit, url: "/audit", icon: History, roles: ["admin"] },
   ];
 
-  const engineerAllowed = new Set(["/", "/orders", "/production", "/warehouse", "/supply", "/chat"]);
+  const engineerAllowed = new Set(["/", "/orders", "/production", "/warehouse", "/metal", "/supply", "/chat"]);
   // Oddiy xodim faqat o'ziga tegishli bo'limlarni ko'radi.
   const isWorkerOnly = roles.length > 0 && roles.every((r) => r === "worker");
   const workerAllowed = new Set(["/trips", "/chat"]);
