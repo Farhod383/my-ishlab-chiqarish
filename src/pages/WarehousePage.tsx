@@ -1135,33 +1135,14 @@ export default function WarehousePage() {
                           </div>
                         ))}
                       </div>
-                      <div className="space-y-2">
-                        <Label>Nakladnoy rasmi <span className="text-destructive">*</span></Label>
-                        {openSession.image_url ? (
-                          <a href={openSession.image_url} target="_blank" rel="noreferrer">
-                            <img src={openSession.image_url} alt={`Nakladnoy ${intakeCode(openSession)}`} className="max-h-32 rounded border" />
-                          </a>
-                        ) : (
-                          <div className="flex flex-col sm:flex-row gap-2">
-                            <Input type="file" accept="image/*" onChange={e => setNaklFile(e.target.files?.[0] ?? null)} />
-                            <Button variant="outline" disabled={!naklFile || naklBusy} onClick={uploadNaklImage}>Rasmni yuklash</Button>
-                          </div>
-                        )}
-                        {!openSession.image_url && <p className="text-xs text-muted-foreground">Rasm yuklanmaguncha "Tugatish" ishlamaydi</p>}
-                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Barcha kirimlar shu Nakladnoyga yig'iladi. Rasm yuklash va yakunlash — "Nakladnoy" bo'limida.
+                      </p>
                     </div>
                   )}
                 </div>
-                <div className="px-6 py-4 border-t bg-background shrink-0 flex flex-col sm:flex-row gap-2">
-                  <Button className="flex-1" onClick={doImport}>{t.supply.saveIn}</Button>
-                  <Button
-                    className="flex-1"
-                    variant="default"
-                    disabled={!openSession || sessionItems.length === 0 || !openSession?.image_url || naklBusy}
-                    onClick={doFinishSession}
-                  >
-                    Tugatish (skladga kirim)
-                  </Button>
+                <div className="px-6 py-4 border-t bg-background shrink-0">
+                  <Button className="w-full" onClick={doImport}>Kirimni saqlash</Button>
                 </div>
               </DialogContent>
             </Dialog>
