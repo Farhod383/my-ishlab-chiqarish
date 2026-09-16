@@ -149,7 +149,7 @@ export default function WarehousePage() {
     supabase.from("locations").select("id, name").order("name").then(({ data }) => setLocations(data ?? []));
   }, []);
   // Sahifa ochilganda/refreshda eski draft Nakladnoylar to'liq tozalanadi
-  useEffect(() => { purgeDrafts(); }, [user?.id]);
+  useEffect(() => { loadSession(); }, [user?.id]);
 
   const canManage = hasRole(["warehouse", "admin"]);
   const canImport = hasRole(["warehouse", "admin"]);
