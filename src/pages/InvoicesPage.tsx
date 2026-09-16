@@ -48,11 +48,10 @@ export default function InvoicesPage() {
 
   const load = async () => {
     setLoading(true);
-    // Faqat haqiqiy yakunlangan Nakladnoylar — draft/vaqtinchalik kirimlar ko'rsatilmaydi
+    // Ochiq (yig'ilayotgan) Nakladnoy + yakunlanganlar tarixi
     const { data: s } = await supabase
       .from("intake_sessions").select("*")
-      .eq("status", "finalized")
-      .order("finalized_at", { ascending: false })
+      .order("started_at", { ascending: false })
       .limit(300);
     const list = ((s as any[]) ?? []) as IntakeSession[];
     const ids = list.map((x) => x.id);
