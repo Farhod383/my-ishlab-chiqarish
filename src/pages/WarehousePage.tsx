@@ -321,13 +321,43 @@ export default function WarehousePage() {
     }
     const priceN = Number(newPrice) || 0;
     const minN = newMin === "" ? 0 : Number(newMin);
+    const num = (v: string) => (v.trim() === "" ? null : Number(v.replace(",", ".")));
+    const metalFields = isMetalProduct
+      ? {
+          metal_type: newMetalType.trim() || null,
+          thickness_mm: num(newThick),
+          width_mm: num(newWidth),
+          length_mm: num(newLength),
+          weight_kg: num(newWeightKg),
+        }
+      : {};
     const { data: created, error } = await supabase.from("products").insert({
       name: newName.trim(), unit: newUnit || "dona", last_price: priceN,
       min_limit: minN, phone: newPhone || null, image_url,
       source: newSource.trim() || null,
       priority: newPriority, currency: newCurrency,
+      ...metalFields,
     } as any).select("id").single();
     if (error || !created) { toast.error(error?.message || "Error"); return; }
+    // Metall normativi: Konstruktor sarfida ishlatilishi uchun saqlanadi
+    if (isMetalProduct && newMetalType.trim() && num(newThick) && num(newWidth) && num(newLength) && num(newWeightKg)) {
+      const mt = newMetalType.trim();
+      const { data: existing } = await supabase.from("metal_norms").select("id")
+        .eq("metal_type", mt).eq("thickness_mm", num(newThick) as number)
+        .eq("width_mm", num(newWidth) as number).eq("length_mm", num(newLength) as number)
+        .maybeSingle();
+      if (!existing) {
+        await supabase.from("metal_norms").insert({
+          metal_type: mt,
+          thickness_mm: num(newThick) as number,
+          width_mm: num(newWidth) as number,
+          length_mm: num(newLength) as number,
+          weight_kg: num(newWeightKg) as number,
+          created_by: user?.id ?? null,
+        } as any);
+        setMetalTypes(prev => (prev.includes(mt) ? prev : [...prev, mt]));
+      }
+    }
     if (qtyN > 0) {
       // Qoldiq faqat Nakladnoy rasm bilan yakunlangandan keyin oshadi —
       // shuning uchun miqdor kirim sessiyasiga yoziladi
