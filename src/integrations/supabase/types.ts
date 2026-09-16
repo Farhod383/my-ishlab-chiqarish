@@ -1825,13 +1825,18 @@ export type Database = {
           id: string
           image_url: string | null
           last_price: number
+          length_mm: number | null
+          metal_type: string | null
           min_limit: number
           name: string
           phone: string | null
           priority: string
           source: string | null
           stock_qty: number
+          thickness_mm: number | null
           unit: string
+          weight_kg: number | null
+          width_mm: number | null
         }
         Insert: {
           created_at?: string
@@ -1839,13 +1844,18 @@ export type Database = {
           id?: string
           image_url?: string | null
           last_price?: number
+          length_mm?: number | null
+          metal_type?: string | null
           min_limit?: number
           name: string
           phone?: string | null
           priority?: string
           source?: string | null
           stock_qty?: number
+          thickness_mm?: number | null
           unit?: string
+          weight_kg?: number | null
+          width_mm?: number | null
         }
         Update: {
           created_at?: string
@@ -1853,13 +1863,18 @@ export type Database = {
           id?: string
           image_url?: string | null
           last_price?: number
+          length_mm?: number | null
+          metal_type?: string | null
           min_limit?: number
           name?: string
           phone?: string | null
           priority?: string
           source?: string | null
           stock_qty?: number
+          thickness_mm?: number | null
           unit?: string
+          weight_kg?: number | null
+          width_mm?: number | null
         }
         Relationships: []
       }
