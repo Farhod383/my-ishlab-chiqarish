@@ -130,7 +130,7 @@ export default function WarehouseHistory({
       person: m.recipient_name || profs[m.created_by] || "",
       orderNumber: m.order?.order_number ?? "",
       invoiceId: m.intake_session?.id ?? null,
-      invoiceLabel: m.intake_session?.started_at ? intakeCode(m.intake_session.started_at) : "",
+      invoiceLabel: m.intake_session?.started_at ? intakeCode(m.intake_session) : "",
       source: m.source ?? "",
       comment: m.comment ?? "",
       raw: m,

@@ -24,6 +24,7 @@ import { fmtNum } from "@/lib/format";
 import { matchesAcrossScripts } from "@/lib/translit";
 import { toast } from "sonner";
 import InstrumentsTab from "@/components/InstrumentsTab";
+import WarehouseHistory from "@/components/WarehouseHistory";
 import EmployeesView from "@/components/EmployeesView";
 import NumberInput from "@/components/NumberInput";
 import SearchableSelect from "@/components/SearchableSelect";
@@ -1468,85 +1469,7 @@ export default function WarehousePage() {
         </TabsContent>
 
         <TabsContent value="history" className="mt-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between flex-wrap gap-3">
-                <div>
-                  <CardTitle className="text-base">{t.warehouse.historyTitle}</CardTitle>
-                  <CardDescription>{t.warehouse.historyDesc}</CardDescription>
-                </div>
-                <ProductSearchBox movements={movements} value={historySearch} onChange={setHistorySearch} placeholder={t.common.search} />
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="border-t overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12 text-right">№</TableHead>
-                      <TableHead>Nakladnoy</TableHead>
-                      <TableHead>{t.warehouse.cols.datetime}</TableHead>
-                      <TableHead>{t.warehouse.cols.direction}</TableHead>
-                      <TableHead>{t.warehouse.cols.product}</TableHead>
-                      <TableHead className="text-right">{t.warehouse.cols.qty}</TableHead>
-                      <TableHead className="text-right">{t.warehouse.price}</TableHead>
-                      <TableHead>Zavod</TableHead>
-                      <TableHead>{t.warehouse.cols.whoTook}</TableHead>
-                      <TableHead>{(t.warehouse.cols as any).source}</TableHead>
-                      <TableHead>{(t.warehouse.cols as any).addedBy}</TableHead>
-                      <TableHead>{t.warehouse.cols.order}</TableHead>
-                      <TableHead>{t.warehouse.cols.comment}</TableHead>
-                      {canManage && <TableHead></TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredMovements.map((m: any, idx: number) => (
-                      <TableRow
-                        key={m.id}
-                        className={canManage ? "cursor-pointer hover:bg-muted/40" : undefined}
-                        onClick={canManage ? () => openEditMovement(m) : undefined}
-                      >
-                        <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
-                        <TableCell className="text-xs whitespace-nowrap font-mono">
-                          {m.intake_session?.started_at ? (
-                            <Link to="/invoices" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
-                              {fmtDateTime24(m.intake_session.started_at)}
-                            </Link>
-                          ) : <span className="text-muted-foreground">—</span>}
-                        </TableCell>
-                        <TableCell className="text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</TableCell>
-                        <TableCell>
-                          {m.direction === "out"
-                            ? <span className="inline-flex items-center gap-1 text-status-red text-xs font-semibold"><ArrowDownCircle className="h-3.5 w-3.5" />{t.warehouse.out}</span>
-                            : <span className="inline-flex items-center gap-1 text-status-green text-xs font-semibold"><ArrowUpCircle className="h-3.5 w-3.5" />{t.warehouse.in}</span>}
-                        </TableCell>
-                        <TableCell className="text-sm font-medium">{m.product?.name ?? "—"}</TableCell>
-                        <TableCell className={`text-right font-mono font-semibold ${m.direction==="out" ? "text-status-red" : "text-status-green"}`}>
-                          {m.direction==="out"?"-":"+"}{m.quantity} {m.product?.unit}
-                        </TableCell>
-                        <TableCell className="text-right text-xs font-mono">
-                          {Number(m.unit_price) > 0
-                            ? <>{fmt(Number(m.unit_price))} <span className="text-muted-foreground">{m.currency ?? "UZS"}</span></>
-                            : <span className="text-muted-foreground">—</span>}
-                        </TableCell>
-                        <TableCell className="text-xs">{m.location ?? "—"}</TableCell>
-                        <TableCell className="text-sm">{m.recipient_name ? localize(m.recipient_name) : <span className="text-muted-foreground">—</span>}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{m.source ?? "—"}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{localize(profiles[m.created_by]) || "—"}</TableCell>
-                        <TableCell className="text-sm font-mono">{m.order?.order_number ?? <span className="text-muted-foreground">{t.warehouse.common}</span>}</TableCell>
-                        <TableCell className="text-xs italic text-muted-foreground max-w-[200px] truncate">{m.comment ?? "—"}</TableCell>
-                        {canManage && <TableCell onClick={(e) => e.stopPropagation()}><div className="flex gap-1">
-                          <Button size="sm" variant="ghost" onClick={() => openEditMovement(m)}><Pencil className="h-3.5 w-3.5" /></Button>
-                          <Button size="sm" variant="ghost" onClick={() => deleteMovement(m)}><Trash2 className="h-3.5 w-3.5 text-status-red" /></Button>
-                        </div></TableCell>}
-                      </TableRow>
-                    ))}
-                    {filteredMovements.length === 0 && <TableRow><TableCell colSpan={13} className="text-center text-muted-foreground py-6">{t.warehouse.noMov}</TableCell></TableRow>}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+          <WarehouseHistory canManage={canManage} onEdit={openEditMovement} onDelete={deleteMovement} reloadKey={movements.length} />
         </TabsContent>
       </Tabs>
 
