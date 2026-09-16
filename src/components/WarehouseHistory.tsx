@@ -122,6 +122,29 @@ export default function WarehouseHistory({
       (data ?? []).forEach((p: any) => { profs[p.id] = p.full_name || p.email || ""; });
     }
 
+    // embed ishlamagan bo'lsa — nomlarni alohida so'rov bilan to'ldiramiz
+    if (all.some((m: any) => !m.product)) {
+      const pIds = Array.from(new Set(all.map((m: any) => m.product_id).filter(Boolean)));
+      const oIds = Array.from(new Set(all.map((m: any) => m.order_id).filter(Boolean)));
+      const sIds = Array.from(new Set(all.map((m: any) => m.intake_session_id).filter(Boolean)));
+      const [pr, or_, se] = await Promise.all([
+        pIds.length ? supabase.from("products").select("id, name, unit").in("id", pIds) : Promise.resolve({ data: [] as any[] }),
+        oIds.length ? supabase.from("orders").select("id, order_number, product_name").in("id", oIds) : Promise.resolve({ data: [] as any[] }),
+        sIds.length ? supabase.from("intake_sessions").select("id, started_at, finished_at, supplier, created_by_name").in("id", sIds) : Promise.resolve({ data: [] as any[] }),
+      ]);
+      const pMap = new Map((pr.data ?? []).map((x: any) => [x.id, x]));
+      const oMap = new Map((or_.data ?? []).map((x: any) => [x.id, x]));
+      const sMap = new Map((se.data ?? []).map((x: any) => [x.id, x]));
+      all = all.map((m: any) => ({
+        ...m,
+        product: m.product ?? pMap.get(m.product_id) ?? null,
+        order: m.order ?? oMap.get(m.order_id) ?? null,
+        intake_session: m.intake_session ?? sMap.get(m.intake_session_id) ?? null,
+      }));
+    }
+
+
+
     const productRows: Row[] = all.map((m: any) => ({
       id: m.id,
       kind: "product",
