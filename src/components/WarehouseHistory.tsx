@@ -78,18 +78,29 @@ export default function WarehouseHistory({
     setLoading(true);
     // 1000 satrdan ko'p bo'lishi mumkin — sahifalab olamiz
     const pageSize = 1000;
+    const FULL =
+      "*, product:products(name, unit), order:orders!stock_movements_order_id_fkey(order_number, product_name), intake_session:intake_sessions(id, started_at, finished_at, supplier, created_by_name)";
     let all: any[] = [];
+    let cols = FULL;
     for (let page = 0; page < 6; page++) {
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from("stock_movements")
-        .select(
-          "*, product:products(name, unit), order:orders(order_number, product_name), intake_session:intake_sessions(id, started_at, finished_at, supplier, created_by_name)"
-        )
+        .select(cols)
         .order("created_at", { ascending: false })
         .range(page * pageSize, page * pageSize + pageSize - 1);
-      if (error) break;
-      all = all.concat(data ?? []);
-      if (!data || data.length < pageSize) break;
+      if (error) {
+        // embed muammosi bo'lsa — tarixni baribir ko'rsatamiz
+        cols = "*";
+        const retry = await supabase
+          .from("stock_movements")
+          .select(cols)
+          .order("created_at", { ascending: false })
+          .range(page * pageSize, page * pageSize + pageSize - 1);
+        if (retry.error) break;
+        data = retry.data as any;
+      }
+      all = all.concat((data as any[]) ?? []);
+      if (!data || (data as any[]).length < pageSize) break;
     }
 
     const [{ data: metal }, { data: normData }] = await Promise.all([
