@@ -1188,6 +1188,132 @@ export type Database = {
         }
         Relationships: []
       }
+      metal_movements: {
+        Row: {
+          comment: string | null
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          direction: string
+          id: string
+          order_id: string | null
+          quantity: number
+          stock_id: string
+          weight_kg: number
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          direction: string
+          id?: string
+          order_id?: string | null
+          quantity: number
+          stock_id: string
+          weight_kg: number
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          direction?: string
+          id?: string
+          order_id?: string | null
+          quantity?: number
+          stock_id?: string
+          weight_kg?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metal_movements_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metal_movements_stock_id_fkey"
+            columns: ["stock_id"]
+            isOneToOne: false
+            referencedRelation: "metal_stock"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      metal_norms: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          length_mm: number
+          metal_type: string
+          thickness_mm: number
+          updated_at: string
+          weight_kg: number
+          width_mm: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          length_mm: number
+          metal_type: string
+          thickness_mm: number
+          updated_at?: string
+          weight_kg: number
+          width_mm: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          length_mm?: number
+          metal_type?: string
+          thickness_mm?: number
+          updated_at?: string
+          weight_kg?: number
+          width_mm?: number
+        }
+        Relationships: []
+      }
+      metal_stock: {
+        Row: {
+          created_at: string
+          id: string
+          length_mm: number
+          metal_type: string
+          quantity: number
+          thickness_mm: number
+          updated_at: string
+          weight_kg: number
+          width_mm: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          length_mm: number
+          metal_type: string
+          quantity?: number
+          thickness_mm: number
+          updated_at?: string
+          weight_kg: number
+          width_mm: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          length_mm?: number
+          metal_type?: string
+          quantity?: number
+          thickness_mm?: number
+          updated_at?: string
+          weight_kg?: number
+          width_mm?: number
+        }
+        Relationships: []
+      }
       notification_user_states: {
         Row: {
           created_at: string
@@ -2230,6 +2356,29 @@ export type Database = {
         Returns: boolean
       }
       is_my_trip: { Args: { _trip: string; _user: string }; Returns: boolean }
+      metal_consume: {
+        Args: {
+          _actor_name?: string
+          _comment?: string
+          _order_id: string
+          _quantity: number
+          _stock_id: string
+        }
+        Returns: number
+      }
+      metal_intake: {
+        Args: {
+          _actor_name?: string
+          _comment?: string
+          _length: number
+          _metal_type: string
+          _quantity: number
+          _thickness: number
+          _weight_kg: number
+          _width: number
+        }
+        Returns: string
+      }
       update_intake_invoice: {
         Args: { _image_url?: string; _session_id: string; _supplier?: string }
         Returns: undefined
