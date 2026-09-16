@@ -43,6 +43,10 @@ export default function InvoicesPage() {
   const [edRows, setEdRows] = useState<Record<string, { quantity: string; unit_price: string; currency: string }>>({});
   const [busy, setBusy] = useState(false);
 
+  // Ochiq nakladnoy
+  const [actFile, setActFile] = useState<File | null>(null);
+  const [actBusy, setActBusy] = useState(false);
+
   // O'chirish
   const [delId, setDelId] = useState<string | null>(null);
   const [delItemId, setDelItemId] = useState<string | null>(null);
