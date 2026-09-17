@@ -22,8 +22,8 @@ import EmployeeDetailDialog, { SALARY_KINDS, SALARY_KIND_LABELS, type SalaryKind
 import UsersTab from "@/components/kassa/UsersTab";
 import { useEmployees, refreshEmployees } from "@/hooks/useEmployees";
 
-const PAYMENT_TYPES = ["cash", "corporate_card", "transfer", "other"] as const;
-type PaymentType = typeof PAYMENT_TYPES[number];
+const PAYMENT_TYPES = ["cash", "transfer", "corporate_card"] as const;
+type PaymentType = typeof PAYMENT_TYPES[number] | "other";
 
 // Locale-aware payment-type labels. Legacy `card` rows are surfaced under
 // `corporate_card` since that is what they always represented in practice.
@@ -38,8 +38,14 @@ const normalizePT = (pt: unknown): PaymentType => {
   return (PAYMENT_TYPES as readonly string[]).includes(v) ? (v as PaymentType) : "other";
 };
 
-const CARD_CURRENCIES = ["UZS", "USD", "EUR", "CNY"];
-const CURRENCIES = ["UZS", "USD", "EUR", "RUB", "CNY", "KZT", "TRY", "GBP", "AED", "INR", "JPY", "KRW", "CHF", "CAD", "AUD"];
+// Kassada faqat ikkita valyuta yuritiladi.
+const CURRENCIES = ["UZS", "USD"];
+const CURRENCY_LABELS: Record<string, string> = { UZS: "UZS (So'm)", USD: "USD (Dollar)" };
+// Chiqim sabablarining boshlang'ich ro'yxati (DB bo'sh bo'lsa ishlatiladi).
+const DEFAULT_REASONS = [
+  "Oshxona", "Prochi", "Dastavka", "Hisobot", "Qurilish materiallari",
+  "Zavod", "Usta haqi", "Ish haqi (avans)", "Rahbariyat", "Zakaz uchun", "Zapchast",
+];
 
 type CurForm = { currency: string; exchange_rate: number };
 const defaultCur: CurForm = { currency: "UZS", exchange_rate: 1 };
