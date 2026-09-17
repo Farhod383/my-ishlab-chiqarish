@@ -303,6 +303,111 @@ export default function KassaPage() {
     );
   };
 
+  // --- Oylik qoldiq: oldingi oy yakuni keyingi oyning boshlang'ich qoldig'i ---
+  const openingByCur = (ym: string): Record<string, number> => {
+    if (!ym) return {};
+    const start = new Date(`${monthBounds(ym).from}T00:00:00`).getTime();
+    const m: Record<string, number> = {};
+    for (const i of incomes) {
+      if (new Date(i.income_date).getTime() < start) {
+        const c = normalizeCurrency(i.currency); m[c] = (m[c] || 0) + (Number(i.amount) || 0);
+      }
+    }
+    for (const e of expenses) {
+      if (new Date(e.expense_date).getTime() < start) {
+        const c = normalizeCurrency(e.currency); m[c] = (m[c] || 0) - (Number(e.amount) || 0);
+      }
+    }
+    return m;
+  };
+
+  // Tanlangan oy uchun boshlang'ich qoldiq (butun davr tanlansa — 0).
+  const openingBal = useMemo(() => (selectedMonth ? openingByCur(selectedMonth) : {}), [selectedMonth, incomes, expenses]);
+  // Yakuniy qoldiq = boshlang'ich + kirim − chiqim
+  const closingBal = useMemo(() => {
+    const m: Record<string, number> = { ...openingBal };
+    for (const [c, v] of Object.entries(incByCur)) m[c] = (m[c] || 0) + v;
+    for (const [c, v] of Object.entries(expByCur)) m[c] = (m[c] || 0) - v;
+    return m;
+  }, [openingBal, incByCur, expByCur]);
+
+  // --- Hisobot (tanlangan oy) ---
+  const report = useMemo(() => {
+    const b = monthBounds(reportMonth);
+    const from = new Date(`${b.from}T00:00:00`).getTime();
+    const to = new Date(`${b.to}T23:59:59`).getTime();
+    const inRows = incomes.filter((i) => { const t = new Date(i.income_date).getTime(); return t >= from && t <= to; });
+    const exRows = expenses.filter((e) => { const t = new Date(e.expense_date).getTime(); return t >= from && t <= to; });
+    const opening = openingByCur(reportMonth);
+    const totalIn: Record<string, number> = {};
+    const totalOut: Record<string, number> = {};
+    for (const i of inRows) { const c = normalizeCurrency(i.currency); totalIn[c] = (totalIn[c] || 0) + (Number(i.amount) || 0); }
+    for (const e of exRows) { const c = normalizeCurrency(e.currency); totalOut[c] = (totalOut[c] || 0) + (Number(e.amount) || 0); }
+    const closing: Record<string, number> = { ...opening };
+    for (const [c, v] of Object.entries(totalIn)) closing[c] = (closing[c] || 0) + v;
+    for (const [c, v] of Object.entries(totalOut)) closing[c] = (closing[c] || 0) - v;
+    const groups: Record<string, { reason: string; byCur: Record<string, number>; count: number }> = {};
+    for (const e of exRows) {
+      const key = (e.reason ?? "—").trim() || "—";
+      const c = normalizeCurrency(e.currency);
+      groups[key] ??= { reason: key, byCur: {}, count: 0 };
+      groups[key].byCur[c] = (groups[key].byCur[c] || 0) + (Number(e.amount) || 0);
+      groups[key].count += 1;
+    }
+    return {
+      inRows: [...inRows].sort((a, b2) => new Date(b2.income_date).getTime() - new Date(a.income_date).getTime()),
+      exRows: [...exRows].sort((a, b2) => new Date(b2.expense_date).getTime() - new Date(a.expense_date).getTime()),
+      opening, totalIn, totalOut, closing,
+      groups: Object.values(groups).sort((a, b2) => b2.count - a.count),
+    };
+  }, [incomes, expenses, reportMonth]);
+
+  const curLine = (m: Record<string, number>) => {
+    const items = Object.entries(m).filter(([, v]) => Math.abs(Number(v) || 0) > 0.0001);
+    if (!items.length) return "0 so'm";
+    return items.map(([c, v]) => `${fmtCash(Number(v), c)} ${CUR_SYMBOL[c] ?? c}`).join(" · ");
+  };
+
+  const downloadReport = () => {
+    const esc = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const lines: string[] = [];
+    lines.push(esc(`Kassa hisoboti — ${monthLabel(reportMonth)}`));
+    lines.push("");
+    lines.push([esc("Boshlang'ich qoldiq"), esc(curLine(report.opening))].join(";"));
+    lines.push([esc("Jami kirim"), esc(curLine(report.totalIn))].join(";"));
+    lines.push([esc("Jami chiqim"), esc(curLine(report.totalOut))].join(";"));
+    lines.push([esc("Yakuniy qoldiq"), esc(curLine(report.closing))].join(";"));
+    lines.push("");
+    lines.push([esc("KIRIMLAR")].join(";"));
+    lines.push(["Sana va vaqt", "Manba", "Summa", "Valyuta"].map(esc).join(";"));
+    for (const i of report.inRows) lines.push([fmtDateTime24(i.income_date), i.source ?? "", fmtCash(Number(i.amount), i.currency), normalizeCurrency(i.currency)].map(esc).join(";"));
+    lines.push("");
+    lines.push([esc("CHIQIMLAR")].join(";"));
+    lines.push(["Sana va vaqt", "Sabab", "Summa", "Valyuta"].map(esc).join(";"));
+    for (const e of report.exRows) lines.push([fmtDateTime24(e.expense_date), e.reason ?? "", fmtCash(Number(e.amount), e.currency), normalizeCurrency(e.currency)].map(esc).join(";"));
+    lines.push("");
+    lines.push([esc("SABAB BO'YICHA GURUHLAR")].join(";"));
+    lines.push(["Sabab", "Soni", "Jami"].map(esc).join(";"));
+    for (const g of report.groups) lines.push([g.reason, String(g.count), curLine(g.byCur)].map(esc).join(";"));
+    const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `kassa-hisobot-${reportMonth}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  const addReason = async () => {
+    const name = newReason.trim();
+    if (!name) return;
+    const { error } = await (supabase.from as any)("cash_expense_reasons").insert({ name, sort_order: 200, created_by: user?.id });
+    if (error && !String(error.message).includes("duplicate")) { toast.error(error.message); return; }
+    await loadReasons();
+    setExpForm((f) => ({ ...f, reason: name }));
+    setNewReason(""); setNewReasonOpen(false);
+    toast.success("Tur qo'shildi");
+  };
+
 
   const saveExpense = async () => {
     if (!expForm.amount || !expForm.reason.trim()) { toast.error(k.fillFields ?? "Maydonlarni to'ldiring"); return; }
