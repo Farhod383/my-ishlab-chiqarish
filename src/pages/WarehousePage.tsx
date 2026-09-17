@@ -1161,6 +1161,26 @@ export default function WarehousePage() {
                       </Select>
                     </div>
                   </div>
+                  <div className="grid grid-cols-3 gap-3 items-end">
+                    <div className="col-span-2">
+                      <Label>Tonna <span className="text-muted-foreground text-xs">(ixtiyoriy)</span></Label>
+                      <NumberInput
+                        min={0} step={0.001}
+                        value={impTons}
+                        onChange={e => { setImpTonsManual(true); setImpTons(e.target.value); }}
+                        placeholder="0.000"
+                      />
+                    </div>
+                    {impTonsManual && (
+                      <Button variant="ghost" size="sm" onClick={() => { setImpTonsManual(false); }}>Avtomatik</Button>
+                    )}
+                  </div>
+                  {impKg > 0 && (
+                    <div className="text-sm bg-muted/40 border rounded p-2 flex justify-between">
+                      <span className="text-muted-foreground">Og'irlik:</span>
+                      <span className="font-mono font-semibold">{fmt(impKg)} kg = {(impKg / 1000).toFixed(4)} t</span>
+                    </div>
+                  )}
                   <div className="grid grid-cols-3 gap-3">
                     <div className="col-span-2"><Label>{t.supply.price}</Label><NumberInput min={0} step={1} value={impPrice} onChange={e => setImpPrice(e.target.value)} placeholder="0" /></div>
                     <div><Label>Valyuta</Label>
