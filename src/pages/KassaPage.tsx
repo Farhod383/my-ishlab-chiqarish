@@ -11,15 +11,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Wallet, Plus, ArrowDownCircle, ArrowUpCircle, Users, Edit2, Search, UserCog } from "lucide-react";
+import { Wallet, Plus, ArrowDownCircle, ArrowUpCircle, Edit2, Search, FileBarChart, Truck, Download } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
 import { notify } from "@/lib/notify";
-import { fmtKassaAmount, fmtNum } from "@/lib/format";
-import EmployeeDetailDialog, { SALARY_KINDS, SALARY_KIND_LABELS, type SalaryKind } from "@/components/kassa/EmployeeDetailDialog";
-import UsersTab from "@/components/kassa/UsersTab";
+import { fmtKassaAmount, fmtNum, fmtDateTime24 } from "@/lib/format";
+import SupplyFinancePage from "@/pages/SupplyFinancePage";
 import { useEmployees, refreshEmployees } from "@/hooks/useEmployees";
 
 const PAYMENT_TYPES = ["cash", "transfer", "corporate_card"] as const;
