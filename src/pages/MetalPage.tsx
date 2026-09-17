@@ -144,6 +144,54 @@ export default function MetalPage() {
   const actorName = user?.email ?? null;
   const [busy, setBusy] = useState(false);
 
+  /* ---------------- Kirim (metall/profil) ---------------- */
+  const [inOpen, setInOpen] = useState(false);
+  const [inType, setInType] = useState("");
+  const [inThick, setInThick] = useState("");
+  const [inWidth, setInWidth] = useState("");
+  const [inLength, setInLength] = useState("");
+  const [inKgPiece, setInKgPiece] = useState("");
+  const [inQty, setInQty] = useState("");
+  const [inPrice, setInPrice] = useState("");
+  const [inLocation, setInLocation] = useState("Sklad");
+  const [inComment, setInComment] = useState("");
+
+  // Norma bo'yicha 1 dona kg ni avtomatik to'ldirish
+  useEffect(() => {
+    const t = norm3(inType), th = Number(inThick), w = Number(inWidth), l = Number(inLength);
+    if (!t || !th || !w || !l) return;
+    const m = norms.find((x) => norm3(x.metal_type) === t && n(x.thickness_mm) === th && n(x.width_mm) === w && n(x.length_mm) === l);
+    if (m) setInKgPiece(String(n(m.weight_kg)));
+  }, [inType, inThick, inWidth, inLength, norms]);
+
+  const inTotalKg = Number(inKgPiece || 0) * Number(inQty || 0);
+
+  const doIntake = async () => {
+    if (!inType.trim()) return toast.error("Metall turini kiriting");
+    if (!Number(inQty)) return toast.error("Dona sonini kiriting");
+    if (!Number(inKgPiece)) return toast.error("1 dona og'irligini (kg) kiriting");
+    setBusy(true);
+    const { error } = await supabase.rpc("metal_intake_product" as any, {
+      _metal_type: inType.trim(),
+      _thickness: inThick ? Number(inThick) : null,
+      _width: inWidth ? Number(inWidth) : null,
+      _length: inLength ? Number(inLength) : null,
+      _kg_per_piece: Number(inKgPiece),
+      _pieces: Number(inQty),
+      _unit_price: inPrice ? Number(inPrice) : 0,
+      _currency: "UZS",
+      _location: inLocation || "Sklad",
+      _comment: inComment || null,
+      _actor_name: actorName,
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success(`Kirim qilindi: ${fmtKg(inTotalKg)} (${fmtT(inTotalKg)})`);
+    setInOpen(false);
+    setInQty(""); setInPrice(""); setInComment("");
+    load();
+  };
+
   /* ---------------- Sarf (Konstruktor) ---------------- */
   const [outOpen, setOutOpen] = useState(false);
   const [outProduct, setOutProduct] = useState("");
