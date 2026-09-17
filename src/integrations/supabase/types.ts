@@ -2352,6 +2352,10 @@ export type Database = {
     Functions: {
       can_edit_intake: { Args: { _user_id: string }; Returns: boolean }
       can_manage_trips: { Args: { _user_id: string }; Returns: boolean }
+      clear_intake_invoice_image: {
+        Args: { _session_id: string }
+        Returns: undefined
+      }
       close_intake_invoice: {
         Args: { _session_id: string }
         Returns: undefined

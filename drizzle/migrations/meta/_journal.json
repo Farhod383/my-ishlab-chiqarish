@@ -106,6 +106,13 @@
       "when": 1789632645507,
       "tag": "0014_metal_intake_product_rpc",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1789632723842,
+      "tag": "0015_clear_intake_invoice_image",
+      "breakpoints": true
     }
   ]
 }
