@@ -790,6 +790,16 @@ export default function KassaPage() {
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>{CURRENCIES.map((c) => <SelectItem key={c} value={c}>{CURRENCY_LABELS[c] ?? c}</SelectItem>)}</SelectContent>
                     </Select>
+                    {expForm.currency !== "UZS" && (
+                      expRate > 0 ? (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Kurs (oxirgi {expForm.currency} kirimidan): <span className="font-mono text-foreground">{fmt(expRate)}</span> so'm
+                          {Number(expForm.amount) > 0 && <> · = <span className="font-mono font-semibold text-foreground">{fmt(Number(expForm.amount) * expRate)} UZS</span></>}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-status-red mt-1">{expForm.currency} kursi mavjud emas — avval {expForm.currency} kirimini kurs bilan kiriting.</p>
+                      )
+                    )}
                    </div>
                    <div>
                      <Label>{k.paymentType ?? "To'lov turi"}</Label>
