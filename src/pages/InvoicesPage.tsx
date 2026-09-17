@@ -116,6 +116,28 @@ export default function InvoicesPage() {
     await load();
   };
 
+  /** Nakladnoy rasmini o'chirish (DB + storage) */
+  const [delImgId, setDelImgId] = useState<string | null>(null);
+  const removeImage = async () => {
+    const s = sessions.find((x) => x.id === delImgId);
+    if (!s || !s.image_url) { setDelImgId(null); return; }
+    setBusy(true);
+    try {
+      const marker = "/object/public/product-images/";
+      const idx = s.image_url.indexOf(marker);
+      if (idx >= 0) {
+        const path = decodeURIComponent(s.image_url.slice(idx + marker.length).split("?")[0]);
+        await supabase.storage.from("product-images").remove([path]);
+      }
+      const { error } = await supabase.rpc("clear_intake_invoice_image" as any, { _session_id: s.id });
+      if (error) throw error;
+      toast.success("Rasm o'chirildi");
+      setDelImgId(null);
+      await load();
+    } catch (e: any) { toast.error(e.message ?? "Rasmni o'chirishda xatolik"); }
+    finally { setBusy(false); }
+  };
+
   /** Ochiq Nakladnoyga rasm yuklash */
   const uploadActiveImage = async () => {
     if (!active || !actFile) return;
@@ -214,9 +236,16 @@ export default function InvoicesPage() {
             <div className="space-y-2">
               <Label>Nakladnoy rasmi <span className="text-destructive">*</span></Label>
               {active.image_url ? (
-                <a href={active.image_url} target="_blank" rel="noreferrer">
-                  <img src={active.image_url} alt={`Nakladnoy ${intakeCode(active)}`} className="max-h-40 rounded border" />
-                </a>
+                <div className="flex items-start gap-2">
+                  <a href={active.image_url} target="_blank" rel="noreferrer">
+                    <img src={active.image_url} alt={`Nakladnoy ${intakeCode(active)}`} className="max-h-40 rounded border" />
+                  </a>
+                  {canEdit && (
+                    <Button variant="outline" size="sm" className="text-destructive" onClick={() => setDelImgId(active.id)}>
+                      <Trash2 className="h-4 w-4 mr-1" /> Rasmni o'chirish
+                    </Button>
+                  )}
+                </div>
               ) : (
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Input type="file" accept="image/*" onChange={(e) => setActFile(e.target.files?.[0] ?? null)} />
@@ -354,9 +383,16 @@ export default function InvoicesPage() {
                 <div className="space-y-2">
                   <Label>Nakladnoy rasmi</Label>
                   {current.image_url ? (
-                    <a href={current.image_url} target="_blank" rel="noreferrer">
-                      <img src={current.image_url} alt={`Nakladnoy ${intakeCode(current)}`} className="max-h-48 rounded border" />
-                    </a>
+                    <div className="flex items-start gap-2">
+                      <a href={current.image_url} target="_blank" rel="noreferrer">
+                        <img src={current.image_url} alt={`Nakladnoy ${intakeCode(current)}`} className="max-h-48 rounded border" />
+                      </a>
+                      {canEdit && (
+                        <Button variant="outline" size="sm" className="text-destructive" onClick={() => setDelImgId(current.id)}>
+                          <Trash2 className="h-4 w-4 mr-1" /> Rasmni o'chirish
+                        </Button>
+                      )}
+                    </div>
                   ) : (
                     <p className="text-xs text-muted-foreground">Rasm yo'q</p>
                   )}
@@ -388,6 +424,22 @@ export default function InvoicesPage() {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={busy}>Bekor qilish</AlertDialogCancel>
             <AlertDialogAction onClick={deleteSession} disabled={busy} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">O'chirish</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Rasmni o'chirishni tasdiqlash */}
+      <AlertDialog open={!!delImgId} onOpenChange={(o) => { if (!o) setDelImgId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Nakladnoy rasmi o'chirilsinmi?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Faqat rasm o'chiriladi. Nakladnoyning mahsulotlari, summalari va tarixi saqlanib qoladi.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Bekor qilish</AlertDialogCancel>
+            <AlertDialogAction onClick={removeImage} disabled={busy} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">O'chirish</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -2352,6 +2352,10 @@ export type Database = {
     Functions: {
       can_edit_intake: { Args: { _user_id: string }; Returns: boolean }
       can_manage_trips: { Args: { _user_id: string }; Returns: boolean }
+      clear_intake_invoice_image: {
+        Args: { _session_id: string }
+        Returns: undefined
+      }
       close_intake_invoice: {
         Args: { _session_id: string }
         Returns: undefined
@@ -2411,6 +2415,22 @@ export type Database = {
           _quantity: number
           _thickness: number
           _weight_kg: number
+          _width: number
+        }
+        Returns: string
+      }
+      metal_intake_product: {
+        Args: {
+          _actor_name?: string
+          _comment?: string
+          _currency?: string
+          _kg_per_piece: number
+          _length: number
+          _location?: string
+          _metal_type: string
+          _pieces: number
+          _thickness: number
+          _unit_price?: number
           _width: number
         }
         Returns: string
