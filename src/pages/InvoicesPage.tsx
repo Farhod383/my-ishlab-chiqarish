@@ -236,34 +236,36 @@ export default function InvoicesPage() {
 
             <div className="space-y-2">
               <Label>Nakladnoy rasmi <span className="text-destructive">*</span></Label>
-              {active.image_url ? (
-                <div className="flex items-start gap-2">
-                  <a href={active.image_url} target="_blank" rel="noreferrer">
-                    <img src={active.image_url} alt={`Nakladnoy ${intakeCode(active)}`} className="max-h-40 rounded border" />
+              {active.image_url || actPreviewUrl ? (
+                <div className="flex items-start gap-2 flex-wrap">
+                  <a href={active.image_url ?? actPreviewUrl!} target="_blank" rel="noreferrer">
+                    <img src={active.image_url ?? actPreviewUrl!} alt={`Nakladnoy ${intakeCode(active)}`} className="max-h-40 rounded border" />
                   </a>
-                  {canEdit && (
+                  {canEdit && active.image_url && (
                     <Button variant="outline" size="sm" className="text-destructive" onClick={() => setDelImgId(active.id)}>
                       <Trash2 className="h-4 w-4 mr-1" /> Rasmni o'chirish
                     </Button>
                   )}
                 </div>
               ) : (
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Input type="file" accept="image/*" onChange={(e) => setActFile(e.target.files?.[0] ?? null)} />
-                  <Button variant="outline" disabled={!actFile || actBusy} onClick={uploadActiveImage}>Rasm yuklash</Button>
-                </div>
+                <Input type="file" accept="image/*" onChange={(e) => handleActFile(e.target.files?.[0] ?? null)} />
+              )}
+              {!active.image_url && actPreviewUrl && (
+                <Input type="file" accept="image/*" onChange={(e) => handleActFile(e.target.files?.[0] ?? null)} />
               )}
             </div>
 
-            <Button
-              className="w-full"
-              disabled={!active.image_url || activeItems.length === 0 || actBusy}
-              onClick={closeActive}
-            >
-              <CheckCircle2 className="h-4 w-4 mr-2" /> Nakladnoyni yopish
-            </Button>
-            {!active.image_url && (
-              <p className="text-xs text-muted-foreground text-center">Rasm yuklanmaguncha Nakladnoy yopilmaydi.</p>
+            {(active.image_url || actPreviewUrl) && (
+              <Button
+                className="w-full"
+                disabled={actBusy}
+                onClick={closeActive}
+              >
+                <CheckCircle2 className="h-4 w-4 mr-2" /> Nakladnoyni yopish
+              </Button>
+            )}
+            {!active.image_url && !actPreviewUrl && (
+              <p className="text-xs text-muted-foreground text-center">Rasm tanlanmaguncha Nakladnoy yopilmaydi.</p>
             )}
           </CardContent>
         </Card>
