@@ -133,31 +133,53 @@ export default function MetalPage() {
 
   /* ---------------- Chiqim (Konstruktor sarfi) ---------------- */
   const [outOpen, setOutOpen] = useState(false);
-  const [outStock, setOutStock] = useState("");
+  const [outType, setOutType] = useState("");
+  const [outThick, setOutThick] = useState("");
+  const [outSize, setOutSize] = useState(""); // "width×length"
   const [outOrder, setOutOrder] = useState("");
   const [outQty, setOutQty] = useState("");
   const [outComment, setOutComment] = useState("");
 
-  const outRow = rows.find((r) => r.s.id === outStock);
+  const outTypes = useMemo(
+    () => Array.from(new Set(rows.filter((r) => r.pieces > 0).map((r) => r.s.metal_type))),
+    [rows]
+  );
+  const outThicks = useMemo(
+    () => Array.from(new Set(rows.filter((r) => r.pieces > 0 && r.s.metal_type === outType).map((r) => String(n(r.s.thickness_mm))))),
+    [rows, outType]
+  );
+  const outSizes = useMemo(
+    () => Array.from(new Set(rows
+      .filter((r) => r.pieces > 0 && r.s.metal_type === outType && String(n(r.s.thickness_mm)) === outThick)
+      .map((r) => `${n(r.s.width_mm)}×${n(r.s.length_mm)}`))),
+    [rows, outType, outThick]
+  );
+
+  const outRow = rows.find(
+    (r) => r.s.metal_type === outType &&
+      String(n(r.s.thickness_mm)) === outThick &&
+      `${n(r.s.width_mm)}×${n(r.s.length_mm)}` === outSize
+  );
   const outKg = n(outRow?.kgPerPiece) * Number(outQty || 0);
 
   const doConsume = async () => {
-    if (!outStock) return toast.error("Metall pozitsiyasini tanlang");
+    if (!outRow) return toast.error("Metall turi, qalinligi va o'lchamini tanlang");
     if (!outOrder) return toast.error("Zakazni tanlang");
     const q = Number(outQty);
     if (!q || q <= 0) return toast.error("Dona sonini kiriting");
-    if (outRow && q > outRow.pieces + 0.0001) return toast.error(`Qoldiq yetarli emas: ${outRow.pieces} dona`);
+    if (q > outRow.pieces + 0.0001) return toast.error(`Qoldiq yetarli emas: ${outRow.pieces} dona`);
     setBusy(true);
     const { error } = await supabase.rpc("metal_consume" as any, {
-      _stock_id: outStock, _quantity: q, _order_id: outOrder,
+      _stock_id: outRow.s.id, _quantity: q, _order_id: outOrder,
       _comment: outComment || null, _actor_name: actorName,
     });
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success(`Sarflandi: ${fmtKg(outKg)} (${fmtT(outKg)})`);
-    setOutOpen(false); setOutStock(""); setOutQty(""); setOutComment("");
+    setOutOpen(false); setOutQty(""); setOutComment("");
     load();
   };
+
 
   /* ---------------- Norma ---------------- */
   const [normOpen, setNormOpen] = useState(false);
