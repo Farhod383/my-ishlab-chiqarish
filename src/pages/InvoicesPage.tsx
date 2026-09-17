@@ -427,6 +427,22 @@ export default function InvoicesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Rasmni o'chirishni tasdiqlash */}
+      <AlertDialog open={!!delImgId} onOpenChange={(o) => { if (!o) setDelImgId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Nakladnoy rasmi o'chirilsinmi?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Faqat rasm o'chiriladi. Nakladnoyning mahsulotlari, summalari va tarixi saqlanib qoladi.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Bekor qilish</AlertDialogCancel>
+            <AlertDialogAction onClick={removeImage} disabled={busy} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">O'chirish</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
