@@ -1067,6 +1067,7 @@ export type Database = {
           source: string | null
           unit: string
           unit_price: number
+          weight_kg: number | null
         }
         Insert: {
           comment?: string | null
@@ -1085,6 +1086,7 @@ export type Database = {
           source?: string | null
           unit?: string
           unit_price?: number
+          weight_kg?: number | null
         }
         Update: {
           comment?: string | null
@@ -1103,6 +1105,7 @@ export type Database = {
           source?: string | null
           unit?: string
           unit_price?: number
+          weight_kg?: number | null
         }
         Relationships: [
           {
@@ -2150,6 +2153,7 @@ export type Database = {
           supply_request_id: string | null
           taken_by: string | null
           unit_price: number
+          weight_kg: number | null
         }
         Insert: {
           comment?: string | null
@@ -2174,6 +2178,7 @@ export type Database = {
           supply_request_id?: string | null
           taken_by?: string | null
           unit_price?: number
+          weight_kg?: number | null
         }
         Update: {
           comment?: string | null
@@ -2198,6 +2203,7 @@ export type Database = {
           supply_request_id?: string | null
           taken_by?: string | null
           unit_price?: number
+          weight_kg?: number | null
         }
         Relationships: [
           {

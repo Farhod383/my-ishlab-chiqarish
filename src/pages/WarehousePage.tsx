@@ -103,6 +103,8 @@ export default function WarehousePage() {
   const [impLocation, setImpLocation] = useState<string>("Asosiy zavod");
   const [impCurrency, setImpCurrency] = useState<string>("UZS");
   const [impOrderId, setImpOrderId] = useState<string>("");
+  const [impTons, setImpTons] = useState<string>("");
+  const [impTonsManual, setImpTonsManual] = useState(false);
   const [locations, setLocations] = useState<{ id: string; name: string }[]>([]);
 
   // Kirim sessiyasi (Nakladnoy)
@@ -422,6 +424,26 @@ export default function WarehousePage() {
     load();
   };
 
+  /** Kirim uchun avtomatik kg: birlik kg bo'lsa miqdorning o'zi, aks holda dona × 1 dona kg normativi */
+  const impUnitKg = useMemo(() => {
+    const p: any = products.find((x: any) => x.id === impProductId);
+    return Number(p?.weight_kg) > 0 ? Number(p.weight_kg) : 0;
+  }, [products, impProductId]);
+  const impAutoKg = useMemo(() => {
+    const q = Number(impQty) || 0;
+    if (!q) return 0;
+    if ((impUnit || "").toLowerCase() === "kg") return q;
+    return impUnitKg > 0 ? q * impUnitKg : 0;
+  }, [impQty, impUnit, impUnitKg]);
+
+  useEffect(() => {
+    if (impTonsManual) return;
+    setImpTons(impAutoKg > 0 ? String(Number((impAutoKg / 1000).toFixed(4))) : "");
+  }, [impAutoKg, impTonsManual]);
+
+  /** Saqlanadigan kg: qo'lda kiritilgan tonna ustuvor */
+  const impKg = Number(impTons) > 0 ? Number(impTons) * 1000 : impAutoKg;
+
   const doImport = async () => {
     const qtyN = Number(impQty);
     const priceN = Number(impPrice) || 0;
@@ -484,6 +506,7 @@ export default function WarehousePage() {
         product_name: trimmedName,
         unit: impUnit || "dona",
         quantity: qtyN,
+        weight_kg: impKg > 0 ? impKg : null,
         unit_price: priceN,
         currency: impCurrency || "UZS",
         location: impLocation || "Asosiy zavod",
@@ -500,12 +523,12 @@ export default function WarehousePage() {
       actor_id: user?.id, actor_name: user?.email,
       action: "Nakladnoyga mahsulot qo'shildi", entity: "intake_item",
       order_id: impOrderId || null,
-      details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${impCurrency}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
+      details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${impCurrency}${impKg > 0 ? ` · ${fmt(impKg)} kg = ${(impKg / 1000).toFixed(4)} t` : ""}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
     });
     toast.success(merged
       ? "Nakladnoyda mavjud mahsulotga jamlandi"
       : "Nakladnoyga qo'shildi — kirim tugatilgach skladga tushadi");
-    setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId("");
+    setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId(""); setImpTons(""); setImpTonsManual(false);
     loadSession();
     load();
   };
@@ -1138,6 +1161,26 @@ export default function WarehousePage() {
                       </Select>
                     </div>
                   </div>
+                  <div className="grid grid-cols-3 gap-3 items-end">
+                    <div className="col-span-2">
+                      <Label>Tonna <span className="text-muted-foreground text-xs">(ixtiyoriy)</span></Label>
+                      <NumberInput
+                        min={0} step={0.001}
+                        value={impTons}
+                        onChange={e => { setImpTonsManual(true); setImpTons(e.target.value); }}
+                        placeholder="0.000"
+                      />
+                    </div>
+                    {impTonsManual && (
+                      <Button variant="ghost" size="sm" onClick={() => { setImpTonsManual(false); }}>Avtomatik</Button>
+                    )}
+                  </div>
+                  {impKg > 0 && (
+                    <div className="text-sm bg-muted/40 border rounded p-2 flex justify-between">
+                      <span className="text-muted-foreground">Og'irlik:</span>
+                      <span className="font-mono font-semibold">{fmt(impKg)} kg = {(impKg / 1000).toFixed(4)} t</span>
+                    </div>
+                  )}
                   <div className="grid grid-cols-3 gap-3">
                     <div className="col-span-2"><Label>{t.supply.price}</Label><NumberInput min={0} step={1} value={impPrice} onChange={e => setImpPrice(e.target.value)} placeholder="0" /></div>
                     <div><Label>Valyuta</Label>
@@ -1506,7 +1549,21 @@ export default function WarehousePage() {
                               {r.batches.length > 1 && <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded">{r.batches.length} partiya</span>}
                             </div>
                           </TableCell>
-                          <TableCell className={`text-right font-mono font-semibold ${meta.text}`}>{r.totalQty} {r.first.unit}</TableCell>
+                          <TableCell className={`text-right font-mono font-semibold ${meta.text}`}>
+                            {r.totalQty} {r.first.unit}
+                            {(() => {
+                              const per = Number((r.first as any).weight_kg) || 0;
+                              const kg = (r.first.unit ?? "").toLowerCase() === "kg"
+                                ? Number(r.totalQty) || 0
+                                : per > 0 ? per * (Number(r.totalQty) || 0) : 0;
+                              if (kg <= 0) return null;
+                              return (
+                                <div className="text-[11px] font-normal text-muted-foreground">
+                                  {fmt(kg)} kg · {(kg / 1000).toFixed(4)} t
+                                </div>
+                              );
+                            })()}
+                          </TableCell>
                           <TableCell className="text-right text-xs text-muted-foreground">{r.batches.length}</TableCell>
                           <TableCell className="text-right text-sm font-mono">{r.minP === r.maxP ? fmt(r.minP) : `${fmt(r.minP)}–${fmt(r.maxP)}`}</TableCell>
                           <TableCell>
