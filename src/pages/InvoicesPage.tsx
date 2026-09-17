@@ -73,11 +73,12 @@ export default function InvoicesPage() {
     [sessions],
   );
   const active = useMemo(() => {
-    if (!openSessions.length) return null;
+    // Faqat mahsuloti bor yopilmagan nakladnoy ko'rinadi —
+    // bo'sh vaqtinchalik sessiyalar "Kirim davom etmoqda" kartasini yaratmaydi.
     const withItems = openSessions.filter((s) => (itemsBySession[s.id] ?? []).length > 0);
-    const pool = withItems.length ? withItems : openSessions;
+    if (!withItems.length) return null;
     // eng erta boshlangani — asosiy nakladnoy
-    return [...pool].sort((a, b) => +new Date(a.started_at) - +new Date(b.started_at))[0];
+    return [...withItems].sort((a, b) => +new Date(a.started_at) - +new Date(b.started_at))[0];
   }, [openSessions, itemsBySession]);
   const activeItems = useMemo(
     () => openSessions.flatMap((s) => itemsBySession[s.id] ?? []),
