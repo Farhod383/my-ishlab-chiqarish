@@ -36,6 +36,7 @@ export default function InvoicesPage() {
 
   // Ochiq nakladnoy
   const [actFile, setActFile] = useState<File | null>(null);
+  const [actPreviewUrl, setActPreviewUrl] = useState<string | null>(null);
   const [actBusy, setActBusy] = useState(false);
 
   // O'chirish
@@ -138,34 +139,34 @@ export default function InvoicesPage() {
     finally { setBusy(false); }
   };
 
-  /** Ochiq Nakladnoyga rasm yuklash */
-  const uploadActiveImage = async () => {
-    if (!active || !actFile) return;
-    setActBusy(true);
-    try {
-      const ext = actFile.name.split(".").pop();
-      const path = `nakladnoy/${crypto.randomUUID()}.${ext}`;
-      const up = await supabase.storage.from("product-images").upload(path, actFile);
-      if (up.error) throw up.error;
-      const url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
-      const { error } = await supabase.from("intake_sessions").update({ image_url: url } as any).eq("id", active.id);
-      if (error) throw error;
-      setActFile(null);
-      toast.success("Rasm yuklandi");
-      await load();
-    } catch (e: any) { toast.error(e.message ?? "Rasm yuklashda xatolik"); }
-    finally { setActBusy(false); }
+  /** Rasm tanlash — avtomatik preview (alohida yuklash tugmasi yo'q) */
+  const handleActFile = (f: File | null) => {
+    if (actPreviewUrl) URL.revokeObjectURL(actPreviewUrl);
+    setActFile(f);
+    setActPreviewUrl(f ? URL.createObjectURL(f) : null);
   };
 
-  /** Nakladnoyni yopish — barcha kirimlar bir martada skladga tushadi */
+  /** Nakladnoyni yopish — rasm shu paytda saqlanadi, barcha kirimlar bir martada skladga tushadi */
   const closeActive = async () => {
     if (!active) return;
     if (activeItems.length === 0) { toast.error("Nakladnoyda mahsulot yo'q"); return; }
-    if (!active.image_url) { toast.error("Avval nakladnoy rasmini yuklang"); return; }
+    if (!active.image_url && !actFile) { toast.error("Avval rasm tanlang"); return; }
     if (active.status === "finalized") return;
     setActBusy(true);
     try {
+      if (actFile) {
+        const ext = actFile.name.split(".").pop();
+        const path = `nakladnoy/${crypto.randomUUID()}.${ext}`;
+        const up = await supabase.storage.from("product-images").upload(path, actFile);
+        if (up.error) throw up.error;
+        const url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+        const { error } = await supabase.from("intake_sessions").update({ image_url: url } as any).eq("id", active.id);
+        if (error) throw error;
+      }
       await closeInvoice(active.id);
+      if (actPreviewUrl) URL.revokeObjectURL(actPreviewUrl);
+      setActFile(null);
+      setActPreviewUrl(null);
       toast.success("Nakladnoy yopildi — mahsulotlar skladga kirim qilindi");
       await load();
     } catch (e: any) { toast.error(e.message ?? "Xatolik"); }
@@ -235,34 +236,36 @@ export default function InvoicesPage() {
 
             <div className="space-y-2">
               <Label>Nakladnoy rasmi <span className="text-destructive">*</span></Label>
-              {active.image_url ? (
-                <div className="flex items-start gap-2">
-                  <a href={active.image_url} target="_blank" rel="noreferrer">
-                    <img src={active.image_url} alt={`Nakladnoy ${intakeCode(active)}`} className="max-h-40 rounded border" />
+              {active.image_url || actPreviewUrl ? (
+                <div className="flex items-start gap-2 flex-wrap">
+                  <a href={active.image_url ?? actPreviewUrl!} target="_blank" rel="noreferrer">
+                    <img src={active.image_url ?? actPreviewUrl!} alt={`Nakladnoy ${intakeCode(active)}`} className="max-h-40 rounded border" />
                   </a>
-                  {canEdit && (
+                  {canEdit && active.image_url && (
                     <Button variant="outline" size="sm" className="text-destructive" onClick={() => setDelImgId(active.id)}>
                       <Trash2 className="h-4 w-4 mr-1" /> Rasmni o'chirish
                     </Button>
                   )}
                 </div>
               ) : (
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Input type="file" accept="image/*" onChange={(e) => setActFile(e.target.files?.[0] ?? null)} />
-                  <Button variant="outline" disabled={!actFile || actBusy} onClick={uploadActiveImage}>Rasm yuklash</Button>
-                </div>
+                <Input type="file" accept="image/*" onChange={(e) => handleActFile(e.target.files?.[0] ?? null)} />
+              )}
+              {!active.image_url && actPreviewUrl && (
+                <Input type="file" accept="image/*" onChange={(e) => handleActFile(e.target.files?.[0] ?? null)} />
               )}
             </div>
 
-            <Button
-              className="w-full"
-              disabled={!active.image_url || activeItems.length === 0 || actBusy}
-              onClick={closeActive}
-            >
-              <CheckCircle2 className="h-4 w-4 mr-2" /> Nakladnoyni yopish
-            </Button>
-            {!active.image_url && (
-              <p className="text-xs text-muted-foreground text-center">Rasm yuklanmaguncha Nakladnoy yopilmaydi.</p>
+            {(active.image_url || actPreviewUrl) && (
+              <Button
+                className="w-full"
+                disabled={actBusy}
+                onClick={closeActive}
+              >
+                <CheckCircle2 className="h-4 w-4 mr-2" /> Nakladnoyni yopish
+              </Button>
+            )}
+            {!active.image_url && !actPreviewUrl && (
+              <p className="text-xs text-muted-foreground text-center">Rasm tanlanmaguncha Nakladnoy yopilmaydi.</p>
             )}
           </CardContent>
         </Card>
