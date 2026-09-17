@@ -85,6 +85,13 @@
       "when": 1789627177096,
       "tag": "0011_restrict_metal_module_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1789628496497,
+      "tag": "0012_close_intake_invoice_all_items",
+      "breakpoints": true
     }
   ]
 }
