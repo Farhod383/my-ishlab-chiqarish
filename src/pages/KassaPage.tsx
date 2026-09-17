@@ -427,8 +427,8 @@ export default function KassaPage() {
   const saveExpense = async () => {
     if (!expForm.amount || !expForm.reason.trim()) { toast.error(k.fillFields ?? "Maydonlarni to'ldiring"); return; }
     if (!ensureOnline((m) => toast.error(m))) return;
-    if (expForm.currency !== "UZS" && (!expForm.exchange_rate || expForm.exchange_rate <= 0)) {
-      toast.error(k.enterRate ?? "Valyuta kursini kiriting"); return;
+    if (expForm.currency !== "UZS" && !(expRate > 0)) {
+      toast.error(`${expForm.currency} kursi mavjud emas — avval ${expForm.currency} kirimini kurs bilan kiriting`); return;
     }
     // Client-side balance guard (server trigger is the source of truth).
     const pt = expForm.payment_type || "cash";
