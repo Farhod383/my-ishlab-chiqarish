@@ -79,7 +79,7 @@ export default function WarehouseHistory({
     // 1000 satrdan ko'p bo'lishi mumkin — sahifalab olamiz
     const pageSize = 1000;
     const FULL =
-      "*, product:products(name, unit), order:orders!stock_movements_order_id_fkey(order_number, product_name), intake_session:intake_sessions(id, started_at, finished_at, supplier, created_by_name)";
+      "*, product:products(name, unit, weight_kg), order:orders!stock_movements_order_id_fkey(order_number, product_name), intake_session:intake_sessions(id, started_at, finished_at, supplier, created_by_name)";
     let all: any[] = [];
     let cols = FULL;
     for (let page = 0; page < 6; page++) {
