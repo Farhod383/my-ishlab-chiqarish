@@ -133,7 +133,7 @@ export default function ProductionBoard() {
                       </span>
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      {o.client?.name ?? "—"} · {o.quantity} {t.common.pieces} · {t.dashboard.deadline}: {o.deadline}
+                      {o.client?.name ?? "—"} · {o.quantity} {t.common.pieces} · {t.dashboard.deadline}: <span className="text-status-green font-medium">{o.deadline}</span>
                     </div>
                     <div className="mt-3">
                       <div className="flex items-center justify-between text-xs mb-1">

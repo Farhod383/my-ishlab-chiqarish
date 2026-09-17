@@ -160,9 +160,10 @@ export default function Orders() {
                       <TableCell className="text-right text-sm">{o.quantity}</TableCell>
                       <TableCell><PriorityBadge priority={o.priority} /></TableCell>
                       <TableCell><StatusBadge status={o.status as any} /></TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">{o.order_date}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap text-muted-foreground">{startStr}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">{o.deadline}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap text-status-green font-medium">{o.order_date}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap text-status-green font-medium">{startStr}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap text-status-green font-medium">{o.deadline}</TableCell>
+
                       <TableCell className="text-xs whitespace-nowrap">
                         {isDone ? <span className="text-status-green font-medium">{t.orders.finished}</span>
                           : diffDays < 0 ? <span className="text-status-red font-semibold">{Math.abs(diffDays)} {t.orders.daysLate}</span>

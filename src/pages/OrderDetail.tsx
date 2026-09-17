@@ -304,9 +304,10 @@ export default function OrderDetail() {
       </div>
 
       <div className="grid md:grid-cols-4 gap-3">
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{t.orderDetail.received}</div><div className="font-semibold">{order.order_date}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{t.orderDetail.started}</div><div className="font-semibold">{startedAt ? new Date(startedAt).toISOString().slice(0,10) : "—"}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{t.orderDetail.deadline}</div><div className="font-semibold">{order.deadline}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{t.orderDetail.received}</div><div className="font-semibold text-status-green">{order.order_date}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{t.orderDetail.started}</div><div className="font-semibold text-status-green">{startedAt ? new Date(startedAt).toISOString().slice(0,10) : "—"}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{t.orderDetail.deadline}</div><div className="font-semibold text-status-green">{order.deadline}</div></CardContent></Card>
+
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{t.orderDetail.left}</div><div className={`font-bold text-lg ${daysLeft < 0 ? "text-status-red" : daysLeft <= 2 ? "text-status-yellow" : "text-status-green"}`}>{order.status === "completed" ? t.orderDetail.finished : daysLeft < 0 ? `${Math.abs(daysLeft)} ${t.orderDetail.daysLate}` : `${daysLeft} ${t.common.days}`}</div></CardContent></Card>
       </div>
 
@@ -782,7 +783,7 @@ function StageWorkersDisplay({ stage }: { stage: any }) {
         </div>
       )}
       {(stage.planned_start || stage.planned_end) && (
-        <div>{stage.planned_start ?? "—"} → {stage.planned_end ?? "—"}</div>
+        <div className="text-status-green font-medium">{stage.planned_start ?? "—"} → {stage.planned_end ?? "—"}</div>
       )}
       {stage.handover_comment && <div className="italic">"{stage.handover_comment}"</div>}
     </div>
