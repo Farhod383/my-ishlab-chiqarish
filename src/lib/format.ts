@@ -104,18 +104,12 @@ export function fmtMoney(amount: number | string | null | undefined, currency?: 
 }
 
 /**
- * Display-only formatter for Kassa amounts. Legacy USD cash records are stored
- * in thousandths, so only their rendered value is divided by 1,000. Database
- * values and all calculations remain unchanged.
+ * Display-only formatter for Kassa amounts. Values are always shown exactly as
+ * stored in the database — no scaling for any currency.
  */
 export function fmtKassaAmount(
   amount: number | string | null | undefined,
-  currency?: string | null,
+  _currency?: string | null,
 ): string {
-  const code = String(currency ?? "UZS").trim().toUpperCase() || "UZS";
-  const numericAmount = typeof amount === "string" ? Number(amount) : amount;
-  const displayAmount = code === "USD" && Number.isFinite(numericAmount)
-    ? Number(numericAmount) / 1_000
-    : numericAmount;
-  return fmtNum(displayAmount);
+  return fmtNum(amount);
 }

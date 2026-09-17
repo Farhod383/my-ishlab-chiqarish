@@ -43,7 +43,7 @@ const CURRENCY_LABELS: Record<string, string> = { UZS: "UZS (So'm)", USD: "USD (
 // Chiqim sabablarining boshlang'ich ro'yxati (DB bo'sh bo'lsa ishlatiladi).
 const DEFAULT_REASONS = [
   "Oshxona", "Prochi", "Dastavka", "Hisobot", "Qurilish materiallari",
-  "Zavod", "Usta haqi", "Ish haqi (avans)", "Rahbariyat", "Zakaz uchun", "Zapchast",
+  "Zavod", "Usta haqi", "Ish haqi (avans)", "Rahbariyat", "Zakaz uchun", "Zapchast", "Ta'minot",
 ];
 
 type CurForm = { currency: string; exchange_rate: number };
@@ -441,7 +441,7 @@ export default function KassaPage() {
       payment_type: expForm.payment_type,
       salary_kind: recipientMode === "employee" && expForm.salary_kind ? expForm.salary_kind : null,
       // Ta'minot bo'limiga ajratilgan pul — Ta'minot moliya sahifasida kirim sifatida ko'rinadi.
-      purpose: expForm.is_supply ? "supply" : null,
+      purpose: expForm.reason.trim().toLowerCase() === "ta'minot" || expForm.is_supply ? "supply" : null,
     };
     if (expEditId) {
       const { error } = await supabase.from("cash_expenses").update(payload).eq("id", expEditId);
