@@ -1549,7 +1549,21 @@ export default function WarehousePage() {
                               {r.batches.length > 1 && <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded">{r.batches.length} partiya</span>}
                             </div>
                           </TableCell>
-                          <TableCell className={`text-right font-mono font-semibold ${meta.text}`}>{r.totalQty} {r.first.unit}</TableCell>
+                          <TableCell className={`text-right font-mono font-semibold ${meta.text}`}>
+                            {r.totalQty} {r.first.unit}
+                            {(() => {
+                              const per = Number((r.first as any).weight_kg) || 0;
+                              const kg = (r.first.unit ?? "").toLowerCase() === "kg"
+                                ? Number(r.totalQty) || 0
+                                : per > 0 ? per * (Number(r.totalQty) || 0) : 0;
+                              if (kg <= 0) return null;
+                              return (
+                                <div className="text-[11px] font-normal text-muted-foreground">
+                                  {fmt(kg)} kg · {(kg / 1000).toFixed(4)} t
+                                </div>
+                              );
+                            })()}
+                          </TableCell>
                           <TableCell className="text-right text-xs text-muted-foreground">{r.batches.length}</TableCell>
                           <TableCell className="text-right text-sm font-mono">{r.minP === r.maxP ? fmt(r.minP) : `${fmt(r.minP)}–${fmt(r.maxP)}`}</TableCell>
                           <TableCell>
