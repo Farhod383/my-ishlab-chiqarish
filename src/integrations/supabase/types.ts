@@ -2391,6 +2391,17 @@ export type Database = {
         }
         Returns: number
       }
+      metal_consume_product: {
+        Args: {
+          _actor_name: string
+          _comment: string
+          _kg_per_piece: number
+          _order_id: string
+          _pieces: number
+          _product_id: string
+        }
+        Returns: number
+      }
       metal_intake: {
         Args: {
           _actor_name?: string
