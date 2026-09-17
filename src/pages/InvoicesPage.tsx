@@ -36,6 +36,7 @@ export default function InvoicesPage() {
 
   // Ochiq nakladnoy
   const [actFile, setActFile] = useState<File | null>(null);
+  const [actPreviewUrl, setActPreviewUrl] = useState<string | null>(null);
   const [actBusy, setActBusy] = useState(false);
 
   // O'chirish
@@ -138,34 +139,34 @@ export default function InvoicesPage() {
     finally { setBusy(false); }
   };
 
-  /** Ochiq Nakladnoyga rasm yuklash */
-  const uploadActiveImage = async () => {
-    if (!active || !actFile) return;
-    setActBusy(true);
-    try {
-      const ext = actFile.name.split(".").pop();
-      const path = `nakladnoy/${crypto.randomUUID()}.${ext}`;
-      const up = await supabase.storage.from("product-images").upload(path, actFile);
-      if (up.error) throw up.error;
-      const url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
-      const { error } = await supabase.from("intake_sessions").update({ image_url: url } as any).eq("id", active.id);
-      if (error) throw error;
-      setActFile(null);
-      toast.success("Rasm yuklandi");
-      await load();
-    } catch (e: any) { toast.error(e.message ?? "Rasm yuklashda xatolik"); }
-    finally { setActBusy(false); }
+  /** Rasm tanlash — avtomatik preview (alohida yuklash tugmasi yo'q) */
+  const handleActFile = (f: File | null) => {
+    if (actPreviewUrl) URL.revokeObjectURL(actPreviewUrl);
+    setActFile(f);
+    setActPreviewUrl(f ? URL.createObjectURL(f) : null);
   };
 
-  /** Nakladnoyni yopish — barcha kirimlar bir martada skladga tushadi */
+  /** Nakladnoyni yopish — rasm shu paytda saqlanadi, barcha kirimlar bir martada skladga tushadi */
   const closeActive = async () => {
     if (!active) return;
     if (activeItems.length === 0) { toast.error("Nakladnoyda mahsulot yo'q"); return; }
-    if (!active.image_url) { toast.error("Avval nakladnoy rasmini yuklang"); return; }
+    if (!active.image_url && !actFile) { toast.error("Avval rasm tanlang"); return; }
     if (active.status === "finalized") return;
     setActBusy(true);
     try {
+      if (actFile) {
+        const ext = actFile.name.split(".").pop();
+        const path = `nakladnoy/${crypto.randomUUID()}.${ext}`;
+        const up = await supabase.storage.from("product-images").upload(path, actFile);
+        if (up.error) throw up.error;
+        const url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+        const { error } = await supabase.from("intake_sessions").update({ image_url: url } as any).eq("id", active.id);
+        if (error) throw error;
+      }
       await closeInvoice(active.id);
+      if (actPreviewUrl) URL.revokeObjectURL(actPreviewUrl);
+      setActFile(null);
+      setActPreviewUrl(null);
       toast.success("Nakladnoy yopildi — mahsulotlar skladga kirim qilindi");
       await load();
     } catch (e: any) { toast.error(e.message ?? "Xatolik"); }
