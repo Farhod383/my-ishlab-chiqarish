@@ -1236,7 +1236,7 @@ export default function WarehousePage() {
                   <div><Label>{t.supply.phone}</Label><Input list="dl-phones" value={impPhone} onChange={e => setImpPhone(e.target.value)} placeholder={t.supply.phonePh} /></div>
 
 
-                  {openSession && (
+                  {openSession && sessionItems.length > 0 && (
                     <div className="rounded-lg border border-status-yellow/40 bg-status-yellow/5 p-3 space-y-3">
                       <div className="text-sm font-semibold">
                         Ochiq Nakladnoy <span className="font-mono">{intakeCode(openSession)}</span>
@@ -1362,7 +1362,7 @@ export default function WarehousePage() {
         })}
       </div>
 
-      {openSession && (
+      {openSession && sessionItems.length > 0 && (
         <Card className="border-status-yellow/40 bg-status-yellow/5">
           <CardHeader className="pb-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
