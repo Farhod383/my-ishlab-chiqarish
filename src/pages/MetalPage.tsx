@@ -277,35 +277,57 @@ export default function MetalPage() {
                 <Button><PackagePlus className="h-4 w-4 mr-1" /> Kirim</Button>
               </DialogTrigger>
               <DialogContent className="max-h-[90vh] overflow-y-auto">
-                <DialogHeader><DialogTitle>Mahsulot qo'shish (metall)</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>Mahsulot qo'shish</DialogTitle></DialogHeader>
                 <div className="space-y-3">
-                  <div>
-                    <Label>Mahsulot nomi / Metall turi *</Label>
-                    <Input list="metal-types-in" value={inType} onChange={(e) => setInType(e.target.value)} placeholder="Nerj" />
-                    <datalist id="metal-types-in">
+                  <div><Label>Mahsulot nomi *</Label>
+                    <Input list="dl-metal-names" value={newName} onChange={(e) => setNewName(e.target.value)} />
+                    <datalist id="dl-metal-names">
                       {[...new Set([...norms.map((x) => x.metal_type), ...stock.map((s) => s.metal_type)])].map((t) => <option key={t} value={t} />)}
                     </datalist>
                   </div>
-                  <div className="rounded-md border p-3 space-y-3">
-                    <div className="text-sm font-medium">Metall o'lchamlari</div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div><Label>Qalinligi S (mm)</Label><NumberInput step="0.1" value={inThick} onChange={(e) => setInThick(e.target.value)} placeholder="2.5" /></div>
-                      <div><Label>Eni (mm)</Label><NumberInput value={inWidth} onChange={(e) => setInWidth(e.target.value)} placeholder="1500" /></div>
-                      <div><Label>Bo'yi (mm)</Label><NumberInput value={inLength} onChange={(e) => setInLength(e.target.value)} placeholder="6000" /></div>
-                      <div><Label>1 dona og'irligi (kg)</Label><NumberInput step="0.01" value={inKgPiece} onChange={(e) => setInKgPiece(e.target.value)} /></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Miqdor *</Label><NumberInput min={0} step="any" value={newQty} onChange={(e) => setNewQty(e.target.value.replace(/[^0-9.]/g, ""))} placeholder="0" /></div>
+                    <div><Label>O'lchov birligi *</Label>
+                      <Select value={newUnit} onValueChange={setNewUnit}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>{UNITS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+                      </Select>
                     </div>
                   </div>
-                  <div><Label>Miqdor (dona)</Label><NumberInput step="0.001" value={inQty} onChange={(e) => setInQty(e.target.value)} /></div>
-                  <div><Label>Izoh</Label><Input value={inComment} onChange={(e) => setInComment(e.target.value)} /></div>
-                  {inTotalKg > 0 && (
-                    <div className="rounded-md border p-2 text-sm">
-                      Jami: <b>{fmtKg(inTotalKg)}</b> = <b>{fmtT(inTotalKg)}</b>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Min limit</Label><NumberInput min={0} value={newMin} onChange={(e) => setNewMin(e.target.value)} placeholder="0" /></div>
+                    <div><Label>Narx</Label><NumberInput min={0} value={newPrice} onChange={(e) => setNewPrice(e.target.value)} placeholder="0" /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Muhimlik</Label>
+                      <Select value={newPriority} onValueChange={setNewPriority}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>{PRIORITY_OPTIONS.map((p) => <SelectItem key={p.value} value={p.value}><span className="inline-flex items-center gap-2"><span className={`inline-block h-2.5 w-2.5 rounded-full ${p.color}`} />{p.label}</span></SelectItem>)}</SelectContent>
+                      </Select>
                     </div>
-                  )}
-                  <p className="text-xs text-muted-foreground">Metall kirimi zakazga biriktirilmaydi va faqat Metall hisobi qoldig'iga tushadi.</p>
+                    <div><Label>Valyuta</Label>
+                      <Select value={newCurrency} onValueChange={setNewCurrency}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>{CURRENCIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div><Label>Telefon</Label><Input value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="+998..." /></div>
+                  <div><Label>Qayerdan olindi</Label><Input value={newSource} onChange={(e) => setNewSource(e.target.value)} /></div>
+                  <div><Label>Yetkazib beruvchi</Label>
+                    <Select value={newSupplier} onValueChange={setNewSupplier}>
+                      <SelectTrigger><SelectValue placeholder="Tanlang" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Davronxo'ja">Davronxo'ja</SelectItem>
+                        <SelectItem value="Sanjar">Sanjar</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label>Rasm</Label><Input type="file" accept="image/*" onChange={(e) => setNewImage(e.target.files?.[0] ?? null)} /></div>
+                  <Button className="w-full" onClick={doIntake} disabled={busy}>Saqlash</Button>
                 </div>
-                <DialogFooter><Button onClick={doIntake} disabled={busy}>Kirimni saqlash</Button></DialogFooter>
               </DialogContent>
+
             </Dialog>
           )}
           {canConsume && (
