@@ -103,6 +103,8 @@ export default function WarehousePage() {
   const [impLocation, setImpLocation] = useState<string>("Asosiy zavod");
   const [impCurrency, setImpCurrency] = useState<string>("UZS");
   const [impOrderId, setImpOrderId] = useState<string>("");
+  const [impTons, setImpTons] = useState<string>("");
+  const [impTonsManual, setImpTonsManual] = useState(false);
   const [locations, setLocations] = useState<{ id: string; name: string }[]>([]);
 
   // Kirim sessiyasi (Nakladnoy)
