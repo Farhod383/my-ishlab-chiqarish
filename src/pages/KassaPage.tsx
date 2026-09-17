@@ -774,8 +774,15 @@ export default function KassaPage() {
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>{CURRENCIES.map((c) => <SelectItem key={c} value={c}>{CURRENCY_LABELS[c] ?? c}</SelectItem>)}</SelectContent>
                     </Select>
-                  </div>
-                  <div><Label>{k.amount ?? "Summa"}</Label><Input type="number" min={0} value={expForm.amount || ""} onChange={e => setExpForm({ ...expForm, amount: Number(e.target.value) })} /></div>
+                   </div>
+                   <div>
+                     <Label>{k.paymentType ?? "To'lov turi"}</Label>
+                     <Select value={normalizePT(expForm.payment_type)} onValueChange={(v) => setExpForm({ ...expForm, payment_type: v as PaymentType })}>
+                       <SelectTrigger><SelectValue /></SelectTrigger>
+                       <SelectContent>{PAYMENT_TYPES.map((p) => <SelectItem key={p} value={p}>{ptLabel(p)}</SelectItem>)}</SelectContent>
+                     </Select>
+                   </div>
+                   <div><Label>{k.amount ?? "Summa"}</Label><Input type="number" min={0} value={expForm.amount || ""} onChange={e => setExpForm({ ...expForm, amount: Number(e.target.value) })} /></div>
                   <Button className="w-full" onClick={saveExpense}>{t.common.save}</Button>
                 </div>
               </DialogContent>
