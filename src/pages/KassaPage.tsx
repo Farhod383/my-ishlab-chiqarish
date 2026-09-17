@@ -115,6 +115,13 @@ export default function KassaPage() {
 
   const actorName = profile?.full_name || user?.email || null;
 
+  const loadReasons = async () => {
+    const { data } = await (supabase.from as any)("cash_expense_reasons")
+      .select("name,sort_order").order("sort_order", { ascending: true }).order("name", { ascending: true });
+    const list = ((data ?? []) as any[]).map((r) => String(r.name)).filter(Boolean);
+    if (list.length) setReasons(list);
+  };
+
   const load = async () => {
     setLoading(true);
     const [{ data: exp }, { data: inc }] = await Promise.all([
@@ -127,6 +134,7 @@ export default function KassaPage() {
   };
   useEffect(() => {
     load();
+    loadReasons();
     const channel = supabase
       .channel("kassa-currency-totals")
       .on("postgres_changes", { event: "*", schema: "public", table: "cash_incomes" }, () => load())
