@@ -33,7 +33,7 @@ import { getStockStatus, stockStatusMeta, StockDot, type StockStatus } from "@/l
 import { useEmployees } from "@/hooks/useEmployees";
 import { Link } from "react-router-dom";
 import { fmtDateTime24 } from "@/lib/format";
-import { getOpenSession, getOrStartSession, finishSession, finalizeSession, discardDraftSessions, addOrMergeItem, intakeCode, itemsTotal, type IntakeSession, type IntakeItem } from "@/lib/intake";
+import { getOpenSession, getOrStartSession, closeInvoice, discardDraftSessions, addOrMergeItem, intakeCode, itemsTotal, type IntakeSession, type IntakeItem } from "@/lib/intake";
 
 const UNITS = ["dona", "kg", "tonna", "metr", "litr", "rulon", "komplekt"] as const;
 const CURRENCIES = ["UZS", "USD"] as const;
@@ -587,8 +587,7 @@ export default function WarehousePage() {
     if (!openSession.image_url) { toast.error("Avval nakladnoy rasmini yuklang"); return; }
     setNaklBusy(true);
     try {
-      await finishSession(openSession.id);
-      await finalizeSession(openSession.id);
+      await closeInvoice(openSession.id);
       await logAudit(supabase, {
         actor_id: user?.id, actor_name: user?.email,
         action: "Nakladnoy yakunlandi", entity: "intake_session",

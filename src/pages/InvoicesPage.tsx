@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { fmtNum, fmtDateTime24 } from "@/lib/format";
 import {
   INTAKE_STATUS_META, intakeCode, intakeDuration, itemsTotal,
-  finishSession, finalizeSession,
+  closeInvoice,
   type IntakeItem, type IntakeSession,
 } from "@/lib/intake";
 
@@ -67,8 +67,22 @@ export default function InvoicesPage() {
     return m;
   }, [items]);
 
-  const active = useMemo(() => sessions.find((s) => s.status !== "finalized") ?? null, [sessions]);
-  const activeItems = active ? (itemsBySession[active.id] ?? []) : [];
+  // Yopilmagan barcha sessiyalar bitta Nakladnoy sifatida ko'rsatiladi
+  const openSessions = useMemo(
+    () => sessions.filter((s) => s.status !== "finalized"),
+    [sessions],
+  );
+  const active = useMemo(() => {
+    if (!openSessions.length) return null;
+    const withItems = openSessions.filter((s) => (itemsBySession[s.id] ?? []).length > 0);
+    const pool = withItems.length ? withItems : openSessions;
+    // eng erta boshlangani — asosiy nakladnoy
+    return [...pool].sort((a, b) => +new Date(a.started_at) - +new Date(b.started_at))[0];
+  }, [openSessions, itemsBySession]);
+  const activeItems = useMemo(
+    () => openSessions.flatMap((s) => itemsBySession[s.id] ?? []),
+    [openSessions, itemsBySession],
+  );
 
   const rows = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -128,8 +142,7 @@ export default function InvoicesPage() {
     if (active.status === "finalized") return;
     setActBusy(true);
     try {
-      if (active.status === "open") await finishSession(active.id);
-      await finalizeSession(active.id);
+      await closeInvoice(active.id);
       toast.success("Nakladnoy yopildi — mahsulotlar skladga kirim qilindi");
       await load();
     } catch (e: any) { toast.error(e.message ?? "Xatolik"); }
