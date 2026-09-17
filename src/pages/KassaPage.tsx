@@ -613,10 +613,16 @@ export default function KassaPage() {
                 : "Barcha davr ko'rsatilmoqda"}
           </span>
         </div>
-        <div className="grid sm:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-4 gap-4">
+          {selectedMonth && (
+            <Card><CardContent className="p-4 space-y-2">
+              <div className="text-xs text-muted-foreground">Boshlang'ich qoldiq (oy boshi)</div>
+              {renderCurrencies(openingBal, "balance")}
+            </CardContent></Card>
+          )}
           <Card><CardContent className="p-4 space-y-2">
-            <div className="text-xs text-muted-foreground">{k.balance ?? "Balans"}</div>
-            {renderCurrencies(balByCur, "balance")}
+            <div className="text-xs text-muted-foreground">{selectedMonth ? "Yakuniy qoldiq" : (k.balance ?? "Balans")}</div>
+            {renderCurrencies(selectedMonth ? closingBal : balByCur, "balance")}
           </CardContent></Card>
           <Card><CardContent className="p-4 space-y-2">
             <div className="text-xs text-muted-foreground">{k.totalIncome ?? "Jami kirim"}</div>
