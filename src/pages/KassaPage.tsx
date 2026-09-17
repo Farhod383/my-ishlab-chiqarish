@@ -114,6 +114,22 @@ export default function KassaPage() {
 
   const actorName = profile?.full_name || user?.email || null;
 
+  // Oxirgi valyuta kirimidagi kurs (valyuta bo'yicha) — chiqimda avtomatik qo'llanadi.
+  const lastRateByCur = useMemo(() => {
+    const map: Record<string, number> = {};
+    const sorted = [...incomes].sort(
+      (a: any, b: any) => new Date(b.income_date ?? b.created_at).getTime() - new Date(a.income_date ?? a.created_at).getTime()
+    );
+    for (const i of sorted as any[]) {
+      const cur = i.currency ?? "UZS";
+      if (cur === "UZS") continue;
+      const r = Number(i.exchange_rate) || 0;
+      if (r > 0 && !map[cur]) map[cur] = r;
+    }
+    return map;
+  }, [incomes]);
+  const expRate = expForm.currency === "UZS" ? 1 : (lastRateByCur[expForm.currency] ?? 0);
+
   const loadReasons = async () => {
     const { data } = await (supabase.from as any)("cash_expense_reasons")
       .select("name,sort_order").order("sort_order", { ascending: true }).order("name", { ascending: true });
