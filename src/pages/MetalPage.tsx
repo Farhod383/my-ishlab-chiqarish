@@ -21,14 +21,14 @@ interface Norm {
   id: string; metal_type: string; length_mm: number; width_mm: number;
   thickness_mm: number; weight_kg: number;
 }
-interface ProductRow {
-  id: string; name: string; unit: string; stock_qty: number; weight_kg: number | null;
-  metal_type: string | null; thickness_mm: number | null; width_mm: number | null; length_mm: number | null;
+interface StockRow {
+  id: string; metal_type: string; length_mm: number; width_mm: number;
+  thickness_mm: number; weight_kg: number; quantity: number;
 }
 interface MoveRow {
-  id: string; created_at: string; direction: "in" | "out"; product_id: string | null;
-  quantity: number; weight_kg: number | null; order_id: string | null;
-  comment: string | null; reason: string | null; recipient_name: string | null;
+  id: string; created_at: string; direction: "in" | "out"; stock_id: string;
+  quantity: number; weight_kg: number; order_id: string | null;
+  comment: string | null; created_by_name: string | null;
 }
 interface OrderLite { id: string; order_number: string; product_name: string }
 
@@ -38,113 +38,57 @@ const fmtT = (v: number) => `${(n(v) / 1000).toLocaleString("ru-RU", { maximumFr
 const sizeLabel = (m: { length_mm?: number | null; width_mm?: number | null }) =>
   m.width_mm && m.length_mm ? `${n(m.width_mm)}×${n(m.length_mm)} mm` : "—";
 const norm3 = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
-
-const METAL_KEYWORDS = [
-  "metall", "metal", "метал", "nerj", "нерж", "nerjaveyka", "list", "лист", "po'lat", "polat",
-  "temir", "alyumin", "алюмин", "chyorniy", "profil", "профил", "профеил", "truba", "turba",
-  "труба", "shveller", "швеллер", "ugolok", "уголок", "armatura", "армат", "polosa", "полоса",
-];
-
-/** kg qoldig'i: tonna → ×1000, kg → o'zi, boshqasi → dona × 1 dona kg */
-function stockKg(p: ProductRow, kgPerPiece: number): number {
-  const u = String(p.unit ?? "").toLowerCase();
-  if (u === "tonna") return n(p.stock_qty) * 1000;
-  if (u === "kg") return n(p.stock_qty);
-  return kgPerPiece > 0 ? n(p.stock_qty) * kgPerPiece : 0;
-}
-
-/** Mahsulot nomidan qalinlik / o'lchamni ajratib olish (1,8 мм 1250х2500) */
-function parseDims(name: string) {
-  const s = name.replace(",", ".");
-  const th = s.match(/(\d+(?:\.\d+)?)\s*(?:mm|мм)/i);
-  const wl = s.match(/(\d{3,4})\s*[xх×]\s*(\d{3,4})/i);
-  return {
-    thickness: th ? Number(th[1]) : null,
-    width: wl ? Number(wl[1]) : null,
-    length: wl ? Number(wl[2]) : null,
-  };
-}
+const stockLabel = (s: StockRow) =>
+  `${s.metal_type} — ${sizeLabel(s)} — S=${n(s.thickness_mm)} mm`;
 
 export default function MetalPage() {
   const { user, hasRole } = useAuth();
   const canConsume = hasRole(["admin", "engineer"]);
-  const canNorm = hasRole(["admin", "engineer"]);
+  const canNorm = hasRole(["admin", "engineer", "warehouse"]);
   const canIntake = hasRole(["admin", "engineer", "warehouse"]);
 
   const [norms, setNorms] = useState<Norm[]>([]);
-  const [products, setProducts] = useState<ProductRow[]>([]);
+  const [stock, setStock] = useState<StockRow[]>([]);
   const [moves, setMoves] = useState<MoveRow[]>([]);
   const [orders, setOrders] = useState<OrderLite[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
-    const [nr, pr, or_] = await Promise.all([
+    const [nr, st, mv, or_] = await Promise.all([
       supabase.from("metal_norms").select("*").order("metal_type").order("length_mm").order("thickness_mm"),
-      supabase.from("products").select("id,name,unit,stock_qty,weight_kg,metal_type,thickness_mm,width_mm,length_mm").order("name"),
+      supabase.from("metal_stock").select("*").order("metal_type").order("length_mm").order("thickness_mm"),
+      supabase.from("metal_movements")
+        .select("id,created_at,direction,stock_id,quantity,weight_kg,order_id,comment,created_by_name")
+        .order("created_at", { ascending: false }).limit(500),
       supabase.from("orders").select("id,order_number,product_name").neq("status", "cancelled").order("created_at", { ascending: false }).limit(300),
     ]);
-    const allProducts = ((pr.data as any) ?? []) as ProductRow[];
-    const metalProducts = allProducts.filter((p) => {
-      if (p.metal_type) return true;
-      const nm = norm3(p.name ?? "");
-      return METAL_KEYWORDS.some((k) => nm.includes(k));
-    });
     setNorms((nr.data as any) ?? []);
-    setProducts(metalProducts);
+    setStock(((st.data as any) ?? []) as StockRow[]);
+    setMoves(((mv.data as any) ?? []) as MoveRow[]);
     setOrders((or_.data as any) ?? []);
-
-    const ids = metalProducts.map((p) => p.id);
-    if (ids.length) {
-      const { data: mv } = await supabase
-        .from("stock_movements")
-        .select("id,created_at,direction,product_id,quantity,weight_kg,order_id,comment,reason,recipient_name")
-        .in("product_id", ids)
-        .order("created_at", { ascending: false })
-        .limit(400);
-      setMoves(((mv as any) ?? []) as MoveRow[]);
-    } else {
-      setMoves([]);
-    }
     setLoading(false);
   };
 
   useEffect(() => { load(); }, []);
 
-  const productById = useMemo(() => Object.fromEntries(products.map((p) => [p.id, p])), [products]);
+  const stockById = useMemo(() => Object.fromEntries(stock.map((s) => [s.id, s])), [stock]);
   const orderById = useMemo(() => Object.fromEntries(orders.map((o) => [o.id, o])), [orders]);
 
-  /** Har bir metall mahsulot uchun normativ (1 dona kg) ni topish */
-  const rows = useMemo(() => {
-    return products.map((p) => {
-      const parsed = parseDims(p.name ?? "");
-      const thickness = p.thickness_mm ?? parsed.thickness;
-      const width = p.width_mm ?? parsed.width;
-      const length = p.length_mm ?? parsed.length;
-      const matched = norms.find((x) =>
-        (p.metal_type ? norm3(x.metal_type) === norm3(p.metal_type) : true) &&
-        thickness != null && Number(x.thickness_mm) === Number(thickness) &&
-        width != null && Number(x.width_mm) === Number(width) &&
-        length != null && Number(x.length_mm) === Number(length),
-      );
-      const kgPerPiece = n(p.weight_kg) || (matched ? n(matched.weight_kg) : 0);
-      const kg = stockKg(p, kgPerPiece);
-      return {
-        product: p,
-        metalType: p.metal_type ?? p.name,
-        thickness, width, length,
-        kgPerPiece,
-        normId: matched?.id ?? null,
-        pieces: kgPerPiece > 0 ? kg / kgPerPiece : null,
-        kg,
-      };
-    });
-  }, [products, norms]);
+  const rows = useMemo(() => stock.map((s) => {
+    const kgPerPiece = n(s.weight_kg);
+    const inKg = moves.filter((m) => m.stock_id === s.id && m.direction === "in").reduce((a, m) => a + n(m.weight_kg), 0);
+    const outKg = moves.filter((m) => m.stock_id === s.id && m.direction === "out").reduce((a, m) => a + n(m.weight_kg), 0);
+    return { s, kgPerPiece, pieces: n(s.quantity), kg: n(s.quantity) * kgPerPiece, inKg, outKg };
+  }), [stock, moves]);
 
-  const totalKg = useMemo(() => rows.reduce((s, r) => s + r.kg, 0), [rows]);
+  const totalKg = useMemo(() => rows.reduce((a, r) => a + r.kg, 0), [rows]);
+  const totalInKg = useMemo(() => moves.filter((m) => m.direction === "in").reduce((a, m) => a + n(m.weight_kg), 0), [moves]);
+  const totalOutKg = useMemo(() => moves.filter((m) => m.direction === "out").reduce((a, m) => a + n(m.weight_kg), 0), [moves]);
+
   const actorName = user?.email ?? null;
   const [busy, setBusy] = useState(false);
 
-  /* ---------------- Kirim (metall/profil) ---------------- */
+  /* ---------------- Kirim ---------------- */
   const [inOpen, setInOpen] = useState(false);
   const [inType, setInType] = useState("");
   const [inThick, setInThick] = useState("");
@@ -152,11 +96,8 @@ export default function MetalPage() {
   const [inLength, setInLength] = useState("");
   const [inKgPiece, setInKgPiece] = useState("");
   const [inQty, setInQty] = useState("");
-  const [inPrice, setInPrice] = useState("");
-  const [inLocation, setInLocation] = useState("Sklad");
   const [inComment, setInComment] = useState("");
 
-  // Norma bo'yicha 1 dona kg ni avtomatik to'ldirish
   useEffect(() => {
     const t = norm3(inType), th = Number(inThick), w = Number(inWidth), l = Number(inLength);
     if (!t || !th || !w || !l) return;
@@ -168,67 +109,57 @@ export default function MetalPage() {
 
   const doIntake = async () => {
     if (!inType.trim()) return toast.error("Metall turini kiriting");
+    if (!Number(inThick) || !Number(inWidth) || !Number(inLength)) return toast.error("Qalinlik, bo'yi va enini kiriting");
     if (!Number(inQty)) return toast.error("Dona sonini kiriting");
     if (!Number(inKgPiece)) return toast.error("1 dona og'irligini (kg) kiriting");
     setBusy(true);
-    const { error } = await supabase.rpc("metal_intake_product" as any, {
+    const { error } = await supabase.rpc("metal_intake" as any, {
       _metal_type: inType.trim(),
-      _thickness: inThick ? Number(inThick) : null,
-      _width: inWidth ? Number(inWidth) : null,
-      _length: inLength ? Number(inLength) : null,
-      _kg_per_piece: Number(inKgPiece),
-      _pieces: Number(inQty),
-      _unit_price: inPrice ? Number(inPrice) : 0,
-      _currency: "UZS",
-      _location: inLocation || "Sklad",
+      _length: Number(inLength),
+      _width: Number(inWidth),
+      _thickness: Number(inThick),
+      _weight_kg: Number(inKgPiece),
+      _quantity: Number(inQty),
       _comment: inComment || null,
       _actor_name: actorName,
     });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success(`Kirim qilindi: ${fmtKg(inTotalKg)} (${fmtT(inTotalKg)})`);
+    toast.success(`Metall omboriga kirim: ${fmtKg(inTotalKg)} (${fmtT(inTotalKg)})`);
     setInOpen(false);
-    setInQty(""); setInPrice(""); setInComment("");
+    setInQty(""); setInComment("");
     load();
   };
 
-  /* ---------------- Sarf (Konstruktor) ---------------- */
+  /* ---------------- Chiqim (Konstruktor sarfi) ---------------- */
   const [outOpen, setOutOpen] = useState(false);
-  const [outProduct, setOutProduct] = useState("");
-  const [outNorm, setOutNorm] = useState("");
+  const [outStock, setOutStock] = useState("");
   const [outOrder, setOutOrder] = useState("");
   const [outQty, setOutQty] = useState("");
   const [outComment, setOutComment] = useState("");
 
-  const outRow = rows.find((r) => r.product.id === outProduct);
-  const pickedNorm = norms.find((x) => x.id === outNorm);
-  const kgPerPiece = n(outRow?.kgPerPiece) || n(pickedNorm?.weight_kg);
-  const outKg = kgPerPiece * Number(outQty || 0);
-
-  useEffect(() => {
-    if (outRow?.normId) setOutNorm(outRow.normId);
-  }, [outProduct]); // eslint-disable-line react-hooks/exhaustive-deps
+  const outRow = rows.find((r) => r.s.id === outStock);
+  const outKg = n(outRow?.kgPerPiece) * Number(outQty || 0);
 
   const doConsume = async () => {
-    if (!outProduct) return toast.error("Metall pozitsiyasini tanlang");
+    if (!outStock) return toast.error("Metall pozitsiyasini tanlang");
     if (!outOrder) return toast.error("Zakazni tanlang");
-    if (!kgPerPiece) return toast.error("1 dona uchun kg normativini tanlang");
     const q = Number(outQty);
     if (!q || q <= 0) return toast.error("Dona sonini kiriting");
-    if (outRow && outKg > outRow.kg + 0.001) return toast.error(`Qoldiq yetarli emas: ${fmtKg(outRow.kg)}`);
+    if (outRow && q > outRow.pieces + 0.0001) return toast.error(`Qoldiq yetarli emas: ${outRow.pieces} dona`);
     setBusy(true);
-    const { error } = await supabase.rpc("metal_consume_product" as any, {
-      _product_id: outProduct, _pieces: q, _kg_per_piece: kgPerPiece,
-      _order_id: outOrder, _comment: outComment || null, _actor_name: actorName,
+    const { error } = await supabase.rpc("metal_consume" as any, {
+      _stock_id: outStock, _quantity: q, _order_id: outOrder,
+      _comment: outComment || null, _actor_name: actorName,
     });
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success(`Sarflandi: ${fmtKg(outKg)} (${fmtT(outKg)})`);
-    setOutOpen(false); setOutProduct(""); setOutQty(""); setOutComment(""); setOutNorm("");
+    setOutOpen(false); setOutStock(""); setOutQty(""); setOutComment("");
     load();
   };
 
-  /* ---------------- Norma qo'shish ---------------- */
+  /* ---------------- Norma ---------------- */
   const [normOpen, setNormOpen] = useState(false);
   const [nmType, setNmType] = useState("");
   const [nmLen, setNmLen] = useState("");
@@ -251,22 +182,67 @@ export default function MetalPage() {
     load();
   };
 
-  const productOptions = rows.map((r) => ({
-    value: r.product.id,
-    label: `${r.product.name} — ${fmtKg(r.kg)}${r.kgPerPiece ? ` (${r.pieces?.toFixed(2)} dona)` : ""}`,
-  }));
-  const normOptions = norms.map((x) => ({
-    value: x.id,
-    label: `${x.metal_type} — ${sizeLabel(x)} — S=${n(x.thickness_mm)} mm — ${n(x.weight_kg)} kg/dona`,
+  const stockOptions = rows.map((r) => ({
+    value: r.s.id,
+    label: `${stockLabel(r.s)} — ${r.pieces} dona (${fmtKg(r.kg)})`,
   }));
   const orderOptions = orders.map((o) => ({ value: o.id, label: `${o.order_number} — ${o.product_name}` }));
+
+  const movesTable = (list: MoveRow[], kind: "in" | "out" | "all") => (
+    <Card><CardContent className="p-0 overflow-x-auto">
+      <Table>
+        <TableHeader><TableRow>
+          <TableHead>Sana / vaqt</TableHead>
+          {kind === "all" && <TableHead>Turi</TableHead>}
+          <TableHead>Metall</TableHead><TableHead>O'lcham</TableHead><TableHead>S (mm)</TableHead>
+          <TableHead className="text-right">Dona</TableHead><TableHead className="text-right">kg</TableHead>
+          <TableHead className="text-right">Tonna</TableHead><TableHead>Zakaz</TableHead>
+          <TableHead>Kim</TableHead><TableHead>Izoh</TableHead>
+        </TableRow></TableHeader>
+        <TableBody>
+          {list.map((m) => {
+            const s = stockById[m.stock_id] as StockRow | undefined;
+            const o = m.order_id ? orderById[m.order_id] : null;
+            return (
+              <TableRow key={m.id}>
+                <TableCell className="whitespace-nowrap">{fmtDateTime24(m.created_at)}</TableCell>
+                {kind === "all" && (
+                  <TableCell>
+                    <Badge variant="outline" className={m.direction === "in"
+                      ? "bg-status-green/15 text-status-green border-status-green/30"
+                      : "bg-status-red/15 text-status-red border-status-red/30"}>
+                      {m.direction === "in" ? "Kirim" : "Chiqim"}
+                    </Badge>
+                  </TableCell>
+                )}
+                <TableCell className="font-medium">{s?.metal_type ?? "—"}</TableCell>
+                <TableCell>{s ? sizeLabel(s) : "—"}</TableCell>
+                <TableCell>{s ? n(s.thickness_mm) : "—"}</TableCell>
+                <TableCell className="text-right font-mono">{n(m.quantity)}</TableCell>
+                <TableCell className="text-right font-mono">{fmtKg(m.weight_kg)}</TableCell>
+                <TableCell className="text-right font-mono">{fmtT(m.weight_kg)}</TableCell>
+                <TableCell>{o ? `${o.order_number} — ${o.product_name}` : "—"}</TableCell>
+                <TableCell className="truncate max-w-[180px]">{m.created_by_name ?? "—"}</TableCell>
+                <TableCell className="truncate max-w-[200px]">{m.comment ?? "—"}</TableCell>
+              </TableRow>
+            );
+          })}
+          {!list.length && (
+            <TableRow><TableCell colSpan={kind === "all" ? 11 : 10} className="text-center text-muted-foreground py-8">
+              {loading ? "Yuklanmoqda..." : "Harakatlar yo'q"}
+            </TableCell></TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </CardContent></Card>
+  );
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-2xl font-bold">Metall hisobi</h1>
-          <p className="text-sm text-muted-foreground">Qoldiq va harakatlar Sklad bilan bitta real bazadan olinadi.</p>
+          <p className="text-sm text-muted-foreground">Alohida metall ombori — oddiy Sklad qoldig'i bilan aralashmaydi.</p>
         </div>
         <div className="flex gap-2">
           {canIntake && (
@@ -275,12 +251,12 @@ export default function MetalPage() {
                 <Button><PackagePlus className="h-4 w-4 mr-1" /> Kirim</Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Metall / profil kirimi</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>Metall omboriga kirim</DialogTitle></DialogHeader>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2"><Label>Metall turi</Label>
                     <Input list="metal-types-in" value={inType} onChange={(e) => setInType(e.target.value)} placeholder="Nerj" />
                     <datalist id="metal-types-in">
-                      {[...new Set(norms.map((x) => x.metal_type))].map((t) => <option key={t} value={t} />)}
+                      {[...new Set([...norms.map((x) => x.metal_type), ...stock.map((s) => s.metal_type)])].map((t) => <option key={t} value={t} />)}
                     </datalist>
                   </div>
                   <div><Label>Qalinlik S (mm)</Label><NumberInput step="0.1" value={inThick} onChange={(e) => setInThick(e.target.value)} placeholder="2.5" /></div>
@@ -288,8 +264,6 @@ export default function MetalPage() {
                   <div><Label>Eni (mm)</Label><NumberInput value={inWidth} onChange={(e) => setInWidth(e.target.value)} placeholder="1500" /></div>
                   <div><Label>1 dona og'irligi (kg)</Label><NumberInput step="0.01" value={inKgPiece} onChange={(e) => setInKgPiece(e.target.value)} /></div>
                   <div><Label>Dona soni</Label><NumberInput step="0.001" value={inQty} onChange={(e) => setInQty(e.target.value)} /></div>
-                  <div><Label>1 dona narxi (UZS)</Label><NumberInput step="0.01" value={inPrice} onChange={(e) => setInPrice(e.target.value)} /></div>
-                  <div className="col-span-2"><Label>Joylashuv</Label><Input value={inLocation} onChange={(e) => setInLocation(e.target.value)} /></div>
                   <div className="col-span-2"><Label>Izoh</Label><Input value={inComment} onChange={(e) => setInComment(e.target.value)} /></div>
                   {inTotalKg > 0 && (
                     <div className="col-span-2 rounded-md border p-2 text-sm">
@@ -304,7 +278,7 @@ export default function MetalPage() {
           {canConsume && (
             <Dialog open={outOpen} onOpenChange={setOutOpen}>
               <DialogTrigger asChild>
-                <Button variant="secondary"><Scissors className="h-4 w-4 mr-1" /> Sarf (Konstruktor)</Button>
+                <Button variant="secondary"><Scissors className="h-4 w-4 mr-1" /> Chiqim (Konstruktor)</Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>Metall sarfi (donada)</DialogTitle></DialogHeader>
@@ -314,12 +288,8 @@ export default function MetalPage() {
                     <SearchableSelect options={orderOptions} value={outOrder} onChange={setOutOrder} placeholder="Zakazni tanlang" />
                   </div>
                   <div>
-                    <Label>Metall (sklad qoldig'idan)</Label>
-                    <SearchableSelect options={productOptions} value={outProduct} onChange={setOutProduct} placeholder="Metall tanlang" />
-                  </div>
-                  <div>
-                    <Label>Normativ (1 dona = kg)</Label>
-                    <SearchableSelect options={normOptions} value={outNorm} onChange={setOutNorm} placeholder="Normativni tanlang" />
+                    <Label>Metall (metall ombori qoldig'idan)</Label>
+                    <SearchableSelect options={stockOptions} value={outStock} onChange={setOutStock} placeholder="Metall tanlang" />
                   </div>
                   <div>
                     <Label>Nechta dona/list</Label>
@@ -328,9 +298,9 @@ export default function MetalPage() {
                   <div><Label>Izoh</Label><Input value={outComment} onChange={(e) => setOutComment(e.target.value)} /></div>
                   {outRow && (
                     <div className="rounded-md border p-2 text-sm space-y-1">
-                      <div>Qoldiq: <b>{fmtKg(outRow.kg)}</b> = <b>{fmtT(outRow.kg)}</b></div>
-                      {kgPerPiece > 0 && <div>1 dona = <b>{fmtKg(kgPerPiece)}</b></div>}
-                      {Number(outQty) > 0 && kgPerPiece > 0 && (
+                      <div>Qoldiq: <b>{outRow.pieces} dona</b> · <b>{fmtKg(outRow.kg)}</b> = <b>{fmtT(outRow.kg)}</b></div>
+                      <div>1 dona = <b>{fmtKg(outRow.kgPerPiece)}</b></div>
+                      {Number(outQty) > 0 && (
                         <div>Sarf: <b>{fmtKg(outKg)}</b> = <b>{fmtT(outKg)}</b> · Qoladi: <b>{fmtKg(outRow.kg - outKg)}</b> ({fmtT(outRow.kg - outKg)})</div>
                       )}
                     </div>
@@ -345,19 +315,23 @@ export default function MetalPage() {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Umumiy qoldiq</CardTitle></CardHeader>
+      <div className="grid gap-3 sm:grid-cols-4">
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Qoldiq (tonna)</CardTitle></CardHeader>
           <CardContent className="text-2xl font-bold">{fmtT(totalKg)}</CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Kilogrammda</CardTitle></CardHeader>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Qoldiq (kg)</CardTitle></CardHeader>
           <CardContent className="text-2xl font-bold">{fmtKg(totalKg)}</CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Pozitsiyalar</CardTitle></CardHeader>
-          <CardContent className="text-2xl font-bold">{rows.length}</CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Jami kirim</CardTitle></CardHeader>
+          <CardContent className="text-2xl font-bold text-status-green">{fmtT(totalInKg)}</CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Jami chiqim</CardTitle></CardHeader>
+          <CardContent className="text-2xl font-bold text-status-red">{fmtT(totalOutKg)}</CardContent></Card>
       </div>
 
       <Tabs defaultValue="stock">
         <TabsList>
           <TabsTrigger value="stock">Qoldiq</TabsTrigger>
-          <TabsTrigger value="moves">Harakatlar</TabsTrigger>
+          <TabsTrigger value="in">Kirim</TabsTrigger>
+          <TabsTrigger value="out">Chiqim</TabsTrigger>
+          <TabsTrigger value="all">Barcha harakatlar</TabsTrigger>
           <TabsTrigger value="norms">Normalar</TabsTrigger>
         </TabsList>
 
@@ -367,65 +341,34 @@ export default function MetalPage() {
               <TableHeader><TableRow>
                 <TableHead>№</TableHead><TableHead>Metall</TableHead><TableHead>O'lcham</TableHead>
                 <TableHead>S (mm)</TableHead><TableHead className="text-right">1 dona (kg)</TableHead>
-                <TableHead className="text-right">Dona</TableHead><TableHead className="text-right">Jami kg</TableHead>
-                <TableHead className="text-right">Tonna</TableHead>
+                <TableHead className="text-right">Dona</TableHead>
+                <TableHead className="text-right">Kirim (kg)</TableHead><TableHead className="text-right">Chiqim (kg)</TableHead>
+                <TableHead className="text-right">Qoldiq kg</TableHead><TableHead className="text-right">Tonna</TableHead>
               </TableRow></TableHeader>
               <TableBody>
                 {rows.map((r, i) => (
-                  <TableRow key={r.product.id}>
+                  <TableRow key={r.s.id}>
                     <TableCell>{i + 1}</TableCell>
-                    <TableCell className="font-medium">{r.metalType}</TableCell>
-                    <TableCell>{sizeLabel({ width_mm: r.width, length_mm: r.length })}</TableCell>
-                    <TableCell>{r.thickness ?? "—"}</TableCell>
-                    <TableCell className="text-right font-mono">{r.kgPerPiece ? n(r.kgPerPiece) : "—"}</TableCell>
-                    <TableCell className="text-right font-mono">{r.pieces != null ? r.pieces.toLocaleString("ru-RU", { maximumFractionDigits: 2 }) : "—"}</TableCell>
+                    <TableCell className="font-medium">{r.s.metal_type}</TableCell>
+                    <TableCell>{sizeLabel(r.s)}</TableCell>
+                    <TableCell>{n(r.s.thickness_mm)}</TableCell>
+                    <TableCell className="text-right font-mono">{n(r.kgPerPiece)}</TableCell>
+                    <TableCell className="text-right font-mono">{r.pieces.toLocaleString("ru-RU", { maximumFractionDigits: 3 })}</TableCell>
+                    <TableCell className="text-right font-mono text-status-green">{fmtKg(r.inKg)}</TableCell>
+                    <TableCell className="text-right font-mono text-status-red">{fmtKg(r.outKg)}</TableCell>
                     <TableCell className="text-right font-mono">{fmtKg(r.kg)}</TableCell>
                     <TableCell className="text-right font-mono">{fmtT(r.kg)}</TableCell>
                   </TableRow>
                 ))}
-                {!rows.length && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{loading ? "Yuklanmoqda..." : "Metall qoldig'i yo'q"}</TableCell></TableRow>}
+                {!rows.length && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">{loading ? "Yuklanmoqda..." : "Metall qoldig'i yo'q"}</TableCell></TableRow>}
               </TableBody>
             </Table>
           </CardContent></Card>
         </TabsContent>
 
-        <TabsContent value="moves">
-          <Card><CardContent className="p-0 overflow-x-auto">
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>Sana / vaqt</TableHead><TableHead>Turi</TableHead><TableHead>Metall</TableHead>
-                <TableHead className="text-right">Miqdor</TableHead><TableHead className="text-right">kg</TableHead>
-                <TableHead className="text-right">Tonna</TableHead><TableHead>Zakaz</TableHead><TableHead>Kim</TableHead>
-              </TableRow></TableHeader>
-              <TableBody>
-                {moves.map((m) => {
-                  const p = m.product_id ? productById[m.product_id] : null;
-                  const o = m.order_id ? orderById[m.order_id] : null;
-                  const kg = n(m.weight_kg);
-                  return (
-                    <TableRow key={m.id}>
-                      <TableCell className="whitespace-nowrap">{fmtDateTime24(m.created_at)}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={m.direction === "in"
-                          ? "bg-status-green/15 text-status-green border-status-green/30"
-                          : "bg-status-red/15 text-status-red border-status-red/30"}>
-                          {m.direction === "in" ? "Kirim" : "Sarf"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{p?.name ?? "—"}</TableCell>
-                      <TableCell className="text-right font-mono">{n(m.quantity)} {p?.unit ?? ""}</TableCell>
-                      <TableCell className="text-right font-mono">{kg ? fmtKg(kg) : "—"}</TableCell>
-                      <TableCell className="text-right font-mono">{kg ? fmtT(kg) : "—"}</TableCell>
-                      <TableCell>{o ? `${o.order_number} — ${o.product_name}` : "—"}</TableCell>
-                      <TableCell className="truncate max-w-[180px]">{m.recipient_name ?? "—"}</TableCell>
-                    </TableRow>
-                  );
-                })}
-                {!moves.length && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{loading ? "Yuklanmoqda..." : "Harakatlar yo'q"}</TableCell></TableRow>}
-              </TableBody>
-            </Table>
-          </CardContent></Card>
-        </TabsContent>
+        <TabsContent value="in">{movesTable(moves.filter((m) => m.direction === "in"), "in")}</TabsContent>
+        <TabsContent value="out">{movesTable(moves.filter((m) => m.direction === "out"), "out")}</TabsContent>
+        <TabsContent value="all">{movesTable(moves, "all")}</TabsContent>
 
         <TabsContent value="norms">
           <Card>
