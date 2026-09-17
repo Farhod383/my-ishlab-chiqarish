@@ -116,6 +116,28 @@ export default function InvoicesPage() {
     await load();
   };
 
+  /** Nakladnoy rasmini o'chirish (DB + storage) */
+  const [delImgId, setDelImgId] = useState<string | null>(null);
+  const removeImage = async () => {
+    const s = sessions.find((x) => x.id === delImgId);
+    if (!s || !s.image_url) { setDelImgId(null); return; }
+    setBusy(true);
+    try {
+      const marker = "/object/public/product-images/";
+      const idx = s.image_url.indexOf(marker);
+      if (idx >= 0) {
+        const path = decodeURIComponent(s.image_url.slice(idx + marker.length).split("?")[0]);
+        await supabase.storage.from("product-images").remove([path]);
+      }
+      const { error } = await supabase.from("intake_sessions").update({ image_url: null } as any).eq("id", s.id);
+      if (error) throw error;
+      toast.success("Rasm o'chirildi");
+      setDelImgId(null);
+      await load();
+    } catch (e: any) { toast.error(e.message ?? "Rasmni o'chirishda xatolik"); }
+    finally { setBusy(false); }
+  };
+
   /** Ochiq Nakladnoyga rasm yuklash */
   const uploadActiveImage = async () => {
     if (!active || !actFile) return;
