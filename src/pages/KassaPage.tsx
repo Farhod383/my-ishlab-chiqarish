@@ -11,19 +11,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Wallet, Plus, ArrowDownCircle, ArrowUpCircle, Users, Edit2, Search, UserCog } from "lucide-react";
+import { Wallet, Plus, ArrowDownCircle, ArrowUpCircle, Edit2, Search, FileBarChart, Truck, Download } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
 import { notify } from "@/lib/notify";
-import { fmtKassaAmount, fmtNum } from "@/lib/format";
-import EmployeeDetailDialog, { SALARY_KINDS, SALARY_KIND_LABELS, type SalaryKind } from "@/components/kassa/EmployeeDetailDialog";
-import UsersTab from "@/components/kassa/UsersTab";
+import { fmtKassaAmount, fmtNum, fmtDateTime24 } from "@/lib/format";
+import SupplyFinancePage from "@/pages/SupplyFinancePage";
 import { useEmployees, refreshEmployees } from "@/hooks/useEmployees";
 
-const PAYMENT_TYPES = ["cash", "corporate_card", "transfer", "other"] as const;
-type PaymentType = typeof PAYMENT_TYPES[number];
+const PAYMENT_TYPES = ["cash", "transfer", "corporate_card"] as const;
+type PaymentType = typeof PAYMENT_TYPES[number] | "other";
 
 // Locale-aware payment-type labels. Legacy `card` rows are surfaced under
 // `corporate_card` since that is what they always represented in practice.
@@ -38,8 +37,14 @@ const normalizePT = (pt: unknown): PaymentType => {
   return (PAYMENT_TYPES as readonly string[]).includes(v) ? (v as PaymentType) : "other";
 };
 
-const CARD_CURRENCIES = ["UZS", "USD", "EUR", "CNY"];
-const CURRENCIES = ["UZS", "USD", "EUR", "RUB", "CNY", "KZT", "TRY", "GBP", "AED", "INR", "JPY", "KRW", "CHF", "CAD", "AUD"];
+// Kassada faqat ikkita valyuta yuritiladi.
+const CURRENCIES = ["UZS", "USD"];
+const CURRENCY_LABELS: Record<string, string> = { UZS: "UZS (So'm)", USD: "USD (Dollar)" };
+// Chiqim sabablarining boshlang'ich ro'yxati (DB bo'sh bo'lsa ishlatiladi).
+const DEFAULT_REASONS = [
+  "Oshxona", "Prochi", "Dastavka", "Hisobot", "Qurilish materiallari",
+  "Zavod", "Usta haqi", "Ish haqi (avans)", "Rahbariyat", "Zakaz uchun", "Zapchast",
+];
 
 type CurForm = { currency: string; exchange_rate: number };
 const defaultCur: CurForm = { currency: "UZS", exchange_rate: 1 };
@@ -70,7 +75,11 @@ export default function KassaPage() {
   const [incomes, setIncomes] = useState<any[]>([]);
   const { employees, allEmployees } = useEmployees({ activeOnly: true });
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"income" | "expense" | "employees">("income");
+  const [tab, setTab] = useState<"income" | "expense" | "report" | "supply">("income");
+  const [reasons, setReasons] = useState<string[]>(DEFAULT_REASONS);
+  const [newReasonOpen, setNewReasonOpen] = useState(false);
+  const [newReason, setNewReason] = useState("");
+  const [reportMonth, setReportMonth] = useState<string>(() => currentMonth());
   const [empSearch, setEmpSearch] = useState("");
   const [empStatusFilter, setEmpStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [empDeptFilter, setEmpDeptFilter] = useState("all");
@@ -92,7 +101,7 @@ export default function KassaPage() {
   const [openExp, setOpenExp] = useState(false);
   const [expEditId, setExpEditId] = useState<string | null>(null);
   const [expOrig, setExpOrig] = useState<any>(null);
-  const [expForm, setExpForm] = useState({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash" as PaymentType, salary_kind: "" as "" | SalaryKind, is_supply: false });
+  const [expForm, setExpForm] = useState({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash" as PaymentType, salary_kind: "" as string, is_supply: false });
   const [recipientMode, setRecipientMode] = useState<"employee" | "manual">("employee");
   const [empDetailId, setEmpDetailId] = useState<string | null>(null);
 
@@ -104,6 +113,13 @@ export default function KassaPage() {
   const [incFile, setIncFile] = useState<File | null>(null);
 
   const actorName = profile?.full_name || user?.email || null;
+
+  const loadReasons = async () => {
+    const { data } = await (supabase.from as any)("cash_expense_reasons")
+      .select("name,sort_order").order("sort_order", { ascending: true }).order("name", { ascending: true });
+    const list = ((data ?? []) as any[]).map((r) => String(r.name)).filter(Boolean);
+    if (list.length) setReasons(list);
+  };
 
   const load = async () => {
     setLoading(true);
@@ -117,6 +133,7 @@ export default function KassaPage() {
   };
   useEffect(() => {
     load();
+    loadReasons();
     const channel = supabase
       .channel("kassa-currency-totals")
       .on("postgres_changes", { event: "*", schema: "public", table: "cash_incomes" }, () => load())
@@ -283,6 +300,111 @@ export default function KassaPage() {
         })}
       </div>
     );
+  };
+
+  // --- Oylik qoldiq: oldingi oy yakuni keyingi oyning boshlang'ich qoldig'i ---
+  const openingByCur = (ym: string): Record<string, number> => {
+    if (!ym) return {};
+    const start = new Date(`${monthBounds(ym).from}T00:00:00`).getTime();
+    const m: Record<string, number> = {};
+    for (const i of incomes) {
+      if (new Date(i.income_date).getTime() < start) {
+        const c = normalizeCurrency(i.currency); m[c] = (m[c] || 0) + (Number(i.amount) || 0);
+      }
+    }
+    for (const e of expenses) {
+      if (new Date(e.expense_date).getTime() < start) {
+        const c = normalizeCurrency(e.currency); m[c] = (m[c] || 0) - (Number(e.amount) || 0);
+      }
+    }
+    return m;
+  };
+
+  // Tanlangan oy uchun boshlang'ich qoldiq (butun davr tanlansa — 0).
+  const openingBal = useMemo(() => (selectedMonth ? openingByCur(selectedMonth) : {}), [selectedMonth, incomes, expenses]);
+  // Yakuniy qoldiq = boshlang'ich + kirim − chiqim
+  const closingBal = useMemo(() => {
+    const m: Record<string, number> = { ...openingBal };
+    for (const [c, v] of Object.entries(incByCur)) m[c] = (m[c] || 0) + v;
+    for (const [c, v] of Object.entries(expByCur)) m[c] = (m[c] || 0) - v;
+    return m;
+  }, [openingBal, incByCur, expByCur]);
+
+  // --- Hisobot (tanlangan oy) ---
+  const report = useMemo(() => {
+    const b = monthBounds(reportMonth);
+    const from = new Date(`${b.from}T00:00:00`).getTime();
+    const to = new Date(`${b.to}T23:59:59`).getTime();
+    const inRows = incomes.filter((i) => { const t = new Date(i.income_date).getTime(); return t >= from && t <= to; });
+    const exRows = expenses.filter((e) => { const t = new Date(e.expense_date).getTime(); return t >= from && t <= to; });
+    const opening = openingByCur(reportMonth);
+    const totalIn: Record<string, number> = {};
+    const totalOut: Record<string, number> = {};
+    for (const i of inRows) { const c = normalizeCurrency(i.currency); totalIn[c] = (totalIn[c] || 0) + (Number(i.amount) || 0); }
+    for (const e of exRows) { const c = normalizeCurrency(e.currency); totalOut[c] = (totalOut[c] || 0) + (Number(e.amount) || 0); }
+    const closing: Record<string, number> = { ...opening };
+    for (const [c, v] of Object.entries(totalIn)) closing[c] = (closing[c] || 0) + v;
+    for (const [c, v] of Object.entries(totalOut)) closing[c] = (closing[c] || 0) - v;
+    const groups: Record<string, { reason: string; byCur: Record<string, number>; count: number }> = {};
+    for (const e of exRows) {
+      const key = (e.reason ?? "—").trim() || "—";
+      const c = normalizeCurrency(e.currency);
+      groups[key] ??= { reason: key, byCur: {}, count: 0 };
+      groups[key].byCur[c] = (groups[key].byCur[c] || 0) + (Number(e.amount) || 0);
+      groups[key].count += 1;
+    }
+    return {
+      inRows: [...inRows].sort((a, b2) => new Date(b2.income_date).getTime() - new Date(a.income_date).getTime()),
+      exRows: [...exRows].sort((a, b2) => new Date(b2.expense_date).getTime() - new Date(a.expense_date).getTime()),
+      opening, totalIn, totalOut, closing,
+      groups: Object.values(groups).sort((a, b2) => b2.count - a.count),
+    };
+  }, [incomes, expenses, reportMonth]);
+
+  const curLine = (m: Record<string, number>) => {
+    const items = Object.entries(m).filter(([, v]) => Math.abs(Number(v) || 0) > 0.0001);
+    if (!items.length) return "0 so'm";
+    return items.map(([c, v]) => `${fmtCash(Number(v), c)} ${CUR_SYMBOL[c] ?? c}`).join(" · ");
+  };
+
+  const downloadReport = () => {
+    const esc = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const lines: string[] = [];
+    lines.push(esc(`Kassa hisoboti — ${monthLabel(reportMonth)}`));
+    lines.push("");
+    lines.push([esc("Boshlang'ich qoldiq"), esc(curLine(report.opening))].join(";"));
+    lines.push([esc("Jami kirim"), esc(curLine(report.totalIn))].join(";"));
+    lines.push([esc("Jami chiqim"), esc(curLine(report.totalOut))].join(";"));
+    lines.push([esc("Yakuniy qoldiq"), esc(curLine(report.closing))].join(";"));
+    lines.push("");
+    lines.push([esc("KIRIMLAR")].join(";"));
+    lines.push(["Sana va vaqt", "Manba", "Summa", "Valyuta"].map(esc).join(";"));
+    for (const i of report.inRows) lines.push([fmtDateTime24(i.income_date), i.source ?? "", fmtCash(Number(i.amount), i.currency), normalizeCurrency(i.currency)].map(esc).join(";"));
+    lines.push("");
+    lines.push([esc("CHIQIMLAR")].join(";"));
+    lines.push(["Sana va vaqt", "Sabab", "Summa", "Valyuta"].map(esc).join(";"));
+    for (const e of report.exRows) lines.push([fmtDateTime24(e.expense_date), e.reason ?? "", fmtCash(Number(e.amount), e.currency), normalizeCurrency(e.currency)].map(esc).join(";"));
+    lines.push("");
+    lines.push([esc("SABAB BO'YICHA GURUHLAR")].join(";"));
+    lines.push(["Sabab", "Soni", "Jami"].map(esc).join(";"));
+    for (const g of report.groups) lines.push([g.reason, String(g.count), curLine(g.byCur)].map(esc).join(";"));
+    const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `kassa-hisobot-${reportMonth}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  const addReason = async () => {
+    const name = newReason.trim();
+    if (!name) return;
+    const { error } = await (supabase.from as any)("cash_expense_reasons").insert({ name, sort_order: 200, created_by: user?.id });
+    if (error && !String(error.message).includes("duplicate")) { toast.error(error.message); return; }
+    await loadReasons();
+    setExpForm((f) => ({ ...f, reason: name }));
+    setNewReason(""); setNewReasonOpen(false);
+    toast.success("Tur qo'shildi");
   };
 
 
@@ -491,10 +613,16 @@ export default function KassaPage() {
                 : "Barcha davr ko'rsatilmoqda"}
           </span>
         </div>
-        <div className="grid sm:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-4 gap-4">
+          {selectedMonth && (
+            <Card><CardContent className="p-4 space-y-2">
+              <div className="text-xs text-muted-foreground">Boshlang'ich qoldiq (oy boshi)</div>
+              {renderCurrencies(openingBal, "balance")}
+            </CardContent></Card>
+          )}
           <Card><CardContent className="p-4 space-y-2">
-            <div className="text-xs text-muted-foreground">{k.balance ?? "Balans"}</div>
-            {renderCurrencies(balByCur, "balance")}
+            <div className="text-xs text-muted-foreground">{selectedMonth ? "Yakuniy qoldiq" : (k.balance ?? "Balans")}</div>
+            {renderCurrencies(selectedMonth ? closingBal : balByCur, "balance")}
           </CardContent></Card>
           <Card><CardContent className="p-4 space-y-2">
             <div className="text-xs text-muted-foreground">{k.totalIncome ?? "Jami kirim"}</div>
@@ -550,8 +678,8 @@ export default function KassaPage() {
         <TabsList>
           <TabsTrigger value="income"><ArrowDownCircle className="h-4 w-4 mr-1 text-status-green" />{k.income ?? "Kirim"}</TabsTrigger>
           <TabsTrigger value="expense"><ArrowUpCircle className="h-4 w-4 mr-1 text-status-red" />{k.expense ?? "Chiqim"}</TabsTrigger>
-          <TabsTrigger value="employees"><Users className="h-4 w-4 mr-1" />{k.employees ?? "Xodimlar"}</TabsTrigger>
-          {canManageUsers && <TabsTrigger value="users"><UserCog className="h-4 w-4 mr-1" />Foydalanuvchilar</TabsTrigger>}
+          <TabsTrigger value="report"><FileBarChart className="h-4 w-4 mr-1" />Hisobot</TabsTrigger>
+          <TabsTrigger value="supply"><Truck className="h-4 w-4 mr-1" />Ta'minot</TabsTrigger>
         </TabsList>
 
         <TabsContent value="income" className="space-y-3">
@@ -598,7 +726,7 @@ export default function KassaPage() {
                   {loading && <TableRow><TableCell colSpan={canManage ? 10 : 9} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                   {!loading && fInc.map(i => (
                     <TableRow key={i.id}>
-                      <TableCell className="text-sm whitespace-nowrap">{new Date(i.income_date).toLocaleString()}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{fmtDateTime24(i.income_date)}</TableCell>
                       <TableCell className="text-right font-mono font-semibold text-status-green">{fmtCash(Number(i.amount), i.currency)}</TableCell>
                       <TableCell className="text-xs"><Badge variant="secondary">{i.currency ?? "UZS"}</Badge></TableCell>
                       <TableCell className="text-right text-xs font-mono">{(i.currency ?? "UZS") === "UZS" ? "—" : fmt(Number(i.exchange_rate ?? 1))}</TableCell>
@@ -620,52 +748,34 @@ export default function KassaPage() {
         <TabsContent value="expense" className="space-y-3">
           {canManage && (
             <Dialog open={openExp} onOpenChange={(o) => { setOpenExp(o); if (!o) { setExpEditId(null); setExpOrig(null); setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash", salary_kind: "", is_supply: false }); setRecipientMode("employee"); } }}>
-              <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{k.addExpense ?? "Xarajat qo'shish"}</Button></DialogTrigger>
+              <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />Chiqim qilish</Button></DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>{expEditId ? ((t as any).kassaExtra?.editExpense ?? "Xarajatni tahrirlash") : (k.addExpense ?? "Xarajat qo'shish")}</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{expEditId ? "Chiqimni tahrirlash" : "Chiqim qilish"}</DialogTitle></DialogHeader>
                 <div className="space-y-3">
-                  <div><Label>{k.amount ?? "Summa"}</Label><Input type="number" min={0} value={expForm.amount || ""} onChange={e => setExpForm({ ...expForm, amount: Number(e.target.value) })} /></div>
-                  {renderCurrencyFields(expForm, setExpForm)}
-                  <div><Label>{k.reason ?? "Sabab"}</Label><Input value={expForm.reason} onChange={e => setExpForm({ ...expForm, reason: e.target.value })} /></div>
                   <div>
-                    <Label>{k.recipient ?? "Oluvchi"}</Label>
-                    <div className="flex gap-2 mt-1 mb-2">
-                      <Button type="button" size="sm" variant={recipientMode === "employee" ? "default" : "outline"} onClick={() => setRecipientMode("employee")}>{k.fromEmployees ?? "Xodimdan"}</Button>
-                      <Button type="button" size="sm" variant={recipientMode === "manual" ? "default" : "outline"} onClick={() => setRecipientMode("manual")}>{k.manualInput ?? "Boshqa"}</Button>
-                    </div>
-                    {recipientMode === "employee" ? (
-                      <Select value={expForm.recipient_id} onValueChange={v => setExpForm({ ...expForm, recipient_id: v })}>
-                        <SelectTrigger><SelectValue placeholder={k.selectEmployee ?? "Xodimni tanlang"} /></SelectTrigger>
-                        <SelectContent>{employees.map(e => <SelectItem key={e.id} value={e.id}>{localize(e.full_name)} {e.department && `(${e.department})`}</SelectItem>)}</SelectContent>
-                      </Select>
-                    ) : (
-                      <Input placeholder={k.recipientPlaceholder ?? "Yandex, Dostavka, ..."} value={expForm.recipient_manual} onChange={e => setExpForm({ ...expForm, recipient_manual: e.target.value })} />
-                    )}
-                  </div>
-                  {recipientMode === "employee" && (
-                    <div>
-                      <Label>To'lov turi (xodim uchun)</Label>
-                      <Select value={expForm.salary_kind || "none"} onValueChange={(v) => setExpForm({ ...expForm, salary_kind: (v === "none" ? "" : v) as any })}>
-                        <SelectTrigger><SelectValue placeholder="Tanlanmagan" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">— Tanlanmagan —</SelectItem>
-                          {SALARY_KINDS.map((sk) => <SelectItem key={sk} value={sk}>{SALARY_KIND_LABELS[sk]}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  <div>
-                    <Label>{k.paymentType ?? "To'lov turi"}</Label>
-                    <Select value={expForm.payment_type} onValueChange={(v: PaymentType) => setExpForm({ ...expForm, payment_type: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>{PAYMENT_TYPES.map(p => <SelectItem key={p} value={p}>{ptLabel(p)}</SelectItem>)}</SelectContent>
+                    <Label>{k.reason ?? "Sabab"}</Label>
+                    <Select value={expForm.reason || undefined} onValueChange={(v) => {
+                      if (v === "__add__") { setNewReasonOpen(true); return; }
+                      setExpForm({ ...expForm, reason: v });
+                    }}>
+                      <SelectTrigger><SelectValue placeholder="Sababni tanlang" /></SelectTrigger>
+                      <SelectContent>
+                        {reasons.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                        {expForm.reason && !reasons.includes(expForm.reason) && (
+                          <SelectItem value={expForm.reason}>{expForm.reason}</SelectItem>
+                        )}
+                        <SelectItem value="__add__">+ Tur qo'shish</SelectItem>
+                      </SelectContent>
                     </Select>
                   </div>
-                  <div><Label>{k.comment ?? "Izoh"}</Label><Textarea value={expForm.comment} onChange={e => setExpForm({ ...expForm, comment: e.target.value })} /></div>
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input type="checkbox" className="h-4 w-4 accent-primary" checked={expForm.is_supply} onChange={e => setExpForm({ ...expForm, is_supply: e.target.checked })} />
-                    Ta'minot bo'limiga ajratilgan pul
-                  </label>
+                  <div>
+                    <Label>{k.currency ?? "Valyuta"}</Label>
+                    <Select value={expForm.currency} onValueChange={(v) => setExpForm({ ...expForm, currency: v, exchange_rate: 1 })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{CURRENCIES.map((c) => <SelectItem key={c} value={c}>{CURRENCY_LABELS[c] ?? c}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label>{k.amount ?? "Summa"}</Label><Input type="number" min={0} value={expForm.amount || ""} onChange={e => setExpForm({ ...expForm, amount: Number(e.target.value) })} /></div>
                   <Button className="w-full" onClick={saveExpense}>{t.common.save}</Button>
                 </div>
               </DialogContent>
@@ -691,7 +801,7 @@ export default function KassaPage() {
                   {loading && <TableRow><TableCell colSpan={canManage ? 10 : 9} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                   {!loading && fExp.map(e => (
                     <TableRow key={e.id}>
-                      <TableCell className="text-sm whitespace-nowrap">{new Date(e.expense_date).toLocaleString()}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{fmtDateTime24(e.expense_date)}</TableCell>
                       <TableCell className="text-right font-mono font-semibold text-status-red">{fmtCash(Number(e.amount), e.currency)}</TableCell>
                       <TableCell className="text-xs"><Badge variant="secondary">{e.currency ?? "UZS"}</Badge></TableCell>
                       <TableCell className="text-right text-xs font-mono">{(e.currency ?? "UZS") === "UZS" ? "—" : fmt(Number(e.exchange_rate ?? 1))}</TableCell>
@@ -712,118 +822,121 @@ export default function KassaPage() {
           </CardContent></Card>
         </TabsContent>
 
-        <TabsContent value="employees" className="space-y-3">
-          <div className="flex flex-wrap items-end gap-2">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input className="pl-8" placeholder={k.searchEmployee ?? "Qidirish..."} value={empSearch} onChange={e => setEmpSearch(e.target.value)} />
-            </div>
-            <Select value={empStatusFilter} onValueChange={(v: any) => setEmpStatusFilter(v)}>
-              <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{k.allStatuses ?? "Barcha holat"}</SelectItem>
-                <SelectItem value="active">{k.active ?? "Faol"}</SelectItem>
-                <SelectItem value="inactive">{k.inactive ?? "Nofaol"}</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={empDeptFilter} onValueChange={setEmpDeptFilter}>
-              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{k.allDepartments ?? "Barcha bo'lim"}</SelectItem>
-                {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            {canManage && (
-              <Dialog open={empOpen} onOpenChange={(o) => { setEmpOpen(o); if (!o) { setEmpEditId(null); resetEmpForm(); } }}>
-                <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{k.addEmployee ?? "Xodim qo'shish"}</Button></DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>{empEditId ? (k.editEmployee ?? "Tahrirlash") : (k.addEmployee ?? "Xodim qo'shish")}</DialogTitle></DialogHeader>
-                  <div className="space-y-3">
-                    <div><Label>{k.fullName ?? "To'liq ism"}</Label><Input value={empForm.full_name} onChange={e => setEmpForm({ ...empForm, full_name: e.target.value })} /></div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div><Label>{k.position ?? "Lavozim"}</Label><Input value={empForm.position} onChange={e => setEmpForm({ ...empForm, position: e.target.value })} /></div>
-                      <div><Label>{k.department ?? "Bo'lim"}</Label><Input value={empForm.department} onChange={e => setEmpForm({ ...empForm, department: e.target.value })} /></div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div><Label>{k.phone ?? "Telefon"}</Label><Input value={empForm.phone} onChange={e => setEmpForm({ ...empForm, phone: e.target.value })} placeholder="+998..." /></div>
-                      <div><Label>{k.salary ?? "Maosh"}</Label><Input type="number" min={0} value={empForm.salary || ""} onChange={e => setEmpForm({ ...empForm, salary: Number(e.target.value) })} /></div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div><Label>{k.hireDate ?? "Ish boshlagan"}</Label><Input type="date" value={empForm.hire_date} onChange={e => setEmpForm({ ...empForm, hire_date: e.target.value })} /></div>
-                      <div><Label>{k.leaveDate ?? "Ketgan sana"}</Label><Input type="date" value={empForm.leave_date} onChange={e => setEmpForm({ ...empForm, leave_date: e.target.value })} /></div>
-                    </div>
-                    <div>
-                      <Label>{k.status ?? "Holat"}</Label>
-                      <Select value={empForm.status} onValueChange={v => setEmpForm({ ...empForm, status: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="active">{k.active ?? "Faol"}</SelectItem>
-                          <SelectItem value="inactive">{k.inactive ?? "Nofaol"}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Button className="w-full" onClick={saveEmployee}>{t.common.save}</Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            )}
+        <TabsContent value="report" className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Label className="text-xs">Oy</Label>
+            <Input type="month" className="w-[170px]" value={reportMonth} onChange={(e) => setReportMonth(e.target.value || currentMonth())} />
+            <span className="text-sm text-muted-foreground">{monthLabel(reportMonth)}</span>
+            <Button variant="outline" size="sm" onClick={downloadReport}><Download className="h-4 w-4 mr-1" />Yuklab olish</Button>
           </div>
 
-          <Card><CardContent className="p-0">
-            <div className="border rounded-md overflow-x-auto">
-              <Table>
-                <TableHeader><TableRow>
-                  <TableHead>{k.fullName ?? "Ism"}</TableHead>
-                  <TableHead>{k.position ?? "Lavozim"}</TableHead>
-                  <TableHead>{k.department ?? "Bo'lim"}</TableHead>
-                  <TableHead>{k.phone ?? "Telefon"}</TableHead>
-                  <TableHead className="text-right">{k.salary ?? "Maosh"}</TableHead>
-                  <TableHead>{k.hireDate ?? "Ish boshlagan"}</TableHead>
-                  <TableHead>{k.status ?? "Holat"}</TableHead>
-                  {canManage && <TableHead></TableHead>}
-                </TableRow></TableHeader>
-                <TableBody>
-                  {loading && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
-                  {!loading && filteredEmps.map(e => (
-                    <TableRow key={e.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setEmpDetailId(e.id)}>
-                      <TableCell className="font-medium text-primary underline-offset-2 hover:underline">{localize(e.full_name)}</TableCell>
-                      <TableCell className="text-sm">{e.position}</TableCell>
-                      <TableCell className="text-sm">{e.department}</TableCell>
-                      <TableCell className="text-sm">{e.phone ?? "—"}</TableCell>
-                      <TableCell className="text-right font-mono text-sm">{e.salary ? `${fmt(Number(e.salary))} ${t.common.sum}` : "—"}</TableCell>
-                      <TableCell className="text-sm">{e.hire_date}</TableCell>
-                      <TableCell>
-                        <Badge variant={e.status === "active" ? "default" : "secondary"}>
-                          {e.status === "active" ? (k.active ?? "Faol") : (k.inactive ?? "Nofaol")}
-                        </Badge>
-                      </TableCell>
-                      {canManage && (
-                        <TableCell className="whitespace-nowrap" onClick={(ev) => ev.stopPropagation()}>
-                          <Button size="sm" variant="ghost" onClick={() => openEditEmp(e)}><Edit2 className="h-3 w-3" /></Button>
-                          <Button size="sm" variant="ghost" onClick={() => toggleEmpStatus(e)}>{e.status === "active" ? (k.deactivate ?? "O'chirish") : (k.activate ?? "Faollash")}</Button>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  ))}
-                  {!loading && filteredEmps.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{k.emptyEmployees ?? "Xodimlar yo'q"}</TableCell></TableRow>}
-                </TableBody>
-              </Table>
-            </div>
+          <div className="grid gap-3 sm:grid-cols-4">
+            <Card><CardContent className="p-4">
+              <div className="text-xs text-muted-foreground">Boshlang'ich qoldiq</div>
+              <div className="text-lg font-bold font-mono mt-1">{curLine(report.opening)}</div>
+            </CardContent></Card>
+            <Card><CardContent className="p-4">
+              <div className="text-xs text-muted-foreground">Jami kirim</div>
+              <div className="text-lg font-bold font-mono mt-1 text-status-green">{curLine(report.totalIn)}</div>
+            </CardContent></Card>
+            <Card><CardContent className="p-4">
+              <div className="text-xs text-muted-foreground">Jami chiqim</div>
+              <div className="text-lg font-bold font-mono mt-1 text-status-red">{curLine(report.totalOut)}</div>
+            </CardContent></Card>
+            <Card><CardContent className="p-4">
+              <div className="text-xs text-muted-foreground">Yakuniy qoldiq</div>
+              <div className="text-lg font-bold font-mono mt-1">{curLine(report.closing)}</div>
+            </CardContent></Card>
+          </div>
+
+          <Card><CardContent className="p-4 space-y-2">
+            <div className="text-sm font-semibold">Chiqimlar sabab bo'yicha</div>
+            <Table>
+              <TableHeader><TableRow>
+                <TableHead>Sabab</TableHead>
+                <TableHead className="text-right">Soni</TableHead>
+                <TableHead className="text-right">Jami</TableHead>
+              </TableRow></TableHeader>
+              <TableBody>
+                {report.groups.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-6">Chiqim yo'q</TableCell></TableRow>}
+                {report.groups.map((g) => (
+                  <TableRow key={g.reason}>
+                    <TableCell className="font-medium">{g.reason}</TableCell>
+                    <TableCell className="text-right">{g.count}</TableCell>
+                    <TableCell className="text-right font-mono text-status-red">{curLine(g.byCur)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </CardContent></Card>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card><CardContent className="p-4 space-y-2">
+              <div className="text-sm font-semibold text-status-green">Kirimlar ({report.inRows.length})</div>
+              <div className="max-h-[50vh] overflow-auto">
+                <Table>
+                  <TableHeader><TableRow>
+                    <TableHead>Sana va vaqt</TableHead>
+                    <TableHead>Manba</TableHead>
+                    <TableHead className="text-right">Summa</TableHead>
+                    <TableHead>Valyuta</TableHead>
+                  </TableRow></TableHeader>
+                  <TableBody>
+                    {report.inRows.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-6">Kirim yo'q</TableCell></TableRow>}
+                    {report.inRows.map((i) => (
+                      <TableRow key={i.id}>
+                        <TableCell className="font-mono text-sm whitespace-nowrap">{fmtDateTime24(i.income_date)}</TableCell>
+                        <TableCell className="text-sm">{i.source}</TableCell>
+                        <TableCell className="text-right font-mono text-status-green">{fmtCash(Number(i.amount), i.currency)}</TableCell>
+                        <TableCell><Badge variant="secondary">{normalizeCurrency(i.currency)}</Badge></TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent></Card>
+
+            <Card><CardContent className="p-4 space-y-2">
+              <div className="text-sm font-semibold text-status-red">Chiqimlar ({report.exRows.length})</div>
+              <div className="max-h-[50vh] overflow-auto">
+                <Table>
+                  <TableHeader><TableRow>
+                    <TableHead>Sana va vaqt</TableHead>
+                    <TableHead>Sabab</TableHead>
+                    <TableHead className="text-right">Summa</TableHead>
+                    <TableHead>Valyuta</TableHead>
+                  </TableRow></TableHeader>
+                  <TableBody>
+                    {report.exRows.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-6">Chiqim yo'q</TableCell></TableRow>}
+                    {report.exRows.map((e) => (
+                      <TableRow key={e.id}>
+                        <TableCell className="font-mono text-sm whitespace-nowrap">{fmtDateTime24(e.expense_date)}</TableCell>
+                        <TableCell className="text-sm">{e.reason}</TableCell>
+                        <TableCell className="text-right font-mono text-status-red">{fmtCash(Number(e.amount), e.currency)}</TableCell>
+                        <TableCell><Badge variant="secondary">{normalizeCurrency(e.currency)}</Badge></TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent></Card>
+          </div>
         </TabsContent>
 
-        {canManageUsers && (
-          <TabsContent value="users" className="space-y-3">
-            <UsersTab />
-          </TabsContent>
-        )}
+        <TabsContent value="supply" className="space-y-3">
+          <SupplyFinancePage />
+        </TabsContent>
       </Tabs>
 
-      <EmployeeDetailDialog
-        employee={allEmployees.find((e) => e.id === empDetailId) ?? null}
-        open={!!empDetailId}
-        onOpenChange={(o) => { if (!o) setEmpDetailId(null); }}
-      />
+      <Dialog open={newReasonOpen} onOpenChange={(o) => { setNewReasonOpen(o); if (!o) setNewReason(""); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Yangi chiqim turi</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Nomi</Label><Input value={newReason} onChange={(e) => setNewReason(e.target.value)} placeholder="Masalan: Transport" /></div>
+            <Button className="w-full" onClick={addReason}>{t.common.save}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
