@@ -68,7 +68,7 @@ export default function SupplyFinancePage() {
         .order("created_at", { ascending: false }),
       supabase
         .from("stock_movements")
-        .select("id,quantity,unit_price,created_at,created_by,comment,products(name,unit),orders(order_number)")
+        .select("id,quantity,unit_price,currency,created_at,created_by,comment,products(name,unit),orders(order_number)")
         .eq("direction", "in")
         .order("created_at", { ascending: false })
         .limit(1000),
@@ -107,6 +107,7 @@ export default function SupplyFinancePage() {
           unit: m.products?.unit ?? null,
           unit_price: price,
           total: qty * price,
+          currency: normCur(m.currency),
           order_number: m.orders?.order_number ?? null,
           actor: nameOf(m.created_by),
         };
