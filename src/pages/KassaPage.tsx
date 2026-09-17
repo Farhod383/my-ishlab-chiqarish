@@ -443,7 +443,7 @@ export default function KassaPage() {
     }
     const emp = recipientMode === "employee" ? employees.find(e => e.id === expForm.recipient_id) : null;
     const recipientName = recipientMode === "employee" ? (emp?.full_name ?? null) : (expForm.recipient_manual.trim() || null);
-    const rate = expForm.currency === "UZS" ? 1 : Number(expForm.exchange_rate) || 0;
+    const rate = expForm.currency === "UZS" ? 1 : expRate;
     const total_uzs = computeUzs(expForm.amount, expForm.currency, rate);
     const payload: any = {
       amount: expForm.amount,
