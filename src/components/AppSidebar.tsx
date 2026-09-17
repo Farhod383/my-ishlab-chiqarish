@@ -61,7 +61,7 @@ export function AppSidebar() {
   // Per-role sidebar visibility overrides (does not affect permissions/routes)
   const isAdmin = roles.includes("admin");
   const hiddenByRole: Record<string, string[]> = {
-    warehouse: ["/", "/production", "/otk", "/defects"],
+    warehouse: ["/", "/production", "/otk"],
     marketing: ["/defects"],
     supply: ["/", "/production", "/otk", "/defects"],
   };
