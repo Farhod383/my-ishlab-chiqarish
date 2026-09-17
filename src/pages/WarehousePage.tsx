@@ -528,7 +528,7 @@ export default function WarehousePage() {
     toast.success(merged
       ? "Nakladnoyda mavjud mahsulotga jamlandi"
       : "Nakladnoyga qo'shildi — kirim tugatilgach skladga tushadi");
-    setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId("");
+    setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId(""); setImpTons(""); setImpTonsManual(false);
     loadSession();
     load();
   };
