@@ -376,9 +376,16 @@ export default function InvoicesPage() {
                 <div className="space-y-2">
                   <Label>Nakladnoy rasmi</Label>
                   {current.image_url ? (
-                    <a href={current.image_url} target="_blank" rel="noreferrer">
-                      <img src={current.image_url} alt={`Nakladnoy ${intakeCode(current)}`} className="max-h-48 rounded border" />
-                    </a>
+                    <div className="flex items-start gap-2">
+                      <a href={current.image_url} target="_blank" rel="noreferrer">
+                        <img src={current.image_url} alt={`Nakladnoy ${intakeCode(current)}`} className="max-h-48 rounded border" />
+                      </a>
+                      {canEdit && (
+                        <Button variant="outline" size="sm" className="text-destructive" onClick={() => setDelImgId(current.id)}>
+                          <Trash2 className="h-4 w-4 mr-1" /> Rasmni o'chirish
+                        </Button>
+                      )}
+                    </div>
                   ) : (
                     <p className="text-xs text-muted-foreground">Rasm yo'q</p>
                   )}
