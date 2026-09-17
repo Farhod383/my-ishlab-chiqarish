@@ -15,7 +15,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Layers3, Scissors } from "lucide-react";
+import { Plus, Layers3, Scissors, PackagePlus } from "lucide-react";
 
 interface Norm {
   id: string; metal_type: string; length_mm: number; width_mm: number;
@@ -69,6 +69,7 @@ export default function MetalPage() {
   const { user, hasRole } = useAuth();
   const canConsume = hasRole(["admin", "engineer"]);
   const canNorm = hasRole(["admin", "engineer"]);
+  const canIntake = hasRole(["admin", "engineer", "warehouse"]);
 
   const [norms, setNorms] = useState<Norm[]>([]);
   const [products, setProducts] = useState<ProductRow[]>([]);
