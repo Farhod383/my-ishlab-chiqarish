@@ -61,8 +61,16 @@ export function fmtNum(n: number | string | null | undefined, opts?: { decimals?
   if (n === null || n === undefined || n === "") return "0";
   const num = typeof n === "string" ? Number(n) : n;
   if (!Number.isFinite(num)) return "0";
-  const decimals = opts?.decimals ?? 0;
-  const fixed = decimals > 0 ? num.toFixed(decimals) : String(Math.round(num));
+  const decimals = opts?.decimals;
+  // Kasr qiymatlar (masalan 6.940 tonna) yo'qolmasin: butun bo'lmasa 3 xonagacha ko'rsatiladi.
+  const fixed =
+    decimals !== undefined
+      ? decimals > 0
+        ? num.toFixed(decimals)
+        : String(Math.round(num))
+      : Number.isInteger(num)
+        ? String(num)
+        : String(Number(num.toFixed(3)));
   const [intPart, decPart] = fixed.split(".");
   const sign = intPart.startsWith("-") ? "-" : "";
   const abs = sign ? intPart.slice(1) : intPart;
