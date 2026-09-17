@@ -1155,7 +1155,7 @@ export default function WarehousePage() {
                     {impProductId && <p className="text-xs text-status-green mt-1">✓ Mavjud mahsulot — miqdor qo'shiladi</p>}
                   </div>
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="col-span-2"><Label>{t.supply.qty} *</Label><NumberInput min={0.1} step={0.1} value={impQty} onChange={e => setImpQty(e.target.value)} placeholder={(t.warehouse as any).qtyPh} /></div>
+                    <div className="col-span-2"><Label>{t.supply.qty} *</Label><NumberInput min={0.01} step={(impUnit || "").toLowerCase() === "tonna" ? 0.01 : 0.1} value={impQty} onChange={e => setImpQty(e.target.value)} placeholder={(impUnit || "").toLowerCase() === "tonna" ? "0.5 / 1.25 / 10.75" : (t.warehouse as any).qtyPh} /></div>
                     <div><Label>{t.warehouse.unit}</Label>
                       <Select value={impUnit} onValueChange={setImpUnit}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
