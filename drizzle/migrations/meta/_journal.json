@@ -78,6 +78,13 @@
       "when": 1789623466059,
       "tag": "0010_add_weight_kg_to_intake_and_movements",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1789627177096,
+      "tag": "0011_restrict_metal_module_roles",
+      "breakpoints": true
     }
   ]
 }

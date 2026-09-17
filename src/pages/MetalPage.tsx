@@ -37,9 +37,8 @@ const normLabel = (m: Norm) => `${m.metal_type} — ${sizeLabel(m)} — S=${n(m.
 
 export default function MetalPage() {
   const { user, hasRole } = useAuth();
-  const canIntake = hasRole(["admin", "warehouse"]);
-  const canConsume = hasRole(["admin", "warehouse", "engineer"]);
-  const canNorm = hasRole(["admin", "warehouse", "engineer"]);
+  const canConsume = hasRole(["admin", "engineer"]);
+  const canNorm = hasRole(["admin", "engineer"]);
 
   const [norms, setNorms] = useState<Norm[]>([]);
   const [stock, setStock] = useState<Stock[]>([]);
@@ -68,57 +67,7 @@ export default function MetalPage() {
   const totalKg = useMemo(() => stock.reduce((s, r) => s + n(r.quantity) * n(r.weight_kg), 0), [stock]);
   const actorName = user?.email ?? null;
 
-  /* ---------------- Kirim ---------------- */
-  const [inOpen, setInOpen] = useState(false);
-  const [inType, setInType] = useState("");
-  const [inLen, setInLen] = useState("");
-  const [inWid, setInWid] = useState("");
-  const [inThick, setInThick] = useState("");
-  const [inWeight, setInWeight] = useState("");
-  const [inQty, setInQty] = useState("");
-  const [inComment, setInComment] = useState("");
   const [busy, setBusy] = useState(false);
-
-  // Norma bazasidan 1 list kg avtomatik olinadi
-  useEffect(() => {
-    if (!inType || !inLen || !inWid || !inThick) return;
-    const hit = norms.find(
-      (x) => x.metal_type.toLowerCase() === inType.trim().toLowerCase() &&
-        n(x.length_mm) === Number(inLen) && n(x.width_mm) === Number(inWid) &&
-        n(x.thickness_mm) === Number(inThick),
-    );
-    if (hit) setInWeight(String(n(hit.weight_kg)));
-  }, [inType, inLen, inWid, inThick, norms]);
-
-  const applyNormPreset = (id: string) => {
-    const nm = norms.find((x) => x.id === id);
-    if (!nm) return;
-    setInType(nm.metal_type);
-    setInLen(String(n(nm.length_mm)));
-    setInWid(String(n(nm.width_mm)));
-    setInThick(String(n(nm.thickness_mm)));
-    setInWeight(String(n(nm.weight_kg)));
-  };
-
-  const resetIn = () => {
-    setInType(""); setInLen(""); setInWid(""); setInThick(""); setInWeight(""); setInQty(""); setInComment("");
-  };
-
-  const doIntake = async () => {
-    if (!inType.trim() || !inLen || !inWid || !inThick) return toast.error("Metall turi va o'lchamlarni kiriting");
-    if (!Number(inWeight)) return toast.error("1 list og'irligi (kg) kiritilmagan");
-    if (!Number(inQty)) return toast.error("Miqdorni kiriting");
-    setBusy(true);
-    const { error } = await supabase.rpc("metal_intake" as any, {
-      _metal_type: inType.trim(), _length: Number(inLen), _width: Number(inWid),
-      _thickness: Number(inThick), _weight_kg: Number(inWeight), _quantity: Number(inQty),
-      _comment: inComment || null, _actor_name: actorName,
-    });
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success(`Kirim qilindi: ${fmtKg(Number(inWeight) * Number(inQty))}`);
-    setInOpen(false); resetIn(); load();
-  };
 
   /* ---------------- Sarf (Konstruktor) ---------------- */
   const [outOpen, setOutOpen] = useState(false);
@@ -182,47 +131,9 @@ export default function MetalPage() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-2xl font-bold">Metall hisobi</h1>
-          <p className="text-sm text-muted-foreground">Metall turi, o'lchami va qalinligi bo'yicha alohida qoldiq</p>
+          <p className="text-sm text-muted-foreground">Konstruktor metall sarfi va hisob-kitobi. Metall kirimi Sklad → Kirim orqali qilinadi.</p>
         </div>
         <div className="flex gap-2">
-          {canIntake && (
-            <Dialog open={inOpen} onOpenChange={(o) => { setInOpen(o); if (!o) resetIn(); }}>
-              <DialogTrigger asChild>
-                <Button><Plus className="h-4 w-4 mr-1" /> Metall kirimi</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>Metall kirimi</DialogTitle></DialogHeader>
-                <div className="space-y-3">
-                  <div>
-                    <Label>Normadan tanlash</Label>
-                    <SearchableSelect
-                      options={norms.map((x) => ({ value: x.id, label: normLabel(x) }))}
-                      value=""
-                      onChange={applyNormPreset}
-                      placeholder="Norma tanlang (ixtiyoriy)"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Metall turi</Label><Input value={inType} onChange={(e) => setInType(e.target.value)} placeholder="Nerj" /></div>
-                    <div><Label>Qalinlik S (mm)</Label><NumberInput step="0.1" value={inThick} onChange={(e) => setInThick(e.target.value)} placeholder="4.2" /></div>
-                    <div><Label>Bo'yi (mm)</Label><NumberInput value={inLen} onChange={(e) => setInLen(e.target.value)} placeholder="6000" /></div>
-                    <div><Label>Eni (mm)</Label><NumberInput value={inWid} onChange={(e) => setInWid(e.target.value)} placeholder="1500" /></div>
-                    <div><Label>1 list og'irligi (kg)</Label><NumberInput step="0.01" value={inWeight} onChange={(e) => setInWeight(e.target.value)} /></div>
-                    <div><Label>Miqdori (dona)</Label><NumberInput step="0.01" value={inQty} onChange={(e) => setInQty(e.target.value)} /></div>
-                  </div>
-                  <div><Label>Izoh</Label><Input value={inComment} onChange={(e) => setInComment(e.target.value)} /></div>
-                  {Number(inWeight) > 0 && Number(inQty) > 0 && (
-                    <div className="rounded-md border p-2 text-sm">
-                      Jami: <b>{fmtKg(Number(inWeight) * Number(inQty))}</b> = <b>{fmtT(Number(inWeight) * Number(inQty))}</b>
-                    </div>
-                  )}
-                </div>
-                <DialogFooter>
-                  <Button onClick={doIntake} disabled={busy}>Saqlash</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          )}
           {canConsume && (
             <Dialog open={outOpen} onOpenChange={setOutOpen}>
               <DialogTrigger asChild>
