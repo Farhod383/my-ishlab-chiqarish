@@ -51,15 +51,27 @@ export const INTAKE_STATUS_META: Record<IntakeStatus, { label: string; cls: stri
   finalized: { label: "Yakunlangan", cls: "bg-status-green/15 text-status-green border-status-green/30" },
 };
 
-/** Foydalanuvchining ochiq kirim sessiyasini qaytaradi (bo'lmasa null). */
-export async function getOpenSession(userId: string): Promise<IntakeSession | null> {
+/**
+ * Ochiq kirim sessiyasini qaytaradi. Nakladnoy umumiy — kim kiritishidan
+ * qat'i nazar barcha prixodlar bitta ochiq sessiyaga yig'iladi.
+ */
+export async function getOpenSession(_userId?: string): Promise<IntakeSession | null> {
   const { data } = await supabase
     .from("intake_sessions")
     .select("*")
-    .eq("created_by", userId)
     .eq("status", "open")
-    .maybeSingle();
-  return (data as any) ?? null;
+    .order("started_at", { ascending: true })
+    .limit(1);
+  return ((data as any[]) ?? [])[0] ?? null;
+}
+
+/**
+ * Nakladnoyni yopish — yopilmagan barcha prixodlar shu nakladnoyga
+ * biriktiriladi va bitta tranzaksiyada skladga kirim qilinadi.
+ */
+export async function closeInvoice(sessionId: string) {
+  const { error } = await supabase.rpc("close_intake_invoice" as any, { _session_id: sessionId });
+  if (error) throw error;
 }
 
 /** Ochiq sessiyani qaytaradi, bo'lmasa avtomatik yangisini boshlaydi. */
