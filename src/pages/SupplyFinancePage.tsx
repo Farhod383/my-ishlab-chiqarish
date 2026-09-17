@@ -31,9 +31,20 @@ interface OutRow {
   unit: string | null;
   unit_price: number;
   total: number;
+  currency: string;
   order_number: string | null;
   actor: string;
 }
+
+const PT_KEYS = ["cash", "transfer", "corporate_card"] as const;
+const CUR_KEYS = ["UZS", "USD"] as const;
+const normPT = (p: string | null | undefined) => {
+  const v = (p ?? "cash").toLowerCase();
+  if (v === "card") return "corporate_card";
+  if (v === "transfer" || v === "corporate_card" || v === "cash") return v;
+  return "cash";
+};
+const normCur = (c: string | null | undefined) => ((c ?? "UZS").toUpperCase() === "USD" ? "USD" : "UZS");
 
 /**
  * Kassa / Ta'minot — faqat moliyaviy nazorat sahifasi.
