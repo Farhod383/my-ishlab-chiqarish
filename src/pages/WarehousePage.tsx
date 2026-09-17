@@ -506,6 +506,7 @@ export default function WarehousePage() {
         product_name: trimmedName,
         unit: impUnit || "dona",
         quantity: qtyN,
+        weight_kg: impKg > 0 ? impKg : null,
         unit_price: priceN,
         currency: impCurrency || "UZS",
         location: impLocation || "Asosiy zavod",
