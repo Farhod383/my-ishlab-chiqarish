@@ -157,7 +157,9 @@ export default function WarehouseHistory({
       width: null,
       qty: Number(m.quantity || 0),
       unit: m.product?.unit ?? "",
-      kg: null,
+      kg: Number(m.weight_kg) > 0
+        ? Number(m.weight_kg)
+        : (Number(m.product?.weight_kg) > 0 ? Number(m.product.weight_kg) * Number(m.quantity || 0) : null),
       price: num(m.unit_price),
       currency: m.currency ?? "UZS",
       location: m.location ?? "",
