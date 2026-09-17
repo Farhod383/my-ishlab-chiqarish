@@ -266,9 +266,41 @@ export default function MetalPage() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-2xl font-bold">Metall hisobi</h1>
-          <p className="text-sm text-muted-foreground">Qoldiq to'g'ridan-to'g'ri Sklad ma'lumotidan olinadi. Metall kirimi Sklad → Kirim orqali qilinadi.</p>
+          <p className="text-sm text-muted-foreground">Qoldiq va harakatlar Sklad bilan bitta real bazadan olinadi.</p>
         </div>
         <div className="flex gap-2">
+          {canIntake && (
+            <Dialog open={inOpen} onOpenChange={setInOpen}>
+              <DialogTrigger asChild>
+                <Button><PackagePlus className="h-4 w-4 mr-1" /> Kirim</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Metall / profil kirimi</DialogTitle></DialogHeader>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2"><Label>Metall turi</Label>
+                    <Input list="metal-types-in" value={inType} onChange={(e) => setInType(e.target.value)} placeholder="Nerj" />
+                    <datalist id="metal-types-in">
+                      {[...new Set(norms.map((x) => x.metal_type))].map((t) => <option key={t} value={t} />)}
+                    </datalist>
+                  </div>
+                  <div><Label>Qalinlik S (mm)</Label><NumberInput step="0.1" value={inThick} onChange={(e) => setInThick(e.target.value)} placeholder="2.5" /></div>
+                  <div><Label>Bo'yi (mm)</Label><NumberInput value={inLength} onChange={(e) => setInLength(e.target.value)} placeholder="6000" /></div>
+                  <div><Label>Eni (mm)</Label><NumberInput value={inWidth} onChange={(e) => setInWidth(e.target.value)} placeholder="1500" /></div>
+                  <div><Label>1 dona og'irligi (kg)</Label><NumberInput step="0.01" value={inKgPiece} onChange={(e) => setInKgPiece(e.target.value)} /></div>
+                  <div><Label>Dona soni</Label><NumberInput step="0.001" value={inQty} onChange={(e) => setInQty(e.target.value)} /></div>
+                  <div><Label>1 dona narxi (UZS)</Label><NumberInput step="0.01" value={inPrice} onChange={(e) => setInPrice(e.target.value)} /></div>
+                  <div className="col-span-2"><Label>Joylashuv</Label><Input value={inLocation} onChange={(e) => setInLocation(e.target.value)} /></div>
+                  <div className="col-span-2"><Label>Izoh</Label><Input value={inComment} onChange={(e) => setInComment(e.target.value)} /></div>
+                  {inTotalKg > 0 && (
+                    <div className="col-span-2 rounded-md border p-2 text-sm">
+                      Jami: <b>{fmtKg(inTotalKg)}</b> = <b>{fmtT(inTotalKg)}</b>
+                    </div>
+                  )}
+                </div>
+                <DialogFooter><Button onClick={doIntake} disabled={busy}>Kirimni saqlash</Button></DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
           {canConsume && (
             <Dialog open={outOpen} onOpenChange={setOutOpen}>
               <DialogTrigger asChild>
