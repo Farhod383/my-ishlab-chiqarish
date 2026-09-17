@@ -114,6 +114,22 @@ export default function KassaPage() {
 
   const actorName = profile?.full_name || user?.email || null;
 
+  // Oxirgi valyuta kirimidagi kurs (valyuta bo'yicha) — chiqimda avtomatik qo'llanadi.
+  const lastRateByCur = useMemo(() => {
+    const map: Record<string, number> = {};
+    const sorted = [...incomes].sort(
+      (a: any, b: any) => new Date(b.income_date ?? b.created_at).getTime() - new Date(a.income_date ?? a.created_at).getTime()
+    );
+    for (const i of sorted as any[]) {
+      const cur = i.currency ?? "UZS";
+      if (cur === "UZS") continue;
+      const r = Number(i.exchange_rate) || 0;
+      if (r > 0 && !map[cur]) map[cur] = r;
+    }
+    return map;
+  }, [incomes]);
+  const expRate = expForm.currency === "UZS" ? 1 : (lastRateByCur[expForm.currency] ?? 0);
+
   const loadReasons = async () => {
     const { data } = await (supabase.from as any)("cash_expense_reasons")
       .select("name,sort_order").order("sort_order", { ascending: true }).order("name", { ascending: true });
@@ -411,8 +427,8 @@ export default function KassaPage() {
   const saveExpense = async () => {
     if (!expForm.amount || !expForm.reason.trim()) { toast.error(k.fillFields ?? "Maydonlarni to'ldiring"); return; }
     if (!ensureOnline((m) => toast.error(m))) return;
-    if (expForm.currency !== "UZS" && (!expForm.exchange_rate || expForm.exchange_rate <= 0)) {
-      toast.error(k.enterRate ?? "Valyuta kursini kiriting"); return;
+    if (expForm.currency !== "UZS" && !(expRate > 0)) {
+      toast.error(`${expForm.currency} kursi mavjud emas — avval ${expForm.currency} kirimini kurs bilan kiriting`); return;
     }
     // Client-side balance guard (server trigger is the source of truth).
     const pt = expForm.payment_type || "cash";
@@ -427,7 +443,7 @@ export default function KassaPage() {
     }
     const emp = recipientMode === "employee" ? employees.find(e => e.id === expForm.recipient_id) : null;
     const recipientName = recipientMode === "employee" ? (emp?.full_name ?? null) : (expForm.recipient_manual.trim() || null);
-    const rate = expForm.currency === "UZS" ? 1 : Number(expForm.exchange_rate) || 0;
+    const rate = expForm.currency === "UZS" ? 1 : expRate;
     const total_uzs = computeUzs(expForm.amount, expForm.currency, rate);
     const payload: any = {
       amount: expForm.amount,
@@ -774,6 +790,16 @@ export default function KassaPage() {
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>{CURRENCIES.map((c) => <SelectItem key={c} value={c}>{CURRENCY_LABELS[c] ?? c}</SelectItem>)}</SelectContent>
                     </Select>
+                    {expForm.currency !== "UZS" && (
+                      expRate > 0 ? (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Kurs (oxirgi {expForm.currency} kirimidan): <span className="font-mono text-foreground">{fmt(expRate)}</span> so'm
+                          {Number(expForm.amount) > 0 && <> · = <span className="font-mono font-semibold text-foreground">{fmt(Number(expForm.amount) * expRate)} UZS</span></>}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-status-red mt-1">{expForm.currency} kursi mavjud emas — avval {expForm.currency} kirimini kurs bilan kiriting.</p>
+                      )
+                    )}
                    </div>
                    <div>
                      <Label>{k.paymentType ?? "To'lov turi"}</Label>
