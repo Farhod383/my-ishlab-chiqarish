@@ -236,9 +236,16 @@ export default function InvoicesPage() {
             <div className="space-y-2">
               <Label>Nakladnoy rasmi <span className="text-destructive">*</span></Label>
               {active.image_url ? (
-                <a href={active.image_url} target="_blank" rel="noreferrer">
-                  <img src={active.image_url} alt={`Nakladnoy ${intakeCode(active)}`} className="max-h-40 rounded border" />
-                </a>
+                <div className="flex items-start gap-2">
+                  <a href={active.image_url} target="_blank" rel="noreferrer">
+                    <img src={active.image_url} alt={`Nakladnoy ${intakeCode(active)}`} className="max-h-40 rounded border" />
+                  </a>
+                  {canEdit && (
+                    <Button variant="outline" size="sm" className="text-destructive" onClick={() => setDelImgId(active.id)}>
+                      <Trash2 className="h-4 w-4 mr-1" /> Rasmni o'chirish
+                    </Button>
+                  )}
+                </div>
               ) : (
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Input type="file" accept="image/*" onChange={(e) => setActFile(e.target.files?.[0] ?? null)} />
