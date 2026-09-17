@@ -15,7 +15,13 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PRIORITY_OPTIONS } from "@/components/PriorityDot";
 import { Plus, Layers3, Scissors, PackagePlus } from "lucide-react";
+
+const UNITS = ["dona", "kg", "tonna", "metr", "litr", "rulon", "komplekt"] as const;
+const CURRENCIES = ["UZS", "USD"] as const;
+
 
 interface Norm {
   id: string; metal_type: string; length_mm: number; width_mm: number;
