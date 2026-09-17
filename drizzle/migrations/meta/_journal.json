@@ -99,6 +99,13 @@
       "when": 1789630096038,
       "tag": "0013_metal_consume_from_products",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1789632645507,
+      "tag": "0014_metal_intake_product_rpc",
+      "breakpoints": true
     }
   ]
 }
