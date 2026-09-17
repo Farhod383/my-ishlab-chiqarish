@@ -144,9 +144,12 @@ export async function addOrMergeItem(
       newQty > 0
         ? (oldQty * Number(existing.unit_price || 0) + addQty * Number(payload.unit_price || 0)) / newQty
         : Number(payload.unit_price || 0);
+    const oldKg = Number((existing as any).weight_kg) || 0;
+    const addKg = Number(payload.weight_kg) || 0;
+    const newKg = oldKg + addKg;
     const { error } = await supabase
       .from("intake_items")
-      .update({ quantity: newQty, unit_price: newPrice } as any)
+      .update({ quantity: newQty, unit_price: newPrice, weight_kg: newKg > 0 ? newKg : null } as any)
       .eq("id", existing.id);
     if (error) throw error;
     return { merged: true };
