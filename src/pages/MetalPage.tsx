@@ -88,48 +88,55 @@ export default function MetalPage() {
   const actorName = user?.email ?? null;
   const [busy, setBusy] = useState(false);
 
-  /* ---------------- Kirim ---------------- */
+  /* ---------------- Kirim (Sklad "Mahsulot qo'shish" formasi bilan bir xil) ---------------- */
   const [inOpen, setInOpen] = useState(false);
-  const [inType, setInType] = useState("");
-  const [inThick, setInThick] = useState("");
-  const [inWidth, setInWidth] = useState("");
-  const [inLength, setInLength] = useState("");
-  const [inKgPiece, setInKgPiece] = useState("");
-  const [inQty, setInQty] = useState("");
-  const [inComment, setInComment] = useState("");
+  const [newName, setNewName] = useState("");
+  const [newQty, setNewQty] = useState("");
+  const [newUnit, setNewUnit] = useState("dona");
+  const [newMin, setNewMin] = useState("");
+  const [newPrice, setNewPrice] = useState("");
+  const [newPriority, setNewPriority] = useState("green");
+  const [newCurrency, setNewCurrency] = useState("UZS");
+  const [newPhone, setNewPhone] = useState("");
+  const [newSource, setNewSource] = useState("");
+  const [newSupplier, setNewSupplier] = useState("");
+  const [newImage, setNewImage] = useState<File | null>(null);
 
-  useEffect(() => {
-    const t = norm3(inType), th = Number(inThick), w = Number(inWidth), l = Number(inLength);
-    if (!t || !th || !w || !l) return;
-    const m = norms.find((x) => norm3(x.metal_type) === t && n(x.thickness_mm) === th && n(x.width_mm) === w && n(x.length_mm) === l);
-    if (m) setInKgPiece(String(n(m.weight_kg)));
-  }, [inType, inThick, inWidth, inLength, norms]);
-
-  const inTotalKg = Number(inKgPiece || 0) * Number(inQty || 0);
+  const kgPerUnit = (u: string) => (u === "tonna" ? 1000 : 1);
 
   const doIntake = async () => {
-    if (!inType.trim()) return toast.error("Metall turini kiriting");
-    if (!Number(inThick) || !Number(inWidth) || !Number(inLength)) return toast.error("Qalinlik, bo'yi va enini kiriting");
-    if (!Number(inQty)) return toast.error("Dona sonini kiriting");
-    if (!Number(inKgPiece)) return toast.error("1 dona og'irligini (kg) kiriting");
+    if (!newName.trim()) return toast.error("Mahsulot nomini kiriting");
+    const qty = Number(newQty);
+    if (!qty || qty <= 0) return toast.error("Miqdorni kiriting");
     setBusy(true);
+    const commentParts = [
+      newSupplier ? `Yetkazib beruvchi: ${newSupplier}` : null,
+      newSource.trim() ? `Manba: ${newSource.trim()}` : null,
+      newPhone.trim() ? `Tel: ${newPhone.trim()}` : null,
+      Number(newPrice) ? `1 ${newUnit} narxi: ${Number(newPrice)} ${newCurrency}` : null,
+      newMin.trim() ? `Min limit: ${newMin.trim()}` : null,
+      `Muhimlik: ${newPriority}`,
+    ].filter(Boolean);
     const { error } = await supabase.rpc("metal_intake" as any, {
-      _metal_type: inType.trim(),
-      _length: Number(inLength),
-      _width: Number(inWidth),
-      _thickness: Number(inThick),
-      _weight_kg: Number(inKgPiece),
-      _quantity: Number(inQty),
-      _comment: inComment || null,
+      _metal_type: newName.trim(),
+      _length: 0,
+      _width: 0,
+      _thickness: 0,
+      _weight_kg: kgPerUnit(newUnit),
+      _quantity: qty,
+      _comment: commentParts.join(" · ") || null,
       _actor_name: actorName,
     });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success(`Metall omboriga kirim: ${fmtKg(inTotalKg)} (${fmtT(inTotalKg)})`);
+    toast.success("Metall omboriga kirim qilindi");
     setInOpen(false);
-    setInQty(""); setInComment("");
+    setNewName(""); setNewQty(""); setNewUnit("dona"); setNewMin(""); setNewPrice("");
+    setNewPriority("green"); setNewCurrency("UZS"); setNewPhone(""); setNewSource("");
+    setNewSupplier(""); setNewImage(null);
     load();
   };
+
 
   /* ---------------- Chiqim (Konstruktor sarfi) ---------------- */
   const [outOpen, setOutOpen] = useState(false);
