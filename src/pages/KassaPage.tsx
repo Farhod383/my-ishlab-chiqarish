@@ -816,118 +816,121 @@ export default function KassaPage() {
           </CardContent></Card>
         </TabsContent>
 
-        <TabsContent value="employees" className="space-y-3">
-          <div className="flex flex-wrap items-end gap-2">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input className="pl-8" placeholder={k.searchEmployee ?? "Qidirish..."} value={empSearch} onChange={e => setEmpSearch(e.target.value)} />
-            </div>
-            <Select value={empStatusFilter} onValueChange={(v: any) => setEmpStatusFilter(v)}>
-              <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{k.allStatuses ?? "Barcha holat"}</SelectItem>
-                <SelectItem value="active">{k.active ?? "Faol"}</SelectItem>
-                <SelectItem value="inactive">{k.inactive ?? "Nofaol"}</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={empDeptFilter} onValueChange={setEmpDeptFilter}>
-              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{k.allDepartments ?? "Barcha bo'lim"}</SelectItem>
-                {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            {canManage && (
-              <Dialog open={empOpen} onOpenChange={(o) => { setEmpOpen(o); if (!o) { setEmpEditId(null); resetEmpForm(); } }}>
-                <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{k.addEmployee ?? "Xodim qo'shish"}</Button></DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>{empEditId ? (k.editEmployee ?? "Tahrirlash") : (k.addEmployee ?? "Xodim qo'shish")}</DialogTitle></DialogHeader>
-                  <div className="space-y-3">
-                    <div><Label>{k.fullName ?? "To'liq ism"}</Label><Input value={empForm.full_name} onChange={e => setEmpForm({ ...empForm, full_name: e.target.value })} /></div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div><Label>{k.position ?? "Lavozim"}</Label><Input value={empForm.position} onChange={e => setEmpForm({ ...empForm, position: e.target.value })} /></div>
-                      <div><Label>{k.department ?? "Bo'lim"}</Label><Input value={empForm.department} onChange={e => setEmpForm({ ...empForm, department: e.target.value })} /></div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div><Label>{k.phone ?? "Telefon"}</Label><Input value={empForm.phone} onChange={e => setEmpForm({ ...empForm, phone: e.target.value })} placeholder="+998..." /></div>
-                      <div><Label>{k.salary ?? "Maosh"}</Label><Input type="number" min={0} value={empForm.salary || ""} onChange={e => setEmpForm({ ...empForm, salary: Number(e.target.value) })} /></div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div><Label>{k.hireDate ?? "Ish boshlagan"}</Label><Input type="date" value={empForm.hire_date} onChange={e => setEmpForm({ ...empForm, hire_date: e.target.value })} /></div>
-                      <div><Label>{k.leaveDate ?? "Ketgan sana"}</Label><Input type="date" value={empForm.leave_date} onChange={e => setEmpForm({ ...empForm, leave_date: e.target.value })} /></div>
-                    </div>
-                    <div>
-                      <Label>{k.status ?? "Holat"}</Label>
-                      <Select value={empForm.status} onValueChange={v => setEmpForm({ ...empForm, status: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="active">{k.active ?? "Faol"}</SelectItem>
-                          <SelectItem value="inactive">{k.inactive ?? "Nofaol"}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Button className="w-full" onClick={saveEmployee}>{t.common.save}</Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            )}
+        <TabsContent value="report" className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Label className="text-xs">Oy</Label>
+            <Input type="month" className="w-[170px]" value={reportMonth} onChange={(e) => setReportMonth(e.target.value || currentMonth())} />
+            <span className="text-sm text-muted-foreground">{monthLabel(reportMonth)}</span>
+            <Button variant="outline" size="sm" onClick={downloadReport}><Download className="h-4 w-4 mr-1" />Yuklab olish</Button>
           </div>
 
-          <Card><CardContent className="p-0">
-            <div className="border rounded-md overflow-x-auto">
-              <Table>
-                <TableHeader><TableRow>
-                  <TableHead>{k.fullName ?? "Ism"}</TableHead>
-                  <TableHead>{k.position ?? "Lavozim"}</TableHead>
-                  <TableHead>{k.department ?? "Bo'lim"}</TableHead>
-                  <TableHead>{k.phone ?? "Telefon"}</TableHead>
-                  <TableHead className="text-right">{k.salary ?? "Maosh"}</TableHead>
-                  <TableHead>{k.hireDate ?? "Ish boshlagan"}</TableHead>
-                  <TableHead>{k.status ?? "Holat"}</TableHead>
-                  {canManage && <TableHead></TableHead>}
-                </TableRow></TableHeader>
-                <TableBody>
-                  {loading && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
-                  {!loading && filteredEmps.map(e => (
-                    <TableRow key={e.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setEmpDetailId(e.id)}>
-                      <TableCell className="font-medium text-primary underline-offset-2 hover:underline">{localize(e.full_name)}</TableCell>
-                      <TableCell className="text-sm">{e.position}</TableCell>
-                      <TableCell className="text-sm">{e.department}</TableCell>
-                      <TableCell className="text-sm">{e.phone ?? "—"}</TableCell>
-                      <TableCell className="text-right font-mono text-sm">{e.salary ? `${fmt(Number(e.salary))} ${t.common.sum}` : "—"}</TableCell>
-                      <TableCell className="text-sm">{e.hire_date}</TableCell>
-                      <TableCell>
-                        <Badge variant={e.status === "active" ? "default" : "secondary"}>
-                          {e.status === "active" ? (k.active ?? "Faol") : (k.inactive ?? "Nofaol")}
-                        </Badge>
-                      </TableCell>
-                      {canManage && (
-                        <TableCell className="whitespace-nowrap" onClick={(ev) => ev.stopPropagation()}>
-                          <Button size="sm" variant="ghost" onClick={() => openEditEmp(e)}><Edit2 className="h-3 w-3" /></Button>
-                          <Button size="sm" variant="ghost" onClick={() => toggleEmpStatus(e)}>{e.status === "active" ? (k.deactivate ?? "O'chirish") : (k.activate ?? "Faollash")}</Button>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  ))}
-                  {!loading && filteredEmps.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{k.emptyEmployees ?? "Xodimlar yo'q"}</TableCell></TableRow>}
-                </TableBody>
-              </Table>
-            </div>
+          <div className="grid gap-3 sm:grid-cols-4">
+            <Card><CardContent className="p-4">
+              <div className="text-xs text-muted-foreground">Boshlang'ich qoldiq</div>
+              <div className="text-lg font-bold font-mono mt-1">{curLine(report.opening)}</div>
+            </CardContent></Card>
+            <Card><CardContent className="p-4">
+              <div className="text-xs text-muted-foreground">Jami kirim</div>
+              <div className="text-lg font-bold font-mono mt-1 text-status-green">{curLine(report.totalIn)}</div>
+            </CardContent></Card>
+            <Card><CardContent className="p-4">
+              <div className="text-xs text-muted-foreground">Jami chiqim</div>
+              <div className="text-lg font-bold font-mono mt-1 text-status-red">{curLine(report.totalOut)}</div>
+            </CardContent></Card>
+            <Card><CardContent className="p-4">
+              <div className="text-xs text-muted-foreground">Yakuniy qoldiq</div>
+              <div className="text-lg font-bold font-mono mt-1">{curLine(report.closing)}</div>
+            </CardContent></Card>
+          </div>
+
+          <Card><CardContent className="p-4 space-y-2">
+            <div className="text-sm font-semibold">Chiqimlar sabab bo'yicha</div>
+            <Table>
+              <TableHeader><TableRow>
+                <TableHead>Sabab</TableHead>
+                <TableHead className="text-right">Soni</TableHead>
+                <TableHead className="text-right">Jami</TableHead>
+              </TableRow></TableHeader>
+              <TableBody>
+                {report.groups.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-6">Chiqim yo'q</TableCell></TableRow>}
+                {report.groups.map((g) => (
+                  <TableRow key={g.reason}>
+                    <TableCell className="font-medium">{g.reason}</TableCell>
+                    <TableCell className="text-right">{g.count}</TableCell>
+                    <TableCell className="text-right font-mono text-status-red">{curLine(g.byCur)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </CardContent></Card>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card><CardContent className="p-4 space-y-2">
+              <div className="text-sm font-semibold text-status-green">Kirimlar ({report.inRows.length})</div>
+              <div className="max-h-[50vh] overflow-auto">
+                <Table>
+                  <TableHeader><TableRow>
+                    <TableHead>Sana va vaqt</TableHead>
+                    <TableHead>Manba</TableHead>
+                    <TableHead className="text-right">Summa</TableHead>
+                    <TableHead>Valyuta</TableHead>
+                  </TableRow></TableHeader>
+                  <TableBody>
+                    {report.inRows.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-6">Kirim yo'q</TableCell></TableRow>}
+                    {report.inRows.map((i) => (
+                      <TableRow key={i.id}>
+                        <TableCell className="font-mono text-sm whitespace-nowrap">{fmtDateTime24(i.income_date)}</TableCell>
+                        <TableCell className="text-sm">{i.source}</TableCell>
+                        <TableCell className="text-right font-mono text-status-green">{fmtCash(Number(i.amount), i.currency)}</TableCell>
+                        <TableCell><Badge variant="secondary">{normalizeCurrency(i.currency)}</Badge></TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent></Card>
+
+            <Card><CardContent className="p-4 space-y-2">
+              <div className="text-sm font-semibold text-status-red">Chiqimlar ({report.exRows.length})</div>
+              <div className="max-h-[50vh] overflow-auto">
+                <Table>
+                  <TableHeader><TableRow>
+                    <TableHead>Sana va vaqt</TableHead>
+                    <TableHead>Sabab</TableHead>
+                    <TableHead className="text-right">Summa</TableHead>
+                    <TableHead>Valyuta</TableHead>
+                  </TableRow></TableHeader>
+                  <TableBody>
+                    {report.exRows.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-6">Chiqim yo'q</TableCell></TableRow>}
+                    {report.exRows.map((e) => (
+                      <TableRow key={e.id}>
+                        <TableCell className="font-mono text-sm whitespace-nowrap">{fmtDateTime24(e.expense_date)}</TableCell>
+                        <TableCell className="text-sm">{e.reason}</TableCell>
+                        <TableCell className="text-right font-mono text-status-red">{fmtCash(Number(e.amount), e.currency)}</TableCell>
+                        <TableCell><Badge variant="secondary">{normalizeCurrency(e.currency)}</Badge></TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent></Card>
+          </div>
         </TabsContent>
 
-        {canManageUsers && (
-          <TabsContent value="users" className="space-y-3">
-            <UsersTab />
-          </TabsContent>
-        )}
+        <TabsContent value="supply" className="space-y-3">
+          <SupplyFinancePage />
+        </TabsContent>
       </Tabs>
 
-      <EmployeeDetailDialog
-        employee={allEmployees.find((e) => e.id === empDetailId) ?? null}
-        open={!!empDetailId}
-        onOpenChange={(o) => { if (!o) setEmpDetailId(null); }}
-      />
+      <Dialog open={newReasonOpen} onOpenChange={(o) => { setNewReasonOpen(o); if (!o) setNewReason(""); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Yangi chiqim turi</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Nomi</Label><Input value={newReason} onChange={(e) => setNewReason(e.target.value)} placeholder="Masalan: Transport" /></div>
+            <Button className="w-full" onClick={addReason}>{t.common.save}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
