@@ -6,7 +6,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Truck, ArrowDownCircle, ArrowUpCircle, Wallet, Search } from "lucide-react";
-import { fmtNum, fmtDateTime24 } from "@/lib/format";
+import { fmtNum, fmtDateTime24, fmtMoney } from "@/lib/format";
+
+const PT_LABEL: Record<string, string> = { cash: "Naqd pul", transfer: "O'tkazma", corporate_card: "Korporativ karta", card: "Karta", other: "Boshqa" };
 
 interface IncomeRow {
   id: string;
@@ -17,6 +19,7 @@ interface IncomeRow {
   currency: string;
   reason: string | null;
   comment: string | null;
+  payment_type: string | null;
   giver: string;
 }
 
@@ -49,7 +52,7 @@ export default function SupplyFinancePage() {
     const [{ data: exp }, { data: mov }, { data: profs }] = await Promise.all([
       supabase
         .from("cash_expenses")
-        .select("id,amount,total_uzs,currency,reason,comment,expense_date,created_at,created_by,recipient_name")
+        .select("id,amount,total_uzs,currency,reason,comment,payment_type,expense_date,created_at,created_by,recipient_name")
         .eq("purpose", "supply")
         .order("created_at", { ascending: false }),
       supabase
@@ -76,6 +79,7 @@ export default function SupplyFinancePage() {
         currency: e.currency ?? "UZS",
         reason: e.reason,
         comment: e.comment,
+        payment_type: e.payment_type ?? null,
         giver: nameOf(e.created_by),
       })),
     );
@@ -116,7 +120,7 @@ export default function SupplyFinancePage() {
 
   const needle = q.trim().toLowerCase();
   const fIncomes = needle
-    ? incomes.filter((r) => `${r.reason ?? ""} ${r.comment ?? ""} ${r.giver} ${r.amount}`.toLowerCase().includes(needle))
+    ? incomes.filter((r) => `${r.reason ?? ""} ${r.comment ?? ""} ${r.giver} ${r.amount} ${r.currency}`.toLowerCase().includes(needle))
     : incomes;
   const fOuts = needle
     ? outs.filter((r) => `${r.product_name} ${r.order_number ?? ""} ${r.actor} ${r.total}`.toLowerCase().includes(needle))
@@ -168,12 +172,13 @@ export default function SupplyFinancePage() {
                     <TableHead>Sana va vaqt</TableHead>
                     <TableHead>Kim bergan</TableHead>
                     <TableHead>Sabab / izoh</TableHead>
+                    <TableHead>To'lov turi</TableHead>
                     <TableHead className="text-right">Summa</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {!loading && fIncomes.length === 0 && (
-                    <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Kirim yo'q</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">Kirim yo'q</TableCell></TableRow>
                   )}
                   {fIncomes.map((r, i) => (
                     <TableRow key={r.id}>
@@ -181,7 +186,11 @@ export default function SupplyFinancePage() {
                       <TableCell className="font-mono text-sm">{fmtDateTime24(r.created_at)}</TableCell>
                       <TableCell>{r.giver}</TableCell>
                       <TableCell className="text-sm">{r.reason}{r.comment ? ` · ${r.comment}` : ""}</TableCell>
-                      <TableCell className="text-right font-semibold">{fmtNum(r.total_uzs || r.amount)} so'm</TableCell>
+                      <TableCell className="text-sm">{PT_LABEL[r.payment_type ?? "cash"] ?? "—"}</TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {fmtMoney(r.amount, r.currency)}
+                        {r.currency !== "UZS" ? <div className="text-xs text-muted-foreground">= {fmtNum(r.total_uzs)} so'm</div> : null}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
