@@ -129,7 +129,7 @@ export default function InvoicesPage() {
         const path = decodeURIComponent(s.image_url.slice(idx + marker.length).split("?")[0]);
         await supabase.storage.from("product-images").remove([path]);
       }
-      const { error } = await supabase.from("intake_sessions").update({ image_url: null } as any).eq("id", s.id);
+      const { error } = await supabase.rpc("clear_intake_invoice_image" as any, { _session_id: s.id });
       if (error) throw error;
       toast.success("Rasm o'chirildi");
       setDelImgId(null);
