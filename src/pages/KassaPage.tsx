@@ -742,52 +742,34 @@ export default function KassaPage() {
         <TabsContent value="expense" className="space-y-3">
           {canManage && (
             <Dialog open={openExp} onOpenChange={(o) => { setOpenExp(o); if (!o) { setExpEditId(null); setExpOrig(null); setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash", salary_kind: "", is_supply: false }); setRecipientMode("employee"); } }}>
-              <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{k.addExpense ?? "Xarajat qo'shish"}</Button></DialogTrigger>
+              <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />Chiqim qilish</Button></DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>{expEditId ? ((t as any).kassaExtra?.editExpense ?? "Xarajatni tahrirlash") : (k.addExpense ?? "Xarajat qo'shish")}</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{expEditId ? "Chiqimni tahrirlash" : "Chiqim qilish"}</DialogTitle></DialogHeader>
                 <div className="space-y-3">
-                  <div><Label>{k.amount ?? "Summa"}</Label><Input type="number" min={0} value={expForm.amount || ""} onChange={e => setExpForm({ ...expForm, amount: Number(e.target.value) })} /></div>
-                  {renderCurrencyFields(expForm, setExpForm)}
-                  <div><Label>{k.reason ?? "Sabab"}</Label><Input value={expForm.reason} onChange={e => setExpForm({ ...expForm, reason: e.target.value })} /></div>
                   <div>
-                    <Label>{k.recipient ?? "Oluvchi"}</Label>
-                    <div className="flex gap-2 mt-1 mb-2">
-                      <Button type="button" size="sm" variant={recipientMode === "employee" ? "default" : "outline"} onClick={() => setRecipientMode("employee")}>{k.fromEmployees ?? "Xodimdan"}</Button>
-                      <Button type="button" size="sm" variant={recipientMode === "manual" ? "default" : "outline"} onClick={() => setRecipientMode("manual")}>{k.manualInput ?? "Boshqa"}</Button>
-                    </div>
-                    {recipientMode === "employee" ? (
-                      <Select value={expForm.recipient_id} onValueChange={v => setExpForm({ ...expForm, recipient_id: v })}>
-                        <SelectTrigger><SelectValue placeholder={k.selectEmployee ?? "Xodimni tanlang"} /></SelectTrigger>
-                        <SelectContent>{employees.map(e => <SelectItem key={e.id} value={e.id}>{localize(e.full_name)} {e.department && `(${e.department})`}</SelectItem>)}</SelectContent>
-                      </Select>
-                    ) : (
-                      <Input placeholder={k.recipientPlaceholder ?? "Yandex, Dostavka, ..."} value={expForm.recipient_manual} onChange={e => setExpForm({ ...expForm, recipient_manual: e.target.value })} />
-                    )}
-                  </div>
-                  {recipientMode === "employee" && (
-                    <div>
-                      <Label>To'lov turi (xodim uchun)</Label>
-                      <Select value={expForm.salary_kind || "none"} onValueChange={(v) => setExpForm({ ...expForm, salary_kind: (v === "none" ? "" : v) as any })}>
-                        <SelectTrigger><SelectValue placeholder="Tanlanmagan" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">— Tanlanmagan —</SelectItem>
-                          {SALARY_KINDS.map((sk) => <SelectItem key={sk} value={sk}>{SALARY_KIND_LABELS[sk]}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  <div>
-                    <Label>{k.paymentType ?? "To'lov turi"}</Label>
-                    <Select value={expForm.payment_type} onValueChange={(v: PaymentType) => setExpForm({ ...expForm, payment_type: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>{PAYMENT_TYPES.map(p => <SelectItem key={p} value={p}>{ptLabel(p)}</SelectItem>)}</SelectContent>
+                    <Label>{k.reason ?? "Sabab"}</Label>
+                    <Select value={expForm.reason || undefined} onValueChange={(v) => {
+                      if (v === "__add__") { setNewReasonOpen(true); return; }
+                      setExpForm({ ...expForm, reason: v });
+                    }}>
+                      <SelectTrigger><SelectValue placeholder="Sababni tanlang" /></SelectTrigger>
+                      <SelectContent>
+                        {reasons.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                        {expForm.reason && !reasons.includes(expForm.reason) && (
+                          <SelectItem value={expForm.reason}>{expForm.reason}</SelectItem>
+                        )}
+                        <SelectItem value="__add__">+ Tur qo'shish</SelectItem>
+                      </SelectContent>
                     </Select>
                   </div>
-                  <div><Label>{k.comment ?? "Izoh"}</Label><Textarea value={expForm.comment} onChange={e => setExpForm({ ...expForm, comment: e.target.value })} /></div>
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input type="checkbox" className="h-4 w-4 accent-primary" checked={expForm.is_supply} onChange={e => setExpForm({ ...expForm, is_supply: e.target.checked })} />
-                    Ta'minot bo'limiga ajratilgan pul
-                  </label>
+                  <div>
+                    <Label>{k.currency ?? "Valyuta"}</Label>
+                    <Select value={expForm.currency} onValueChange={(v) => setExpForm({ ...expForm, currency: v, exchange_rate: 1 })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{CURRENCIES.map((c) => <SelectItem key={c} value={c}>{CURRENCY_LABELS[c] ?? c}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label>{k.amount ?? "Summa"}</Label><Input type="number" min={0} value={expForm.amount || ""} onChange={e => setExpForm({ ...expForm, amount: Number(e.target.value) })} /></div>
                   <Button className="w-full" onClick={saveExpense}>{t.common.save}</Button>
                 </div>
               </DialogContent>
