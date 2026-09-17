@@ -171,7 +171,7 @@ export default function InvoicesPage() {
                       <TableHead>№</TableHead>
                       <TableHead>Mahsulot</TableHead>
                       <TableHead className="text-right">Miqdor</TableHead>
-                      <TableHead className="text-right">Narx</TableHead>
+                      <TableHead className="text-right">1 birlik narxi</TableHead>
                       <TableHead>Valyuta</TableHead>
                       <TableHead className="text-right">Jami</TableHead>
                     </TableRow>
@@ -311,7 +311,7 @@ export default function InvoicesPage() {
                           <TableHead>№</TableHead>
                           <TableHead>Mahsulot</TableHead>
                           <TableHead className="text-right">Miqdor</TableHead>
-                          <TableHead className="text-right">Narx</TableHead>
+                          <TableHead className="text-right">1 birlik narxi</TableHead>
                           <TableHead>Valyuta</TableHead>
                           <TableHead className="text-right">Jami</TableHead>
                         </TableRow>

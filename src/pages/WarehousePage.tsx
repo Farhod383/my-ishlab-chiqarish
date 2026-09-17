@@ -1184,7 +1184,7 @@ export default function WarehousePage() {
                     </div>
                   )}
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="col-span-2"><Label>{t.supply.price}</Label><NumberInput min={0} step={1} value={impPrice} onChange={e => setImpPrice(e.target.value)} placeholder="0" /></div>
+                    <div className="col-span-2"><Label>1 {impUnit || "dona"} narxi</Label><NumberInput min={0} step={0.001} value={impPrice} onChange={e => setImpPrice(e.target.value)} placeholder={`1 ${impUnit || "dona"} narxi`} /></div>
                     <div><Label>Valyuta</Label>
                       <Select value={impCurrency} onValueChange={setImpCurrency}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
@@ -1211,9 +1211,14 @@ export default function WarehousePage() {
                     />
                   </div>
                   {Number(impQty) > 0 && Number(impPrice) > 0 && (
-                    <div className="text-sm bg-primary/5 border border-primary/20 rounded p-2 flex justify-between">
-                      <span className="text-muted-foreground">{t.supply.totalValue}:</span>
-                      <span className="font-mono font-bold text-primary">{fmt(Number(impQty) * Number(impPrice))} {t.common.sum}</span>
+                    <div className="text-sm bg-primary/5 border border-primary/20 rounded p-2 space-y-1">
+                      <div className="text-xs text-muted-foreground font-mono">
+                        {fmt(Number(impQty))} {impUnit || "dona"} × {fmt(Number(impPrice))} {impCurrency} / 1 {impUnit || "dona"}
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">{t.supply.totalValue}:</span>
+                        <span className="font-mono font-bold text-primary">{fmt(Number(impQty) * Number(impPrice))} {impCurrency}</span>
+                      </div>
                     </div>
                   )}
                   <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={impSource} onChange={e => setImpSource(e.target.value)} placeholder={(t.warehouse as any).sourcePh} /></div>
@@ -1247,7 +1252,7 @@ export default function WarehousePage() {
                           <div key={i.id} className="flex items-center gap-2 px-2 py-1.5 text-sm">
                             <span className="text-muted-foreground text-xs w-4">{idx + 1}</span>
                             <span className="flex-1 truncate">{i.product_name}</span>
-                            <span className="font-mono text-xs whitespace-nowrap">{fmt(Number(i.quantity))} {i.unit} × {fmt(Number(i.unit_price))} {i.currency}</span>
+                            <span className="font-mono text-xs whitespace-nowrap">{fmt(Number(i.quantity))} {i.unit} × {fmt(Number(i.unit_price))} = {fmt(Number(i.quantity) * Number(i.unit_price))} {i.currency}</span>
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeSessionItem(i.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                           </div>
                         ))}
@@ -1386,7 +1391,7 @@ export default function WarehousePage() {
                     <TableHead>№</TableHead>
                     <TableHead>Mahsulot</TableHead>
                     <TableHead className="text-right">Miqdor</TableHead>
-                    <TableHead className="text-right">Narx</TableHead>
+                    <TableHead className="text-right">1 birlik narxi</TableHead>
                     <TableHead>Valyuta</TableHead>
                     <TableHead className="text-right">Jami</TableHead>
                     <TableHead>Vaqt</TableHead>
