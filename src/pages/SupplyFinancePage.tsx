@@ -31,9 +31,20 @@ interface OutRow {
   unit: string | null;
   unit_price: number;
   total: number;
+  currency: string;
   order_number: string | null;
   actor: string;
 }
+
+const PT_KEYS = ["cash", "transfer", "corporate_card"] as const;
+const CUR_KEYS = ["UZS", "USD"] as const;
+const normPT = (p: string | null | undefined) => {
+  const v = (p ?? "cash").toLowerCase();
+  if (v === "card") return "corporate_card";
+  if (v === "transfer" || v === "corporate_card" || v === "cash") return v;
+  return "cash";
+};
+const normCur = (c: string | null | undefined) => ((c ?? "UZS").toUpperCase() === "USD" ? "USD" : "UZS");
 
 /**
  * Kassa / Ta'minot — faqat moliyaviy nazorat sahifasi.
@@ -57,7 +68,7 @@ export default function SupplyFinancePage() {
         .order("created_at", { ascending: false }),
       supabase
         .from("stock_movements")
-        .select("id,quantity,unit_price,created_at,created_by,comment,products(name,unit),orders(order_number)")
+        .select("id,quantity,unit_price,currency,created_at,created_by,comment,products(name,unit),orders(order_number)")
         .eq("direction", "in")
         .order("created_at", { ascending: false })
         .limit(1000),
@@ -96,6 +107,7 @@ export default function SupplyFinancePage() {
           unit: m.products?.unit ?? null,
           unit_price: price,
           total: qty * price,
+          currency: normCur(m.currency),
           order_number: m.orders?.order_number ?? null,
           actor: nameOf(m.created_by),
         };
