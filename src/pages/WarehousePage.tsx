@@ -523,7 +523,7 @@ export default function WarehousePage() {
       actor_id: user?.id, actor_name: user?.email,
       action: "Nakladnoyga mahsulot qo'shildi", entity: "intake_item",
       order_id: impOrderId || null,
-      details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${impCurrency}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
+      details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${impCurrency}${impKg > 0 ? ` · ${fmt(impKg)} kg = ${(impKg / 1000).toFixed(4)} t` : ""}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
     });
     toast.success(merged
       ? "Nakladnoyda mavjud mahsulotga jamlandi"
