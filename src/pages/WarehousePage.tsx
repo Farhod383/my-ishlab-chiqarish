@@ -424,6 +424,26 @@ export default function WarehousePage() {
     load();
   };
 
+  /** Kirim uchun avtomatik kg: birlik kg bo'lsa miqdorning o'zi, aks holda dona × 1 dona kg normativi */
+  const impUnitKg = useMemo(() => {
+    const p: any = products.find((x: any) => x.id === impProductId);
+    return Number(p?.weight_kg) > 0 ? Number(p.weight_kg) : 0;
+  }, [products, impProductId]);
+  const impAutoKg = useMemo(() => {
+    const q = Number(impQty) || 0;
+    if (!q) return 0;
+    if ((impUnit || "").toLowerCase() === "kg") return q;
+    return impUnitKg > 0 ? q * impUnitKg : 0;
+  }, [impQty, impUnit, impUnitKg]);
+
+  useEffect(() => {
+    if (impTonsManual) return;
+    setImpTons(impAutoKg > 0 ? String(Number((impAutoKg / 1000).toFixed(4))) : "");
+  }, [impAutoKg, impTonsManual]);
+
+  /** Saqlanadigan kg: qo'lda kiritilgan tonna ustuvor */
+  const impKg = Number(impTons) > 0 ? Number(impTons) * 1000 : impAutoKg;
+
   const doImport = async () => {
     const qtyN = Number(impQty);
     const priceN = Number(impPrice) || 0;
