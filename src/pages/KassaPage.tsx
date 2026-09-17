@@ -76,7 +76,11 @@ export default function KassaPage() {
   const [incomes, setIncomes] = useState<any[]>([]);
   const { employees, allEmployees } = useEmployees({ activeOnly: true });
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"income" | "expense" | "employees">("income");
+  const [tab, setTab] = useState<"income" | "expense" | "report" | "supply">("income");
+  const [reasons, setReasons] = useState<string[]>(DEFAULT_REASONS);
+  const [newReasonOpen, setNewReasonOpen] = useState(false);
+  const [newReason, setNewReason] = useState("");
+  const [reportMonth, setReportMonth] = useState<string>(() => currentMonth());
   const [empSearch, setEmpSearch] = useState("");
   const [empStatusFilter, setEmpStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [empDeptFilter, setEmpDeptFilter] = useState("all");
