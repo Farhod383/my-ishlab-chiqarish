@@ -35,7 +35,7 @@ import { Link } from "react-router-dom";
 import { fmtDateTime24 } from "@/lib/format";
 import { getOpenSession, getOrStartSession, finishSession, finalizeSession, discardDraftSessions, addOrMergeItem, intakeCode, itemsTotal, type IntakeSession, type IntakeItem } from "@/lib/intake";
 
-const UNITS = ["dona", "kg", "metr", "litr", "rulon", "komplekt"] as const;
+const UNITS = ["dona", "kg", "tonna", "metr", "litr", "rulon", "komplekt"] as const;
 const CURRENCIES = ["UZS", "USD"] as const;
 
 export default function WarehousePage() {
@@ -432,7 +432,9 @@ export default function WarehousePage() {
   const impAutoKg = useMemo(() => {
     const q = Number(impQty) || 0;
     if (!q) return 0;
-    if ((impUnit || "").toLowerCase() === "kg") return q;
+    const u = (impUnit || "").toLowerCase();
+    if (u === "kg") return q;
+    if (u === "tonna") return q * 1000;
     return impUnitKg > 0 ? q * impUnitKg : 0;
   }, [impQty, impUnit, impUnitKg]);
 
