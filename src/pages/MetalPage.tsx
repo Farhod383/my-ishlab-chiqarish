@@ -129,7 +129,7 @@ export default function MetalPage() {
       newPhone.trim() ? `${tm.phoneLine}: ${newPhone.trim()}` : null,
       Number(newPrice) ? `1 ${unitLabel(newUnit)} ${tm.priceLine}: ${Number(newPrice)} ${newCurrency}` : null,
       newMin.trim() ? `${tm.minLimit}: ${newMin.trim()}` : null,
-      `${tm.priorityLine}: ${newPriority}`,
+      `${tm.priorityLine}: ${prioLabel(newPriority)}`,
     ].filter(Boolean);
     const { error } = await supabase.rpc("metal_intake" as any, {
       _metal_type: newName.trim(),
@@ -142,7 +142,7 @@ export default function MetalPage() {
       _actor_name: actorName,
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(tm.errSave);
     toast.success(tm.okIntake);
     setInOpen(false);
     setNewName(""); setNewQty(""); setNewUnit("dona"); setNewMin(""); setNewPrice("");
@@ -195,7 +195,7 @@ export default function MetalPage() {
       _comment: outComment || null, _actor_name: actorName,
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(tm.errSave);
     toast.success(`${tm.okConsume}: ${fmtKg(outKg)} (${fmtT(outKg)})`);
     setOutOpen(false); setOutQty(""); setOutComment("");
     load();
@@ -219,7 +219,7 @@ export default function MetalPage() {
       thickness_mm: Number(nmThick), weight_kg: Number(nmWeight), created_by: user?.id ?? null,
     } as any);
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(tm.errSave);
     toast.success(tm.okNorm);
     setNormOpen(false); setNmType(""); setNmLen(""); setNmWid(""); setNmThick(""); setNmWeight("");
     load();
@@ -294,13 +294,13 @@ export default function MetalPage() {
                 <DialogHeader><DialogTitle>{tm.addProduct}</DialogTitle></DialogHeader>
                 <div className="space-y-3">
                   <div><Label>{tm.productName} *</Label>
-                    <Input list="dl-metal-names" value={newName} onChange={(e) => setNewName(e.target.value)} />
+                    <Input list="dl-metal-names" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={tm.productNamePh} />
                     <datalist id="dl-metal-names">
                       {[...new Set([...norms.map((x) => x.metal_type), ...stock.map((s) => s.metal_type)])].map((t) => <option key={t} value={t} />)}
                     </datalist>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><Label>{tm.qty} *</Label><NumberInput min={0} step="any" value={newQty} onChange={(e) => setNewQty(e.target.value.replace(/[^0-9.]/g, ""))} placeholder="0" /></div>
+                    <div><Label>{tm.qty} *</Label><NumberInput min={0} step="any" value={newQty} onChange={(e) => setNewQty(e.target.value.replace(/[^0-9.]/g, ""))} placeholder={tm.qtyPh} /></div>
                     <div><Label>{tm.unit} *</Label>
                       <Select value={newUnit} onValueChange={setNewUnit}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
@@ -309,8 +309,8 @@ export default function MetalPage() {
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><Label>{tm.minLimit}</Label><NumberInput min={0} value={newMin} onChange={(e) => setNewMin(e.target.value)} placeholder="0" /></div>
-                    <div><Label>{tm.price}</Label><NumberInput min={0} value={newPrice} onChange={(e) => setNewPrice(e.target.value)} placeholder="0" /></div>
+                    <div><Label>{tm.minLimit}</Label><NumberInput min={0} value={newMin} onChange={(e) => setNewMin(e.target.value)} placeholder={tm.minLimitPh} /></div>
+                    <div><Label>{tm.price}</Label><NumberInput min={0} value={newPrice} onChange={(e) => setNewPrice(e.target.value)} placeholder={tm.pricePh} /></div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label>{tm.priority}</Label>
@@ -326,8 +326,8 @@ export default function MetalPage() {
                       </Select>
                     </div>
                   </div>
-                  <div><Label>{tm.phone}</Label><Input value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="+998..." /></div>
-                  <div><Label>{tm.source}</Label><Input value={newSource} onChange={(e) => setNewSource(e.target.value)} /></div>
+                  <div><Label>{tm.phone}</Label><Input value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder={tm.phonePh} /></div>
+                  <div><Label>{tm.source}</Label><Input value={newSource} onChange={(e) => setNewSource(e.target.value)} placeholder={tm.sourcePh} /></div>
                   <div><Label>{tm.supplier}</Label>
                     <Select value={newSupplier} onValueChange={setNewSupplier}>
                       <SelectTrigger><SelectValue placeholder={tm.select} /></SelectTrigger>
@@ -338,7 +338,7 @@ export default function MetalPage() {
                     </Select>
                   </div>
                   <div><Label>{tm.image}</Label><Input type="file" accept="image/*" onChange={(e) => setNewImage(e.target.files?.[0] ?? null)} /></div>
-                  <Button className="w-full" onClick={doIntake} disabled={busy}>{tm.save}</Button>
+                  <Button className="w-full" onClick={doIntake} disabled={busy}>{busy ? tm.saving : tm.save}</Button>
                 </div>
               </DialogContent>
 
