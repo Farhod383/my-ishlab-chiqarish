@@ -66,6 +66,9 @@ export default function BusinessTripsPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [delTrip, setDelTrip] = useState<Trip | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // create form
   const [fEmployeeId, setFEmployeeId] = useState("");
