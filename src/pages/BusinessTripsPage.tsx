@@ -33,6 +33,7 @@ interface Trip {
   returned_amount: number;
   status: string;
   comment: string | null;
+  cash_expense_id?: string | null;
   created_at: string;
 }
 
