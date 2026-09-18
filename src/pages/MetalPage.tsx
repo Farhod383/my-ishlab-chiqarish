@@ -507,6 +507,7 @@ export default function MetalPage() {
                 <TableHead className="text-right">{tm.colPieces}</TableHead>
                 <TableHead className="text-right">{tm.colInKg}</TableHead><TableHead className="text-right">{tm.colOutKg}</TableHead>
                 <TableHead className="text-right">{tm.colRestKg}</TableHead><TableHead className="text-right">{tm.colTon}</TableHead>
+                {canIntake && <TableHead className="text-right">{tm.colActions}</TableHead>}
               </TableRow></TableHeader>
               <TableBody>
                 {rows.map((r, i) => (
@@ -521,9 +522,16 @@ export default function MetalPage() {
                     <TableCell className="text-right font-mono text-status-red">{fmtKg(r.outKg)}</TableCell>
                     <TableCell className="text-right font-mono">{fmtKg(r.kg)}</TableCell>
                     <TableCell className="text-right font-mono">{fmtT(r.kg)}</TableCell>
+                    {canIntake && (
+                      <TableCell className="text-right">
+                        <Button size="sm" variant="ghost" title={tm.editTitle} onClick={() => openEdit(r.s)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
-                {!rows.length && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">{loading ? tm.loading : tm.noStock}</TableCell></TableRow>}
+                {!rows.length && <TableRow><TableCell colSpan={canIntake ? 11 : 10} className="text-center text-muted-foreground py-8">{loading ? tm.loading : tm.noStock}</TableCell></TableRow>}
               </TableBody>
             </Table>
           </CardContent></Card>
