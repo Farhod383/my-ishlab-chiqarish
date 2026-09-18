@@ -465,9 +465,9 @@ export default function BusinessTripsPage() {
       </Card>
 
       {/* Yangi kamandirovka */}
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) { setEditId(null); resetForm(); } }}>
         <DialogContent className="sm:max-w-2xl">
-          <DialogHeader><DialogTitle>Yangi kamandirovka</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editId ? "Kamandirovkani tahrirlash" : "Yangi kamandirovka"}</DialogTitle></DialogHeader>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <Label>Xodim *</Label>
