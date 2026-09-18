@@ -139,6 +139,11 @@ export default function KassaPage() {
     if (list.length) setReasons(list);
   };
 
+  const loadDebts = async () => {
+    const { data } = await (supabase.from as any)("debts").select("*").order("created_at", { ascending: false });
+    setDebts((data ?? []) as any[]);
+  };
+
   const load = async () => {
     setLoading(true);
     const [{ data: exp }, { data: inc }] = await Promise.all([
@@ -147,6 +152,7 @@ export default function KassaPage() {
     ]);
     setExpenses(exp ?? []);
     setIncomes(inc ?? []);
+    loadDebts();
     setLoading(false);
   };
   useEffect(() => {
