@@ -160,18 +160,23 @@ export default function SupplyFinancePage() {
       </p>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <Card><CardContent className="p-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground"><ArrowDownCircle className="h-4 w-4 text-status-green" /> Jami kirim</div>
-          <div className="text-2xl font-bold mt-1">{fmtNum(totalIn)} so'm</div>
-        </CardContent></Card>
-        <Card><CardContent className="p-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground"><ArrowUpCircle className="h-4 w-4 text-status-red" /> Jami chiqim</div>
-          <div className="text-2xl font-bold mt-1">{fmtNum(totalOut)} so'm</div>
-        </CardContent></Card>
-        <Card><CardContent className="p-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground"><Wallet className="h-4 w-4" /> Joriy balans</div>
-          <div className={`text-2xl font-bold mt-1 ${balance < 0 ? "text-status-red" : ""}`}>{fmtNum(balance)} so'm</div>
-        </CardContent></Card>
+        {PT_KEYS.map((pt) => (
+          <Card key={pt}><CardContent className="p-4 space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium"><Wallet className="h-4 w-4" /> {PT_LABEL[pt]}</div>
+            {CUR_KEYS.map((c) => {
+              const bal = buckets[pt][c].in - buckets[pt][c].out;
+              return (
+                <div key={c} className="flex items-baseline justify-between">
+                  <span className="text-xs text-muted-foreground">{c === "UZS" ? "UZS (so'm)" : "USD (dollar)"}</span>
+                  <span className={`text-lg font-bold font-mono ${bal < 0 ? "text-status-red" : ""}`}>{fmtMoney(bal, c)}</span>
+                </div>
+              );
+            })}
+            <div className="text-[11px] text-muted-foreground pt-1 border-t">
+              Kirim: {fmtMoney(buckets[pt].UZS.in, "UZS")} · {fmtMoney(buckets[pt].USD.in, "USD")} | Chiqim: {fmtMoney(buckets[pt].UZS.out, "UZS")} · {fmtMoney(buckets[pt].USD.out, "USD")}
+            </div>
+          </CardContent></Card>
+        ))}
       </div>
 
       <Tabs defaultValue="in">
