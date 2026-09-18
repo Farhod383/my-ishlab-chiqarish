@@ -800,6 +800,7 @@ export default function KassaPage() {
           <TabsTrigger value="income"><ArrowDownCircle className="h-4 w-4 mr-1 text-status-green" />{k.income ?? "Kirim"}</TabsTrigger>
           <TabsTrigger value="expense"><ArrowUpCircle className="h-4 w-4 mr-1 text-status-red" />{k.expense ?? "Chiqim"}</TabsTrigger>
           <TabsTrigger value="report"><FileBarChart className="h-4 w-4 mr-1" />Hisobot</TabsTrigger>
+          <TabsTrigger value="debt"><Wallet className="h-4 w-4 mr-1" />Qarz</TabsTrigger>
           <TabsTrigger value="supply"><Truck className="h-4 w-4 mr-1" />Ta'minot</TabsTrigger>
         </TabsList>
 
@@ -902,6 +903,27 @@ export default function KassaPage() {
                         placeholder="Prochi chiqimi izohini kiriting"
                         required
                       />
+                    </div>
+                  )}
+                  {expForm.reason.trim().toLowerCase() === "qarz uchun" && (
+                    <div>
+                      <Label>Qarz *</Label>
+                      <Select value={expForm.debt_id || undefined} onValueChange={(v) => {
+                        const d = debts.find((x) => x.id === v);
+                        setExpForm({ ...expForm, debt_id: v, currency: d?.currency ?? expForm.currency });
+                      }}>
+                        <SelectTrigger><SelectValue placeholder="Qarzni tanlang" /></SelectTrigger>
+                        <SelectContent>
+                          {debts.filter((d) => d.status !== "paid").map((d) => (
+                            <SelectItem key={d.id} value={d.id}>
+                              {d.counterparty} — {d.purpose} ({fmtCash(Math.max(0, Number(d.amount) - Number(d.paid_amount || 0)), d.currency)} {d.currency})
+                            </SelectItem>
+                          ))}
+                          {debts.filter((d) => d.status !== "paid").length === 0 && (
+                            <SelectItem value="__none__" disabled>Ochiq qarz yo'q</SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
                     </div>
                   )}
                   <div>
@@ -1074,6 +1096,94 @@ export default function KassaPage() {
               </div>
             </CardContent></Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="debt" className="space-y-3">
+          {canManage && (
+            <Dialog open={debtOpen} onOpenChange={(o) => { setDebtOpen(o); if (!o) { setDebtEditId(null); setDebtForm({ counterparty: "", purpose: "", amount: 0, currency: "UZS", due_date: "", comment: "" }); } }}>
+              <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />Qarz qo'shish</Button></DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>{debtEditId ? "Qarzni tahrirlash" : "Qarz qo'shish"}</DialogTitle></DialogHeader>
+                <div className="space-y-3">
+                  <div><Label>Kimdan (KM) *</Label><Input value={debtForm.counterparty} onChange={(e) => setDebtForm({ ...debtForm, counterparty: e.target.value })} placeholder="Masalan: KM" /></div>
+                  <div><Label>Nima uchun *</Label><Input value={debtForm.purpose} onChange={(e) => setDebtForm({ ...debtForm, purpose: e.target.value })} placeholder="Qarz sababi" /></div>
+                  <div><Label>{k.amount ?? "Summa"} *</Label><Input type="number" min={0} value={debtForm.amount || ""} onChange={(e) => setDebtForm({ ...debtForm, amount: Number(e.target.value) })} /></div>
+                  <div>
+                    <Label>{k.currency ?? "Valyuta"}</Label>
+                    <Select value={debtForm.currency} onValueChange={(v) => setDebtForm({ ...debtForm, currency: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{CURRENCIES.map((c) => <SelectItem key={c} value={c}>{CURRENCY_LABELS[c] ?? c}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label>Qachongacha</Label><Input type="date" value={debtForm.due_date} onChange={(e) => setDebtForm({ ...debtForm, due_date: e.target.value })} /></div>
+                  <div><Label>{k.comment ?? "Izoh"}</Label><Textarea value={debtForm.comment} onChange={(e) => setDebtForm({ ...debtForm, comment: e.target.value })} /></div>
+                  <Button className="w-full" onClick={saveDebt}>{t.common.save}</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+
+          <Card><CardContent className="p-0">
+            <div className="border rounded-md overflow-x-auto">
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead>Kimdan</TableHead>
+                  <TableHead>Nima uchun</TableHead>
+                  <TableHead className="text-right">{k.amount ?? "Summa"}</TableHead>
+                  <TableHead className="text-right">To'langan</TableHead>
+                  <TableHead className="text-right">Qoldiq</TableHead>
+                  <TableHead>Qachongacha</TableHead>
+                  <TableHead>Holati</TableHead>
+                  {canManage && <TableHead></TableHead>}
+                </TableRow></TableHeader>
+                <TableBody>
+                  {debts.map((d) => {
+                    const paid = Number(d.paid_amount) || 0;
+                    const left = Math.max(0, (Number(d.amount) || 0) - paid);
+                    const overdue = d.status !== "paid" && d.due_date && new Date(d.due_date) < new Date();
+                    return (
+                      <TableRow key={d.id}>
+                        <TableCell className="font-medium">{d.counterparty}</TableCell>
+                        <TableCell className="text-sm">{d.purpose}</TableCell>
+                        <TableCell className="text-right font-mono">{fmtCash(Number(d.amount), d.currency)} {d.currency}</TableCell>
+                        <TableCell className="text-right font-mono text-status-green">{fmtCash(paid, d.currency)}</TableCell>
+                        <TableCell className="text-right font-mono font-semibold text-status-red">{fmtCash(left, d.currency)}</TableCell>
+                        <TableCell className="text-sm whitespace-nowrap">{d.due_date ?? "—"}</TableCell>
+                        <TableCell>
+                          <Badge variant={d.status === "paid" ? "secondary" : overdue ? "destructive" : "outline"}>
+                            {d.status === "paid" ? "To'langan" : overdue ? "Muddati o'tgan" : "Ochiq"}
+                          </Badge>
+                        </TableCell>
+                        {canManage && (
+                          <TableCell className="whitespace-nowrap text-right">
+                            {d.status !== "paid" && <Button size="sm" variant="outline" className="mr-1" onClick={() => payDebt(d)}>To'lash</Button>}
+                            <Button size="sm" variant="ghost" onClick={() => { setDebtEditId(d.id); setDebtForm({ counterparty: d.counterparty, purpose: d.purpose, amount: Number(d.amount) || 0, currency: d.currency ?? "UZS", due_date: d.due_date ?? "", comment: d.comment ?? "" }); setDebtOpen(true); }}><Edit2 className="h-3 w-3" /></Button>
+                            <Button size="sm" variant="ghost" onClick={() => setDebtDelete(d)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    );
+                  })}
+                  {debts.length === 0 && <TableRow><TableCell colSpan={canManage ? 8 : 7} className="text-center text-muted-foreground py-8">Qarzlar yo'q</TableCell></TableRow>}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent></Card>
+
+          <AlertDialog open={!!debtDelete} onOpenChange={(o) => { if (!o) setDebtDelete(null); }}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Qarzni o'chirish</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {debtDelete ? `${debtDelete.counterparty} — ${debtDelete.purpose} (${fmtCash(Number(debtDelete.amount), debtDelete.currency)} ${debtDelete.currency}) o'chiriladi. To'langan chiqimlar tarixda qoladi.` : ""}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t.common.cancel ?? "Bekor qilish"}</AlertDialogCancel>
+                <AlertDialogAction onClick={() => debtDelete && removeDebt(debtDelete)}>{t.common.delete ?? "O'chirish"}</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </TabsContent>
 
         <TabsContent value="supply" className="space-y-3">
