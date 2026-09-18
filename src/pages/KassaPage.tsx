@@ -112,6 +112,7 @@ export default function KassaPage() {
   const [incOrig, setIncOrig] = useState<any>(null);
   const [incForm, setIncForm] = useState({ amount: 0, source: "", payment_type: "cash", comment: "", currency: "UZS", exchange_rate: 1 });
   const [incFile, setIncFile] = useState<File | null>(null);
+  const [incDelete, setIncDelete] = useState<any>(null);
 
   const actorName = profile?.full_name || user?.email || null;
 
