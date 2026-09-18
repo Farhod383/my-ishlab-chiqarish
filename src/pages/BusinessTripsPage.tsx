@@ -513,7 +513,7 @@ export default function BusinessTripsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddOpen(false)}>Bekor qilish</Button>
-            <Button onClick={createTrip} disabled={saving}>{saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Saqlash</Button>
+            <Button onClick={editId ? saveTripEdit : createTrip} disabled={saving}>{saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Saqlash</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
