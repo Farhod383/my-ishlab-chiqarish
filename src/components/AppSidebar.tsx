@@ -34,7 +34,7 @@ export function AppSidebar() {
     { title: t.nav.otk, url: "/otk", icon: ShieldCheck },
     { title: t.nav.warehouse, url: "/warehouse", icon: Warehouse },
     { title: "Nakladnoy", url: "/invoices", icon: FileText, roles: ["admin", "warehouse", "supply"] },
-    { title: "Metall hisobi", url: "/metal", icon: Ruler, roles: ["admin", "engineer", "warehouse"] },
+    { title: t.metal.title, url: "/metal", icon: Ruler, roles: ["admin", "engineer", "warehouse"] },
     { title: t.nav.supply, url: "/supply", icon: Truck },
     { title: t.nav.returns, url: "/returns", icon: RotateCcw, roles: ["warehouse", "admin"] },
     { title: t.nav.defects, url: "/defects", icon: AlertOctagon },
