@@ -631,6 +631,24 @@ export default function BusinessTripsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!delTrip} onOpenChange={(o) => { if (!o) setDelTrip(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Kamandirovkani o'chirish</AlertDialogTitle>
+            <AlertDialogDescription>
+              {delTrip && <>
+                {delTrip.employee_name} — {delTrip.destination} · {fmtMoney(delTrip.given_amount, delTrip.currency)}
+                <br />Bu kamandirovka, uning barcha xarajatlari va Kassadagi bog'langan chiqim o'chiriladi. Kassa balansi qayta hisoblanadi. Amalni orqaga qaytarib bo'lmaydi.
+              </>}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
+            <AlertDialogAction onClick={deleteTrip} disabled={deleting}>O'chirish</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
