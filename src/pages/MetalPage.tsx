@@ -227,6 +227,65 @@ export default function MetalPage() {
 
   const orderOptions = orders.map((o) => ({ value: o.id, label: `${o.order_number} — ${o.product_name}` }));
 
+  /* ---------------- Tahrirlash (faqat mavjud metall yozuvi) ---------------- */
+  const [editOpen, setEditOpen] = useState(false);
+  const [editRow, setEditRow] = useState<StockRow | null>(null);
+  const [edType, setEdType] = useState("");
+  const [edThick, setEdThick] = useState("");
+  const [edLen, setEdLen] = useState("");
+  const [edWid, setEdWid] = useState("");
+  const [edWeight, setEdWeight] = useState("");
+  const [edQty, setEdQty] = useState("");
+
+  const openEdit = (s: StockRow) => {
+    setEditRow(s);
+    setEdType(s.metal_type ?? "");
+    setEdThick(String(n(s.thickness_mm)));
+    setEdLen(String(n(s.length_mm)));
+    setEdWid(String(n(s.width_mm)));
+    setEdWeight(String(n(s.weight_kg)));
+    setEdQty(String(n(s.quantity)));
+    setEditOpen(true);
+  };
+
+  const saveEdit = async () => {
+    if (!editRow) return;
+    if (!edType.trim()) return toast.error(tm.errName);
+    const newQty = Number(edQty);
+    const perKg = Number(edWeight);
+    if (!Number.isFinite(newQty) || newQty < 0) return toast.error(tm.errQty);
+    if (!Number.isFinite(perKg) || perKg <= 0) return toast.error(tm.errAllFields);
+    setBusy(true);
+    const { error } = await supabase.from("metal_stock").update({
+      metal_type: edType.trim(),
+      thickness_mm: Number(edThick) || 0,
+      length_mm: Number(edLen) || 0,
+      width_mm: Number(edWid) || 0,
+      weight_kg: perKg,
+      quantity: newQty,
+      updated_at: new Date().toISOString(),
+    } as any).eq("id", editRow.id);
+    if (error) { setBusy(false); return toast.error(tm.errSave); }
+
+    const diff = newQty - n(editRow.quantity);
+    if (Math.abs(diff) > 0.000001) {
+      await supabase.from("metal_movements").insert({
+        stock_id: editRow.id,
+        direction: diff > 0 ? "in" : "out",
+        quantity: Math.abs(diff),
+        weight_kg: Math.abs(diff) * perKg,
+        comment: `${tm.editTitle}: ${n(editRow.quantity)} → ${newQty}`,
+        created_by: user?.id ?? null,
+        created_by_name: actorName,
+      } as any);
+    }
+    setBusy(false);
+    toast.success(tm.okEdit);
+    setEditOpen(false);
+    setEditRow(null);
+    load();
+  };
+
 
   const movesTable = (list: MoveRow[], kind: "in" | "out" | "all") => (
     <Card><CardContent className="p-0 overflow-x-auto">
