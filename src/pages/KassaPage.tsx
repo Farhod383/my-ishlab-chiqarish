@@ -11,7 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Wallet, Plus, ArrowDownCircle, ArrowUpCircle, Edit2, Search, FileBarChart, Truck, Download } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Wallet, Plus, ArrowDownCircle, ArrowUpCircle, Edit2, Trash2, Search, FileBarChart, Truck, Download } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { toast } from "sonner";
