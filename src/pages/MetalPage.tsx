@@ -337,7 +337,16 @@ export default function MetalPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div><Label>{tm.image}</Label><Input type="file" accept="image/*" onChange={(e) => setNewImage(e.target.files?.[0] ?? null)} /></div>
+                  <div className="space-y-1.5">
+                    <Label>{tm.image}</Label>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <Input id="metal-image" className="sr-only" type="file" accept="image/*" onChange={(e) => setNewImage(e.target.files?.[0] ?? null)} />
+                      <Button type="button" variant="outline" asChild>
+                        <label htmlFor="metal-image" className="shrink-0 cursor-pointer">{tm.chooseImage}</label>
+                      </Button>
+                      <span className="min-w-0 truncate text-sm text-muted-foreground">{newImage?.name ?? tm.noImage}</span>
+                    </div>
+                  </div>
                   <Button className="w-full" onClick={doIntake} disabled={busy}>{busy ? tm.saving : tm.save}</Button>
                 </div>
               </DialogContent>
