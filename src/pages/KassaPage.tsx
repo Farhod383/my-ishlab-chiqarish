@@ -11,7 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Wallet, Plus, ArrowDownCircle, ArrowUpCircle, Edit2, Search, FileBarChart, Truck, Download } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Wallet, Plus, ArrowDownCircle, ArrowUpCircle, Edit2, Trash2, Search, FileBarChart, Truck, Download } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { toast } from "sonner";
@@ -111,6 +112,7 @@ export default function KassaPage() {
   const [incOrig, setIncOrig] = useState<any>(null);
   const [incForm, setIncForm] = useState({ amount: 0, source: "", payment_type: "cash", comment: "", currency: "UZS", exchange_rate: 1 });
   const [incFile, setIncFile] = useState<File | null>(null);
+  const [incDelete, setIncDelete] = useState<any>(null);
 
   const actorName = profile?.full_name || user?.email || null;
 
@@ -572,6 +574,22 @@ export default function KassaPage() {
     setOpenInc(true);
   };
 
+  const deleteIncome = async () => {
+    const row = incDelete;
+    if (!row) return;
+    const { error } = await (supabase.from as any)("cash_incomes").delete().eq("id", row.id);
+    if (error) { toast.error(error.message); setIncDelete(null); return; }
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: actorName,
+      action: "kassa.income.delete", entity: "cash_incomes",
+      details: `${row.amount} ${row.currency ?? "UZS"} · ${row.source ?? ""} · ${fmtDateTime24(row.income_date)}`,
+    });
+    toast.success("Kirim o'chirildi");
+    setIncDelete(null);
+    load();
+  };
+
+
   const renderCurrencyFields = (form: any, setForm: (v: any) => void) => (
     <div className="grid grid-cols-2 gap-3">
       <div>
@@ -757,7 +775,10 @@ export default function KassaPage() {
                       <TableCell className="text-sm">{ptLabel(i.payment_type)}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{i.comment ?? "—"}</TableCell>
                       <TableCell>{i.receipt_url ? <a href={i.receipt_url} target="_blank" rel="noreferrer" className="text-primary underline text-xs">{k.view ?? "Ko'rish"}</a> : "—"}</TableCell>
-                      {canManage && <TableCell><Button size="sm" variant="ghost" onClick={() => openEditInc(i)}><Edit2 className="h-3 w-3" /></Button></TableCell>}
+                      {canManage && <TableCell className="whitespace-nowrap">
+                        <Button size="sm" variant="ghost" onClick={() => openEditInc(i)}><Edit2 className="h-3 w-3" /></Button>
+                        <Button size="sm" variant="ghost" onClick={() => setIncDelete(i)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
+                      </TableCell>}
                     </TableRow>
                   ))}
                   {!loading && fInc.length === 0 && <TableRow><TableCell colSpan={canManage ? 10 : 9} className="text-center text-muted-foreground py-8">{k.emptyIncome ?? "Kirimlar yo'q"}</TableCell></TableRow>}
@@ -988,6 +1009,24 @@ export default function KassaPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!incDelete} onOpenChange={(o) => { if (!o) setIncDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Kirimni o'chirish</AlertDialogTitle>
+            <AlertDialogDescription>
+              {incDelete && <>
+                {fmtDateTime24(incDelete.income_date)} · {fmtKassaAmount(incDelete.amount, incDelete.currency)} {incDelete.currency ?? "UZS"} · {incDelete.source}
+                <br />Bu kirim o'chiriladi va Kassa balansi, oylik qoldiq va hisobotlar qayta hisoblanadi. Amalni orqaga qaytarib bo'lmaydi.
+              </>}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
+            <AlertDialogAction onClick={deleteIncome}>O'chirish</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

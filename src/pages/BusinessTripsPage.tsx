@@ -14,7 +14,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import NumberInput from "@/components/NumberInput";
 import SearchableSelect from "@/components/SearchableSelect";
 import { fmtMoney, fmtDate, fmtDateTime24 } from "@/lib/format";
-import { Plus, Search, Plane, Paperclip, Trash2, Loader2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Plus, Search, Plane, Paperclip, Trash2, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
 
@@ -33,6 +34,7 @@ interface Trip {
   returned_amount: number;
   status: string;
   comment: string | null;
+  cash_expense_id?: string | null;
   created_at: string;
 }
 
@@ -64,6 +66,9 @@ export default function BusinessTripsPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [delTrip, setDelTrip] = useState<Trip | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // create form
   const [fEmployeeId, setFEmployeeId] = useState("");
@@ -189,6 +194,109 @@ export default function BusinessTripsPage() {
     setAddOpen(false); resetForm(); load();
   };
 
+  const openEditTrip = (t: Trip) => {
+    setEditId(t.id);
+    setFEmployeeId(t.employee_id ?? "");
+    setFUserId(t.assignee_user_id ?? "");
+    setFDest(t.destination ?? "");
+    setFPurpose(t.purpose ?? "");
+    setFStart(t.start_date ?? new Date().toISOString().slice(0, 10));
+    setFEnd(t.end_date ?? "");
+    setFKm(Number(t.distance_km) || 0);
+    setFAmount(String(t.given_amount ?? ""));
+    setFCurrency(t.currency ?? "UZS");
+    setFComment(t.comment ?? "");
+    setFFromKassa(!!t.cash_expense_id);
+    setAddOpen(true);
+  };
+
+  const saveTripEdit = async () => {
+    const trip = trips.find((t) => t.id === editId);
+    if (!trip) return;
+    const emp = employees.find((e) => e.id === fEmployeeId);
+    if (!emp) { toast.error("Xodim tanlanishi shart"); return; }
+    if (!fDest.trim()) { toast.error("Manzil (qayerga) kiritilishi shart"); return; }
+    const givenAmount = Number(fAmount);
+    if (!Number.isFinite(givenAmount) || givenAmount < 0) { toast.error("Beriladigan summani to'g'ri kiriting"); return; }
+    setSaving(true);
+
+    let cashExpenseId: string | null = trip.cash_expense_id ?? null;
+    const cashPayload = {
+      amount: givenAmount,
+      reason: `Kamandirovka — ${fDest.trim()}`,
+      recipient_id: emp.id,
+      recipient_name: emp.full_name,
+      currency: fCurrency,
+      total_uzs: fCurrency === "UZS" ? givenAmount : 0,
+      comment: fPurpose.trim() || null,
+    };
+    if (fFromKassa && givenAmount > 0) {
+      if (cashExpenseId) {
+        const { error } = await supabase.from("cash_expenses").update(cashPayload as any).eq("id", cashExpenseId);
+        if (error) { setSaving(false); toast.error(`Kassa: ${error.message}`); return; }
+      } else {
+        const { data: ce, error } = await supabase.from("cash_expenses").insert({
+          ...cashPayload, exchange_rate: 1, payment_type: "cash", created_by: user?.id ?? null,
+        } as any).select("id").single();
+        if (error) { setSaving(false); toast.error(`Kassa: ${error.message}`); return; }
+        cashExpenseId = (ce as any)?.id ?? null;
+      }
+    } else if (cashExpenseId) {
+      const { error } = await supabase.from("cash_expenses").delete().eq("id", cashExpenseId);
+      if (error) { setSaving(false); toast.error(`Kassa: ${error.message}`); return; }
+      cashExpenseId = null;
+    }
+
+    const { error } = await supabase.from("business_trips").update({
+      employee_id: emp.id,
+      employee_name: emp.full_name,
+      assignee_user_id: fUserId || null,
+      destination: fDest.trim(),
+      purpose: fPurpose.trim() || null,
+      start_date: fStart,
+      end_date: fEnd || null,
+      distance_km: fKm || 0,
+      given_amount: givenAmount,
+      currency: fCurrency,
+      comment: fComment.trim() || null,
+      cash_expense_id: cashExpenseId,
+    } as any).eq("id", trip.id);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: "Kamandirovka tahrirlandi", entity: "business_trip",
+      details: `${emp.full_name} — ${fDest.trim()} · ${givenAmount} ${fCurrency}`,
+    });
+    toast.success("Saqlandi");
+    setAddOpen(false); setEditId(null); resetForm(); load();
+  };
+
+  const deleteTrip = async () => {
+    const trip = delTrip;
+    if (!trip) return;
+    setDeleting(true);
+    const { error: exErr } = await supabase.from("business_trip_expenses").delete().eq("trip_id", trip.id);
+    if (exErr) { setDeleting(false); toast.error(exErr.message); return; }
+    if (trip.cash_expense_id) {
+      const { error: cErr } = await supabase.from("cash_expenses").delete().eq("id", trip.cash_expense_id);
+      if (cErr) { setDeleting(false); toast.error(`Kassa: ${cErr.message}`); return; }
+    }
+    const { error } = await supabase.from("business_trips").delete().eq("id", trip.id);
+    setDeleting(false);
+    if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: "Kamandirovka o'chirildi", entity: "business_trip",
+      details: `${trip.employee_name} — ${trip.destination} · ${trip.given_amount} ${trip.currency}`,
+    });
+    toast.success("Kamandirovka o'chirildi");
+    setDelTrip(null);
+    if (detailId === trip.id) setDetailId(null);
+    load();
+  };
+
+
   const detail = trips.find((t) => t.id === detailId) ?? null;
   const detailExpenses = detailId ? expenses[detailId] ?? [] : [];
   const detailSpent = detailId ? spentOf(detailId) : 0;
@@ -309,14 +417,15 @@ export default function BusinessTripsPage() {
                   <TableHead className="text-right">Sarflangan</TableHead>
                   <TableHead className="text-right">Qoldiq</TableHead>
                   <TableHead>Holat</TableHead>
+                  {canManage && <TableHead className="text-right">Amallar</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading && (
-                  <TableRow><TableCell colSpan={9} className="py-8 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></TableCell></TableRow>
+                  <TableRow><TableCell colSpan={canManage ? 10 : 9} className="py-8 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></TableCell></TableRow>
                 )}
                 {!loading && filtered.length === 0 && (
-                  <TableRow><TableCell colSpan={9} className="py-8 text-center text-muted-foreground">Kamandirovka topilmadi</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={canManage ? 10 : 9} className="py-8 text-center text-muted-foreground">Kamandirovka topilmadi</TableCell></TableRow>
                 )}
                 {filtered.map((t, i) => {
                   const spent = spentOf(t.id);
@@ -339,9 +448,15 @@ export default function BusinessTripsPage() {
                           : "bg-status-green/15 text-status-green border-status-green/30"}>
                           {t.status === "closed" ? "Yakunlangan" : "Faol"}
                         </Badge>
-                      </TableCell>
-                    </TableRow>
-                  );
+                       </TableCell>
+                       {canManage && (
+                         <TableCell className="whitespace-nowrap text-right" onClick={(e) => e.stopPropagation()}>
+                           <Button variant="ghost" size="icon" onClick={() => openEditTrip(t)}><Pencil className="h-4 w-4" /></Button>
+                           <Button variant="ghost" size="icon" onClick={() => setDelTrip(t)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                         </TableCell>
+                       )}
+                     </TableRow>
+                   );
                 })}
               </TableBody>
             </Table>
@@ -350,9 +465,9 @@ export default function BusinessTripsPage() {
       </Card>
 
       {/* Yangi kamandirovka */}
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) { setEditId(null); resetForm(); } }}>
         <DialogContent className="sm:max-w-2xl">
-          <DialogHeader><DialogTitle>Yangi kamandirovka</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editId ? "Kamandirovkani tahrirlash" : "Yangi kamandirovka"}</DialogTitle></DialogHeader>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <Label>Xodim *</Label>
@@ -398,7 +513,7 @@ export default function BusinessTripsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddOpen(false)}>Bekor qilish</Button>
-            <Button onClick={createTrip} disabled={saving}>{saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Saqlash</Button>
+            <Button onClick={editId ? saveTripEdit : createTrip} disabled={saving}>{saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Saqlash</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -516,6 +631,24 @@ export default function BusinessTripsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!delTrip} onOpenChange={(o) => { if (!o) setDelTrip(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Kamandirovkani o'chirish</AlertDialogTitle>
+            <AlertDialogDescription>
+              {delTrip && <>
+                {delTrip.employee_name} — {delTrip.destination} · {fmtMoney(delTrip.given_amount, delTrip.currency)}
+                <br />Bu kamandirovka, uning barcha xarajatlari va Kassadagi bog'langan chiqim o'chiriladi. Kassa balansi qayta hisoblanadi. Amalni orqaga qaytarib bo'lmaydi.
+              </>}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
+            <AlertDialogAction onClick={deleteTrip} disabled={deleting}>O'chirish</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
