@@ -585,6 +585,32 @@ export default function MetalPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{tm.editTitle}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>{tm.metalType} *</Label><Input value={edType} onChange={(e) => setEdType(e.target.value)} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>{tm.thickness}</Label><NumberInput step="0.1" value={edThick} onChange={(e) => setEdThick(e.target.value)} /></div>
+              <div><Label>{tm.oneWeight}</Label><NumberInput step="0.01" value={edWeight} onChange={(e) => setEdWeight(e.target.value)} /></div>
+              <div><Label>{tm.length}</Label><NumberInput value={edLen} onChange={(e) => setEdLen(e.target.value)} /></div>
+              <div><Label>{tm.width}</Label><NumberInput value={edWid} onChange={(e) => setEdWid(e.target.value)} /></div>
+            </div>
+            <div>
+              <Label>{tm.colPieces}</Label>
+              <NumberInput min={0} step="any" value={edQty} onChange={(e) => setEdQty(e.target.value)} />
+              <p className="mt-1 text-xs text-muted-foreground">{tm.editQtyNote}</p>
+            </div>
+            {editRow && Number(edQty) >= 0 && Number(edWeight) > 0 && (
+              <div className="rounded-md border p-2 text-sm">
+                {tm.rest}: <b>{fmtKg(Number(edQty) * Number(edWeight))}</b> = <b>{fmtT(Number(edQty) * Number(edWeight))}</b>
+              </div>
+            )}
+          </div>
+          <DialogFooter><Button onClick={saveEdit} disabled={busy}>{busy ? tm.saving : tm.save}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
