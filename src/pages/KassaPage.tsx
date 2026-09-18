@@ -775,7 +775,10 @@ export default function KassaPage() {
                       <TableCell className="text-sm">{ptLabel(i.payment_type)}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{i.comment ?? "—"}</TableCell>
                       <TableCell>{i.receipt_url ? <a href={i.receipt_url} target="_blank" rel="noreferrer" className="text-primary underline text-xs">{k.view ?? "Ko'rish"}</a> : "—"}</TableCell>
-                      {canManage && <TableCell><Button size="sm" variant="ghost" onClick={() => openEditInc(i)}><Edit2 className="h-3 w-3" /></Button></TableCell>}
+                      {canManage && <TableCell className="whitespace-nowrap">
+                        <Button size="sm" variant="ghost" onClick={() => openEditInc(i)}><Edit2 className="h-3 w-3" /></Button>
+                        <Button size="sm" variant="ghost" onClick={() => setIncDelete(i)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
+                      </TableCell>}
                     </TableRow>
                   ))}
                   {!loading && fInc.length === 0 && <TableRow><TableCell colSpan={canManage ? 10 : 9} className="text-center text-muted-foreground py-8">{k.emptyIncome ?? "Kirimlar yo'q"}</TableCell></TableRow>}
