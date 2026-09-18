@@ -653,6 +653,8 @@ export default function KassaPage() {
           </CardContent></Card>
         </div>
 
+        {/* To'lov turi kartalari faqat Kassa tablarida; Ta'minot tabida o'z alohida kartalari bor (takrorlanmasin) */}
+        {tab !== "supply" && (
         <div className="grid sm:grid-cols-2 gap-4">
           <Card className="border-status-green/30"><CardContent className="p-4 space-y-3">
             <div className="text-xs font-semibold uppercase tracking-wide text-status-green">
@@ -676,6 +678,7 @@ export default function KassaPage() {
             </div>
           </CardContent></Card>
         </div>
+        )}
       </div>
 
 
