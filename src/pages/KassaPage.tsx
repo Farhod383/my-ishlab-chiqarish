@@ -426,6 +426,9 @@ export default function KassaPage() {
 
   const saveExpense = async () => {
     if (!expForm.amount || !expForm.reason.trim()) { toast.error(k.fillFields ?? "Maydonlarni to'ldiring"); return; }
+    if (expForm.reason.trim().toLowerCase() === "prochi" && !expForm.comment.trim()) {
+      toast.error("Prochi chiqimi uchun izoh kiritilishi shart"); return;
+    }
     if (!ensureOnline((m) => toast.error(m))) return;
     if (expForm.currency !== "UZS" && !(expRate > 0)) {
       toast.error(`${expForm.currency} kursi mavjud emas — avval ${expForm.currency} kirimini kurs bilan kiriting`); return;
@@ -772,7 +775,7 @@ export default function KassaPage() {
                     <Label>{k.reason ?? "Sabab"}</Label>
                     <Select value={expForm.reason || undefined} onValueChange={(v) => {
                       if (v === "__add__") { setNewReasonOpen(true); return; }
-                      setExpForm({ ...expForm, reason: v });
+                      setExpForm({ ...expForm, reason: v, comment: v.trim().toLowerCase() === "prochi" ? expForm.comment : "" });
                     }}>
                       <SelectTrigger><SelectValue placeholder="Sababni tanlang" /></SelectTrigger>
                       <SelectContent>
@@ -784,6 +787,18 @@ export default function KassaPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  {expForm.reason.trim().toLowerCase() === "prochi" && (
+                    <div>
+                      <Label htmlFor="expense-comment">Izoh *</Label>
+                      <Textarea
+                        id="expense-comment"
+                        value={expForm.comment}
+                        onChange={(e) => setExpForm({ ...expForm, comment: e.target.value })}
+                        placeholder="Prochi chiqimi izohini kiriting"
+                        required
+                      />
+                    </div>
+                  )}
                   <div>
                     <Label>{k.currency ?? "Valyuta"}</Label>
                     <Select value={expForm.currency} onValueChange={(v) => setExpForm({ ...expForm, currency: v, exchange_rate: 1 })}>

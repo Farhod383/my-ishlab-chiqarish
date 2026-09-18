@@ -73,7 +73,7 @@ export default function BusinessTripsPage() {
   const [fStart, setFStart] = useState(new Date().toISOString().slice(0, 10));
   const [fEnd, setFEnd] = useState("");
   const [fKm, setFKm] = useState<number>(0);
-  const [fAmount, setFAmount] = useState<number>(0);
+  const [fAmount, setFAmount] = useState("");
   const [fCurrency, setFCurrency] = useState("UZS");
   const [fComment, setFComment] = useState("");
   const [fFromKassa, setFFromKassa] = useState(true);
@@ -135,24 +135,26 @@ export default function BusinessTripsPage() {
   const resetForm = () => {
     setFEmployeeId(""); setFUserId(""); setFDest(""); setFPurpose("");
     setFStart(new Date().toISOString().slice(0, 10)); setFEnd("");
-    setFKm(0); setFAmount(0); setFCurrency("UZS"); setFComment(""); setFFromKassa(true);
+    setFKm(0); setFAmount(""); setFCurrency("UZS"); setFComment(""); setFFromKassa(true);
   };
 
   const createTrip = async () => {
     const emp = employees.find((e) => e.id === fEmployeeId);
     if (!emp) { toast.error("Xodim tanlanishi shart"); return; }
     if (!fDest.trim()) { toast.error("Manzil (qayerga) kiritilishi shart"); return; }
+    const givenAmount = Number(fAmount);
+    if (!Number.isFinite(givenAmount) || givenAmount < 0) { toast.error("Beriladigan summani to'g'ri kiriting"); return; }
     setSaving(true);
     let cashExpenseId: string | null = null;
-    if (fFromKassa && fAmount > 0) {
+    if (fFromKassa && givenAmount > 0) {
       const { data: ce, error: cErr } = await supabase.from("cash_expenses").insert({
-        amount: fAmount,
+        amount: givenAmount,
         reason: `Kamandirovka — ${fDest.trim()}`,
         recipient_id: emp.id,
         recipient_name: emp.full_name,
         currency: fCurrency,
         exchange_rate: 1,
-        total_uzs: fCurrency === "UZS" ? fAmount : 0,
+        total_uzs: fCurrency === "UZS" ? givenAmount : 0,
         payment_type: "cash",
         comment: fPurpose.trim() || null,
         created_by: user?.id ?? null,
@@ -170,7 +172,7 @@ export default function BusinessTripsPage() {
       start_date: fStart,
       end_date: fEnd || null,
       distance_km: fKm || 0,
-      given_amount: fAmount || 0,
+      given_amount: givenAmount,
       currency: fCurrency,
       comment: fComment.trim() || null,
       cash_expense_id: cashExpenseId,
@@ -383,7 +385,7 @@ export default function BusinessTripsPage() {
             </div>
             <div className="sm:col-span-2">
               <Label>Kassa tomonidan berilgan summa</Label>
-              <NumberInput value={fAmount} onChange={(e) => setFAmount(Number(e.target.value))} />
+              <NumberInput value={fAmount} min={0} onChange={(e) => setFAmount(e.target.value)} />
             </div>
             <div className="sm:col-span-2 flex items-center gap-2">
               <input id="fromKassa" type="checkbox" className="h-4 w-4" checked={fFromKassa} onChange={(e) => setFFromKassa(e.target.checked)} />
