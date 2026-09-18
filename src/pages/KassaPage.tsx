@@ -1009,6 +1009,24 @@ export default function KassaPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!incDelete} onOpenChange={(o) => { if (!o) setIncDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Kirimni o'chirish</AlertDialogTitle>
+            <AlertDialogDescription>
+              {incDelete && <>
+                {fmtDateTime24(incDelete.income_date)} · {fmtKassaAmount(incDelete.amount, incDelete.currency)} {incDelete.currency ?? "UZS"} · {incDelete.source}
+                <br />Bu kirim o'chiriladi va Kassa balansi, oylik qoldiq va hisobotlar qayta hisoblanadi. Amalni orqaga qaytarib bo'lmaydi.
+              </>}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
+            <AlertDialogAction onClick={deleteIncome}>O'chirish</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
