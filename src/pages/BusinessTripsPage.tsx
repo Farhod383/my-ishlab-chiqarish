@@ -14,7 +14,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import NumberInput from "@/components/NumberInput";
 import SearchableSelect from "@/components/SearchableSelect";
 import { fmtMoney, fmtDate, fmtDateTime24 } from "@/lib/format";
-import { Plus, Search, Plane, Paperclip, Trash2, Loader2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Plus, Search, Plane, Paperclip, Trash2, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
 
