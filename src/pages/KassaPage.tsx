@@ -76,7 +76,13 @@ export default function KassaPage() {
   const [incomes, setIncomes] = useState<any[]>([]);
   const { employees, allEmployees } = useEmployees({ activeOnly: true });
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"income" | "expense" | "report" | "supply">("income");
+  const [tab, setTab] = useState<"income" | "expense" | "report" | "debt" | "supply">("income");
+  // Qarz bo'limi
+  const [debts, setDebts] = useState<any[]>([]);
+  const [debtOpen, setDebtOpen] = useState(false);
+  const [debtEditId, setDebtEditId] = useState<string | null>(null);
+  const [debtForm, setDebtForm] = useState({ counterparty: "", purpose: "", amount: 0, currency: "UZS", due_date: "", comment: "" });
+  const [debtDelete, setDebtDelete] = useState<any>(null);
   const [reasons, setReasons] = useState<string[]>(DEFAULT_REASONS);
   const [newReasonOpen, setNewReasonOpen] = useState(false);
   const [newReason, setNewReason] = useState("");
