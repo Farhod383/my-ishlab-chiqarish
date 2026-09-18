@@ -126,9 +126,15 @@ export default function SupplyFinancePage() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
-  const totalIn = useMemo(() => incomes.reduce((s, r) => s + (r.total_uzs || r.amount), 0), [incomes]);
-  const totalOut = useMemo(() => outs.reduce((s, r) => s + r.total, 0), [outs]);
-  const balance = totalIn - totalOut;
+  // Har bir to'lov turi × valyuta bo'yicha alohida balans (real DB yozuvlaridan).
+  const buckets = useMemo(() => {
+    const b: Record<string, Record<string, { in: number; out: number }>> = {};
+    for (const pt of PT_KEYS) { b[pt] = {}; for (const c of CUR_KEYS) b[pt][c] = { in: 0, out: 0 }; }
+    for (const r of incomes) b[normPT(r.payment_type)][normCur(r.currency)].in += Number(r.amount) || 0;
+    // Sklad kirimlari (Ta'minot chiqimi) — to'lov turi yozilmagan, naqd puldan ayriladi.
+    for (const r of outs) b.cash[normCur(r.currency)].out += Number(r.total) || 0;
+    return b;
+  }, [incomes, outs]);
 
   const needle = q.trim().toLowerCase();
   const fIncomes = needle
