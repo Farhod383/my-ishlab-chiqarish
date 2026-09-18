@@ -106,6 +106,11 @@ export default function WarehousePage() {
   const [impTons, setImpTons] = useState<string>("");
   const [impTonsManual, setImpTonsManual] = useState(false);
   const [locations, setLocations] = useState<{ id: string; name: string }[]>([]);
+  // Kirim joylashuvi: avval joy tanlanadi, keyin kirim varianti.
+  const [inStep, setInStep] = useState<"loc" | "variant">("loc");
+  const [locFilter, setLocFilter] = useState<string>("all");
+  // Mahsulot -> u kirim qilingan joylashuvlar (filter uchun).
+  const [prodLocations, setProdLocations] = useState<Record<string, string[]>>({});
 
   // Kirim sessiyasi (Nakladnoy)
   const [openSession, setOpenSession] = useState<IntakeSession | null>(null);
@@ -157,6 +162,14 @@ export default function WarehousePage() {
   useEffect(() => {
     load();
     supabase.from("locations").select("id, name").order("name").then(({ data }) => setLocations(data ?? []));
+    supabase.from("stock_movements").select("product_id, location").eq("direction", "in").limit(5000).then(({ data }) => {
+      const map: Record<string, string[]> = {};
+      for (const r of (data ?? []) as any[]) {
+        if (!r.product_id || !r.location) continue;
+        (map[r.product_id] ||= []).push(String(r.location));
+      }
+      setProdLocations(map);
+    });
   }, []);
   // Sahifa ochilganda/refreshda eski draft Nakladnoylar to'liq tozalanadi
   useEffect(() => { loadSession(); }, [user?.id]);
@@ -821,8 +834,9 @@ export default function WarehousePage() {
 
   const filteredMovements = useMemo(() => {
     const q = historySearch.trim().toLowerCase();
-    if (!q) return movements;
-    return movements.filter((m: any) => {
+    const byLoc = locFilter === "all" ? movements : movements.filter((m: any) => (m.location ?? "") === locFilter);
+    if (!q) return byLoc;
+    return byLoc.filter((m: any) => {
       const hay = [
         m.product?.name,
         m.order?.product_name,
@@ -832,7 +846,7 @@ export default function WarehousePage() {
       ].filter(Boolean).join(" ");
       return matchesAcrossScripts(hay, q);
     });
-  }, [movements, historySearch]);
+  }, [movements, historySearch, locFilter]);
 
   return (
     <div className="space-y-6">
@@ -866,11 +880,24 @@ export default function WarehousePage() {
         </div>
 
         {/* KIRIM chooser modal */}
-        <Dialog open={chooseIn} onOpenChange={setChooseIn}>
+        <Dialog open={chooseIn} onOpenChange={(o) => { setChooseIn(o); if (o) setInStep("loc"); }}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
-              <DialogTitle className="text-2xl">Kirim varianti</DialogTitle>
+              <DialogTitle className="text-2xl">{inStep === "loc" ? "Qaysi bo'limga kirim?" : `Kirim varianti — ${impLocation}`}</DialogTitle>
             </DialogHeader>
+            {inStep === "loc" ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
+                {["Oshxona", "Sklad", "Office", "Zavod"].map((loc) => (
+                  <button
+                    key={loc}
+                    onClick={() => { setImpLocation(loc); setInStep("variant"); }}
+                    className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-5 text-center font-semibold hover:border-primary hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[110px] flex items-center justify-center"
+                  >
+                    {loc}
+                  </button>
+                ))}
+              </div>
+            ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
               <button
                 onClick={() => { setChooseIn(false); setAddOpen(true); }}
@@ -893,6 +920,10 @@ export default function WarehousePage() {
                 <div className="text-sm text-muted-foreground">Mavjud mahsulotga yangi partiya qo'shish</div>
               </button>
             </div>
+            )}
+            {inStep === "variant" && (
+              <Button variant="ghost" className="mt-2 self-start" onClick={() => setInStep("loc")}>← Bo'limni o'zgartirish</Button>
+            )}
           </DialogContent>
         </Dialog>
 
@@ -1514,7 +1545,18 @@ export default function WarehousePage() {
 
         <TabsContent value="stock" className="mt-4 space-y-3">
 
-          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={(t.warehouse as any).search} className="max-w-md" />
+          <div className="flex flex-wrap items-center gap-2">
+            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={(t.warehouse as any).search} className="max-w-md" />
+            <Select value={locFilter} onValueChange={setLocFilter}>
+              <SelectTrigger className="w-[200px]"><SelectValue placeholder="Joylashuv" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Barcha joylashuvlar</SelectItem>
+                {Array.from(new Set([...["Oshxona", "Sklad", "Office", "Zavod"], ...locations.map(l => l.name)])).map((n) => (
+                  <SelectItem key={n} value={n}>{n}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <Card><CardContent className="p-0">
             <div className="border rounded-md overflow-x-auto">
               <Table>
@@ -1532,6 +1574,7 @@ export default function WarehousePage() {
                     const q = search.trim().toLowerCase();
                     let rows = productGroups
                       .filter(g => stockFilter === "all" ? true : g.status === stockFilter)
+                      .filter(g => locFilter === "all" || g.batches.some((p: any) => (prodLocations[p.id] ?? []).includes(locFilter)))
                       .filter(g => !q || g.batches.some((p: any) =>
                         [p.name, p.unit, p.source, p.phone].some((v: any) => (v ?? "").toString().toLowerCase().includes(q))
                       ))
@@ -1541,7 +1584,7 @@ export default function WarehousePage() {
                         const maxP = prices.length ? Math.max(...prices) : 0;
                         return { ...g, minP, maxP };
                       });
-                    if (rows.length === 0) return <TableRow><TableCell colSpan={canManage ? 7 : 6} className="text-center text-muted-foreground py-8">{q || stockFilter !== "all" ? (t.warehouse as any).noResults ?? "Natija topilmadi" : t.common.noRecords}</TableCell></TableRow>;
+                    if (rows.length === 0) return <TableRow><TableCell colSpan={canManage ? 7 : 6} className="text-center text-muted-foreground py-8">{q || stockFilter !== "all" || locFilter !== "all" ? (t.warehouse as any).noResults ?? "Natija topilmadi" : t.common.noRecords}</TableCell></TableRow>;
                     return rows.map((r, i) => {
                       const meta = stockStatusMeta[r.status];
                       return (
