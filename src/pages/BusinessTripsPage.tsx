@@ -447,9 +447,15 @@ export default function BusinessTripsPage() {
                           : "bg-status-green/15 text-status-green border-status-green/30"}>
                           {t.status === "closed" ? "Yakunlangan" : "Faol"}
                         </Badge>
-                      </TableCell>
-                    </TableRow>
-                  );
+                       </TableCell>
+                       {canManage && (
+                         <TableCell className="whitespace-nowrap text-right" onClick={(e) => e.stopPropagation()}>
+                           <Button variant="ghost" size="icon" onClick={() => openEditTrip(t)}><Pencil className="h-4 w-4" /></Button>
+                           <Button variant="ghost" size="icon" onClick={() => setDelTrip(t)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                         </TableCell>
+                       )}
+                     </TableRow>
+                   );
                 })}
               </TableBody>
             </Table>
