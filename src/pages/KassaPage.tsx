@@ -438,11 +438,74 @@ export default function KassaPage() {
   };
 
 
+  // Qarz bo'yicha to'langan summani real chiqimlardan qayta hisoblash.
+  const recalcDebt = async (debtId: string) => {
+    if (!debtId) return;
+    const { data: rows } = await (supabase.from as any)("cash_expenses").select("amount").eq("debt_id", debtId);
+    const paid = ((rows ?? []) as any[]).reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+    const d = debts.find((x) => x.id === debtId);
+    const total = Number(d?.amount) || 0;
+    await (supabase.from as any)("debts")
+      .update({ paid_amount: paid, status: total > 0 && paid >= total ? "paid" : "open" })
+      .eq("id", debtId);
+    loadDebts();
+  };
+
+  const saveDebt = async () => {
+    if (!debtForm.counterparty.trim() || !debtForm.purpose.trim() || !debtForm.amount) {
+      toast.error(k.fillFields ?? "Maydonlarni to'ldiring"); return;
+    }
+    const payload: any = {
+      counterparty: debtForm.counterparty.trim(),
+      purpose: debtForm.purpose.trim(),
+      amount: Number(debtForm.amount) || 0,
+      currency: debtForm.currency,
+      due_date: debtForm.due_date || null,
+      comment: debtForm.comment.trim() || null,
+    };
+    if (debtEditId) {
+      const { error } = await (supabase.from as any)("debts").update(payload).eq("id", debtEditId);
+      if (error) { toast.error(error.message); return; }
+    } else {
+      const { error } = await (supabase.from as any)("debts").insert({ ...payload, created_by: user?.id });
+      if (error) { toast.error(error.message); return; }
+    }
+    await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: debtEditId ? "kassa.debt.update" : "kassa.debt.create", entity: "debts", details: `${payload.counterparty} · ${payload.amount} ${payload.currency}` });
+    toast.success(k.saved ?? "Saqlandi");
+    setDebtOpen(false); setDebtEditId(null);
+    setDebtForm({ counterparty: "", purpose: "", amount: 0, currency: "UZS", due_date: "", comment: "" });
+    loadDebts();
+  };
+
+  const removeDebt = async (d: any) => {
+    const { error } = await (supabase.from as any)("debts").delete().eq("id", d.id);
+    if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: "kassa.debt.delete", entity: "debts", details: `${d.counterparty} · ${d.amount} ${d.currency}` });
+    setDebtDelete(null);
+    toast.success(k.saved ?? "Saqlandi");
+    load();
+  };
+
+  // Qarz bo'yicha to'lov — chiqim formasini tayyor holda ochadi.
+  const payDebt = (d: any) => {
+    const left = Math.max(0, (Number(d.amount) || 0) - (Number(d.paid_amount) || 0));
+    setExpEditId(null); setExpOrig(null);
+    setExpForm({
+      amount: left, reason: "Qarz uchun", recipient_id: "", recipient_manual: "",
+      comment: `${d.counterparty} — ${d.purpose}`, currency: d.currency ?? "UZS", exchange_rate: 1,
+      payment_type: "cash", salary_kind: "", is_supply: false, debt_id: d.id,
+    });
+    setTab("expense");
+    setOpenExp(true);
+  };
+
   const saveExpense = async () => {
     if (!expForm.amount || !expForm.reason.trim()) { toast.error(k.fillFields ?? "Maydonlarni to'ldiring"); return; }
     if (expForm.reason.trim().toLowerCase() === "prochi" && !expForm.comment.trim()) {
       toast.error("Prochi chiqimi uchun izoh kiritilishi shart"); return;
     }
+    const isDebtPay = expForm.reason.trim().toLowerCase() === "qarz uchun";
+    if (isDebtPay && !expForm.debt_id) { toast.error("Qarzni tanlang"); return; }
     if (!ensureOnline((m) => toast.error(m))) return;
     if (expForm.currency !== "UZS" && !(expRate > 0)) {
       toast.error(`${expForm.currency} kursi mavjud emas — avval ${expForm.currency} kirimini kurs bilan kiriting`); return;
@@ -475,6 +538,7 @@ export default function KassaPage() {
       salary_kind: recipientMode === "employee" && expForm.salary_kind ? expForm.salary_kind : null,
       // Ta'minot bo'limiga ajratilgan pul — Ta'minot moliya sahifasida kirim sifatida ko'rinadi.
       purpose: expForm.reason.trim().toLowerCase() === "ta'minot" || expForm.is_supply ? "supply" : null,
+      debt_id: isDebtPay ? expForm.debt_id : null,
     };
     if (expEditId) {
       const { error } = await supabase.from("cash_expenses").update(payload).eq("id", expEditId);
@@ -493,6 +557,10 @@ export default function KassaPage() {
         recipient_role: ["cashier", "manager"],
         sender_id: user?.id, sender_name: actorName,
       });
+    }
+    if (payload.debt_id || expOrig?.debt_id) {
+      await recalcDebt(payload.debt_id || expOrig?.debt_id);
+      if (expOrig?.debt_id && payload.debt_id && expOrig.debt_id !== payload.debt_id) await recalcDebt(expOrig.debt_id);
     }
     toast.success(k.saved ?? "Saqlandi");
     setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash", salary_kind: "", is_supply: false, debt_id: "" });
@@ -516,6 +584,7 @@ export default function KassaPage() {
       payment_type: normalizePT(e.payment_type),
       salary_kind: (e.salary_kind ?? "") as any,
       is_supply: e.purpose === "supply",
+      debt_id: e.debt_id ?? "",
     });
     setRecipientMode(e.recipient_id ? "employee" : "manual");
     setOpenExp(true);
