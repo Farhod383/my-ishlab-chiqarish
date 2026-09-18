@@ -41,7 +41,6 @@ export function AppSidebar() {
     { title: t.nav.defects, url: "/defects", icon: AlertOctagon },
     { title: t.nav.hr, url: "/hr", icon: Users, roles: ["hr", "admin", "cashier"] },
     { title: (t.nav as any).faceId ?? "Face_id (Davomat)", url: "/face-id", icon: ScanFace, roles: ["hr", "admin"] },
-    { title: "Kassa", url: "/kassa", icon: Wallet, roles: ["cashier", "admin"] },
     { title: "Kamandirovka", url: "/trips", icon: Plane },
     { title: t.nav.chat, url: "/chat", icon: MessageSquare },
     { title: t.nav.reports, url: "/reports", icon: FileBarChart, roles: ["admin"] },
