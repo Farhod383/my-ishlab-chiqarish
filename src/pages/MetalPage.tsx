@@ -52,6 +52,9 @@ export default function MetalPage() {
   const { user, hasRole } = useAuth();
   const { t: tr } = useI18n();
   const tm = tr.metal;
+  const unitLabel = (u: string) => (tm.units as Record<string, string>)[u] ?? u;
+  const prioLabel = (v: string) =>
+    v === "red" ? tm.prioRed : v === "yellow" ? tm.prioYellow : tm.prioGreen;
   const canConsume = hasRole(["admin", "engineer"]);
   const canNorm = hasRole(["admin", "engineer", "warehouse"]);
   const canIntake = hasRole(["admin", "engineer", "warehouse"]);
