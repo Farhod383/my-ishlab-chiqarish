@@ -422,10 +422,10 @@ export default function BusinessTripsPage() {
               </TableHeader>
               <TableBody>
                 {loading && (
-                  <TableRow><TableCell colSpan={9} className="py-8 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></TableCell></TableRow>
+                  <TableRow><TableCell colSpan={canManage ? 10 : 9} className="py-8 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></TableCell></TableRow>
                 )}
                 {!loading && filtered.length === 0 && (
-                  <TableRow><TableCell colSpan={9} className="py-8 text-center text-muted-foreground">Kamandirovka topilmadi</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={canManage ? 10 : 9} className="py-8 text-center text-muted-foreground">Kamandirovka topilmadi</TableCell></TableRow>
                 )}
                 {filtered.map((t, i) => {
                   const spent = spentOf(t.id);
