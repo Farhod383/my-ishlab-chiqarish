@@ -417,6 +417,7 @@ export default function BusinessTripsPage() {
                   <TableHead className="text-right">Sarflangan</TableHead>
                   <TableHead className="text-right">Qoldiq</TableHead>
                   <TableHead>Holat</TableHead>
+                  {canManage && <TableHead className="text-right">Amallar</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
