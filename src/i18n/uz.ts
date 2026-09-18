@@ -389,6 +389,7 @@ export const uz = {
     okConsume: "Sarflandi", errAllFields: "Barcha maydonlarni to'ldiring", okNorm: "Norma saqlandi",
     units: { dona: "dona", kg: "kg", tonna: "tonna", metr: "metr", litr: "litr", rulon: "rulon", komplekt: "komplekt" },
     sourceLine: "Manba", phoneLine: "Tel", priceLine: "narxi", priorityLine: "Muhimlik",
+    kgShort: "kg", tShort: "t",
     prioGreen: "Yashil — kerak bo'lganda", prioYellow: "Sariq — o'rtacha", prioRed: "Qizil — doimo kerak",
   },
 };
@@ -689,6 +690,7 @@ export const ru: Translations = {
     okConsume: "Израсходовано", errAllFields: "Заполните все поля", okNorm: "Норма сохранена",
     units: { dona: "шт", kg: "кг", tonna: "тонна", metr: "метр", litr: "литр", rulon: "рулон", komplekt: "комплект" },
     sourceLine: "Источник", phoneLine: "Тел", priceLine: "цена", priorityLine: "Важность",
+    kgShort: "кг", tShort: "т",
     prioGreen: "Зелёный — по необходимости", prioYellow: "Жёлтый — средний", prioRed: "Красный — всегда нужен",
   },
 };
@@ -987,6 +989,7 @@ export const uzc: Translations = {
     okConsume: "Сарфланди", errAllFields: "Барча майдонларни тўлдиринг", okNorm: "Норма сақланди",
     units: { dona: "дона", kg: "кг", tonna: "тонна", metr: "метр", litr: "литр", rulon: "рулон", komplekt: "комплект" },
     sourceLine: "Манба", phoneLine: "Тел", priceLine: "нархи", priorityLine: "Муҳимлик",
+    kgShort: "кг", tShort: "т",
     prioGreen: "Яшил — керак бўлганда", prioYellow: "Сариқ — ўртача", prioRed: "Қизил — доимо керак",
   },
 };

@@ -40,8 +40,8 @@ interface MoveRow {
 interface OrderLite { id: string; order_number: string; product_name: string }
 
 const n = (v: any) => Number(v ?? 0);
-const fmtKg = (v: number) => `${n(v).toLocaleString("ru-RU", { maximumFractionDigits: 2 })} kg`;
-const fmtT = (v: number) => `${(n(v) / 1000).toLocaleString("ru-RU", { maximumFractionDigits: 4 })} t`;
+const fmtKgU = (v: number, u = "kg") => `${n(v).toLocaleString("ru-RU", { maximumFractionDigits: 2 })} ${u}`;
+const fmtTU = (v: number, u = "t") => `${(n(v) / 1000).toLocaleString("ru-RU", { maximumFractionDigits: 4 })} ${u}`;
 const sizeLabel = (m: { length_mm?: number | null; width_mm?: number | null }) =>
   m.width_mm && m.length_mm ? `${n(m.width_mm)}×${n(m.length_mm)} mm` : "—";
 const norm3 = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
@@ -55,6 +55,8 @@ export default function MetalPage() {
   const unitLabel = (u: string) => (tm.units as Record<string, string>)[u] ?? u;
   const prioLabel = (v: string) =>
     v === "red" ? tm.prioRed : v === "yellow" ? tm.prioYellow : tm.prioGreen;
+  const fmtKg = (v: number) => fmtKgU(v, tm.kgShort);
+  const fmtT = (v: number) => fmtTU(v, tm.tShort);
   const canConsume = hasRole(["admin", "engineer"]);
   const canNorm = hasRole(["admin", "engineer", "warehouse"]);
   const canIntake = hasRole(["admin", "engineer", "warehouse"]);
