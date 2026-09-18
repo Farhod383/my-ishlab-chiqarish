@@ -159,24 +159,40 @@ export default function SupplyFinancePage() {
         Faqat kuzatuv sahifasi. Kirim — Kassadan Ta'minotga ajratilgan pul, chiqim — Skladga kirim qilingan tovarlar qiymati.
       </p>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        {PT_KEYS.map((pt) => (
-          <Card key={pt}><CardContent className="p-4 space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium"><Wallet className="h-4 w-4" /> {PT_LABEL[pt]}</div>
-            {CUR_KEYS.map((c) => {
-              const bal = buckets[pt][c].in - buckets[pt][c].out;
-              return (
-                <div key={c} className="flex items-baseline justify-between">
-                  <span className="text-xs text-muted-foreground">{c === "UZS" ? "UZS (so'm)" : "USD (dollar)"}</span>
-                  <span className={`text-lg font-bold font-mono ${bal < 0 ? "text-status-red" : ""}`}>{fmtMoney(bal, c)}</span>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {PT_KEYS.flatMap((pt) => CUR_KEYS.map((currency) => {
+          const totals = buckets[pt][currency];
+          const balance = totals.in - totals.out;
+          return (
+            <Card key={`${pt}-${currency}`} className="overflow-hidden border-l-4 border-l-primary bg-primary/5">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2 font-medium">
+                    <Wallet className="h-4 w-4 shrink-0 text-primary" />
+                    <span className="truncate">{PT_LABEL[pt]}</span>
+                  </div>
+                  <Badge variant="outline">{currency}</Badge>
                 </div>
-              );
-            })}
-            <div className="text-[11px] text-muted-foreground pt-1 border-t">
-              Kirim: {fmtMoney(buckets[pt].UZS.in, "UZS")} · {fmtMoney(buckets[pt].USD.in, "USD")} | Chiqim: {fmtMoney(buckets[pt].UZS.out, "UZS")} · {fmtMoney(buckets[pt].USD.out, "USD")}
-            </div>
-          </CardContent></Card>
-        ))}
+                <div>
+                  <div className="text-xs text-muted-foreground">Hozirgi balans</div>
+                  <div className={`mt-1 font-mono text-xl font-bold ${balance < 0 ? "text-status-red" : "text-foreground"}`}>
+                    {fmtMoney(balance, currency)}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 border-t pt-3 text-sm">
+                  <div className="rounded-md border border-status-green/30 bg-status-green/10 p-2">
+                    <div className="flex items-center gap-1 text-xs text-status-green"><ArrowDownCircle className="h-3.5 w-3.5" /> Kirim</div>
+                    <div className="mt-1 font-mono font-semibold text-status-green">+{fmtMoney(totals.in, currency)}</div>
+                  </div>
+                  <div className="rounded-md border border-status-red/30 bg-status-red/10 p-2">
+                    <div className="flex items-center gap-1 text-xs text-status-red"><ArrowUpCircle className="h-3.5 w-3.5" /> Chiqim</div>
+                    <div className="mt-1 font-mono font-semibold text-status-red">−{fmtMoney(totals.out, currency)}</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        }))}
       </div>
 
       <Tabs defaultValue="in">
