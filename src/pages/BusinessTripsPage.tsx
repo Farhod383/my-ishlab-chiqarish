@@ -194,6 +194,109 @@ export default function BusinessTripsPage() {
     setAddOpen(false); resetForm(); load();
   };
 
+  const openEditTrip = (t: Trip) => {
+    setEditId(t.id);
+    setFEmployeeId(t.employee_id ?? "");
+    setFUserId(t.assignee_user_id ?? "");
+    setFDest(t.destination ?? "");
+    setFPurpose(t.purpose ?? "");
+    setFStart(t.start_date ?? new Date().toISOString().slice(0, 10));
+    setFEnd(t.end_date ?? "");
+    setFKm(Number(t.distance_km) || 0);
+    setFAmount(String(t.given_amount ?? ""));
+    setFCurrency(t.currency ?? "UZS");
+    setFComment(t.comment ?? "");
+    setFFromKassa(!!t.cash_expense_id);
+    setAddOpen(true);
+  };
+
+  const saveTripEdit = async () => {
+    const trip = trips.find((t) => t.id === editId);
+    if (!trip) return;
+    const emp = employees.find((e) => e.id === fEmployeeId);
+    if (!emp) { toast.error("Xodim tanlanishi shart"); return; }
+    if (!fDest.trim()) { toast.error("Manzil (qayerga) kiritilishi shart"); return; }
+    const givenAmount = Number(fAmount);
+    if (!Number.isFinite(givenAmount) || givenAmount < 0) { toast.error("Beriladigan summani to'g'ri kiriting"); return; }
+    setSaving(true);
+
+    let cashExpenseId: string | null = trip.cash_expense_id ?? null;
+    const cashPayload = {
+      amount: givenAmount,
+      reason: `Kamandirovka — ${fDest.trim()}`,
+      recipient_id: emp.id,
+      recipient_name: emp.full_name,
+      currency: fCurrency,
+      total_uzs: fCurrency === "UZS" ? givenAmount : 0,
+      comment: fPurpose.trim() || null,
+    };
+    if (fFromKassa && givenAmount > 0) {
+      if (cashExpenseId) {
+        const { error } = await supabase.from("cash_expenses").update(cashPayload as any).eq("id", cashExpenseId);
+        if (error) { setSaving(false); toast.error(`Kassa: ${error.message}`); return; }
+      } else {
+        const { data: ce, error } = await supabase.from("cash_expenses").insert({
+          ...cashPayload, exchange_rate: 1, payment_type: "cash", created_by: user?.id ?? null,
+        } as any).select("id").single();
+        if (error) { setSaving(false); toast.error(`Kassa: ${error.message}`); return; }
+        cashExpenseId = (ce as any)?.id ?? null;
+      }
+    } else if (cashExpenseId) {
+      const { error } = await supabase.from("cash_expenses").delete().eq("id", cashExpenseId);
+      if (error) { setSaving(false); toast.error(`Kassa: ${error.message}`); return; }
+      cashExpenseId = null;
+    }
+
+    const { error } = await supabase.from("business_trips").update({
+      employee_id: emp.id,
+      employee_name: emp.full_name,
+      assignee_user_id: fUserId || null,
+      destination: fDest.trim(),
+      purpose: fPurpose.trim() || null,
+      start_date: fStart,
+      end_date: fEnd || null,
+      distance_km: fKm || 0,
+      given_amount: givenAmount,
+      currency: fCurrency,
+      comment: fComment.trim() || null,
+      cash_expense_id: cashExpenseId,
+    } as any).eq("id", trip.id);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: "Kamandirovka tahrirlandi", entity: "business_trip",
+      details: `${emp.full_name} — ${fDest.trim()} · ${givenAmount} ${fCurrency}`,
+    });
+    toast.success("Saqlandi");
+    setAddOpen(false); setEditId(null); resetForm(); load();
+  };
+
+  const deleteTrip = async () => {
+    const trip = delTrip;
+    if (!trip) return;
+    setDeleting(true);
+    const { error: exErr } = await supabase.from("business_trip_expenses").delete().eq("trip_id", trip.id);
+    if (exErr) { setDeleting(false); toast.error(exErr.message); return; }
+    if (trip.cash_expense_id) {
+      const { error: cErr } = await supabase.from("cash_expenses").delete().eq("id", trip.cash_expense_id);
+      if (cErr) { setDeleting(false); toast.error(`Kassa: ${cErr.message}`); return; }
+    }
+    const { error } = await supabase.from("business_trips").delete().eq("id", trip.id);
+    setDeleting(false);
+    if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: "Kamandirovka o'chirildi", entity: "business_trip",
+      details: `${trip.employee_name} — ${trip.destination} · ${trip.given_amount} ${trip.currency}`,
+    });
+    toast.success("Kamandirovka o'chirildi");
+    setDelTrip(null);
+    if (detailId === trip.id) setDetailId(null);
+    load();
+  };
+
+
   const detail = trips.find((t) => t.id === detailId) ?? null;
   const detailExpenses = detailId ? expenses[detailId] ?? [] : [];
   const detailSpent = detailId ? spentOf(detailId) : 0;
