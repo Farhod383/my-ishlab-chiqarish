@@ -76,7 +76,13 @@ export default function KassaPage() {
   const [incomes, setIncomes] = useState<any[]>([]);
   const { employees, allEmployees } = useEmployees({ activeOnly: true });
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"income" | "expense" | "report" | "supply">("income");
+  const [tab, setTab] = useState<"income" | "expense" | "report" | "debt" | "supply">("income");
+  // Qarz bo'limi
+  const [debts, setDebts] = useState<any[]>([]);
+  const [debtOpen, setDebtOpen] = useState(false);
+  const [debtEditId, setDebtEditId] = useState<string | null>(null);
+  const [debtForm, setDebtForm] = useState({ counterparty: "", purpose: "", amount: 0, currency: "UZS", due_date: "", comment: "" });
+  const [debtDelete, setDebtDelete] = useState<any>(null);
   const [reasons, setReasons] = useState<string[]>(DEFAULT_REASONS);
   const [newReasonOpen, setNewReasonOpen] = useState(false);
   const [newReason, setNewReason] = useState("");
@@ -102,7 +108,7 @@ export default function KassaPage() {
   const [openExp, setOpenExp] = useState(false);
   const [expEditId, setExpEditId] = useState<string | null>(null);
   const [expOrig, setExpOrig] = useState<any>(null);
-  const [expForm, setExpForm] = useState({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash" as PaymentType, salary_kind: "" as string, is_supply: false });
+  const [expForm, setExpForm] = useState({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash" as PaymentType, salary_kind: "" as string, is_supply: false, debt_id: "" });
   const [recipientMode, setRecipientMode] = useState<"employee" | "manual">("employee");
   const [empDetailId, setEmpDetailId] = useState<string | null>(null);
 
@@ -139,6 +145,11 @@ export default function KassaPage() {
     if (list.length) setReasons(list);
   };
 
+  const loadDebts = async () => {
+    const { data } = await (supabase.from as any)("debts").select("*").order("created_at", { ascending: false });
+    setDebts((data ?? []) as any[]);
+  };
+
   const load = async () => {
     setLoading(true);
     const [{ data: exp }, { data: inc }] = await Promise.all([
@@ -147,6 +158,7 @@ export default function KassaPage() {
     ]);
     setExpenses(exp ?? []);
     setIncomes(inc ?? []);
+    loadDebts();
     setLoading(false);
   };
   useEffect(() => {
@@ -426,11 +438,74 @@ export default function KassaPage() {
   };
 
 
+  // Qarz bo'yicha to'langan summani real chiqimlardan qayta hisoblash.
+  const recalcDebt = async (debtId: string) => {
+    if (!debtId) return;
+    const { data: rows } = await (supabase.from as any)("cash_expenses").select("amount").eq("debt_id", debtId);
+    const paid = ((rows ?? []) as any[]).reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+    const d = debts.find((x) => x.id === debtId);
+    const total = Number(d?.amount) || 0;
+    await (supabase.from as any)("debts")
+      .update({ paid_amount: paid, status: total > 0 && paid >= total ? "paid" : "open" })
+      .eq("id", debtId);
+    loadDebts();
+  };
+
+  const saveDebt = async () => {
+    if (!debtForm.counterparty.trim() || !debtForm.purpose.trim() || !debtForm.amount) {
+      toast.error(k.fillFields ?? "Maydonlarni to'ldiring"); return;
+    }
+    const payload: any = {
+      counterparty: debtForm.counterparty.trim(),
+      purpose: debtForm.purpose.trim(),
+      amount: Number(debtForm.amount) || 0,
+      currency: debtForm.currency,
+      due_date: debtForm.due_date || null,
+      comment: debtForm.comment.trim() || null,
+    };
+    if (debtEditId) {
+      const { error } = await (supabase.from as any)("debts").update(payload).eq("id", debtEditId);
+      if (error) { toast.error(error.message); return; }
+    } else {
+      const { error } = await (supabase.from as any)("debts").insert({ ...payload, created_by: user?.id });
+      if (error) { toast.error(error.message); return; }
+    }
+    await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: debtEditId ? "kassa.debt.update" : "kassa.debt.create", entity: "debts", details: `${payload.counterparty} · ${payload.amount} ${payload.currency}` });
+    toast.success(k.saved ?? "Saqlandi");
+    setDebtOpen(false); setDebtEditId(null);
+    setDebtForm({ counterparty: "", purpose: "", amount: 0, currency: "UZS", due_date: "", comment: "" });
+    loadDebts();
+  };
+
+  const removeDebt = async (d: any) => {
+    const { error } = await (supabase.from as any)("debts").delete().eq("id", d.id);
+    if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: "kassa.debt.delete", entity: "debts", details: `${d.counterparty} · ${d.amount} ${d.currency}` });
+    setDebtDelete(null);
+    toast.success(k.saved ?? "Saqlandi");
+    load();
+  };
+
+  // Qarz bo'yicha to'lov — chiqim formasini tayyor holda ochadi.
+  const payDebt = (d: any) => {
+    const left = Math.max(0, (Number(d.amount) || 0) - (Number(d.paid_amount) || 0));
+    setExpEditId(null); setExpOrig(null);
+    setExpForm({
+      amount: left, reason: "Qarz uchun", recipient_id: "", recipient_manual: "",
+      comment: `${d.counterparty} — ${d.purpose}`, currency: d.currency ?? "UZS", exchange_rate: 1,
+      payment_type: "cash", salary_kind: "", is_supply: false, debt_id: d.id,
+    });
+    setTab("expense");
+    setOpenExp(true);
+  };
+
   const saveExpense = async () => {
     if (!expForm.amount || !expForm.reason.trim()) { toast.error(k.fillFields ?? "Maydonlarni to'ldiring"); return; }
     if (expForm.reason.trim().toLowerCase() === "prochi" && !expForm.comment.trim()) {
       toast.error("Prochi chiqimi uchun izoh kiritilishi shart"); return;
     }
+    const isDebtPay = expForm.reason.trim().toLowerCase() === "qarz uchun";
+    if (isDebtPay && !expForm.debt_id) { toast.error("Qarzni tanlang"); return; }
     if (!ensureOnline((m) => toast.error(m))) return;
     if (expForm.currency !== "UZS" && !(expRate > 0)) {
       toast.error(`${expForm.currency} kursi mavjud emas — avval ${expForm.currency} kirimini kurs bilan kiriting`); return;
@@ -463,6 +538,7 @@ export default function KassaPage() {
       salary_kind: recipientMode === "employee" && expForm.salary_kind ? expForm.salary_kind : null,
       // Ta'minot bo'limiga ajratilgan pul — Ta'minot moliya sahifasida kirim sifatida ko'rinadi.
       purpose: expForm.reason.trim().toLowerCase() === "ta'minot" || expForm.is_supply ? "supply" : null,
+      debt_id: isDebtPay ? expForm.debt_id : null,
     };
     if (expEditId) {
       const { error } = await supabase.from("cash_expenses").update(payload).eq("id", expEditId);
@@ -482,8 +558,12 @@ export default function KassaPage() {
         sender_id: user?.id, sender_name: actorName,
       });
     }
+    if (payload.debt_id || expOrig?.debt_id) {
+      await recalcDebt(payload.debt_id || expOrig?.debt_id);
+      if (expOrig?.debt_id && payload.debt_id && expOrig.debt_id !== payload.debt_id) await recalcDebt(expOrig.debt_id);
+    }
     toast.success(k.saved ?? "Saqlandi");
-    setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash", salary_kind: "", is_supply: false });
+    setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash", salary_kind: "", is_supply: false, debt_id: "" });
     setRecipientMode("employee");
     setExpEditId(null); setExpOrig(null);
     setOpenExp(false);
@@ -504,6 +584,7 @@ export default function KassaPage() {
       payment_type: normalizePT(e.payment_type),
       salary_kind: (e.salary_kind ?? "") as any,
       is_supply: e.purpose === "supply",
+      debt_id: e.debt_id ?? "",
     });
     setRecipientMode(e.recipient_id ? "employee" : "manual");
     setOpenExp(true);
@@ -719,6 +800,7 @@ export default function KassaPage() {
           <TabsTrigger value="income"><ArrowDownCircle className="h-4 w-4 mr-1 text-status-green" />{k.income ?? "Kirim"}</TabsTrigger>
           <TabsTrigger value="expense"><ArrowUpCircle className="h-4 w-4 mr-1 text-status-red" />{k.expense ?? "Chiqim"}</TabsTrigger>
           <TabsTrigger value="report"><FileBarChart className="h-4 w-4 mr-1" />Hisobot</TabsTrigger>
+          <TabsTrigger value="debt"><Wallet className="h-4 w-4 mr-1" />Qarz</TabsTrigger>
           <TabsTrigger value="supply"><Truck className="h-4 w-4 mr-1" />Ta'minot</TabsTrigger>
         </TabsList>
 
@@ -790,7 +872,7 @@ export default function KassaPage() {
 
         <TabsContent value="expense" className="space-y-3">
           {canManage && (
-            <Dialog open={openExp} onOpenChange={(o) => { setOpenExp(o); if (!o) { setExpEditId(null); setExpOrig(null); setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash", salary_kind: "", is_supply: false }); setRecipientMode("employee"); } }}>
+            <Dialog open={openExp} onOpenChange={(o) => { setOpenExp(o); if (!o) { setExpEditId(null); setExpOrig(null); setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash", salary_kind: "", is_supply: false, debt_id: "" }); setRecipientMode("employee"); } }}>
               <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />Chiqim qilish</Button></DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>{expEditId ? "Chiqimni tahrirlash" : "Chiqim qilish"}</DialogTitle></DialogHeader>
@@ -821,6 +903,27 @@ export default function KassaPage() {
                         placeholder="Prochi chiqimi izohini kiriting"
                         required
                       />
+                    </div>
+                  )}
+                  {expForm.reason.trim().toLowerCase() === "qarz uchun" && (
+                    <div>
+                      <Label>Qarz *</Label>
+                      <Select value={expForm.debt_id || undefined} onValueChange={(v) => {
+                        const d = debts.find((x) => x.id === v);
+                        setExpForm({ ...expForm, debt_id: v, currency: d?.currency ?? expForm.currency });
+                      }}>
+                        <SelectTrigger><SelectValue placeholder="Qarzni tanlang" /></SelectTrigger>
+                        <SelectContent>
+                          {debts.filter((d) => d.status !== "paid").map((d) => (
+                            <SelectItem key={d.id} value={d.id}>
+                              {d.counterparty} — {d.purpose} ({fmtCash(Math.max(0, Number(d.amount) - Number(d.paid_amount || 0)), d.currency)} {d.currency})
+                            </SelectItem>
+                          ))}
+                          {debts.filter((d) => d.status !== "paid").length === 0 && (
+                            <SelectItem value="__none__" disabled>Ochiq qarz yo'q</SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
                     </div>
                   )}
                   <div>
@@ -993,6 +1096,94 @@ export default function KassaPage() {
               </div>
             </CardContent></Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="debt" className="space-y-3">
+          {canManage && (
+            <Dialog open={debtOpen} onOpenChange={(o) => { setDebtOpen(o); if (!o) { setDebtEditId(null); setDebtForm({ counterparty: "", purpose: "", amount: 0, currency: "UZS", due_date: "", comment: "" }); } }}>
+              <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />Qarz qo'shish</Button></DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>{debtEditId ? "Qarzni tahrirlash" : "Qarz qo'shish"}</DialogTitle></DialogHeader>
+                <div className="space-y-3">
+                  <div><Label>Kimdan (KM) *</Label><Input value={debtForm.counterparty} onChange={(e) => setDebtForm({ ...debtForm, counterparty: e.target.value })} placeholder="Masalan: KM" /></div>
+                  <div><Label>Nima uchun *</Label><Input value={debtForm.purpose} onChange={(e) => setDebtForm({ ...debtForm, purpose: e.target.value })} placeholder="Qarz sababi" /></div>
+                  <div><Label>{k.amount ?? "Summa"} *</Label><Input type="number" min={0} value={debtForm.amount || ""} onChange={(e) => setDebtForm({ ...debtForm, amount: Number(e.target.value) })} /></div>
+                  <div>
+                    <Label>{k.currency ?? "Valyuta"}</Label>
+                    <Select value={debtForm.currency} onValueChange={(v) => setDebtForm({ ...debtForm, currency: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{CURRENCIES.map((c) => <SelectItem key={c} value={c}>{CURRENCY_LABELS[c] ?? c}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label>Qachongacha</Label><Input type="date" value={debtForm.due_date} onChange={(e) => setDebtForm({ ...debtForm, due_date: e.target.value })} /></div>
+                  <div><Label>{k.comment ?? "Izoh"}</Label><Textarea value={debtForm.comment} onChange={(e) => setDebtForm({ ...debtForm, comment: e.target.value })} /></div>
+                  <Button className="w-full" onClick={saveDebt}>{t.common.save}</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+
+          <Card><CardContent className="p-0">
+            <div className="border rounded-md overflow-x-auto">
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead>Kimdan</TableHead>
+                  <TableHead>Nima uchun</TableHead>
+                  <TableHead className="text-right">{k.amount ?? "Summa"}</TableHead>
+                  <TableHead className="text-right">To'langan</TableHead>
+                  <TableHead className="text-right">Qoldiq</TableHead>
+                  <TableHead>Qachongacha</TableHead>
+                  <TableHead>Holati</TableHead>
+                  {canManage && <TableHead></TableHead>}
+                </TableRow></TableHeader>
+                <TableBody>
+                  {debts.map((d) => {
+                    const paid = Number(d.paid_amount) || 0;
+                    const left = Math.max(0, (Number(d.amount) || 0) - paid);
+                    const overdue = d.status !== "paid" && d.due_date && new Date(d.due_date) < new Date();
+                    return (
+                      <TableRow key={d.id}>
+                        <TableCell className="font-medium">{d.counterparty}</TableCell>
+                        <TableCell className="text-sm">{d.purpose}</TableCell>
+                        <TableCell className="text-right font-mono">{fmtCash(Number(d.amount), d.currency)} {d.currency}</TableCell>
+                        <TableCell className="text-right font-mono text-status-green">{fmtCash(paid, d.currency)}</TableCell>
+                        <TableCell className="text-right font-mono font-semibold text-status-red">{fmtCash(left, d.currency)}</TableCell>
+                        <TableCell className="text-sm whitespace-nowrap">{d.due_date ?? "—"}</TableCell>
+                        <TableCell>
+                          <Badge variant={d.status === "paid" ? "secondary" : overdue ? "destructive" : "outline"}>
+                            {d.status === "paid" ? "To'langan" : overdue ? "Muddati o'tgan" : "Ochiq"}
+                          </Badge>
+                        </TableCell>
+                        {canManage && (
+                          <TableCell className="whitespace-nowrap text-right">
+                            {d.status !== "paid" && <Button size="sm" variant="outline" className="mr-1" onClick={() => payDebt(d)}>To'lash</Button>}
+                            <Button size="sm" variant="ghost" onClick={() => { setDebtEditId(d.id); setDebtForm({ counterparty: d.counterparty, purpose: d.purpose, amount: Number(d.amount) || 0, currency: d.currency ?? "UZS", due_date: d.due_date ?? "", comment: d.comment ?? "" }); setDebtOpen(true); }}><Edit2 className="h-3 w-3" /></Button>
+                            <Button size="sm" variant="ghost" onClick={() => setDebtDelete(d)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    );
+                  })}
+                  {debts.length === 0 && <TableRow><TableCell colSpan={canManage ? 8 : 7} className="text-center text-muted-foreground py-8">Qarzlar yo'q</TableCell></TableRow>}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent></Card>
+
+          <AlertDialog open={!!debtDelete} onOpenChange={(o) => { if (!o) setDebtDelete(null); }}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Qarzni o'chirish</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {debtDelete ? `${debtDelete.counterparty} — ${debtDelete.purpose} (${fmtCash(Number(debtDelete.amount), debtDelete.currency)} ${debtDelete.currency}) o'chiriladi. To'langan chiqimlar tarixda qoladi.` : ""}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t.common.cancel ?? "Bekor qilish"}</AlertDialogCancel>
+                <AlertDialogAction onClick={() => debtDelete && removeDebt(debtDelete)}>{t.common.delete ?? "O'chirish"}</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </TabsContent>
 
         <TabsContent value="supply" className="space-y-3">
