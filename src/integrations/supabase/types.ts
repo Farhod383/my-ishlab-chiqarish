@@ -267,6 +267,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           currency: string
+          debt_id: string | null
           exchange_rate: number
           expense_date: string
           id: string
@@ -284,6 +285,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string
+          debt_id?: string | null
           exchange_rate?: number
           expense_date?: string
           id?: string
@@ -301,6 +303,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string
+          debt_id?: string | null
           exchange_rate?: number
           expense_date?: string
           id?: string
@@ -313,6 +316,13 @@ export type Database = {
           total_uzs?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "cash_expenses_debt_id_fkey"
+            columns: ["debt_id"]
+            isOneToOne: false
+            referencedRelation: "debts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "cash_expenses_recipient_id_fkey"
             columns: ["recipient_id"]
@@ -629,6 +639,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      debts: {
+        Row: {
+          amount: number
+          comment: string | null
+          counterparty: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          due_date: string | null
+          id: string
+          paid_amount: number
+          purpose: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          comment?: string | null
+          counterparty: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          due_date?: string | null
+          id?: string
+          paid_amount?: number
+          purpose: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          comment?: string | null
+          counterparty?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          due_date?: string | null
+          id?: string
+          paid_amount?: number
+          purpose?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       defects: {
         Row: {
