@@ -573,6 +573,22 @@ export default function KassaPage() {
     setOpenInc(true);
   };
 
+  const deleteIncome = async () => {
+    const row = incDelete;
+    if (!row) return;
+    const { error } = await (supabase.from as any)("cash_incomes").delete().eq("id", row.id);
+    if (error) { toast.error(error.message); setIncDelete(null); return; }
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: actorName,
+      action: "kassa.income.delete", entity: "cash_incomes",
+      details: `${row.amount} ${row.currency ?? "UZS"} · ${row.source ?? ""} · ${fmtDateTime24(row.income_date)}`,
+    });
+    toast.success("Kirim o'chirildi");
+    setIncDelete(null);
+    load();
+  };
+
+
   const renderCurrencyFields = (form: any, setForm: (v: any) => void) => (
     <div className="grid grid-cols-2 gap-3">
       <div>
