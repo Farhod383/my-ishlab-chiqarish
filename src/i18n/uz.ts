@@ -394,6 +394,8 @@ export const uz = {
     units: { dona: "dona", kg: "kg", tonna: "tonna", metr: "metr", litr: "litr", rulon: "rulon", komplekt: "komplekt" },
     sourceLine: "Manba", phoneLine: "Tel", priceLine: "narxi", priorityLine: "Muhimlik",
     kgShort: "kg", tShort: "t",
+    colActions: "Amallar", editTitle: "Metall yozuvini tahrirlash", okEdit: "O'zgarishlar saqlandi",
+    editQtyNote: "Miqdor o'zgarsa, farq avtomatik kirim/chiqim harakati sifatida yoziladi",
     prioGreen: "Yashil — kerak bo'lganda", prioYellow: "Sariq — o'rtacha", prioRed: "Qizil — doimo kerak",
   },
 };
@@ -699,6 +701,8 @@ export const ru: Translations = {
     units: { dona: "шт", kg: "кг", tonna: "тонна", metr: "метр", litr: "литр", rulon: "рулон", komplekt: "комплект" },
     sourceLine: "Источник", phoneLine: "Тел", priceLine: "цена", priorityLine: "Важность",
     kgShort: "кг", tShort: "т",
+    colActions: "Действия", editTitle: "Редактировать запись металла", okEdit: "Изменения сохранены",
+    editQtyNote: "При изменении количества разница автоматически записывается как приход/расход",
     prioGreen: "Зелёный — по необходимости", prioYellow: "Жёлтый — средний", prioRed: "Красный — всегда нужен",
   },
 };
@@ -1002,6 +1006,8 @@ export const uzc: Translations = {
     units: { dona: "дона", kg: "кг", tonna: "тонна", metr: "метр", litr: "литр", rulon: "рулон", komplekt: "комплект" },
     sourceLine: "Манба", phoneLine: "Тел", priceLine: "нархи", priorityLine: "Муҳимлик",
     kgShort: "кг", tShort: "т",
+    colActions: "Амаллар", editTitle: "Металл ёзувини таҳрирлаш", okEdit: "Ўзгаришлар сақланди",
+    editQtyNote: "Миқдор ўзгарса, фарқ автоматик кирим/чиқим ҳаракати сифатида ёзилади",
     prioGreen: "Яшил — керак бўлганда", prioYellow: "Сариқ — ўртача", prioRed: "Қизил — доимо керак",
   },
 };
