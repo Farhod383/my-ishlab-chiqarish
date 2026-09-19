@@ -1442,6 +1442,7 @@ export type Database = {
           read_at: string | null
           recipient_id: string | null
           recipient_role: string | null
+          recipient_roles: string[] | null
           sender_id: string | null
           sender_name: string | null
           title: string
@@ -1457,6 +1458,7 @@ export type Database = {
           read_at?: string | null
           recipient_id?: string | null
           recipient_role?: string | null
+          recipient_roles?: string[] | null
           sender_id?: string | null
           sender_name?: string | null
           title: string
@@ -1472,6 +1474,7 @@ export type Database = {
           read_at?: string | null
           recipient_id?: string | null
           recipient_role?: string | null
+          recipient_roles?: string[] | null
           sender_id?: string | null
           sender_name?: string | null
           title?: string

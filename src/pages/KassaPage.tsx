@@ -696,17 +696,17 @@ export default function KassaPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="sticky top-0 z-30 -mx-4 px-4 py-3 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b flex items-center justify-between flex-wrap gap-3 min-h-[4rem]">
         <div className="flex items-center gap-4 flex-wrap min-w-0">
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><Wallet className="h-6 w-6" />{k.title ?? "Kassa"}</h1>
           {/* Asosiy navigatsiya: Kassa | Ta'minot */}
-          <div className="inline-flex items-center rounded-lg border bg-muted p-1" role="tablist" aria-label="Kassa navigatsiya">
+          <div className="inline-flex shrink-0 items-center rounded-lg border bg-muted p-1" role="tablist" aria-label="Kassa navigatsiya">
             <button
               type="button"
               role="tab"
               aria-selected={tab !== "supply"}
               onClick={() => setTab("income")}
-              className={`flex items-center gap-1.5 rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${tab !== "supply" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              className={`flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${tab !== "supply" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
             >
               <Wallet className="h-4 w-4" />{k.title ?? "Kassa"}
             </button>
@@ -715,25 +715,25 @@ export default function KassaPage() {
               role="tab"
               aria-selected={tab === "supply"}
               onClick={() => setTab("supply")}
-              className={`flex items-center gap-1.5 rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${tab === "supply" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              className={`flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${tab === "supply" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
             >
               <Truck className="h-4 w-4" />Ta'minot
             </button>
           </div>
         </div>
         {/* Asosiy funksiyalar: Hisobot va Qarz */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0 ml-auto">
           <Button
             size="lg"
             onClick={() => setTab(tab === "report" ? "income" : "report")}
-            className={`bg-status-blue text-white hover:bg-status-blue/90 border border-status-blue/60 shadow-sm px-5 h-11 text-base font-semibold ${tab === "report" ? "ring-2 ring-status-blue ring-offset-2 ring-offset-background" : ""}`}
+            className={`bg-status-blue text-white hover:bg-status-blue/90 border border-status-blue/60 shadow-sm px-5 h-11 text-base font-semibold shrink-0 whitespace-nowrap ${tab === "report" ? "ring-2 ring-status-blue ring-offset-2 ring-offset-background" : ""}`}
           >
             <FileBarChart className="h-5 w-5 mr-2" />Hisobot
           </Button>
           <Button
             size="lg"
             onClick={() => setTab(tab === "debt" ? "income" : "debt")}
-            className={`bg-status-yellow text-foreground hover:bg-status-yellow/90 border border-status-yellow/60 shadow-sm px-5 h-11 text-base font-semibold ${tab === "debt" ? "ring-2 ring-status-yellow ring-offset-2 ring-offset-background" : ""}`}
+            className={`bg-status-yellow text-foreground hover:bg-status-yellow/90 border border-status-yellow/60 shadow-sm px-5 h-11 text-base font-semibold shrink-0 whitespace-nowrap ${tab === "debt" ? "ring-2 ring-status-yellow ring-offset-2 ring-offset-background" : ""}`}
           >
             <Wallet className="h-5 w-5 mr-2" />Qarz
           </Button>

@@ -14,6 +14,7 @@ export interface Notif {
   entity_id: string | null;
   recipient_id: string | null;
   recipient_role: string | null;
+  recipient_roles?: string[] | null;
   sender_name: string | null;
   read_at: string | null;
   created_at: string;
@@ -72,12 +73,15 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   const [loading, setLoading] = useState(false);
   const askedRef = useRef(false);
   const refreshTimerRef = useRef<number | null>(null);
+  /** Representative notification id → every duplicate row id of the same event. */
+  const groupsRef = useRef<Record<string, string[]>>({});
 
   const belongsToMe = useCallback(
     (n: Notif) => {
       if (seesAll) return true;
       if (n.recipient_id && n.recipient_id === user?.id) return true;
       if (n.recipient_role && myRoles.includes(n.recipient_role)) return true;
+      if (n.recipient_roles?.some((r) => myRoles.includes(r))) return true;
       return false;
     },
     [seesAll, user?.id, myRoles.join(",")],
@@ -119,7 +123,26 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       from += pageSize;
     }
 
-    if (!failed) setItems(loaded);
+    if (!failed) {
+      // Legacy rows fanned out one-per-role produce several identical entries for
+      // the same event. Show each event once, but remember every underlying id so
+      // marking it read clears the whole group (and it never flips back to unread).
+      const groups: Record<string, string[]> = {};
+      const byKey = new Map<string, Notif>();
+      for (const n of loaded) {
+        const key = [n.type, n.title, n.body ?? "", n.entity ?? "", n.entity_id ?? "", n.link ?? "", n.created_at].join("|");
+        const head = byKey.get(key);
+        if (!head) {
+          byKey.set(key, { ...n });
+          groups[n.id] = [n.id];
+        } else {
+          groups[head.id].push(n.id);
+          if (n.read_at && !head.read_at) head.read_at = n.read_at;
+        }
+      }
+      groupsRef.current = groups;
+      setItems(Array.from(byKey.values()));
+    }
     setLoading(false);
   }, [user?.id]);
 
@@ -149,6 +172,8 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         if (typeof Notification !== "undefined" && Notification.permission === "granted" && document.hidden) {
           try { new Notification(`MCITY ERP — ${n.title}`, { body: n.body ?? "", tag: n.id }); } catch {}
         }
+        // Badge must update without a page refresh even if the state row event is missed.
+        scheduleRefresh();
       })
       .subscribe();
 
@@ -164,8 +189,11 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         { event: "UPDATE", schema: "public", table: "notification_user_states", filter: `user_id=eq.${user.id}` },
         (payload) => {
           const state = payload.new as { notification_id: string; is_read: boolean; read_at: string | null };
-          setItems((prev) => prev.map((item) => item.id === state.notification_id
-            ? { ...item, read_at: state.is_read ? (state.read_at ?? new Date().toISOString()) : null }
+          if (!state.is_read) return; // never flip an already-read entry back to unread
+          const groups = groupsRef.current;
+          const headId = Object.keys(groups).find((id) => groups[id].includes(state.notification_id)) ?? state.notification_id;
+          setItems((prev) => prev.map((item) => item.id === headId && !item.read_at
+            ? { ...item, read_at: state.read_at ?? new Date().toISOString() }
             : item));
         },
       )
@@ -189,8 +217,10 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     if (!ids.length || !user) return;
     const now = new Date().toISOString();
     setItems((prev) => prev.map((x) => (ids.includes(x.id) && !x.read_at ? { ...x, read_at: now } : x)));
-    for (let start = 0; start < ids.length; start += 200) {
-      const batch = ids.slice(start, start + 200);
+    // Expand to every duplicate row of the same event so it stays read.
+    const all = Array.from(new Set(ids.flatMap((id) => groupsRef.current[id] ?? [id])));
+    for (let start = 0; start < all.length; start += 200) {
+      const batch = all.slice(start, start + 200);
       const { error } = await supabase
         .from("notification_user_states")
         .update({ is_read: true, read_at: now })
