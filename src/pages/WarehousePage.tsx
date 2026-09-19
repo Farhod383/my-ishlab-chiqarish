@@ -193,6 +193,24 @@ export default function WarehousePage() {
   const canManage = hasRole(["warehouse", "admin"]);
   const canImport = hasRole(["warehouse", "admin"]);
   const canOut = hasRole(["warehouse", "admin", "engineer"]);
+
+  // Chiqim dropdownlari uchun: bir xil nom + o'lchov birligidagi mahsulotlar bitta qatorga birlashtiriladi
+  // (DB ma'lumotlari o'zgarmaydi — faqat ko'rinish). Vakil sifatida eng katta qoldiqli yozuv olinadi.
+  const outProductOptions = useMemo(() => {
+    const groups = new Map<string, { id: string; name: string; unit: string; total: number; bestQty: number }>();
+    for (const p of products as any[]) {
+      const key = `${(p.name ?? "").trim().toLowerCase()}|${(p.unit ?? "").trim().toLowerCase()}`;
+      const qty = Number(p.stock_qty) || 0;
+      const g = groups.get(key);
+      if (!g) {
+        groups.set(key, { id: p.id, name: p.name, unit: p.unit ?? "", total: qty, bestQty: qty });
+      } else {
+        g.total += qty;
+        if (qty > g.bestQty) { g.id = p.id; g.bestQty = qty; g.name = p.name; }
+      }
+    }
+    return Array.from(groups.values()).map(g => ({ value: g.id, label: g.name, hint: `${g.total} ${g.unit}` }));
+  }, [products]);
   // Anyone authenticated can create a purchase request
   const canRequest = !!user;
   const userRoles = (roles as string[] | undefined) ?? [];
@@ -1072,7 +1090,7 @@ export default function WarehousePage() {
                         value={otherProduct}
                         onChange={setOtherProduct}
                         placeholder={t.supply.select}
-                        options={products.map(p => ({ value: p.id, label: p.name, hint: `${p.stock_qty} ${p.unit}` }))}
+                        options={outProductOptions}
                       />
                     </div>
                     <div><Label>{t.warehouse.qty}</Label><NumberInput min={0.1} step={0.1} value={otherQty} onChange={e => setOtherQty(Number(e.target.value))} /></div>
@@ -1100,7 +1118,7 @@ export default function WarehousePage() {
                         value={outProduct}
                         onChange={setOutProduct}
                         placeholder={t.supply.select}
-                        options={products.map(p => ({ value: p.id, label: p.name, hint: `${p.stock_qty} ${p.unit}` }))}
+                        options={outProductOptions}
                       />
                     </div>
                     <div><Label>{t.warehouse.forOrder}</Label>
