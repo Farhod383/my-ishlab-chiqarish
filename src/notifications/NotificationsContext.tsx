@@ -189,8 +189,11 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         { event: "UPDATE", schema: "public", table: "notification_user_states", filter: `user_id=eq.${user.id}` },
         (payload) => {
           const state = payload.new as { notification_id: string; is_read: boolean; read_at: string | null };
-          setItems((prev) => prev.map((item) => item.id === state.notification_id
-            ? { ...item, read_at: state.is_read ? (state.read_at ?? new Date().toISOString()) : null }
+          if (!state.is_read) return; // never flip an already-read entry back to unread
+          const groups = groupsRef.current;
+          const headId = Object.keys(groups).find((id) => groups[id].includes(state.notification_id)) ?? state.notification_id;
+          setItems((prev) => prev.map((item) => item.id === headId && !item.read_at
+            ? { ...item, read_at: state.read_at ?? new Date().toISOString() }
             : item));
         },
       )
