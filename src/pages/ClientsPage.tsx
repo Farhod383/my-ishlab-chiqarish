@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { Users, Plus, Loader2, Search, X } from "lucide-react";
+import { notify } from "@/lib/notify";
 
 export const CLIENT_TYPES = ["Mijoz", "Diler"];
 
@@ -174,6 +175,17 @@ export default function ClientsPage() {
     await supabase.from("entity_audit").insert({
       entity: "client", entity_id: data!.id, action: "Klient yaratildi",
       new_value: payload, actor_id: user?.id ?? null, actor_name: user?.email ?? null,
+    });
+    await notify({
+      type: "info",
+      title: `Yangi klient — ${name}`,
+      body: form.phone.trim() || form.contact_person.trim() || undefined,
+      link: `/clients/${data!.id}`,
+      entity: "client",
+      entity_id: data!.id,
+      recipient_role: ["marketing", "manager"],
+      sender_id: user?.id ?? null,
+      sender_name: user?.email ?? null,
     });
     toast({ title: "Klient qo'shildi" });
     setOpen(false);
