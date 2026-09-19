@@ -172,6 +172,8 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         if (typeof Notification !== "undefined" && Notification.permission === "granted" && document.hidden) {
           try { new Notification(`MCITY ERP — ${n.title}`, { body: n.body ?? "", tag: n.id }); } catch {}
         }
+        // Badge must update without a page refresh even if the state row event is missed.
+        scheduleRefresh();
       })
       .subscribe();
 
