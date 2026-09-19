@@ -148,6 +148,13 @@
       "when": 1789726725274,
       "tag": "0020_create_debts",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1789832324454,
+      "tag": "0021_notifications_multi_role_fanout",
+      "breakpoints": true
     }
   ]
 }
