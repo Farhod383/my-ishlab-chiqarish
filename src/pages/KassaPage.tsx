@@ -700,7 +700,7 @@ export default function KassaPage() {
         <div className="flex items-center gap-4 flex-wrap min-w-0">
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><Wallet className="h-6 w-6" />{k.title ?? "Kassa"}</h1>
           {/* Asosiy navigatsiya: Kassa | Ta'minot */}
-          <div className="inline-flex items-center rounded-lg border bg-muted p-1" role="tablist" aria-label="Kassa navigatsiya">
+          <div className="inline-flex shrink-0 items-center rounded-lg border bg-muted p-1" role="tablist" aria-label="Kassa navigatsiya">
             <button
               type="button"
               role="tab"
