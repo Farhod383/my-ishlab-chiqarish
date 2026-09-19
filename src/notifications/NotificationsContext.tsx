@@ -14,6 +14,7 @@ export interface Notif {
   entity_id: string | null;
   recipient_id: string | null;
   recipient_role: string | null;
+  recipient_roles?: string[] | null;
   sender_name: string | null;
   read_at: string | null;
   created_at: string;
