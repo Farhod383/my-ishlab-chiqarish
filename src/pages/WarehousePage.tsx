@@ -1090,7 +1090,7 @@ export default function WarehousePage() {
                         value={otherProduct}
                         onChange={setOtherProduct}
                         placeholder={t.supply.select}
-                        options={products.map(p => ({ value: p.id, label: p.name, hint: `${p.stock_qty} ${p.unit}` }))}
+                        options={outProductOptions}
                       />
                     </div>
                     <div><Label>{t.warehouse.qty}</Label><NumberInput min={0.1} step={0.1} value={otherQty} onChange={e => setOtherQty(Number(e.target.value))} /></div>
@@ -1118,7 +1118,7 @@ export default function WarehousePage() {
                         value={outProduct}
                         onChange={setOutProduct}
                         placeholder={t.supply.select}
-                        options={products.map(p => ({ value: p.id, label: p.name, hint: `${p.stock_qty} ${p.unit}` }))}
+                        options={outProductOptions}
                       />
                     </div>
                     <div><Label>{t.warehouse.forOrder}</Label>
