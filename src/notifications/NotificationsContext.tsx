@@ -217,8 +217,10 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     if (!ids.length || !user) return;
     const now = new Date().toISOString();
     setItems((prev) => prev.map((x) => (ids.includes(x.id) && !x.read_at ? { ...x, read_at: now } : x)));
-    for (let start = 0; start < ids.length; start += 200) {
-      const batch = ids.slice(start, start + 200);
+    // Expand to every duplicate row of the same event so it stays read.
+    const all = Array.from(new Set(ids.flatMap((id) => groupsRef.current[id] ?? [id])));
+    for (let start = 0; start < all.length; start += 200) {
+      const batch = all.slice(start, start + 200);
       const { error } = await supabase
         .from("notification_user_states")
         .update({ is_read: true, read_at: now })
