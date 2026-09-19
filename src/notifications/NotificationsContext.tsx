@@ -123,7 +123,26 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       from += pageSize;
     }
 
-    if (!failed) setItems(loaded);
+    if (!failed) {
+      // Legacy rows fanned out one-per-role produce several identical entries for
+      // the same event. Show each event once, but remember every underlying id so
+      // marking it read clears the whole group (and it never flips back to unread).
+      const groups: Record<string, string[]> = {};
+      const byKey = new Map<string, Notif>();
+      for (const n of loaded) {
+        const key = [n.type, n.title, n.body ?? "", n.entity ?? "", n.entity_id ?? "", n.link ?? "", n.created_at].join("|");
+        const head = byKey.get(key);
+        if (!head) {
+          byKey.set(key, { ...n });
+          groups[n.id] = [n.id];
+        } else {
+          groups[head.id].push(n.id);
+          if (n.read_at && !head.read_at) head.read_at = n.read_at;
+        }
+      }
+      groupsRef.current = groups;
+      setItems(Array.from(byKey.values()));
+    }
     setLoading(false);
   }, [user?.id]);
 
