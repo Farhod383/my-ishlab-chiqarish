@@ -73,12 +73,15 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   const [loading, setLoading] = useState(false);
   const askedRef = useRef(false);
   const refreshTimerRef = useRef<number | null>(null);
+  /** Representative notification id → every duplicate row id of the same event. */
+  const groupsRef = useRef<Record<string, string[]>>({});
 
   const belongsToMe = useCallback(
     (n: Notif) => {
       if (seesAll) return true;
       if (n.recipient_id && n.recipient_id === user?.id) return true;
       if (n.recipient_role && myRoles.includes(n.recipient_role)) return true;
+      if (n.recipient_roles?.some((r) => myRoles.includes(r))) return true;
       return false;
     },
     [seesAll, user?.id, myRoles.join(",")],
