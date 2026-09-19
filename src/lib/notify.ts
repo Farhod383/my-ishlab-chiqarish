@@ -74,8 +74,13 @@ export async function notify(n: NotifyInput): Promise<void> {
       return;
     }
 
-    const rows = roles.map((r) => ({ ...base, recipient_role: r }));
-    await supabase.from("notifications").insert(rows as any);
+    // ONE row per event, targeting every role at once. The database trigger
+    // fans it out to each eligible user, so nobody gets duplicates.
+    await supabase.from("notifications").insert({
+      ...base,
+      recipient_role: roles.length === 1 ? roles[0] : null,
+      recipient_roles: roles,
+    } as any);
   } catch (e) {
     // Notifications must never block the originating action.
     console.warn("notify() failed", e);
