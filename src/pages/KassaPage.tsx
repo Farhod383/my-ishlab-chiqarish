@@ -722,7 +722,7 @@ export default function KassaPage() {
           </div>
         </div>
         {/* Asosiy funksiyalar: Hisobot va Qarz */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0 ml-auto">
           <Button
             size="lg"
             onClick={() => setTab(tab === "report" ? "income" : "report")}
