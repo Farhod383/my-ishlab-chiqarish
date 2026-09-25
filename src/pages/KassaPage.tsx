@@ -412,8 +412,11 @@ export default function KassaPage() {
     for (const i of report.inRows) lines.push([fmtDateTime24(i.income_date), i.source ?? "", fmtCash(Number(i.amount), i.currency), normalizeCurrency(i.currency)].map(esc).join(";"));
     lines.push("");
     lines.push([esc("CHIQIMLAR")].join(";"));
-    lines.push(["Sana va vaqt", "Sabab", "Summa", "Valyuta"].map(esc).join(";"));
-    for (const e of report.exRows) lines.push([fmtDateTime24(e.expense_date), e.reason ?? "", fmtCash(Number(e.amount), e.currency), normalizeCurrency(e.currency)].map(esc).join(";"));
+    lines.push(["Sana va vaqt", "Sabab", "Summa", "Valyuta", "Kurs", "UZS jami"].map(esc).join(";"));
+    for (const e of report.exRows) {
+      const c = normalizeCurrency(e.currency);
+      lines.push([fmtDateTime24(e.expense_date), e.reason ?? "", fmtCash(Number(e.amount), e.currency), c, c === "UZS" ? "—" : fmt(Number(e.exchange_rate ?? 1)), fmt(Number(e.total_uzs || e.amount))].map(esc).join(";"));
+    }
     lines.push("");
     lines.push([esc("SABAB BO'YICHA GURUHLAR")].join(";"));
     lines.push(["Sabab", "Soni", "Jami"].map(esc).join(";"));
@@ -492,7 +495,7 @@ export default function KassaPage() {
     setExpEditId(null); setExpOrig(null);
     setExpForm({
       amount: left, reason: "Qarz uchun", recipient_id: "", recipient_manual: "",
-      comment: `${d.counterparty} — ${d.purpose}`, currency: d.currency ?? "UZS", exchange_rate: 1,
+      comment: `${d.counterparty} — ${d.purpose}`, currency: d.currency ?? "UZS", exchange_rate: (d.currency ?? "UZS") === "UZS" ? 1 : 0,
       payment_type: "cash", salary_kind: "", is_supply: false, debt_id: d.id,
     });
     setTab("expense");
@@ -507,8 +510,8 @@ export default function KassaPage() {
     const isDebtPay = expForm.reason.trim().toLowerCase() === "qarz uchun";
     if (isDebtPay && !expForm.debt_id) { toast.error("Qarzni tanlang"); return; }
     if (!ensureOnline((m) => toast.error(m))) return;
-    if (expForm.currency !== "UZS" && !(expRate > 0)) {
-      toast.error(`${expForm.currency} kursi mavjud emas — avval ${expForm.currency} kirimini kurs bilan kiriting`); return;
+    if (expForm.currency !== "UZS" && !(Number(expForm.exchange_rate) > 0)) {
+      toast.error(`1 ${expForm.currency} uchun kursni kiriting`); return;
     }
     // Client-side balance guard (server trigger is the source of truth).
     const pt = expForm.payment_type || "cash";
@@ -523,7 +526,7 @@ export default function KassaPage() {
     }
     const emp = recipientMode === "employee" ? employees.find(e => e.id === expForm.recipient_id) : null;
     const recipientName = recipientMode === "employee" ? (emp?.full_name ?? null) : (expForm.recipient_manual.trim() || null);
-    const rate = expForm.currency === "UZS" ? 1 : expRate;
+    const rate = expForm.currency === "UZS" ? 1 : Number(expForm.exchange_rate);
     const total_uzs = computeUzs(expForm.amount, expForm.currency, rate);
     const payload: any = {
       amount: expForm.amount,
@@ -962,20 +965,23 @@ export default function KassaPage() {
                   )}
                   <div>
                     <Label>{k.currency ?? "Valyuta"}</Label>
-                    <Select value={expForm.currency} onValueChange={(v) => setExpForm({ ...expForm, currency: v, exchange_rate: 1 })}>
+                    <Select value={expForm.currency} onValueChange={(v) => setExpForm({ ...expForm, currency: v, exchange_rate: v === "UZS" ? 1 : 0 })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>{CURRENCIES.map((c) => <SelectItem key={c} value={c}>{CURRENCY_LABELS[c] ?? c}</SelectItem>)}</SelectContent>
                     </Select>
-                    {expForm.currency !== "UZS" && (
-                      expRate > 0 ? (
+                  </div>
+                  {expForm.currency !== "UZS" && (
+                    <div>
+                      <Label>Kurs (1 {expForm.currency} = ? so'm) *</Label>
+                      <Input type="number" min={0} value={expForm.exchange_rate || ""} placeholder={expRate > 0 ? `Oxirgi kurs: ${fmt(expRate)}` : "Kursni kiriting"} onChange={(e) => setExpForm({ ...expForm, exchange_rate: Number(e.target.value) })} />
+                      {Number(expForm.amount) > 0 && Number(expForm.exchange_rate) > 0 && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          Kurs (oxirgi {expForm.currency} kirimidan): <span className="font-mono text-foreground">{fmt(expRate)}</span> so'm
-                          {Number(expForm.amount) > 0 && <> · = <span className="font-mono font-semibold text-foreground">{fmt(Number(expForm.amount) * expRate)} UZS</span></>}
+                          {fmt(Number(expForm.amount))} {expForm.currency} × {fmt(Number(expForm.exchange_rate))} = <span className="font-mono font-semibold text-foreground">{fmt(Number(expForm.amount) * Number(expForm.exchange_rate))} UZS</span>
                         </p>
-                      ) : (
-                        <p className="text-xs text-status-red mt-1">{expForm.currency} kursi mavjud emas — avval {expForm.currency} kirimini kurs bilan kiriting.</p>
-                      )
-                    )}
+                      )}
+                    </div>
+                  )}
+                  <div className="hidden">
                    </div>
                    <div>
                      <Label>{k.paymentType ?? "To'lov turi"}</Label>
