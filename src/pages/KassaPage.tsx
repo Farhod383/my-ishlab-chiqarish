@@ -495,7 +495,7 @@ export default function KassaPage() {
     setExpEditId(null); setExpOrig(null);
     setExpForm({
       amount: left, reason: "Qarz uchun", recipient_id: "", recipient_manual: "",
-      comment: `${d.counterparty} — ${d.purpose}`, currency: d.currency ?? "UZS", exchange_rate: 1,
+      comment: `${d.counterparty} — ${d.purpose}`, currency: d.currency ?? "UZS", exchange_rate: (d.currency ?? "UZS") === "UZS" ? 1 : 0,
       payment_type: "cash", salary_kind: "", is_supply: false, debt_id: d.id,
     });
     setTab("expense");
