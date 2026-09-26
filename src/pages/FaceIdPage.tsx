@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScanFace, RefreshCw, Wifi, WifiOff, HelpCircle, Users, UserCheck, UserX, LogIn, LogOut, Clock, Factory, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/auth/AuthContext";
+import { useLocalize } from "@/i18n/context";
 import { FaceEmployeeDialog, type FaceEmployee } from "@/components/faceid/FaceEmployeeDialog";
 import { buildDays, fmtHours, hhmm, SITE_LABEL, startOfWeek, ymd, type FaceEvent, type Shift } from "@/lib/faceid";
 
@@ -18,6 +19,7 @@ type Device = {
 };
 
 export default function FaceIdPage() {
+  const localize = useLocalize();
   const { hasRole } = useAuth();
   const canSync = hasRole(["admin", "hr"]);
   const [employees, setEmployees] = useState<FaceEmployee[]>([]);
@@ -198,7 +200,7 @@ export default function FaceIdPage() {
                 return (
                   <TableRow key={e.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelected(e)}>
                     <TableCell className="text-muted-foreground">{i + 1}</TableCell>
-                    <TableCell className="font-semibold">{e.full_name}</TableCell>
+                     <TableCell className="font-semibold">{localize(e.full_name)}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{e.position} · {e.department}</TableCell>
                     <TableCell>{e.work_site ? <Badge variant="outline">{SITE_LABEL[e.work_site]}</Badge> : <span className="text-muted-foreground text-sm">—</span>}</TableCell>
                     <TableCell>{e.hikvision_person_id ?? <span className="text-amber-600 text-xs">Bog'lanmagan</span>}</TableCell>

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ChevronLeft, ChevronRight, LogIn, LogOut, Clock, CalendarDays, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/auth/AuthContext";
+import { useLocalize } from "@/i18n/context";
 import {
   buildDays, daysInRange, fmtHours, hhmm, startOfMonth, startOfWeek, startOfYear, sumHours,
   ymd, SITE_LABEL, type DayAttendance, type FaceEvent, type Shift,
@@ -38,6 +39,7 @@ export function FaceEmployeeDialog({
   onOpenChange: (v: boolean) => void;
   onSaved: () => void;
 }) {
+  const localize = useLocalize();
   const { hasRole } = useAuth();
   const canEdit = hasRole(["admin", "hr"]);
   const [events, setEvents] = useState<FaceEvent[]>([]);
@@ -143,10 +145,10 @@ export function FaceEmployeeDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             {employee.photo_url
-              ? <img src={employee.photo_url} alt={employee.full_name} className="h-10 w-10 rounded-full object-cover" />
+              ? <img src={employee.photo_url} alt={localize(employee.full_name)} className="h-10 w-10 rounded-full object-cover" />
               : <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-sm font-semibold">{employee.full_name.slice(0, 2)}</div>}
             <div className="min-w-0">
-              <div className="truncate">{employee.full_name}</div>
+              <div className="truncate">{localize(employee.full_name)}</div>
               <div className="text-xs font-normal text-muted-foreground truncate">
                 {employee.position} · {employee.department} · {SITE_LABEL[site] ?? "Ish joyi belgilanmagan"}
               </div>

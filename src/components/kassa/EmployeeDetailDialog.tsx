@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Search, Wrench, Wallet } from "lucide-react";
 import { fmtKassaAmount, fmtNum } from "@/lib/format";
+import { useLocalize } from "@/i18n/context";
 
 export const SALARY_KINDS = ["salary", "advance", "bonus", "penalty", "other"] as const;
 export type SalaryKind = typeof SALARY_KINDS[number];
@@ -30,6 +31,7 @@ type Props = {
 };
 
 export default function EmployeeDetailDialog({ employee, open, onOpenChange }: Props) {
+  const localize = useLocalize();
   const [payments, setPayments] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -97,7 +99,7 @@ export default function EmployeeDetailDialog({ employee, open, onOpenChange }: P
       <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {employee?.full_name}
+             {localize(employee?.full_name)}
             <Badge variant="outline" className="font-normal">{employee?.position}</Badge>
             {employee?.department && <Badge variant="secondary" className="font-normal">{employee.department}</Badge>}
           </DialogTitle>

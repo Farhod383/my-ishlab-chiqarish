@@ -47,6 +47,12 @@ const isLat = (s: string) => /[A-Za-z]/.test(s);
 /** Render a stored name in the target locale. Accepts 'uz' (latin), 'uzc'/'uz-cyrl', 'ru'. */
 export function localizeName(name: string, lang: string): string {
   if (!name) return name;
+  // This employee's official Cyrillic spelling is not the generic Uzbek transliteration.
+  // Match only his known historical spellings; keep stored names and other employees unchanged.
+  if (/^(?:Buriyev|Bo['ʼ’`]?riyev|Буриев|Бўриев|Бориев)\s+(?:Shuxrat|Шухрат)$/iu.test(name.trim())) {
+    return lang === "uzc" || lang === "uz-cyrl" || lang === "ru"
+      ? "Буриев Шухрат" : "Buriyev Shuxrat";
+  }
   if (lang === "uzc" || lang === "uz-cyrl" || lang === "ru") {
     return isCyr(name) ? name : latinToCyrillic(name);
   }

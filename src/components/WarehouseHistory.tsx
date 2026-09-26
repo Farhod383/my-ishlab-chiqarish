@@ -10,6 +10,7 @@ import { ArrowDownCircle, ArrowUpCircle, Pencil, Trash2, RotateCcw } from "lucid
 import { Link } from "react-router-dom";
 import { fmtDateTime24, fmtNum } from "@/lib/format";
 import { matchesAcrossScripts } from "@/lib/translit";
+import { useLocalize } from "@/i18n/context";
 import { intakeCode } from "@/lib/intake";
 
 const ALL = "__all__";
@@ -53,6 +54,7 @@ export default function WarehouseHistory({
   onDelete?: (m: any) => void;
   reloadKey?: number;
 }) {
+  const localize = useLocalize();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [norms, setNorms] = useState<any[]>([]);
@@ -273,8 +275,8 @@ export default function WarehouseHistory({
     setFOrder(ALL); setFInvoice(ALL); setFPerson(ALL); setFLoc(ALL); setFNorm(ALL);
   };
 
-  const Picker = ({ label, value, onChange, items, allLabel }: {
-    label: string; value: string; onChange: (v: string) => void; items: any[]; allLabel: string;
+  const Picker = ({ label, value, onChange, items, allLabel, formatItem }: {
+    label: string; value: string; onChange: (v: string) => void; items: any[]; allLabel: string; formatItem?: (v: string) => string;
   }) => (
     <div className="space-y-1">
       <Label className="text-[11px] text-muted-foreground">{label}</Label>
@@ -282,7 +284,7 @@ export default function WarehouseHistory({
         <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
         <SelectContent>
           <SelectItem value={ALL}>{allLabel}</SelectItem>
-          {items.map((v: any) => <SelectItem key={String(v)} value={String(v)}>{String(v)}</SelectItem>)}
+          {items.map((v: any) => <SelectItem key={String(v)} value={String(v)}>{formatItem ? formatItem(String(v)) : String(v)}</SelectItem>)}
         </SelectContent>
       </Select>
     </div>
@@ -331,7 +333,7 @@ export default function WarehouseHistory({
           <Picker label="Eni" value={fWid} onChange={setFWid} items={opts.wid} allLabel="Barchasi" />
           <Picker label="Zakaz" value={fOrder} onChange={setFOrder} items={opts.orders} allLabel="Barcha zakaz" />
           <Picker label="Nakladnoy" value={fInvoice} onChange={setFInvoice} items={opts.invoices} allLabel="Barchasi" />
-          <Picker label="Kim" value={fPerson} onChange={setFPerson} items={opts.persons} allLabel="Barchasi" />
+          <Picker label="Kim" value={fPerson} onChange={setFPerson} items={opts.persons} allLabel="Barchasi" formatItem={localize} />
           <Picker label="Zavod / joylashuv" value={fLoc} onChange={setFLoc} items={opts.locs} allLabel="Barchasi" />
           <div className="space-y-1 col-span-2">
             <Label className="text-[11px] text-muted-foreground">Metall normativi</Label>
@@ -400,7 +402,7 @@ export default function WarehouseHistory({
                     {r.price && r.price > 0 ? <>{fmtNum(r.price)} <span className="text-muted-foreground">{r.currency}</span></> : "—"}
                   </TableCell>
                   <TableCell className="text-xs">{r.location || "—"}</TableCell>
-                  <TableCell className="text-sm">{r.person || "—"}</TableCell>
+                  <TableCell className="text-sm">{localize(r.person) || "—"}</TableCell>
                   <TableCell className="text-sm font-mono">{r.orderNumber || <span className="text-muted-foreground">Umumiy</span>}</TableCell>
                   <TableCell className="text-xs font-mono">
                     {r.invoiceLabel ? (
