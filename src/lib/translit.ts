@@ -62,7 +62,8 @@ export function localizeName(name: string, lang: string): string {
 /** Normalize text to latin lowercase for cross-script search matching. */
 export function searchNorm(s: string): string {
   if (!s) return "";
-  const lat = isCyr(s) ? cyrillicToLatin(s) : s;
+  const canonical = s.replace(/(?:Buriyev|Bo['ʼ’`]?riyev|Буриев|Бўриев|Бориев)\s+(?:Shuxrat|Шухрат)/giu, "Buriyev Shuxrat");
+  const lat = isCyr(canonical) ? cyrillicToLatin(canonical) : canonical;
   return lat.toLowerCase().replace(/[''`ʼ]/g, "");
 }
 
