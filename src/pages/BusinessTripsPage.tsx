@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/auth/AuthContext";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useLocalize } from "@/i18n/context";
+import { matchesAcrossScripts } from "@/lib/translit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -122,7 +123,7 @@ export default function BusinessTripsPage() {
     return trips.filter((t) => {
       if (tab !== "all" && t.status !== tab) return false;
       if (!s) return true;
-      return t.employee_name.toLowerCase().includes(s)
+      return matchesAcrossScripts(t.employee_name, s)
         || t.destination.toLowerCase().includes(s)
         || (t.purpose ?? "").toLowerCase().includes(s);
     });

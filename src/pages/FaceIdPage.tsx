@@ -10,6 +10,7 @@ import { ScanFace, RefreshCw, Wifi, WifiOff, HelpCircle, Users, UserCheck, UserX
 import { toast } from "sonner";
 import { useAuth } from "@/auth/AuthContext";
 import { useLocalize } from "@/i18n/context";
+import { matchesAcrossScripts } from "@/lib/translit";
 import { FaceEmployeeDialog, type FaceEmployee } from "@/components/faceid/FaceEmployeeDialog";
 import { buildDays, fmtHours, hhmm, SITE_LABEL, startOfWeek, ymd, type FaceEvent, type Shift } from "@/lib/faceid";
 
@@ -76,7 +77,7 @@ export default function FaceIdPage() {
       if (siteFilter !== "all" && (e.work_site ?? "") !== siteFilter) return false;
       if (!needle) return true;
       return [e.full_name, e.position, e.department, e.hikvision_person_id ?? ""]
-        .some((v) => String(v).toLowerCase().includes(needle));
+        .some((v) => matchesAcrossScripts(String(v), needle));
     });
   }, [employees, siteFilter, q]);
 
