@@ -12,6 +12,7 @@ import { ChevronLeft, ChevronRight, LogIn, LogOut, Clock, CalendarDays, CheckCir
 import { useAuth } from "@/auth/AuthContext";
 import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
+import { useLocalize } from "@/i18n/context";
 
 type AttRow = {
   id: string;
@@ -72,6 +73,7 @@ interface Props {
 }
 
 export default function AttendanceCalendarDialog({ employee, open, onOpenChange }: Props) {
+  const localize = useLocalize();
   const { user, hasRole } = useAuth();
   const canEdit = hasRole(["admin", "hr"]);
   const [cursor, setCursor] = useState(() => { const d = new Date(); d.setDate(1); return d; });
@@ -235,7 +237,7 @@ export default function AttendanceCalendarDialog({ employee, open, onOpenChange 
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-lg">
               <CalendarDays className="h-5 w-5 text-primary" />
-              Davomat — {employee.full_name}
+               Davomat — {localize(employee.full_name)}
             </DialogTitle>
           </DialogHeader>
         </div>

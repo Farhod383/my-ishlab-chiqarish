@@ -1,0 +1,1 @@
+Display employee names through the shared locale-aware name helper while retaining stored Latin values; this keeps existing linked records intact and lets the official Buriyev Shuxrat / Буриев Шухрат spelling appear consistently.

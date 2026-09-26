@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/auth/AuthContext";
 import { useEmployees } from "@/hooks/useEmployees";
+import { useLocalize } from "@/i18n/context";
+import { matchesAcrossScripts } from "@/lib/translit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,6 +54,7 @@ interface Expense {
 const CURRENCIES = ["UZS", "USD", "EUR", "RUB"];
 
 export default function BusinessTripsPage() {
+  const localize = useLocalize();
   const { user, hasRole } = useAuth();
   const canManage = hasRole(["admin", "cashier"]);
   const { employees } = useEmployees({ activeOnly: true });
@@ -120,7 +123,7 @@ export default function BusinessTripsPage() {
     return trips.filter((t) => {
       if (tab !== "all" && t.status !== tab) return false;
       if (!s) return true;
-      return t.employee_name.toLowerCase().includes(s)
+      return matchesAcrossScripts(t.employee_name, s)
         || t.destination.toLowerCase().includes(s)
         || (t.purpose ?? "").toLowerCase().includes(s);
     });
@@ -433,7 +436,7 @@ export default function BusinessTripsPage() {
                   return (
                     <TableRow key={t.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setDetailId(t.id)}>
                       <TableCell>{i + 1}</TableCell>
-                      <TableCell className="font-medium">{t.employee_name}</TableCell>
+                      <TableCell className="font-medium">{localize(t.employee_name)}</TableCell>
                       <TableCell>{t.destination}</TableCell>
                       <TableCell className="whitespace-nowrap text-sm">
                         {fmtDate(t.start_date)}{t.end_date ? ` — ${fmtDate(t.end_date)}` : ""}
@@ -472,7 +475,7 @@ export default function BusinessTripsPage() {
             <div className="sm:col-span-2">
               <Label>Xodim *</Label>
               <SearchableSelect
-                options={employees.map((e) => ({ value: e.id, label: e.full_name, hint: e.position ?? undefined }))}
+                 options={employees.map((e) => ({ value: e.id, label: localize(e.full_name), hint: e.position ?? undefined }))}
                 value={fEmployeeId} onChange={setFEmployeeId} placeholder="Xodimni tanlang"
               />
             </div>
@@ -524,7 +527,7 @@ export default function BusinessTripsPage() {
           {detail && (
             <>
               <DialogHeader>
-                <DialogTitle>{detail.employee_name} — {detail.destination}</DialogTitle>
+                <DialogTitle>{localize(detail.employee_name)} — {detail.destination}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-3 text-sm">
@@ -638,7 +641,7 @@ export default function BusinessTripsPage() {
             <AlertDialogTitle>Kamandirovkani o'chirish</AlertDialogTitle>
             <AlertDialogDescription>
               {delTrip && <>
-                {delTrip.employee_name} — {delTrip.destination} · {fmtMoney(delTrip.given_amount, delTrip.currency)}
+                 {localize(delTrip.employee_name)} — {delTrip.destination} · {fmtMoney(delTrip.given_amount, delTrip.currency)}
                 <br />Bu kamandirovka, uning barcha xarajatlari va Kassadagi bog'langan chiqim o'chiriladi. Kassa balansi qayta hisoblanadi. Amalni orqaga qaytarib bo'lmaydi.
               </>}
             </AlertDialogDescription>
