@@ -2434,6 +2434,20 @@ export type Database = {
     Functions: {
       can_edit_intake: { Args: { _user_id: string }; Returns: boolean }
       can_manage_trips: { Args: { _user_id: string }; Returns: boolean }
+      cash_available: { Args: { _cur: string; _pt: string }; Returns: number }
+      cash_exchange: {
+        Args: {
+          _actor_name: string
+          _comment: string
+          _from_amount: number
+          _from_cur: string
+          _from_pt: string
+          _rate: number
+          _to_cur: string
+          _to_pt: string
+        }
+        Returns: undefined
+      }
       clear_intake_invoice_image: {
         Args: { _session_id: string }
         Returns: undefined

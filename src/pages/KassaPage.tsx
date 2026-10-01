@@ -114,6 +114,8 @@ export default function KassaPage() {
 
   // income form
   const [openInc, setOpenInc] = useState(false);
+  const [openFx, setOpenFx] = useState(false);
+  const [fx, setFx] = useState({ from_cur: "USD", from_pt: "cash", to_pt: "cash", amount: "", rate: "", comment: "" });
   const [incEditId, setIncEditId] = useState<string | null>(null);
   const [incOrig, setIncOrig] = useState<any>(null);
   const [incForm, setIncForm] = useState({ amount: 0, source: "", payment_type: "cash", comment: "", currency: "UZS", exchange_rate: 1 });
@@ -593,6 +595,28 @@ export default function KassaPage() {
     setOpenExp(true);
   };
 
+  const availOf = (cur: string, pt: string, excludeIncId?: string) =>
+    incomes.filter((x: any) => x.currency === cur && (x.payment_type || "cash") === pt && x.id !== excludeIncId).reduce((s: number, x: any) => s + Number(x.amount || 0), 0)
+    - expenses.filter((x: any) => x.currency === cur && (x.payment_type || "cash") === pt).reduce((s: number, x: any) => s + Number(x.amount || 0), 0);
+
+  const saveFx = async () => {
+    const amount = Number(fx.amount), rate = Number(fx.rate);
+    if (!(amount > 0) || !(rate > 0)) { toast.error("Summa va kursni kiriting"); return; }
+    const avail = availOf(fx.from_cur, fx.from_pt);
+    if (amount > avail) { toast.error(`Mablag' yetarli emas: ${ptLabel(fx.from_pt)} ${fx.from_cur} balansida ${fmtCash(avail, fx.from_cur)} ${fx.from_cur} bor`); return; }
+    const to_cur = fx.from_cur === "USD" ? "UZS" : "USD";
+    const { error } = await (supabase.rpc as any)("cash_exchange", {
+      _from_cur: fx.from_cur, _from_pt: fx.from_pt, _from_amount: amount,
+      _to_cur: to_cur, _to_pt: fx.to_pt, _rate: rate, _comment: fx.comment.trim(), _actor_name: actorName,
+    });
+    if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: "kassa.exchange", entity: "cash_expenses", details: `${amount} ${fx.from_cur} → ${to_cur} kurs ${rate}` });
+    toast.success(k.saved ?? "Saqlandi");
+    setFx({ from_cur: "USD", from_pt: "cash", to_pt: "cash", amount: "", rate: "", comment: "" });
+    setOpenFx(false);
+    load();
+  };
+
   const saveIncome = async () => {
     if (!incForm.amount || !incForm.source.trim()) { toast.error(k.fillFields ?? "Maydonlarni to'ldiring"); return; }
     if (incForm.currency !== "UZS" && (!incForm.exchange_rate || incForm.exchange_rate <= 0)) {
@@ -861,6 +885,42 @@ export default function KassaPage() {
                   <div><Label>{k.comment ?? "Izoh"}</Label><Textarea value={incForm.comment} onChange={e => setIncForm({ ...incForm, comment: e.target.value })} /></div>
                   <div><Label>{k.receipt ?? "Chek / Fayl"}</Label><Input type="file" onChange={e => setIncFile(e.target.files?.[0] ?? null)} /></div>
                   <Button className="w-full" onClick={saveIncome}>{t.common.save}</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+          {canManage && (
+            <Dialog open={openFx} onOpenChange={setOpenFx}>
+              <DialogTrigger asChild><Button variant="outline" className="ml-2">⇄ Valyuta almashtirish</Button></DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Valyuta almashtirish</DialogTitle></DialogHeader>
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground">Eski valyutadan CHIQIM va yangi valyutaga KIRIM bitta operatsiyada, kurs bilan birga saqlanadi.</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div><Label>Qaysi valyutadan</Label>
+                      <Select value={fx.from_cur} onValueChange={v => setFx({ ...fx, from_cur: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>{CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                      </Select></div>
+                    <div><Label>To'lov turi (chiqim)</Label>
+                      <Select value={fx.from_pt} onValueChange={v => setFx({ ...fx, from_pt: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>{PAYMENT_TYPES.map(p => <SelectItem key={p} value={p}>{ptLabel(p)}</SelectItem>)}</SelectContent>
+                      </Select></div>
+                  </div>
+                  <p className="text-xs">Mavjud: <b>{fmtCash(availOf(fx.from_cur, fx.from_pt), fx.from_cur)} {fx.from_cur}</b></p>
+                  <div><Label>Summa ({fx.from_cur})</Label><Input type="number" value={fx.amount} onChange={e => setFx({ ...fx, amount: e.target.value })} /></div>
+                  <div><Label>Kurs (1 USD = ? so'm)</Label><Input type="number" value={fx.rate} onChange={e => setFx({ ...fx, rate: e.target.value })} /></div>
+                  <div><Label>Qaysi to'lov turiga (kirim, {fx.from_cur === "USD" ? "UZS" : "USD"})</Label>
+                    <Select value={fx.to_pt} onValueChange={v => setFx({ ...fx, to_pt: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{PAYMENT_TYPES.map(p => <SelectItem key={p} value={p}>{ptLabel(p)}</SelectItem>)}</SelectContent>
+                    </Select></div>
+                  {Number(fx.amount) > 0 && Number(fx.rate) > 0 && (
+                    <p className="text-sm">Kirim bo'ladi: <b>{fx.from_cur === "USD" ? fmtCash(Number(fx.amount) * Number(fx.rate), "UZS") + " UZS" : fmtCash(Math.round(Number(fx.amount) / Number(fx.rate) * 100) / 100, "USD") + " USD"}</b></p>
+                  )}
+                  <div><Label>{k.comment ?? "Izoh"}</Label><Input value={fx.comment} onChange={e => setFx({ ...fx, comment: e.target.value })} /></div>
+                  <Button className="w-full" onClick={saveFx}>{t.common.save}</Button>
                 </div>
               </DialogContent>
             </Dialog>
