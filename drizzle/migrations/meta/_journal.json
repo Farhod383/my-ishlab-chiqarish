@@ -155,6 +155,13 @@
       "when": 1789832324454,
       "tag": "0021_notifications_multi_role_fanout",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790837436650,
+      "tag": "0022_cash_balance_guards_and_exchange",
+      "breakpoints": true
     }
   ]
 }
