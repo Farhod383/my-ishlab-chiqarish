@@ -144,20 +144,36 @@ export default function EditOrder() {
         } as any);
       }
 
-      // Update stages: delete old ones and re-insert
-      await supabase.from("order_stages").delete().eq("order_id", id!);
+      // Update stages in place: existing stages keep their id, status, dates,
+      // worker and OTK history. Only structural fields (name/order/group/norm) change.
+      const { data: existingStages } = await supabase.from("order_stages")
+        .select("id, status, started_at, finished_at, qc_passed, otk_checked_at, otk_comment, worker_id, worker_name")
+        .eq("order_id", id!);
+      const keptIds = new Set(stages.map((s) => s.id).filter(Boolean) as string[]);
+      // Remove only stages that were dropped AND have no real progress/history.
+      const removable = (existingStages ?? []).filter((x: any) =>
+        !keptIds.has(x.id) && x.status === "pending" && !x.started_at && !x.finished_at
+        && !x.qc_passed && !x.otk_checked_at && !x.otk_comment && !x.worker_id && !x.worker_name
+      ).map((x: any) => x.id);
+      if (removable.length) await supabase.from("order_stages").delete().in("id", removable);
       const perGroup: Record<string, number> = {};
-      const stageRows = stages.map((s, idx) => {
+      const newRows: any[] = [];
+      for (let idx = 0; idx < stages.length; idx++) {
+        const s = stages[idx];
         const gid = s.group_id ?? guessGroupId(s.name, groups);
         const key = gid ?? "none";
         perGroup[key] = (perGroup[key] ?? 0) + 1;
-        return {
-          order_id: id!, name: s.name, stage_order: idx + 1,
-          norm_days: s.norm_days, qc_required: s.qc_required, status: "pending" as const,
+        const structural = {
+          name: s.name, stage_order: idx + 1, norm_days: s.norm_days, qc_required: s.qc_required,
           group_id: gid, group_order: perGroup[key],
         };
-      });
-      if (stageRows.length) await supabase.from("order_stages").insert(stageRows as any);
+        if (s.id) {
+          await supabase.from("order_stages").update(structural as any).eq("id", s.id);
+        } else {
+          newRows.push({ order_id: id!, status: "pending" as const, ...structural });
+        }
+      }
+      if (newRows.length) await supabase.from("order_stages").insert(newRows as any);
 
       // Update parts: delete old and re-insert
       await supabase.from("order_parts").delete().eq("order_id", id!);
