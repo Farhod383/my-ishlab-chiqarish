@@ -702,6 +702,7 @@ export type Database = {
           reason: string | null
           resolution: Database["public"]["Enums"]["defect_resolution"]
           stage_id: string | null
+          stock_applied: boolean
         }
         Insert: {
           comment?: string | null
@@ -719,6 +720,7 @@ export type Database = {
           reason?: string | null
           resolution?: Database["public"]["Enums"]["defect_resolution"]
           stage_id?: string | null
+          stock_applied?: boolean
         }
         Update: {
           comment?: string | null
@@ -736,6 +738,7 @@ export type Database = {
           reason?: string | null
           resolution?: Database["public"]["Enums"]["defect_resolution"]
           stage_id?: string | null
+          stock_applied?: boolean
         }
         Relationships: [
           {

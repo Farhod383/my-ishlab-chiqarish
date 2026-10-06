@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { AlertOctagon, Plus, Search } from "lucide-react";
+import { AlertOctagon, Plus, Search, Trash2 } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { toast } from "sonner";
@@ -34,6 +34,7 @@ export default function DefectsPage() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [kind, setKind] = useState<ItemType>("product");
   const [form, setForm] = useState({
     item_type: "product" as ItemType,
     order_id: "",
@@ -53,8 +54,8 @@ export default function DefectsPage() {
     const [{ data: def }, { data: ord }, { data: prod }, { data: instr }] = await Promise.all([
       supabase.from("defects").select("*, product:products(name, unit), detected_by:employees(full_name), order:orders(order_number, product_name)").order("created_at", { ascending: false }),
       supabase.from("orders").select("id, order_number, product_name").order("order_number", { ascending: false }),
-      supabase.from("products").select("id, name, unit").order("name"),
-      supabase.from("instruments").select("id, name, quantity").order("name"),
+      supabase.from("products").select("id, name, unit, stock_qty").order("name"),
+      supabase.from("instruments").select("id, name, quantity, status, inventory_number").order("name"),
     ]);
     setDefects(def ?? []);
     setOrders(ord ?? []);
@@ -78,8 +79,9 @@ export default function DefectsPage() {
 
   const filteredDefects = useMemo(() => {
     const q = search.trim();
-    if (!q) return defects;
-    return defects.filter((def: any) => {
+    const byKind = defects.filter((def: any) => (def.item_type ?? "product") === kind);
+    if (!q) return byKind;
+    return byKind.filter((def: any) => {
       const hay = [
         itemName(def),
         def.order?.order_number,
@@ -91,12 +93,16 @@ export default function DefectsPage() {
       ].filter(Boolean).join(" ");
       return matchesAcrossScripts(hay, q);
     });
-  }, [defects, search, instrNameById]);
+  }, [defects, search, instrNameById, kind]);
 
   const save = async () => {
     if (form.item_type === "product" && !form.product_id) { toast.error(d.fillFields ?? "Maydonlarni to'ldiring"); return; }
     if (form.item_type === "instrument" && !form.instrument_id) { toast.error(d.fillFields ?? "Maydonlarni to'ldiring"); return; }
     if (!form.quantity || form.quantity <= 0) { toast.error(d.fillFields ?? "Maydonlarni to'ldiring"); return; }
+    const avail = form.item_type === "instrument"
+      ? Number(instruments.find((i: any) => i.id === form.instrument_id)?.quantity ?? 0)
+      : Number(products.find((p: any) => p.id === form.product_id)?.stock_qty ?? 0);
+    if (form.quantity > avail) { toast.error(`Brak miqdori mavjud qoldiqdan oshib ketishi mumkin emas (mavjud: ${avail})`); return; }
 
     let image_url: string | null = null;
     if (form.image) {
@@ -145,6 +151,20 @@ export default function DefectsPage() {
     load();
   };
 
+  const removeDefect = async (def: any) => {
+    if (!confirm(`Brak yozuvini bekor qilasizmi? ${itemName(def)} — ${def.quantity}. Qoldiq qaytariladi.`)) return;
+    const { error } = await supabase.from("defects").delete().eq("id", def.id);
+    if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, {
+      actor_id: user?.id, actor_name: user?.email,
+      action: "Brak bekor qilindi", entity: "defect", order_id: def.order_id ?? null,
+      details: `${def.item_type === "instrument" ? "Instrument" : "Mahsulot"}: ${itemName(def)} · ${def.quantity} · ${def.reason ?? ""}`,
+    });
+    toast.success("Brak bekor qilindi, qoldiq qaytarildi");
+    load();
+  };
+
+
   const updateResolution = async (id: string, resolution: string) => {
     await supabase.from("defects").update({ resolution } as any).eq("id", id);
     const def = defects.find((x: any) => x.id === id);
@@ -166,7 +186,7 @@ export default function DefectsPage() {
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><AlertOctagon className="h-6 w-6" />{d.title ?? "Brak"}</h1>
           <p className="text-sm text-muted-foreground">{d.subtitle ?? "Yaroqsiz mahsulotlar hisobi"}</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (o) setForm(f => ({ ...f, item_type: kind, product_id: "", instrument_id: "", order_id: "" })); }}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{d.add ?? "Brak qo'shish"}</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>{d.add ?? "Brak qo'shish"}</DialogTitle></DialogHeader>
@@ -197,7 +217,7 @@ export default function DefectsPage() {
                       value={form.product_id}
                       onChange={v => setForm({ ...form, product_id: v })}
                       placeholder={d.selectProduct ?? "Tanlang"}
-                      options={products.map(p => ({ value: p.id, label: p.name, hint: p.unit ?? "" }))}
+                      options={products.filter(p => Number(p.stock_qty) > 0).map(p => ({ value: p.id, label: p.name, hint: `mavjud: ${p.stock_qty} ${p.unit ?? ""}` }))}
                     />
                   </div>
                 </>
@@ -209,7 +229,7 @@ export default function DefectsPage() {
                     value={form.instrument_id}
                     onChange={v => setForm({ ...form, instrument_id: v })}
                     placeholder={d.selectInstrument ?? "Instrument tanlang"}
-                    options={instruments.map(i => ({ value: i.id, label: i.name, hint: `${i.quantity} dona` }))}
+                    options={instruments.filter(i => i.status === "active" && Number(i.quantity) > 0).map(i => ({ value: i.id, label: i.name, hint: `${i.inventory_number ? i.inventory_number + " · " : ""}mavjud: ${i.quantity} dona` }))}
                   />
                 </div>
               )}
@@ -242,6 +262,15 @@ export default function DefectsPage() {
         </Dialog>
       </div>
 
+      <div className="inline-flex rounded-lg border bg-muted p-1 gap-1">
+        {(["product", "instrument"] as ItemType[]).map(k => (
+          <Button key={k} size="sm" variant={kind === k ? "default" : "ghost"} onClick={() => setKind(k)}>
+            {k === "product" ? "Mahsulot braklari" : "Instrument braklari"}
+            <Badge variant="secondary" className="ml-2">{defects.filter((x: any) => (x.item_type ?? "product") === k).length}</Badge>
+          </Button>
+        ))}
+      </div>
+
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
         <Input
@@ -266,6 +295,7 @@ export default function DefectsPage() {
                   <TableHead>{d.detectedBy ?? "Kim aniqladi"}</TableHead>
                   <TableHead>{d.reason ?? "Sabab"}</TableHead>
                   <TableHead>{d.resolution ?? "Qaror"}</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -297,6 +327,13 @@ export default function DefectsPage() {
                         <Badge variant="outline" className={`text-xs ${resColor(def.resolution)}`}>
                           {def.resolution === "rework" ? (d.rework ?? "Qayta ishlash") : def.resolution === "write_off" ? (d.writeOff ?? "Hisobdan chiqarish") : (d.pending ?? "Kutilmoqda")}
                         </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {hasRole(["admin", "warehouse"]) && (
+                        <Button size="sm" variant="ghost" onClick={() => removeDefect(def)} title="Bekor qilish">
+                          <Trash2 className="h-3.5 w-3.5 text-status-red" />
+                        </Button>
                       )}
                     </TableCell>
                   </TableRow>

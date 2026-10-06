@@ -183,6 +183,13 @@
       "when": 1791269727059,
       "tag": "0025_intake_unit_must_match_product",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1791270316564,
+      "tag": "0026_defects_stock_apply_and_validate",
+      "breakpoints": true
     }
   ]
 }
