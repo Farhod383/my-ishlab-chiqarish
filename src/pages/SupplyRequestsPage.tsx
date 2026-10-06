@@ -72,15 +72,28 @@ export default function SupplyRequestsPage() {
   }, [notifItems]);
 
   // Zakaz ochilganda shu zakazning ta'minot bildirishnomalari o'qilgan bo'ladi.
+  // Bildirishnomalar entity="supply_request" + entity_id=buyurtma id bilan keladi,
+  // shuning uchun guruh ochilganda uning ichidagi buyurtmalarga tegishli bildirishnomalar ham o'qiladi.
   useEffect(() => {
     if (!openOrderId) return;
+    const reqIds = new Set<string>();
+    rows.forEach((r: any) => {
+      const inGroup =
+        openOrderId === "__general__" ? !r.order?.id :
+        openOrderId === "__all_orders__" ? !!r.order?.id :
+        r.order?.id === openOrderId;
+      if (inGroup) reqIds.add(r.id);
+    });
     const unread = notifItems.filter(
-      (n) => !n.read_at && resolveModule(n) === "supply" && notifOrderId(n) === openOrderId,
+      (n) => !n.read_at && resolveModule(n) === "supply" && (
+        notifOrderId(n) === openOrderId ||
+        (n.entity === "supply_request" && !!n.entity_id && reqIds.has(n.entity_id))
+      ),
     );
     if (!unread.length) return;
     const t = window.setTimeout(() => { unread.forEach((n) => { void markRead(n); }); }, 800);
     return () => window.clearTimeout(t);
-  }, [openOrderId, notifItems]);
+  }, [openOrderId, notifItems, rows]);
 
 
   const load = async () => {
