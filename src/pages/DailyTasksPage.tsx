@@ -65,9 +65,6 @@ export default function DailyTasksPage() {
       .then(({ data }) => setOrders((data as any) ?? []));
     supabase.from("profiles").select("id,full_name").then(({ data }) =>
       setProfiles(Object.fromEntries(((data as any) ?? []).map((p: any) => [p.id, p.full_name]))));
-    const ch = supabase.channel("daily-tasks").on("postgres_changes", { event: "*", schema: "public", table: "daily_tasks" }, () => load()).subscribe();
-    return () => { supabase.removeChannel(ch); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     const ch = supabase.channel("daily-tasks-" + date).on("postgres_changes", { event: "*", schema: "public", table: "daily_tasks" }, () => load()).subscribe();
