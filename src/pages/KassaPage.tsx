@@ -285,22 +285,46 @@ export default function KassaPage() {
     for (const [c, v] of Object.entries(expByCur)) m[c] = (m[c] || 0) - v;
     return m;
   }, [incByCur, expByCur]);
+  // Oy boshidagi qoldiq (ixtiyoriy to'lov turi bo'yicha): oydan oldingi barcha kirim − chiqim
+  const openingFor = (ym: string, pt?: PaymentType): Record<string, number> => {
+    if (!ym) return {};
+    const start = new Date(`${monthBounds(ym).from}T00:00:00`).getTime();
+    const m: Record<string, number> = {};
+    for (const i of incomes) {
+      if (pt && normalizePT(i.payment_type) !== pt) continue;
+      if (new Date(i.income_date).getTime() < start) {
+        const c = normalizeCurrency(i.currency); m[c] = (m[c] || 0) + (Number(i.amount) || 0);
+      }
+    }
+    for (const e of expenses) {
+      if (pt && normalizePT(e.payment_type) !== pt) continue;
+      if (new Date(e.expense_date).getTime() < start) {
+        const c = normalizeCurrency(e.currency); m[c] = (m[c] || 0) - (Number(e.amount) || 0);
+      }
+    }
+    return m;
+  };
+  // Qoldiq = oy boshidagi qoldiq + kirim − chiqim (oy tanlanmagan bo'lsa boshlang'ich 0)
+  const withOpening = (opening: Record<string, number>, inc: Record<string, number>, out: Record<string, number>) => {
+    const m: Record<string, number> = { ...opening };
+    for (const [c, v] of Object.entries(inc)) m[c] = (m[c] || 0) + v;
+    for (const [c, v] of Object.entries(out)) m[c] = (m[c] || 0) - v;
+    return m;
+  };
   // Cash only (excludes corporate card and other electronic payments).
   const cashIn   = useMemo(() => sumByCurrency(fInc,  pt => pt === "cash"), [fInc]);
   const cashOut  = useMemo(() => sumByCurrency(fExp, pt => pt === "cash"), [fExp]);
-  const cashBal  = useMemo(() => {
-    const m: Record<string, number> = { ...cashIn };
-    for (const [c, v] of Object.entries(cashOut)) m[c] = (m[c] || 0) - v;
-    return m;
-  }, [cashIn, cashOut]);
+  const cashBal  = useMemo(
+    () => withOpening(selectedMonth ? openingFor(selectedMonth, "cash") : {}, cashIn, cashOut),
+    [cashIn, cashOut, selectedMonth, incomes, expenses],
+  );
   // Corporate card only.
   const cardIn   = useMemo(() => sumByCurrency(fInc,  pt => pt === "corporate_card"), [fInc]);
   const cardOut  = useMemo(() => sumByCurrency(fExp, pt => pt === "corporate_card"), [fExp]);
-  const cardBal  = useMemo(() => {
-    const m: Record<string, number> = { ...cardIn };
-    for (const [c, v] of Object.entries(cardOut)) m[c] = (m[c] || 0) - v;
-    return m;
-  }, [cardIn, cardOut]);
+  const cardBal  = useMemo(
+    () => withOpening(selectedMonth ? openingFor(selectedMonth, "corporate_card") : {}, cardIn, cardOut),
+    [cardIn, cardOut, selectedMonth, incomes, expenses],
+  );
 
   const CUR_SYMBOL: Record<string, string> = { UZS: "so'm", USD: "$", EUR: "€", RUB: "₽", CNY: "¥", KZT: "₸", TRY: "₺", GBP: "£", AED: "د.إ", INR: "₹", JPY: "¥", KRW: "₩", CHF: "Fr", CAD: "C$", AUD: "A$" };
   const currencyRank = (code: string) => {
@@ -335,22 +359,7 @@ export default function KassaPage() {
   };
 
   // --- Oylik qoldiq: oldingi oy yakuni keyingi oyning boshlang'ich qoldig'i ---
-  const openingByCur = (ym: string): Record<string, number> => {
-    if (!ym) return {};
-    const start = new Date(`${monthBounds(ym).from}T00:00:00`).getTime();
-    const m: Record<string, number> = {};
-    for (const i of incomes) {
-      if (new Date(i.income_date).getTime() < start) {
-        const c = normalizeCurrency(i.currency); m[c] = (m[c] || 0) + (Number(i.amount) || 0);
-      }
-    }
-    for (const e of expenses) {
-      if (new Date(e.expense_date).getTime() < start) {
-        const c = normalizeCurrency(e.currency); m[c] = (m[c] || 0) - (Number(e.amount) || 0);
-      }
-    }
-    return m;
-  };
+  const openingByCur = (ym: string): Record<string, number> => openingFor(ym);
 
   // Tanlangan oy uchun boshlang'ich qoldiq (butun davr tanlansa — 0).
   const openingBal = useMemo(() => (selectedMonth ? openingByCur(selectedMonth) : {}), [selectedMonth, incomes, expenses]);
