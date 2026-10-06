@@ -64,7 +64,7 @@ export function searchNorm(s: string): string {
   if (!s) return "";
   const canonical = s.replace(/(?:Buriyev|Bo['ʼ’`]?riyev|Буриев|Бўриев|Бориев)\s+(?:Shuxrat|Шухрат)/giu, "Buriyev Shuxrat");
   const lat = isCyr(canonical) ? cyrillicToLatin(canonical) : canonical;
-  return lat.toLowerCase().replace(/[''`ʼ]/g, "");
+  return lat.toLowerCase().replace(/['‘’`ʼʻ´]/g, "").replace(/\s+/g, " ").trim();
 }
 
 /** True if needle matches haystack across uz-latin / uz-cyrillic / russian writing. */
