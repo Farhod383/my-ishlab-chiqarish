@@ -169,6 +169,13 @@
       "when": 1791268606655,
       "tag": "0023_stock_movements_recipient_employee",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791268694559,
+      "tag": "0024_protect_employee_history_delete",
+      "breakpoints": true
     }
   ]
 }
