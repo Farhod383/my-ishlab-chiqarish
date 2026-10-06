@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import NewSupplyRequestDialog from "@/components/supply/NewSupplyRequestDialog";
+import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,6 +38,10 @@ export default function SupplyRequestsPage() {
   const { hasRole, user } = useAuth();
   const canEdit = hasRole(["supply", "admin", "warehouse"]);
   const isAdmin = hasRole(["admin"]);
+  // Supply staff can't order to themselves (also enforced in the database).
+  const canCreate = !!user && (isAdmin || !hasRole(["supply"]));
+  const [searchParams, setSearchParams] = useSearchParams();
+  const newMode = searchParams.get("new");
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
@@ -344,10 +350,25 @@ export default function SupplyRequestsPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><Truck className="h-6 w-6" /> Ta'minot — Kerakli mahsulotlar</h1>
-        <p className="text-sm text-muted-foreground">Ta'minot so'rovlari ro'yxati</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><Truck className="h-6 w-6" /> Ta'minot — Kerakli mahsulotlar</h1>
+          <p className="text-sm text-muted-foreground">Ta'minot so'rovlari ro'yxati</p>
+        </div>
+        {canCreate && (
+          <Button onClick={() => setSearchParams({ new: "factory" })}><Plus className="h-4 w-4 mr-2" />Yangi buyurtma</Button>
+        )}
       </div>
+      {canCreate && (
+        <NewSupplyRequestDialog
+          open={!!newMode}
+          onOpenChange={(v) => { if (!v) setSearchParams({}); }}
+          initialMode={newMode === "order" ? "order" : "factory"}
+          initialProductId={searchParams.get("product")}
+          source={searchParams.get("from") === "warehouse" ? "warehouse" : "supply"}
+          onCreated={load}
+        />
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {(["pending", "fulfilled"] as const).map((s) => (
