@@ -359,22 +359,7 @@ export default function KassaPage() {
   };
 
   // --- Oylik qoldiq: oldingi oy yakuni keyingi oyning boshlang'ich qoldig'i ---
-  const openingByCur = (ym: string): Record<string, number> => {
-    if (!ym) return {};
-    const start = new Date(`${monthBounds(ym).from}T00:00:00`).getTime();
-    const m: Record<string, number> = {};
-    for (const i of incomes) {
-      if (new Date(i.income_date).getTime() < start) {
-        const c = normalizeCurrency(i.currency); m[c] = (m[c] || 0) + (Number(i.amount) || 0);
-      }
-    }
-    for (const e of expenses) {
-      if (new Date(e.expense_date).getTime() < start) {
-        const c = normalizeCurrency(e.currency); m[c] = (m[c] || 0) - (Number(e.amount) || 0);
-      }
-    }
-    return m;
-  };
+  const openingByCur = (ym: string): Record<string, number> => openingFor(ym);
 
   // Tanlangan oy uchun boshlang'ich qoldiq (butun davr tanlansa — 0).
   const openingBal = useMemo(() => (selectedMonth ? openingByCur(selectedMonth) : {}), [selectedMonth, incomes, expenses]);
