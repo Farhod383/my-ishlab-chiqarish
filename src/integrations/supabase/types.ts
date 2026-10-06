@@ -2229,6 +2229,7 @@ export type Database = {
           product_id: string | null
           quantity: number
           reason: string | null
+          recipient_employee_id: string | null
           recipient_name: string | null
           source: string | null
           source_order_id: string | null
@@ -2254,6 +2255,7 @@ export type Database = {
           product_id?: string | null
           quantity: number
           reason?: string | null
+          recipient_employee_id?: string | null
           recipient_name?: string | null
           source?: string | null
           source_order_id?: string | null
@@ -2279,6 +2281,7 @@ export type Database = {
           product_id?: string | null
           quantity?: number
           reason?: string | null
+          recipient_employee_id?: string | null
           recipient_name?: string | null
           source?: string | null
           source_order_id?: string | null
@@ -2314,6 +2317,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_recipient_employee_id_fkey"
+            columns: ["recipient_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
@@ -2429,7 +2439,14 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      employee_integrity_issues: {
+        Row: {
+          cnt: number | null
+          detail: string | null
+          issue: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_edit_intake: { Args: { _user_id: string }; Returns: boolean }
