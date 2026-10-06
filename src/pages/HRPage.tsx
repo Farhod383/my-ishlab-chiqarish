@@ -97,12 +97,16 @@ export default function HRPage() {
   };
 
   const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "all" | "vacancy">("active");
-  const filteredEmployees = useMemo(
-    () => statusFilter === "all" || statusFilter === "vacancy"
+  const [empSearch, setEmpSearch] = useState("");
+  const filteredEmployees = useMemo(() => {
+    const base = statusFilter === "all" || statusFilter === "vacancy"
       ? employees
-      : employees.filter(e => (e.status ?? "active") === statusFilter),
-    [employees, statusFilter]
-  );
+      : employees.filter(e => (e.status ?? "active") === statusFilter);
+    const q = empSearch.trim().toLowerCase().replace(/['ʼ‘’`]/g, "").replace(/\s+/g, " ");
+    if (!q) return base;
+    return base.filter(e => (e.full_name ?? "").toLowerCase().replace(/['ʼ‘’`]/g, "").replace(/\s+/g, " ").includes(q));
+  }, [employees, statusFilter, empSearch]);
+  const nameKey = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
 
   const resetForm = () => setForm(emptyForm());
 
@@ -116,6 +120,11 @@ export default function HRPage() {
     if (!isValidPhone(form.phone)) { toast.error("Telefon formati: +998 XX XXX XX XX"); return; }
     if (!form.position.trim()) { toast.error("Lavozim majburiy"); return; }
     if (!form.department.trim()) { toast.error("Bo'lim majburiy"); return; }
+    const prevName = editId ? employees.find(x => x.id === editId)?.full_name ?? "" : "";
+    if ((!editId || nameKey(prevName) !== nameKey(composedName)) &&
+        employees.some(x => x.id !== editId && nameKey(x.full_name ?? "") === nameKey(composedName))) {
+      toast.error("Bu ism va familiyadagi xodim allaqachon ro'yxatda mavjud."); return;
+    }
 
     // Termination guard
     if (editId) {
@@ -307,6 +316,7 @@ export default function HRPage() {
             </Tabs>
             {statusFilter !== "vacancy" && (
               <div className="flex items-center gap-2">
+                <Input value={empSearch} onChange={e => setEmpSearch(e.target.value)} placeholder="Xodimni ism yoki familiya bo'yicha qidiring..." className="h-9 w-72" />
                 {newCount > 0 && (
                   <Badge className="bg-status-green text-status-green-foreground">{newCount} yangi xodim</Badge>
                 )}
