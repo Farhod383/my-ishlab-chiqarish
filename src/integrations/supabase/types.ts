@@ -1031,6 +1031,7 @@ export type Database = {
       }
       instrument_assignments: {
         Row: {
+          box_number: string | null
           created_at: string
           employee_id: string
           id: string
@@ -1044,6 +1045,7 @@ export type Database = {
           returned_by: string | null
         }
         Insert: {
+          box_number?: string | null
           created_at?: string
           employee_id: string
           id?: string
@@ -1057,6 +1059,7 @@ export type Database = {
           returned_by?: string | null
         }
         Update: {
+          box_number?: string | null
           created_at?: string
           employee_id?: string
           id?: string

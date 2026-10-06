@@ -42,8 +42,9 @@ type Assignment = {
   returned_at: string | null;
   issue_comment: string | null;
   return_comment: string | null;
+  box_number?: string | null;
   instrument?: { name: string; inventory_number: string | null } | null;
-  employee?: { full_name: string } | null;
+  employee?: { full_name: string; status?: string | null } | null;
 };
 
 type Group = {
@@ -87,7 +88,26 @@ export default function InstrumentsTab() {
 
   // issue: name-based; backend resolves to batch
   const [issueOpen, setIssueOpen] = useState(false);
-  const [issueForm, setIssueForm] = useState({ employee_id: "", group_key: "", quantity: "1", issued_at: new Date().toISOString().slice(0, 10), comment: "" });
+  const [issueForm, setIssueForm] = useState({ employee_id: "", group_key: "", quantity: "1", issued_at: new Date().toISOString().slice(0, 10), comment: "", box_number: "" });
+  const [boxSearch, setBoxSearch] = useState("");
+  const [showReturned, setShowReturned] = useState(false);
+  const visibleAssignments = useMemo(() => {
+    const bq = boxSearch.trim().toLowerCase().replace(/\s+/g, "");
+    return assignments.filter(a => {
+      if (bq) return (a.box_number ?? "").toLowerCase().replace(/\s+/g, "").includes(bq) && (showReturned || !a.returned_at || true);
+      return showReturned || !a.returned_at;
+    });
+  }, [assignments, boxSearch, showReturned]);
+  const editBox = async (a: Assignment) => {
+    const v = window.prompt("Karobka raqami (bo'sh qoldirsangiz o'chiriladi):", a.box_number ?? "");
+    if (v === null) return;
+    const next = v.trim() || null;
+    const { error } = await supabase.from("instrument_assignments").update({ box_number: next } as any).eq("id", a.id);
+    if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Instrument karobka raqami o'zgartirildi", entity: "instrument_assignment", details: `${a.instrument?.name ?? ""} · ${a.employee?.full_name ?? ""}: ${a.box_number ?? "—"} → ${next ?? "—"}` });
+    setAssignments(prev => prev.map(x => x.id === a.id ? { ...x, box_number: next } : x));
+    toast.success("Saqlandi");
+  };
 
   // return
   const [returnOpen, setReturnOpen] = useState(false);
@@ -102,7 +122,7 @@ export default function InstrumentsTab() {
       supabase.from("instruments").select("*").order("name").order("created_at"),
       supabase
         .from("instrument_assignments")
-        .select("*, instrument:instruments(name, inventory_number), employee:employees(full_name)")
+        .select("*, instrument:instruments(name, inventory_number), employee:employees(full_name, status)")
         .order("issued_at", { ascending: false })
         .limit(2000),
     ]);
@@ -254,6 +274,7 @@ export default function InstrumentsTab() {
         quantity: take,
         issued_at: new Date(issueForm.issued_at).toISOString(),
         issue_comment: issueForm.comment.trim() || null,
+        box_number: issueForm.box_number.trim() || null,
         issued_by: user?.id,
       });
       if (error) { toast.error(error.message); return; }
@@ -262,7 +283,7 @@ export default function InstrumentsTab() {
     if (remaining > 0) { toast.error("Faol batchlarda yetarli emas"); return; }
     await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Instrument berildi", entity: "instrument_assignment", details: `${g.name} ×${qty} → ${emp?.full_name}` });
     toast.success("Berildi");
-    setIssueForm({ employee_id: "", group_key: "", quantity: "1", issued_at: new Date().toISOString().slice(0, 10), comment: "" });
+    setIssueForm({ employee_id: "", group_key: "", quantity: "1", issued_at: new Date().toISOString().slice(0, 10), comment: "", box_number: "" });
     setIssueOpen(false);
   };
 
@@ -314,6 +335,7 @@ export default function InstrumentsTab() {
                     <div><Label>Miqdor *</Label><NumberInput min={1} value={issueForm.quantity} onChange={e => setIssueForm({ ...issueForm, quantity: e.target.value })} /></div>
                     <div><Label>Sana</Label><Input type="date" value={issueForm.issued_at} onChange={e => setIssueForm({ ...issueForm, issued_at: e.target.value })} /></div>
                   </div>
+                  <div><Label>Karobka raqami <span className="text-muted-foreground font-normal">(ixtiyoriy)</span></Label><Input value={issueForm.box_number} onChange={e => setIssueForm({ ...issueForm, box_number: e.target.value })} placeholder="K-025" /></div>
                   <div><Label>Izoh</Label><Textarea value={issueForm.comment} onChange={e => setIssueForm({ ...issueForm, comment: e.target.value })} /></div>
                   <Button className="w-full" onClick={doIssue}>Saqlash</Button>
                 </div>
@@ -403,6 +425,12 @@ export default function InstrumentsTab() {
       </Card>
 
       {/* Active assignments */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Input value={boxSearch} onChange={e => setBoxSearch(e.target.value)} placeholder="Karobka raqami bo'yicha qidirish (masalan K-025)" className="max-w-xs" />
+        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <input type="checkbox" checked={showReturned} onChange={e => setShowReturned(e.target.checked)} /> Qaytarilganlarni ham ko'rsatish
+        </label>
+      </div>
       <Card>
         <CardContent className="p-0">
           <div className="border rounded-md overflow-x-auto">
@@ -414,22 +442,34 @@ export default function InstrumentsTab() {
                   <TableHead>Instrument</TableHead>
                   <TableHead className="text-right">Miqdor</TableHead>
                   <TableHead>Berilgan sana</TableHead>
+                  <TableHead>Karobka raqami</TableHead>
                   <TableHead>Izoh</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {assignments.filter(a => !a.returned_at).map((a, idx) => (
-                  <TableRow key={a.id}>
+                {visibleAssignments.map((a, idx) => (
+                  <TableRow key={a.id} className={a.returned_at ? "opacity-60" : ""}>
                     <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
-                    <TableCell className="font-medium">{localize(a.employee?.full_name) || "—"}</TableCell>
-                    <TableCell>{a.instrument?.name ?? "—"}{a.instrument?.inventory_number && <span className="text-xs text-muted-foreground ml-1">№{a.instrument.inventory_number}</span>}</TableCell>
+                    <TableCell className="font-medium">
+                      {localize(a.employee?.full_name) || "—"}
+                      {a.employee?.status && a.employee.status !== "active" && <Badge variant="secondary" className="ml-1 text-[10px]">Bo'shagan</Badge>}
+                    </TableCell>
+                    <TableCell>{a.instrument?.name ?? "—"}{a.instrument?.inventory_number && <span className="text-xs text-muted-foreground ml-1">№{a.instrument.inventory_number}</span>}{a.returned_at && <span className="text-xs text-muted-foreground ml-1">(qaytarilgan)</span>}</TableCell>
                     <TableCell className="text-right font-mono">{a.quantity}</TableCell>
                     <TableCell className="text-xs whitespace-nowrap">{new Date(a.issued_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-xs font-mono whitespace-nowrap">
+                      {a.box_number || "—"}
+                      {canManage && (
+                        <Button size="sm" variant="ghost" className="h-6 px-1.5 ml-1" onClick={() => editBox(a)} title="Karobka raqamini o'zgartirish">
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </TableCell>
                     <TableCell className="text-xs italic text-muted-foreground">{a.issue_comment ?? "—"}</TableCell>
                   </TableRow>
                 ))}
-                {assignments.filter(a => !a.returned_at).length === 0 && (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6 text-sm">Hozircha topshirilmagan instrumentlar yo'q</TableCell></TableRow>
+                {visibleAssignments.length === 0 && (
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6 text-sm">{boxSearch ? "Bu karobka raqami bo'yicha instrument topilmadi" : "Hozircha topshirilmagan instrumentlar yo'q"}</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
