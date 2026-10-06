@@ -4,6 +4,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Button } from "@/components/ui/button";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { matchesAcrossScripts } from "@/lib/translit";
 
 
 export interface SearchOption {
@@ -66,7 +67,7 @@ export default function SearchableSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-        <Command loop>
+        <Command loop filter={(itemValue, search) => (matchesAcrossScripts(itemValue, search) ? 1 : 0)}>
           <CommandInput placeholder={searchPlaceholder} />
           <CommandList className="max-h-[min(60vh,320px)] overflow-y-auto">
             <CommandEmpty>{emptyText}</CommandEmpty>
