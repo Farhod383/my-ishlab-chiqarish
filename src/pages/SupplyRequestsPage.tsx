@@ -171,8 +171,8 @@ export default function SupplyRequestsPage() {
     };
 
     const result: ReturnType<typeof mk>[] = [];
-    result.push(mk(GENERAL_KEY, { id: GENERAL_KEY, order_number: "📌", product_name: "Zavod uchun umumiy" }, general, true));
-    result.push(mk(ALL_ORDERS_KEY, { id: ALL_ORDERS_KEY, order_number: "📌", product_name: "Zakazlar uchun umumiy" }, allOrders, true));
+    result.push(mk(GENERAL_KEY, { id: GENERAL_KEY, order_number: "📌", product_name: "Zavod uchun umumiy buyurtma" }, general, true));
+    result.push(mk(ALL_ORDERS_KEY, { id: ALL_ORDERS_KEY, order_number: "📌", product_name: "Zakazlar uchun umumiy buyurtma" }, allOrders, true));
 
     const ordered = Array.from(perOrder.values()).sort((a, b) => (b.order.order_number ?? "").localeCompare(a.order.order_number ?? ""));
     ordered.forEach((g) => result.push(mk(g.order.id, g.order, g.items, false)));
