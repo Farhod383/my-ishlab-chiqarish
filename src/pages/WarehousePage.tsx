@@ -45,7 +45,8 @@ export default function WarehousePage() {
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [movements, setMovements] = useState<any[]>([]);
-  const { employees } = useEmployees({ activeOnly: true });
+  const { employees, allEmployees } = useEmployees({ activeOnly: true });
+  const empName = (id: string) => allEmployees.find(e => e.id === id)?.full_name ?? id;
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [groupModal, setGroupModal] = useState<{ name: string; batches: any[] } | null>(null);
@@ -308,7 +309,7 @@ export default function WarehousePage() {
   const finalizeRelease = async (crossOrderReason: string | null, sourceOrderId: string | null) => {
     const { error } = await supabase.from("stock_movements").insert({
       product_id: outProduct, order_id: outOrder || null, direction: "out",
-      quantity: outQty, recipient_name: outRecipient, comment: outComment, created_by: user?.id, taken_by: user?.id,
+      quantity: outQty, recipient_name: empName(outRecipient), recipient_employee_id: outRecipient || null, comment: outComment, created_by: user?.id, taken_by: user?.id,
       ...(crossOrderReason ? { cross_order_reason: crossOrderReason, source_order_id: sourceOrderId } : {}),
     } as any);
     if (error) { toast.error(error.message); return; }
@@ -440,7 +441,7 @@ export default function WarehousePage() {
     }
     const { error } = await supabase.from("stock_movements").insert({
       product_id: otherProduct, order_id: null, direction: "out",
-      quantity: otherQty, recipient_name: otherRecipient, reason: otherReason,
+      quantity: otherQty, recipient_name: empName(otherRecipient), recipient_employee_id: otherRecipient || null, reason: otherReason,
       comment: otherReason, created_by: user?.id, taken_by: user?.id,
     });
     if (error) { toast.error(error.message); return; }
@@ -1099,7 +1100,7 @@ export default function WarehousePage() {
                         value={otherRecipient}
                         onChange={setOtherRecipient}
                         placeholder={t.warehouse.takenByPh}
-                        options={employees.map(e => ({ value: e.full_name, label: localize(e.full_name), hint: e.department }))}
+                        options={employees.map(e => ({ value: e.id, label: localize(e.full_name), hint: [e.position, e.department, e.phone].filter(Boolean).join(" · ") }))}
                       />
                     </div>
                     <div><Label>{t.warehouse.reason} *</Label><Textarea value={otherReason} onChange={e => setOtherReason(e.target.value)} placeholder={t.warehouse.reasonPh} /></div>
@@ -1135,7 +1136,7 @@ export default function WarehousePage() {
                         value={outRecipient}
                         onChange={setOutRecipient}
                         placeholder={t.warehouse.takenByPh}
-                        options={employees.map(e => ({ value: e.full_name, label: localize(e.full_name), hint: e.department }))}
+                        options={employees.map(e => ({ value: e.id, label: localize(e.full_name), hint: [e.position, e.department, e.phone].filter(Boolean).join(" · ") }))}
                       />
                     </div>
                     <div><Label>{t.warehouse.commentOpt}</Label><Textarea value={outComment} onChange={e => setOutComment(e.target.value)} /></div>

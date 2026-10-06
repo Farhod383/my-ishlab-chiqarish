@@ -84,7 +84,7 @@ export default function SearchableSelect({
               {options.map(o => (
                 <CommandItem
                   key={o.value}
-                  value={`${o.label} ${o.hint ?? ""}`}
+                  value={`${o.label} ${o.hint ?? ""} ${o.value}`}
                   onSelect={() => { onChange(o.value); setOpen(false); }}
                   className="min-h-11 cursor-pointer"
                 >
