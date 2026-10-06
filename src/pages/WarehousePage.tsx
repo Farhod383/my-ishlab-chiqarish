@@ -492,20 +492,22 @@ export default function WarehousePage() {
     const trimmedName = impProductName.trim();
     let productId: string;
 
+    let unitToSave = impUnit || "dona";
     if (impProductId) {
       productId = impProductId;
+      const pu = (products.find((x: any) => x.id === impProductId) as any)?.unit;
+      if (pu) unitToSave = pu;
       const patch: any = {};
       if (priceN > 0) patch.last_price = priceN;
       if (impPhone) patch.phone = impPhone;
       if (imgUrl) patch.image_url = imgUrl;
       if (impSource.trim()) patch.source = impSource.trim();
-      if (impUnit) patch.unit = impUnit;
       if (Object.keys(patch).length > 0) {
         await supabase.from("products").update(patch).eq("id", productId);
       }
     } else {
       const { data: existingProducts } = await supabase
-        .from("products").select("id, name").ilike("name", trimmedName).limit(1);
+        .from("products").select("id, name, unit").ilike("name", trimmedName).eq("unit", unitToSave).limit(1);
       if (existingProducts && existingProducts.length > 0) {
         productId = existingProducts[0].id;
       } else {
@@ -1206,10 +1208,11 @@ export default function WarehousePage() {
                   <div className="grid grid-cols-3 gap-3">
                     <div className="col-span-2"><Label>{t.supply.qty} *</Label><NumberInput min={0.001} step={0.001} value={impQty} onChange={e => setImpQty(e.target.value)} placeholder={(impUnit || "").toLowerCase() === "tonna" ? "0.5 / 1.25 / 6.940" : (t.warehouse as any).qtyPh} /></div>
                     <div><Label>{t.warehouse.unit}</Label>
-                      <Select value={impUnit} onValueChange={setImpUnit}>
+                      <Select value={impUnit} onValueChange={setImpUnit} disabled={!!impProductId}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
                       </Select>
+                      {impProductId && <p className="text-[11px] text-muted-foreground mt-1">Mahsulot profilidan</p>}
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-3 items-end">
