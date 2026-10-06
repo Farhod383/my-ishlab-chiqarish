@@ -299,7 +299,7 @@ export default function InstrumentsTab() {
                       value={issueForm.employee_id}
                       onChange={v => setIssueForm({ ...issueForm, employee_id: v })}
                       placeholder="Xodim tanlang"
-                      options={employees.map(e => ({ value: e.id, label: localize(e.full_name), hint: e.department }))}
+                      options={employees.map(e => ({ value: e.id, label: localize(e.full_name), hint: [e.position, e.department, e.phone ? `…${String(e.phone).replace(/\D/g, "").slice(-4)}` : null].filter(Boolean).join(" · ") }))}
                     />
                   </div>
                   <div><Label>Instrument *</Label>
