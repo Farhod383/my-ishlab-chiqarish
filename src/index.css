@@ -44,6 +44,13 @@
     --status-red-ink: 0 72% 34%;
     --status-green-ink: 143 62% 26%;
 
+    /* Solid dark status buttons: dark background + white label, darker on hover */
+    --status-red-solid: 0 72% 30%;
+    --status-red-solid-hover: 0 78% 23%;
+    --status-green-solid: 143 62% 24%;
+    --status-green-solid-hover: 143 66% 17%;
+    --status-solid-foreground: 0 0% 100%;
+
     /* Sidebar - purple/violet */
     --sidebar-background: 265 45% 14%;
     --sidebar-foreground: 270 20% 85%;

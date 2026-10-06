@@ -41,6 +41,11 @@ export default {
           blue: "hsl(var(--status-blue))",
           "green-ink": "hsl(var(--status-green-ink))",
           "red-ink": "hsl(var(--status-red-ink))",
+          "red-solid": "hsl(var(--status-red-solid))",
+          "red-solid-hover": "hsl(var(--status-red-solid-hover))",
+          "green-solid": "hsl(var(--status-green-solid))",
+          "green-solid-hover": "hsl(var(--status-green-solid-hover))",
+          "solid-fg": "hsl(var(--status-solid-foreground))",
         },
       },
       borderRadius: {
