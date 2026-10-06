@@ -186,7 +186,7 @@ export default function DefectsPage() {
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><AlertOctagon className="h-6 w-6" />{d.title ?? "Brak"}</h1>
           <p className="text-sm text-muted-foreground">{d.subtitle ?? "Yaroqsiz mahsulotlar hisobi"}</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (o) setForm(f => ({ ...f, item_type: kind, product_id: "", instrument_id: "", order_id: "" })); }}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{d.add ?? "Brak qo'shish"}</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>{d.add ?? "Brak qo'shish"}</DialogTitle></DialogHeader>
@@ -217,7 +217,7 @@ export default function DefectsPage() {
                       value={form.product_id}
                       onChange={v => setForm({ ...form, product_id: v })}
                       placeholder={d.selectProduct ?? "Tanlang"}
-                      options={products.map(p => ({ value: p.id, label: p.name, hint: p.unit ?? "" }))}
+                      options={products.filter(p => Number(p.stock_qty) > 0).map(p => ({ value: p.id, label: p.name, hint: `mavjud: ${p.stock_qty} ${p.unit ?? ""}` }))}
                     />
                   </div>
                 </>
@@ -229,7 +229,7 @@ export default function DefectsPage() {
                     value={form.instrument_id}
                     onChange={v => setForm({ ...form, instrument_id: v })}
                     placeholder={d.selectInstrument ?? "Instrument tanlang"}
-                    options={instruments.map(i => ({ value: i.id, label: i.name, hint: `${i.quantity} dona` }))}
+                    options={instruments.filter(i => i.status === "active" && Number(i.quantity) > 0).map(i => ({ value: i.id, label: i.name, hint: `${i.inventory_number ? i.inventory_number + " · " : ""}mavjud: ${i.quantity} dona` }))}
                   />
                 </div>
               )}
