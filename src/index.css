@@ -40,6 +40,10 @@
     --status-red: 0 72% 51%;
     --status-blue: 215 60% 52%;
 
+    /* Darker "ink" variants for text/borders on light status backgrounds (AA contrast) */
+    --status-red-ink: 0 72% 34%;
+    --status-green-ink: 143 62% 26%;
+
     /* Sidebar - purple/violet */
     --sidebar-background: 265 45% 14%;
     --sidebar-foreground: 270 20% 85%;

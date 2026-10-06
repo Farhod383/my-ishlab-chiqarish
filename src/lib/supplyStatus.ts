@@ -23,12 +23,16 @@ export const supplyStatusDotCls: Record<SupplyStatus, string> = {
 
 /** Selected status button: stronger background tint, dark text, dark border */
 export const supplyStatusActiveBtnCls: Record<SupplyStatus, string> = {
-  pending: "bg-status-red/20 text-status-red border-status-red hover:bg-status-red/30 hover:text-status-red",
-  fulfilled: "bg-status-green/20 text-status-green border-status-green hover:bg-status-green/30 hover:text-status-green",
+  pending:
+    "bg-status-red/25 text-status-red-ink border-status-red-ink hover:bg-status-red/35 hover:text-status-red-ink",
+  fulfilled:
+    "bg-status-green/25 text-status-green-ink border-status-green-ink hover:bg-status-green/35 hover:text-status-green-ink",
 };
 
-/** Unselected status button: transparent with tinted border/text */
+/** Unselected status button: light tinted background, dark text, dark tinted border */
 export const supplyStatusOutlineBtnCls: Record<SupplyStatus, string> = {
-  pending: "border-status-red/40 text-status-red hover:bg-status-red/10 hover:text-status-red",
-  fulfilled: "border-status-green/40 text-status-green hover:bg-status-green/10 hover:text-status-green",
+  pending:
+    "bg-status-red/10 border-status-red-ink/60 text-status-red-ink hover:bg-status-red/20 hover:text-status-red-ink",
+  fulfilled:
+    "bg-status-green/10 border-status-green-ink/60 text-status-green-ink hover:bg-status-green/20 hover:text-status-green-ink",
 };
