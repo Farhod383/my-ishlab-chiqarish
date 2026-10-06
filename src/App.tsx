@@ -8,6 +8,7 @@ import { AuthProvider } from "@/auth/AuthContext";
 import { ProtectedRoute } from "@/auth/ProtectedRoute";
 import { Layout } from "@/components/Layout";
 import OnlineGuard from "@/components/OnlineGuard";
+import { RouteReadMarker } from "@/notifications/RouteReadMarker";
 import { NotificationsProvider } from "@/notifications/NotificationsContext";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -53,6 +54,7 @@ const App = () => (
           <NotificationsProvider>
           <OnlineGuard>
           <BrowserRouter>
+            <RouteReadMarker />
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/*" element={
