@@ -217,13 +217,7 @@ export default function WarehousePage() {
   const canRequest = !!user && !(userRoles.includes("supply") && !userRoles.includes("admin"));
   const primaryRole = userRoles[0] || "";
 
-  // "Buyurtma berish" is only an entry point: the order is created in Ta'minot (/supply?new=…&product=<id>).
-  const navigate = useNavigate();
-  const goSupplyNew = (mode: "order" | "factory", productId?: string) => {
-    const p = new URLSearchParams({ new: mode, from: "warehouse" });
-    if (productId) p.set("product", productId);
-    navigate(`/supply?${p.toString()}`);
-  };
+  // Ordering lives only in Ta'minot → Yangi buyurtma; Sklad has no order action.
   const [prOpen, setPrOpen] = useState(false);
   const [prMode, setPrMode] = useState<"order" | "factory">("factory");
   const [releaseOpen, setReleaseOpen] = useState(false);
@@ -239,47 +233,6 @@ export default function WarehousePage() {
   const [prComment, setPrComment] = useState("");
   const [prOrderId, setPrOrderId] = useState<string>("");
 
-  const submitPurchaseRequest = async () => {
-    const name = prPname.trim();
-    if (!name || !prQty) { toast.error("Mahsulot va miqdorni kiriting"); return; }
-    if (prMode === "order" && !prOrderId) { toast.error("Zakaz uchun buyurtmada zakazni tanlang"); return; }
-    if (!(await ensureOnline())) return;
-    const { error } = await supabase.from("order_supply_requests").insert({
-      order_id: prMode === "order" ? (prOrderId || null) : null,
-      product_id: prPid || null,
-      product_name: name,
-      quantity: prQty,
-      unit: prUnit || null,
-      required_date: prDate || null,
-      comment: prComment || null,
-      created_by: user?.id ?? null,
-      department: primaryRole || null,
-      source: "warehouse",
-    } as any);
-    if (error) { toast.error(error.message); return; }
-    const { notify } = await import("@/lib/notify");
-    await notify({
-      type: "supply_request",
-      title: `Yangi ta'minot so'rovi${prMode === "order" ? "" : " (zavod uchun)"}`,
-      body: `${name} · ${prQty} ${prUnit ?? ""}${prDate ? ` · kerak: ${prDate}` : ""}`,
-      // Zakaz bilan bog'langan so'rov — bildirishnoma o'sha zakazga tegishli bo'ladi.
-      link: prMode === "order" && prOrderId ? `/orders/${prOrderId}` : `/supply`,
-      entity: "supply_request",
-      recipient_role: ["supply", "warehouse"],
-      sender_id: user?.id,
-      sender_name: user?.email,
-    });
-    await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
-      action: prMode === "order" ? "Zakaz uchun buyurtma berildi" : "Zavod uchun buyurtma berildi",
-      entity: "supply_request",
-      order_id: prMode === "order" ? (prOrderId || null) : null,
-      details: `${name} · ${prQty} ${prUnit ?? ""}`,
-    });
-    toast.success("So'rov yuborildi");
-    setPrPid(""); setPrPname(""); setPrQty(0); setPrUnit("dona"); setPrDate(""); setPrComment(""); setPrOrderId("");
-    setPrOpen(false);
-  };
   const fmt = (n: number) => fmtNum(n);
 
   const release = async () => {
@@ -899,11 +852,6 @@ export default function WarehousePage() {
               <ArrowUpFromLine className="h-4 w-4 mr-2" />Chiqim qilish
             </Button>
           )}
-          {canRequest && (
-            <Button className="min-h-11 bg-sky-600 hover:bg-sky-700 text-white shadow-sm" onClick={() => setChooseBuy(true)}>
-              <ShoppingCart className="h-4 w-4 mr-2" />Buyurtma berish
-            </Button>
-          )}
         </div>
 
         {/* KIRIM chooser modal */}
@@ -986,35 +934,6 @@ export default function WarehousePage() {
         </Dialog>
 
         {/* BUYURTMA chooser modal */}
-        <Dialog open={chooseBuy} onOpenChange={setChooseBuy}>
-          <DialogContent className="max-w-3xl">
-            <DialogHeader>
-              <DialogTitle className="text-2xl">Buyurtma turi</DialogTitle>
-            </DialogHeader>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-              <button
-                onClick={() => { setChooseBuy(false); goSupplyNew("order"); }}
-                className="group text-left rounded-2xl border-2 border-purple-500/30 bg-gradient-to-br from-purple-500/10 to-purple-500/5 p-6 hover:border-purple-500 hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[200px] flex flex-col gap-3"
-              >
-                <div className="h-14 w-14 rounded-xl bg-purple-500/20 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <ClipboardList className="h-8 w-8" />
-                </div>
-                <div className="text-xl font-bold">Zakaz uchun buyurtma</div>
-                <div className="text-sm text-muted-foreground">Aniq zakaz uchun mahsulot buyurtma qilish (zakaz tanlash majburiy)</div>
-              </button>
-              <button
-                onClick={() => { setChooseBuy(false); goSupplyNew("factory"); }}
-                className="group text-left rounded-2xl border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 p-6 hover:border-emerald-500 hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[200px] flex flex-col gap-3"
-              >
-                <div className="h-14 w-14 rounded-xl bg-emerald-500/20 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Factory className="h-8 w-8" />
-                </div>
-                <div className="text-xl font-bold">Zavod uchun buyurtma</div>
-                <div className="text-sm text-muted-foreground">Umumiy zavod ehtiyoji uchun buyurtma</div>
-              </button>
-            </div>
-          </DialogContent>
-        </Dialog>
 
         <div className="hidden">
           {canManage && (
@@ -1480,15 +1399,6 @@ export default function WarehousePage() {
                             <div className="font-semibold text-sm">{g.first.unit || "dona"}</div>
                           </div>
                         </div>
-                        {canRequest && (
-                          <Button
-                            size="sm"
-                            className="w-full"
-                            onClick={() => goSupplyNew("factory", g.first.id)}
-                          >
-                            <ShoppingCart className="h-3.5 w-3.5 mr-1" /> Buyurtma berish
-                          </Button>
-                        )}
                       </div>
                     );
                   })}

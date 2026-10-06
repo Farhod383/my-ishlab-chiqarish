@@ -211,6 +211,13 @@
       "when": 1791271498273,
       "tag": "0029_supply_cannot_self_order",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1791272147339,
+      "tag": "0030_block_warehouse_sourced_supply_orders",
+      "breakpoints": true
     }
   ]
 }
