@@ -129,7 +129,10 @@ export default function SupplyRequestsPage() {
     const sa = normalizeStatus(a.status) === "pending" ? 0 : 1;
     const sb = normalizeStatus(b.status) === "pending" ? 0 : 1;
     if (sa !== sb) return sa - sb;
-    return (a.required_date ?? "").localeCompare(b.required_date ?? "");
+    // Pending: newest created first. Fulfilled: newest fulfilled first (fallback updated/created).
+    const da = sa === 0 ? a.created_at : (a.fulfilled_at ?? a.updated_at ?? a.created_at);
+    const db = sb === 0 ? b.created_at : (b.fulfilled_at ?? b.updated_at ?? b.created_at);
+    return (db ?? "").localeCompare(da ?? "");
   };
 
   const matchesQuery = (r: any) => {
