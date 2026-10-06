@@ -365,7 +365,7 @@ export default function SupplyRequestsPage() {
           onOpenChange={(v) => { if (!v) setSearchParams({}); }}
           initialMode={newMode === "order" ? "order" : "factory"}
           initialProductId={searchParams.get("product")}
-          source={searchParams.get("from") === "warehouse" ? "warehouse" : "supply"}
+          source="supply"
           onCreated={load}
         />
       )}
