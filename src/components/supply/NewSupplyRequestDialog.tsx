@@ -110,20 +110,9 @@ export default function NewSupplyRequestDialog({ open, onOpenChange, initialProd
             <Button type="button" variant={mode === "order" ? "default" : "outline"} onClick={() => setMode("order")}>Zakaz uchun</Button>
           </div>
           <div>
-            <Label>Mahsulot</Label>
-            <SearchableSelect
-              value={pid}
-              onChange={(v) => { setPid(v); const p = products.find((x) => x.id === v); if (p) { setPname(p.name); if (p.unit) setUnit(p.unit); } }}
-              placeholder="Tanlang yoki pastda yozing"
-              options={products.map((p) => ({ value: p.id, label: p.name, hint: `${p.stock_qty} ${p.unit}` }))}
-            />
+            <Label>Mahsulot nomi *</Label>
+            <Input value={pname} onChange={(e) => { setPname(e.target.value); if (pid) setPid(""); }} placeholder="Masalan: Kraska 201" />
           </div>
-          {!pid && (
-            <div>
-              <Label>Yoki yangi mahsulot nomi *</Label>
-              <Input value={pname} onChange={(e) => setPname(e.target.value)} placeholder="Masalan: Kraska 201" />
-            </div>
-          )}
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Miqdor *</Label><NumberInput min={0.01} step={0.01} value={qty || ""} onChange={(e) => setQty(Number(e.target.value))} /></div>
             <div>
