@@ -2487,6 +2487,7 @@ export type Database = {
         Args: { _item_id: string }
         Returns: undefined
       }
+      employee_name_key: { Args: { _n: string }; Returns: string }
       finalize_intake_session: {
         Args: { _session_id: string }
         Returns: undefined
