@@ -462,7 +462,7 @@ export default function SupplyRequestsPage() {
               const e = edit[item.id] ?? { status: normalizeStatus(item.status), supply_comment: "", dirty: false };
               const color = normalizeStatus(item.status);
               return (
-                <Card key={item.id} className="border-l-4" style={{ borderLeftColor: color === "pending" ? "hsl(var(--status-red))" : "hsl(var(--status-green))" }}>
+                <Card key={item.id} className={`border-l-4 ${color === "pending" ? "bg-status-red/10 border-status-red/30" : ""}`} style={{ borderLeftColor: color === "pending" ? "hsl(var(--status-red))" : "hsl(var(--status-green))" }}>
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div className="flex items-start gap-3 min-w-0 flex-1">
