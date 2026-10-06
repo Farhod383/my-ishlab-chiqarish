@@ -1041,20 +1041,20 @@ export default function WarehousePage() {
                 <DialogContent>
                   <DialogHeader><DialogTitle>{t.warehouse.releaseTitle}</DialogTitle></DialogHeader>
                   <div className="space-y-3">
-                    <div><Label>{t.warehouse.cols.product}</Label>
-                      <SearchableSelect
-                        value={outProduct}
-                        onChange={setOutProduct}
-                        placeholder={t.supply.select}
-                        options={outProductOptions}
-                      />
-                    </div>
                     <div><Label>{t.warehouse.forOrder}</Label>
                       <SearchableSelect
                         value={outOrder}
                         onChange={setOutOrder}
                         placeholder={t.warehouse.orderPh}
                         options={orders.map(o => ({ value: o.id, label: o.product_name, hint: o.order_number }))}
+                      />
+                    </div>
+                    <div><Label>{t.warehouse.cols.product}</Label>
+                      <SearchableSelect
+                        value={outProduct}
+                        onChange={setOutProduct}
+                        placeholder={t.supply.select}
+                        options={outProductOptions}
                       />
                     </div>
                     <div><Label>{t.warehouse.qty}</Label><NumberInput min={0.1} step={0.1} value={outQty} onChange={e => setOutQty(Number(e.target.value))} /></div>
@@ -1087,6 +1087,18 @@ export default function WarehousePage() {
               <DialogContent className="max-w-lg max-h-[90vh] flex flex-col p-0 gap-0">
                 <DialogHeader className="px-6 pt-6 pb-3 border-b shrink-0"><DialogTitle>{t.supply.receiveTitle}</DialogTitle></DialogHeader>
                 <div className="space-y-3 overflow-y-auto px-6 py-4 flex-1">
+                  <div>
+                    <Label>Qaysi zakaz uchun olib kelindi <span className="text-muted-foreground text-xs">(ixtiyoriy)</span></Label>
+                    <SearchableSelect
+                      value={impOrderId}
+                      onChange={setImpOrderId}
+                      placeholder="Tanlanmasa — umumiy ombor kirimi"
+                      options={[
+                        { value: "", label: "— Yo'q (umumiy) —" },
+                        ...orders.map((o: any) => ({ value: o.id, label: `${o.order_number} — ${o.product_name}` })),
+                      ]}
+                    />
+                  </div>
                   <div><Label>{t.supply.productName || t.warehouse.productName} *</Label>
                     <Popover open={impPickerOpen} onOpenChange={setImpPickerOpen}>
                       <PopoverTrigger asChild>
@@ -1174,18 +1186,6 @@ export default function WarehousePage() {
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>{locations.map(l => <SelectItem key={l.id} value={l.name}>{l.name}</SelectItem>)}</SelectContent>
                     </Select>
-                  </div>
-                  <div>
-                    <Label>Qaysi zakaz uchun olib kelindi <span className="text-muted-foreground text-xs">(ixtiyoriy)</span></Label>
-                    <SearchableSelect
-                      value={impOrderId}
-                      onChange={setImpOrderId}
-                      placeholder="Tanlanmasa — umumiy ombor kirimi"
-                      options={[
-                        { value: "", label: "— Yo'q (umumiy) —" },
-                        ...orders.map((o: any) => ({ value: o.id, label: `${o.order_number} — ${o.product_name}` })),
-                      ]}
-                    />
                   </div>
                   {Number(impQty) > 0 && Number(impPrice) > 0 && (
                     <div className="text-sm bg-primary/5 border border-primary/20 rounded p-2 space-y-1">
@@ -1788,6 +1788,9 @@ export default function WarehousePage() {
         <DialogContent>
           <DialogHeader><DialogTitle>{t.common.edit} — {editMov?.direction === "in" ? t.warehouse.in : t.warehouse.out}</DialogTitle></DialogHeader>
           <div className="space-y-3">
+            <div><Label>{t.warehouse.forOrder}</Label>
+              <Input readOnly disabled value={(() => { const o = orders.find((x: any) => x.id === editMov?.order_id); return o ? `${o.order_number} — ${o.product_name}` : "— Yo'q (umumiy) —"; })()} />
+            </div>
             <div className="text-sm text-muted-foreground">{editMov?.product?.name} · {editMov && fmtDateTime(editMov.created_at)}</div>
             <div><Label>{t.warehouse.qty} *</Label><NumberInput step="any" value={emQty} onChange={e => setEmQty(e.target.value)} /></div>
             <div><Label>{editMov?.direction === "in" ? t.warehouse.cols.whoBrought : t.warehouse.cols.whoGot}</Label><Input list={editMov?.direction === "in" ? "dl-suppliers" : "dl-recipients"} value={emRecipient} onChange={e => setEmRecipient(e.target.value)} /></div>
