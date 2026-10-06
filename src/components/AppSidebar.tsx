@@ -1,4 +1,4 @@
-import { LayoutDashboard, ClipboardList, Factory, Warehouse, ShieldCheck, LogOut, MessageSquare, History, UserCog, Users, Wallet, RotateCcw, AlertOctagon, FileBarChart, Truck, Wrench, Contact, ScanFace, Plane, FileText, Layers, Ruler } from "lucide-react";
+import { LayoutDashboard, ClipboardList, Factory, Warehouse, ShieldCheck, LogOut, MessageSquare, History, UserCog, Users, Wallet, RotateCcw, AlertOctagon, FileBarChart, Truck, Wrench, Contact, ScanFace, Plane, FileText, Layers, Ruler, ListChecks } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -32,6 +32,7 @@ export function AppSidebar() {
     { title: t.nav.nachalnik, url: "/nachalnik", icon: UserCog, roles: ["manager", "admin"] },
     { title: (t.nav as any).service ?? "Remont (Servis)", url: "/service", icon: Wrench, roles: ["manager", "admin"] },
     { title: t.nav.otk, url: "/otk", icon: ShieldCheck },
+    { title: "Kunlik topshiriqlar", url: "/daily-tasks", icon: ListChecks, roles: ["admin", "otk", "manager"] },
     { title: "Kassa", url: "/kassa", icon: Wallet, roles: ["cashier", "admin"] },
     { title: t.nav.warehouse, url: "/warehouse", icon: Warehouse },
     { title: "Nakladnoy", url: "/invoices", icon: FileText, roles: ["admin", "warehouse", "supply"] },
