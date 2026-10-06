@@ -39,6 +39,8 @@ export default {
           yellow: "hsl(var(--status-yellow))",
           red: "hsl(var(--status-red))",
           blue: "hsl(var(--status-blue))",
+          "green-ink": "hsl(var(--status-green-ink))",
+          "red-ink": "hsl(var(--status-red-ink))",
         },
       },
       borderRadius: {
