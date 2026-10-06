@@ -42,8 +42,9 @@ type Assignment = {
   returned_at: string | null;
   issue_comment: string | null;
   return_comment: string | null;
+  box_number?: string | null;
   instrument?: { name: string; inventory_number: string | null } | null;
-  employee?: { full_name: string } | null;
+  employee?: { full_name: string; status?: string | null } | null;
 };
 
 type Group = {
@@ -90,6 +91,23 @@ export default function InstrumentsTab() {
   const [issueForm, setIssueForm] = useState({ employee_id: "", group_key: "", quantity: "1", issued_at: new Date().toISOString().slice(0, 10), comment: "", box_number: "" });
   const [boxSearch, setBoxSearch] = useState("");
   const [showReturned, setShowReturned] = useState(false);
+  const visibleAssignments = useMemo(() => {
+    const bq = boxSearch.trim().toLowerCase().replace(/\s+/g, "");
+    return assignments.filter(a => {
+      if (bq) return (a.box_number ?? "").toLowerCase().replace(/\s+/g, "").includes(bq) && (showReturned || !a.returned_at || true);
+      return showReturned || !a.returned_at;
+    });
+  }, [assignments, boxSearch, showReturned]);
+  const editBox = async (a: Assignment) => {
+    const v = window.prompt("Karobka raqami (bo'sh qoldirsangiz o'chiriladi):", a.box_number ?? "");
+    if (v === null) return;
+    const next = v.trim() || null;
+    const { error } = await supabase.from("instrument_assignments").update({ box_number: next } as any).eq("id", a.id);
+    if (error) { toast.error(error.message); return; }
+    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Instrument karobka raqami o'zgartirildi", entity: "instrument_assignment", details: `${a.instrument?.name ?? ""} · ${a.employee?.full_name ?? ""}: ${a.box_number ?? "—"} → ${next ?? "—"}` });
+    setAssignments(prev => prev.map(x => x.id === a.id ? { ...x, box_number: next } : x));
+    toast.success("Saqlandi");
+  };
 
   // return
   const [returnOpen, setReturnOpen] = useState(false);
@@ -104,7 +122,7 @@ export default function InstrumentsTab() {
       supabase.from("instruments").select("*").order("name").order("created_at"),
       supabase
         .from("instrument_assignments")
-        .select("*, instrument:instruments(name, inventory_number), employee:employees(full_name)")
+        .select("*, instrument:instruments(name, inventory_number), employee:employees(full_name, status)")
         .order("issued_at", { ascending: false })
         .limit(2000),
     ]);
@@ -265,7 +283,7 @@ export default function InstrumentsTab() {
     if (remaining > 0) { toast.error("Faol batchlarda yetarli emas"); return; }
     await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Instrument berildi", entity: "instrument_assignment", details: `${g.name} ×${qty} → ${emp?.full_name}` });
     toast.success("Berildi");
-    setIssueForm({ employee_id: "", group_key: "", quantity: "1", issued_at: new Date().toISOString().slice(0, 10), comment: "" });
+    setIssueForm({ employee_id: "", group_key: "", quantity: "1", issued_at: new Date().toISOString().slice(0, 10), comment: "", box_number: "" });
     setIssueOpen(false);
   };
 
