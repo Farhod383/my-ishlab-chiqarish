@@ -212,9 +212,9 @@ export default function WarehousePage() {
     }
     return Array.from(groups.values()).map(g => ({ value: g.id, label: g.name, hint: `${g.total} ${g.unit}` }));
   }, [products]);
-  // Anyone authenticated can create a purchase request
-  const canRequest = !!user;
+  // Anyone authenticated can create a purchase request — except supply staff (they can't order to themselves).
   const userRoles = (roles as string[] | undefined) ?? [];
+  const canRequest = !!user && !(userRoles.includes("supply") && !userRoles.includes("admin"));
   const primaryRole = userRoles[0] || "";
 
   // Purchase request (Buyurtma berish) state
@@ -1354,7 +1354,7 @@ export default function WarehousePage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label>Miqdor *</Label><NumberInput min={0.01} step={0.01} value={prQty || ""} onChange={(e) => setPrQty(Number(e.target.value))} /></div>
                     <div><Label>O'lchov</Label>
-                      <Select value={prUnit} onValueChange={setPrUnit}>
+                      <Select value={prUnit} onValueChange={setPrUnit} disabled={!!prPid && !!products.find((x) => x.id === prPid)?.unit}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>{UNITS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
                       </Select>
