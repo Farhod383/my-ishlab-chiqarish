@@ -640,6 +640,113 @@ export type Database = {
           },
         ]
       }
+      daily_task_history: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: string
+          new_progress: number | null
+          new_status: string | null
+          old_progress: number | null
+          old_status: string | null
+          task_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          new_progress?: number | null
+          new_status?: string | null
+          old_progress?: number | null
+          old_status?: string | null
+          task_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          new_progress?: number | null
+          new_status?: string | null
+          old_progress?: number | null
+          old_status?: string | null
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_task_history_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "daily_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_tasks: {
+        Row: {
+          assigned_by: string | null
+          assigned_by_name: string | null
+          closed_at: string | null
+          created_at: string
+          description: string | null
+          employee_id: string
+          id: string
+          order_id: string
+          progress: number
+          status: string
+          task_date: string
+          task_title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          assigned_by_name?: string | null
+          closed_at?: string | null
+          created_at?: string
+          description?: string | null
+          employee_id: string
+          id?: string
+          order_id: string
+          progress?: number
+          status?: string
+          task_date?: string
+          task_title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string | null
+          assigned_by_name?: string | null
+          closed_at?: string | null
+          created_at?: string
+          description?: string | null
+          employee_id?: string
+          id?: string
+          order_id?: string
+          progress?: number
+          status?: string
+          task_date?: string
+          task_title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_tasks_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_tasks_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       debts: {
         Row: {
           amount: number
@@ -2456,6 +2563,7 @@ export type Database = {
     }
     Functions: {
       can_edit_intake: { Args: { _user_id: string }; Returns: boolean }
+      can_manage_daily_tasks: { Args: { _u: string }; Returns: boolean }
       can_manage_trips: { Args: { _user_id: string }; Returns: boolean }
       cash_available: { Args: { _cur: string; _pt: string }; Returns: number }
       cash_exchange: {

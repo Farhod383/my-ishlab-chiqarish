@@ -218,6 +218,13 @@
       "when": 1791272147339,
       "tag": "0030_block_warehouse_sourced_supply_orders",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1791287748493,
+      "tag": "0031_daily_tasks",
+      "breakpoints": true
     }
   ]
 }
