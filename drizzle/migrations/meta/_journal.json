@@ -162,6 +162,13 @@
       "when": 1790837436650,
       "tag": "0022_cash_balance_guards_and_exchange",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1791268606655,
+      "tag": "0023_stock_movements_recipient_employee",
+      "breakpoints": true
     }
   ]
 }
