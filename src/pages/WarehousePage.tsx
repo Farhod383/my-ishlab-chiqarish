@@ -514,7 +514,7 @@ export default function WarehousePage() {
         const { data: newProduct, error: createError } = await supabase
           .from("products")
           .insert({
-            name: trimmedName, unit: impUnit || "dona", last_price: priceN,
+            name: trimmedName, unit: unitToSave, last_price: priceN,
             min_limit: 0, stock_qty: 0, phone: impPhone || null,
             image_url: imgUrl, source: impSource.trim() || null,
           } as any)
@@ -540,7 +540,7 @@ export default function WarehousePage() {
       const res = await addOrMergeItem(session.id, {
         product_id: productId,
         product_name: trimmedName,
-        unit: impUnit || "dona",
+        unit: unitToSave,
         quantity: qtyN,
         weight_kg: impKg > 0 ? impKg : null,
         unit_price: priceN,
