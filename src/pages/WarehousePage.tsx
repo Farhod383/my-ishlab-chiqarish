@@ -217,7 +217,13 @@ export default function WarehousePage() {
   const canRequest = !!user && !(userRoles.includes("supply") && !userRoles.includes("admin"));
   const primaryRole = userRoles[0] || "";
 
-  // Purchase request (Buyurtma berish) state
+  // "Buyurtma berish" is only an entry point: the order is created in Ta'minot (/supply?new=…&product=<id>).
+  const navigate = useNavigate();
+  const goSupplyNew = (mode: "order" | "factory", productId?: string) => {
+    const p = new URLSearchParams({ new: mode, from: "warehouse" });
+    if (productId) p.set("product", productId);
+    navigate(`/supply?${p.toString()}`);
+  };
   const [prOpen, setPrOpen] = useState(false);
   const [prMode, setPrMode] = useState<"order" | "factory">("factory");
   const [releaseOpen, setReleaseOpen] = useState(false);
@@ -987,7 +993,7 @@ export default function WarehousePage() {
             </DialogHeader>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
               <button
-                onClick={() => { setChooseBuy(false); setPrMode("order"); setPrOpen(true); }}
+                onClick={() => { setChooseBuy(false); goSupplyNew("order"); }}
                 className="group text-left rounded-2xl border-2 border-purple-500/30 bg-gradient-to-br from-purple-500/10 to-purple-500/5 p-6 hover:border-purple-500 hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[200px] flex flex-col gap-3"
               >
                 <div className="h-14 w-14 rounded-xl bg-purple-500/20 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -997,7 +1003,7 @@ export default function WarehousePage() {
                 <div className="text-sm text-muted-foreground">Aniq zakaz uchun mahsulot buyurtma qilish (zakaz tanlash majburiy)</div>
               </button>
               <button
-                onClick={() => { setChooseBuy(false); setPrMode("factory"); setPrOrderId(""); setPrOpen(true); }}
+                onClick={() => { setChooseBuy(false); goSupplyNew("factory"); }}
                 className="group text-left rounded-2xl border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 p-6 hover:border-emerald-500 hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[200px] flex flex-col gap-3"
               >
                 <div className="h-14 w-14 rounded-xl bg-emerald-500/20 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -1321,71 +1327,6 @@ export default function WarehousePage() {
               </DialogContent>
             </Dialog>
           )}
-          {canRequest && (
-            <Dialog open={prOpen} onOpenChange={setPrOpen}>
-              <DialogTrigger asChild>
-                <Button variant="default"><Plus className="h-4 w-4 mr-2" />Buyurtma berish</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>
-                    {prMode === "order" ? "Zakaz uchun buyurtma" : "Zavod uchun buyurtma"}
-                  </DialogTitle>
-                  <DialogDescription>So'rov Ta'minot bo'limiga yuboriladi</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-3">
-                  <div>
-                    <Label>Mahsulot (omborda bor)</Label>
-                    <SearchableSelect
-                      value={prPid}
-                      onChange={(v) => {
-                        setPrPid(v);
-                        const p = products.find((x) => x.id === v);
-                        if (p) { setPrPname(p.name); if (p.unit) setPrUnit(p.unit); }
-                      }}
-                      placeholder="Tanlang yoki pastda yozing"
-                      options={products.map((p) => ({ value: p.id, label: p.name, hint: `${p.stock_qty} ${p.unit}` }))}
-                    />
-                  </div>
-                  <div>
-                    <Label>Yoki mahsulot nomini yozing *</Label>
-                    <Input value={prPname} onChange={(e) => setPrPname(e.target.value)} placeholder="Masalan: Kraska 201" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Miqdor *</Label><NumberInput min={0.01} step={0.01} value={prQty || ""} onChange={(e) => setPrQty(Number(e.target.value))} /></div>
-                    <div><Label>O'lchov</Label>
-                      <Select value={prUnit} onValueChange={setPrUnit} disabled={!!prPid && !!products.find((x) => x.id === prPid)?.unit}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>{UNITS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Kerak bo'ladigan sana</Label>
-                    <Input type="date" value={prDate} onChange={(e) => setPrDate(e.target.value)} />
-                  </div>
-                  {prMode === "order" && (
-                    <div>
-                      <Label>Zakaz *</Label>
-                      <SearchableSelect
-                        value={prOrderId}
-                        onChange={setPrOrderId}
-                        placeholder="Zakaz tanlang..."
-                        options={orders.map((o) => ({ value: o.id, label: o.product_name, hint: o.order_number }))}
-                      />
-                    </div>
-                  )}
-                  <div>
-                    <Label>Izoh</Label>
-                    <Textarea rows={2} value={prComment} onChange={(e) => setPrComment(e.target.value)} />
-                  </div>
-                  <Button className="w-full" onClick={submitPurchaseRequest}>
-                    <Plus className="h-4 w-4 mr-2" />Yuborish
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
         </div>
       </div>
 
@@ -1543,15 +1484,7 @@ export default function WarehousePage() {
                           <Button
                             size="sm"
                             className="w-full"
-                            onClick={() => {
-                              setPrMode("factory");
-                              setPrPid(g.first.id);
-                              setPrPname(g.first.name);
-                              setPrQty(need);
-                              setPrUnit(g.first.unit || "dona");
-                              setPrOrderId("");
-                              setPrOpen(true);
-                            }}
+                            onClick={() => goSupplyNew("factory", g.first.id)}
                           >
                             <ShoppingCart className="h-3.5 w-3.5 mr-1" /> Buyurtma berish
                           </Button>
