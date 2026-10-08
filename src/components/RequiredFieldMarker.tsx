@@ -13,6 +13,17 @@ function isEmpty(el: Element): boolean {
   return el.hasAttribute("data-empty") || el.hasAttribute("data-placeholder");
 }
 
+const OPTIONAL = /ixtiyoriy|ихтиёрий|необязат|optional/i;
+function isOptional(el: Element): boolean {
+  if (el.hasAttribute("cmdk-input") || (el as HTMLInputElement).type === "search") return true;
+  const ph = el.getAttribute("placeholder") ?? "";
+  if (/qidir|поиск|search/i.test(ph) || OPTIONAL.test(ph)) return true;
+  if (el.closest("[cmdk-root], [role=listbox], [role=menu]")) return true;
+  const id = el.getAttribute("id");
+  const lbl = (id && document.querySelector(`label[for="${CSS.escape(id)}"]`)) || el.parentElement?.querySelector("label") || el.closest("label");
+  return OPTIONAL.test(lbl?.textContent ?? "");
+}
+
 function isInvalid(el: Element): boolean {
   if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
     if (el.value === "" ) return false;
@@ -30,6 +41,10 @@ function scan() {
     if (target && target !== l) required.add(target);
   });
   document.querySelectorAll("[required], [aria-required=true]").forEach((el) => { if (el.matches(FIELD)) required.add(el); });
+  // Every field inside a form or dialog is required unless its label says optional.
+  document.querySelectorAll('[role=dialog], [role=alertdialog], form').forEach((root) => {
+    root.querySelectorAll(FIELD).forEach((el) => { if (!isOptional(el)) required.add(el); });
+  });
 
   document.querySelectorAll(FIELD).forEach((el) => {
     const disabled = (el as HTMLInputElement).disabled || (el as HTMLInputElement).readOnly;
