@@ -135,8 +135,14 @@ export default function DailyTasksPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Kunlik topshiriqlar</h1>
-        <Button onClick={() => setNewOpen(true)}><Plus className="h-4 w-4 mr-1" />Yangi topshiriq</Button>
+        <div className="flex gap-2">
+          <Button variant={view === "rating" ? "default" : "outline"} onClick={() => setView(view === "rating" ? "tasks" : "rating")}><Trophy className="h-4 w-4 mr-1" />{view === "rating" ? "Topshiriqlar" : "Reyting"}</Button>
+          <Button onClick={() => setNewOpen(true)}><Plus className="h-4 w-4 mr-1" />Yangi topshiriq</Button>
+        </div>
       </div>
+
+      {view === "rating" ? <DailyTasksRating empMap={empMap} orderMap={orderMap} /> : <>
+
 
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" size="icon" onClick={() => setDate(shiftDate(date, -1))} aria-label="Oldingi kun"><ChevronLeft className="h-4 w-4" /></Button>
