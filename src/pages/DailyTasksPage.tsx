@@ -11,9 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, Plus, Lock, RotateCcw, Ban, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Lock, RotateCcw, Ban, Search, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { matchesAcrossScripts } from "@/lib/translit";
+import DailyTasksRating from "@/components/DailyTasksRating";
 
 type Status = "in_progress" | "closed" | "cancelled";
 interface Task {
@@ -51,6 +52,7 @@ export default function DailyTasksPage() {
   const [detail, setDetail] = useState<Task | null>(null);
   const [prog, setProg] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [view, setView] = useState<"tasks" | "rating">("tasks");
 
   const load = async () => {
     const [{ data: t }, { data: o }] = await Promise.all([
@@ -135,8 +137,14 @@ export default function DailyTasksPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Kunlik topshiriqlar</h1>
-        <Button onClick={() => setNewOpen(true)}><Plus className="h-4 w-4 mr-1" />Yangi topshiriq</Button>
+        <div className="flex gap-2">
+          <Button variant={view === "rating" ? "default" : "outline"} onClick={() => setView(view === "rating" ? "tasks" : "rating")}><Trophy className="h-4 w-4 mr-1" />{view === "rating" ? "Topshiriqlar" : "Reyting"}</Button>
+          <Button onClick={() => setNewOpen(true)}><Plus className="h-4 w-4 mr-1" />Yangi topshiriq</Button>
+        </div>
       </div>
+
+      {view === "rating" ? <DailyTasksRating empMap={empMap} orderMap={orderMap} /> : <>
+
 
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" size="icon" onClick={() => setDate(shiftDate(date, -1))} aria-label="Oldingi kun"><ChevronLeft className="h-4 w-4" /></Button>
@@ -179,6 +187,7 @@ export default function DailyTasksPage() {
           );
         })}
       </div>
+      </>}
 
       <Dialog open={newOpen} onOpenChange={setNewOpen}>
         <DialogContent>
