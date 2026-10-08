@@ -11,9 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, Plus, Lock, RotateCcw, Ban, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Lock, RotateCcw, Ban, Search, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { matchesAcrossScripts } from "@/lib/translit";
+import DailyTasksRating from "@/components/DailyTasksRating";
 
 type Status = "in_progress" | "closed" | "cancelled";
 interface Task {
@@ -51,6 +52,7 @@ export default function DailyTasksPage() {
   const [detail, setDetail] = useState<Task | null>(null);
   const [prog, setProg] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [view, setView] = useState<"tasks" | "rating">("tasks");
 
   const load = async () => {
     const [{ data: t }, { data: o }] = await Promise.all([
@@ -185,6 +187,7 @@ export default function DailyTasksPage() {
           );
         })}
       </div>
+      </>}
 
       <Dialog open={newOpen} onOpenChange={setNewOpen}>
         <DialogContent>
