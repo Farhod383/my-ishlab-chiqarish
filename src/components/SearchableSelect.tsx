@@ -48,6 +48,7 @@ export default function SearchableSelect({
           variant="outline"
           role="combobox"
           aria-expanded={open}
+          data-empty={selected ? undefined : ""}
           disabled={disabled}
           onPointerDown={(e) => {
             if (e.pointerType !== "mouse") {

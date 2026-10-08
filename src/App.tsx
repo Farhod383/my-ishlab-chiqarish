@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/auth/ProtectedRoute";
 import { Layout } from "@/components/Layout";
 import OnlineGuard from "@/components/OnlineGuard";
 import { RouteReadMarker } from "@/notifications/RouteReadMarker";
+import { RequiredFieldMarker } from "@/components/RequiredFieldMarker";
 import { NotificationsProvider } from "@/notifications/NotificationsContext";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -50,6 +51,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+          <RequiredFieldMarker />
       <I18nProvider>
         <AuthProvider>
           <NotificationsProvider>
