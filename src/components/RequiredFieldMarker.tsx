@@ -47,8 +47,11 @@ export function RequiredFieldMarker() {
     mo.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["data-empty", "data-placeholder", "value", "disabled"] });
     document.addEventListener("input", schedule, true);
     document.addEventListener("change", schedule, true);
+    // Suppress the browser's own "Please fill out this field" bubble — colour only.
+    const noBubble = (e: Event) => e.preventDefault();
+    document.addEventListener("invalid", noBubble, true);
     schedule();
-    return () => { mo.disconnect(); cancelAnimationFrame(raf); document.removeEventListener("input", schedule, true); document.removeEventListener("change", schedule, true); };
+    return () => { mo.disconnect(); cancelAnimationFrame(raf); document.removeEventListener("input", schedule, true); document.removeEventListener("change", schedule, true); document.removeEventListener("invalid", noBubble, true); };
   }, []);
   return null;
 }
