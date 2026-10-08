@@ -72,3 +72,10 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 }
+
+/* Required / invalid fields: red while empty or wrong, auto-clears (see RequiredFieldMarker) */
+[data-req-error] {
+  border-color: hsl(var(--destructive)) !important;
+  background-color: hsl(var(--destructive) / 0.06) !important;
+  box-shadow: 0 0 0 1px hsl(var(--destructive) / 0.5);
+}
