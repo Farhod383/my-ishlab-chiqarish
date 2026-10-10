@@ -148,7 +148,7 @@ export default function WarehousePage() {
   const load = async () => {
     const [p, o, m] = await Promise.all([
       supabase.from("products").select("*").order("name"),
-      supabase.from("orders").select("id, order_number, product_name").neq("status", "completed"),
+      supabase.from("orders").select("id, order_number, product_name, status, client:clients(name)").order("created_at", { ascending: false }),
       supabase.from("stock_movements").select("*, product:products(name, unit), order:orders(order_number, product_name), intake_session:intake_sessions(id, started_at, finished_at, supplier, created_by_name)").order("created_at", { ascending: false }).limit(200),
     ]);
     setProducts(p.data ?? []); setOrders(o.data ?? []); setMovements(m.data ?? []);
@@ -1046,7 +1046,7 @@ export default function WarehousePage() {
                         value={outOrder}
                         onChange={setOutOrder}
                         placeholder={t.warehouse.orderPh}
-                        options={orders.map(o => ({ value: o.id, label: o.product_name, hint: o.order_number }))}
+                        options={orders.map(o => ({ value: o.id, label: o.product_name, hint: [o.order_number, o.client?.name].filter(Boolean).join(" · ") }))}
                       />
                     </div>
                     <div><Label>{t.warehouse.cols.product}</Label>
@@ -1095,7 +1095,7 @@ export default function WarehousePage() {
                       placeholder="Tanlanmasa — umumiy ombor kirimi"
                       options={[
                         { value: "", label: "— Yo'q (umumiy) —" },
-                        ...orders.map((o: any) => ({ value: o.id, label: `${o.order_number} — ${o.product_name}` })),
+                        ...orders.map((o: any) => ({ value: o.id, label: `${o.order_number} — ${o.product_name}${o.client?.name ? ` (${o.client.name})` : ""}` })),
                       ]}
                     />
                   </div>
