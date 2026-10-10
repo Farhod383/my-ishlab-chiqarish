@@ -114,7 +114,8 @@ export default function HRPage() {
     // Required fields
     const first = form.first_name.trim();
     const last = form.last_name.trim();
-    const composedName = form.full_name.trim() || `${last} ${first}`.trim();
+    // Edited first/last name fields take precedence over the stale stored full_name.
+    const composedName = (`${last} ${first}`.trim() || form.full_name.trim()).replace(/\s+/g, " ");
     if (!composedName) { toast.error("Ism va familiyani kiriting"); return; }
     if (!form.phone.trim()) { toast.error("Telefon raqami majburiy"); return; }
     if (!isValidPhone(form.phone)) { toast.error("Telefon formati: +998 XX XXX XX XX"); return; }
