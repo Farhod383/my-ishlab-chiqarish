@@ -117,7 +117,7 @@ export default function AuditLog() {
           </Select>
           <Select value={actionFilter} onValueChange={setActionFilter}>
             <SelectTrigger><SelectValue placeholder={(t.audit as any).action} /></SelectTrigger>
-            <SelectContent><SelectItem value="all">{(t.audit as any).allActions}</SelectItem>{actions.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+            <SelectContent><SelectItem value="all">{(t.audit as any).allActions}</SelectItem>{actions.map(a => <SelectItem key={a} value={a}>{uzAction(a)}</SelectItem>)}</SelectContent>
           </Select>
           <div className="flex gap-2">
             <Input type="date" value={from} onChange={e => setFrom(e.target.value)} />
