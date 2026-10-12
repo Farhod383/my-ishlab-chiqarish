@@ -22,6 +22,7 @@ import { fmtKassaAmount, fmtNum, fmtDateTime24, fmtDate } from "@/lib/format";
 import SupplyFinancePage from "@/pages/SupplyFinancePage";
 import { useEmployees, refreshEmployees } from "@/hooks/useEmployees";
 import { currentUserName, displayUser } from "@/lib/userNames";
+import { useFocusEntity } from "@/notifications/FocusHighlighter";
 
 const PAYMENT_TYPES = ["cash", "transfer", "corporate_card"] as const;
 type PaymentType = typeof PAYMENT_TYPES[number] | "other";
@@ -78,6 +79,11 @@ export default function KassaPage() {
   const { employees, allEmployees } = useEmployees({ activeOnly: true });
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"income" | "expense" | "report" | "debt" | "supply">("income");
+  const focusEntity = useFocusEntity();
+  useEffect(() => {
+    if (focusEntity === "cash_expense") setTab("expense");
+    else if (focusEntity === "cash_income") setTab("income");
+  }, [focusEntity]);
   // Qarz bo'limi
   const [debts, setDebts] = useState<any[]>([]);
   const [debtOpen, setDebtOpen] = useState(false);

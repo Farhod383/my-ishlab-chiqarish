@@ -62,3 +62,10 @@ export function FocusHighlighter() {
   }, [loc.pathname, loc.search]);
   return null;
 }
+
+/** The `entity` of the record a notification asked to open (re-evaluated on every navigation). */
+export function useFocusEntity(): string | null {
+  const loc = useLocation();
+  const q = new URLSearchParams(loc.search);
+  return q.get("focus") || q.get("focus_at") ? q.get("entity") : null;
+}

@@ -26,6 +26,7 @@ import OrderSupplyRequests from "@/components/OrderSupplyRequests";
 import { useNotifications, notifStageId } from "@/notifications/NotificationsContext";
 import { fmtDateTime24, fmtDuration, fmtLegacyDurations, fmtDate } from "@/lib/format";
 import { currentUserName, displayUser } from "@/lib/userNames";
+import { useFocusEntity } from "@/notifications/FocusHighlighter";
 
 
 export default function OrderDetail() {
@@ -48,6 +49,11 @@ export default function OrderDetail() {
   const [reportOpen, setReportOpen] = useState(false);
   const [otkEdit, setOtkEdit] = useState<Record<string, string>>({});
   const [tab, setTab] = useState("timeline");
+  const focusEntity = useFocusEntity();
+  useEffect(() => {
+    if (focusEntity === "stage") setTab("timeline");
+    else if (focusEntity === "supply_request") setTab("warehouse");
+  }, [focusEntity]);
   const [openStageId, setOpenStageId] = useState<string | null>(null);
   const { items: notifItems, markStageRead, unreadByStage } = useNotifications();
 

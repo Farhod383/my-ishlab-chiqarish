@@ -34,6 +34,7 @@ import { useEmployees } from "@/hooks/useEmployees";
 import { Link, useNavigate } from "react-router-dom";
 import { getOpenSession, getOrStartSession, closeInvoice, discardDraftSessions, addOrMergeItem, intakeCode, itemsTotal, type IntakeSession, type IntakeItem } from "@/lib/intake";
 import { currentUserName, displayUser } from "@/lib/userNames";
+import { useFocusEntity } from "@/notifications/FocusHighlighter";
 
 const UNITS = ["dona", "kg", "tonna", "metr", "litr", "rulon", "komplekt"] as const;
 
@@ -58,6 +59,7 @@ export default function WarehousePage() {
   const { user, hasRole, roles } = useAuth() as any;
   const { t } = useI18n();
   const localize = useLocalize();
+  const focusEntity = useFocusEntity();
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [movements, setMovements] = useState<any[]>([]);
@@ -1373,7 +1375,7 @@ export default function WarehousePage() {
         </Card>
       )}
 
-      <Tabs defaultValue="stock">
+      <Tabs key={focusEntity === "stock_movement" ? "f" : "n"} defaultValue={focusEntity === "stock_movement" ? "history" : "stock"}>
         <TabsList>
           <TabsTrigger value="stock">{t.warehouse.tabs.stock}</TabsTrigger>
           <TabsTrigger value="history">{t.warehouse.tabs.history}</TabsTrigger>

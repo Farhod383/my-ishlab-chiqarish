@@ -21,6 +21,7 @@ import { logAudit } from "@/types/erp";
 import { toast } from "sonner";
 import { useEmployees, refreshEmployees } from "@/hooks/useEmployees";
 import { currentUserName, displayUser } from "@/lib/userNames";
+import { useFocusEntity } from "@/notifications/FocusHighlighter";
 
 // Uzbek phone format validator: +998 XX XXX XX XX  or XX XXX XX XX  (spaces optional)
 const PHONE_RE = /^(\+?998)?\s*\d{2}\s*\d{3}\s*\d{2}\s*\d{2}$/;
@@ -98,6 +99,11 @@ export default function HRPage() {
   };
 
   const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "all" | "vacancy">("active");
+  const focusEntity = useFocusEntity();
+  useEffect(() => {
+    if (focusEntity === "employee") setStatusFilter("all");
+    else if (focusEntity === "vacancy") setStatusFilter("vacancy");
+  }, [focusEntity]);
   const [empSearch, setEmpSearch] = useState("");
   const filteredEmployees = useMemo(() => {
     const base = statusFilter === "all" || statusFilter === "vacancy"
