@@ -20,6 +20,7 @@ import SmartAutocomplete, { rememberFormValue } from "@/components/SmartAutocomp
 import { ensureOnline } from "@/components/OnlineGuard";
 import { useEmployees } from "@/hooks/useEmployees";
 import { fmtDate as fmtDateG } from "@/lib/format";
+import { currentUserName } from "@/lib/userNames";
 
 type Instrument = {
   id: string;
@@ -105,7 +106,7 @@ export default function InstrumentsTab() {
     const next = v.trim() || null;
     const { error } = await supabase.from("instrument_assignments").update({ box_number: next } as any).eq("id", a.id);
     if (error) { toast.error(error.message); return; }
-    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Instrument karobka raqami o'zgartirildi", entity: "instrument_assignment", details: `${a.instrument?.name ?? ""} · ${a.employee?.full_name ?? ""}: ${a.box_number ?? "—"} → ${next ?? "—"}` });
+    await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Instrument karobka raqami o'zgartirildi", entity: "instrument_assignment", details: `${a.instrument?.name ?? ""} · ${a.employee?.full_name ?? ""}: ${a.box_number ?? "—"} → ${next ?? "—"}` });
     setAssignments(prev => prev.map(x => x.id === a.id ? { ...x, box_number: next } : x));
     toast.success("Saqlandi");
   };
@@ -227,12 +228,12 @@ export default function InstrumentsTab() {
     if (iEditId) {
       const { error } = await supabase.from("instruments").update(payload).eq("id", iEditId);
       if (error) { toast.error(error.message); return; }
-      await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Instrument tahrirlandi", entity: "instrument", details: `${payload.name}` });
+      await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Instrument tahrirlandi", entity: "instrument", details: `${payload.name}` });
     } else {
       payload.created_by = user?.id;
       const { error } = await supabase.from("instruments").insert(payload);
       if (error) { toast.error(error.message); return; }
-      await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Instrument kirimi (batch)", entity: "instrument", details: `${payload.name} ×${payload.quantity}` });
+      await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Instrument kirimi (batch)", entity: "instrument", details: `${payload.name} ×${payload.quantity}` });
     }
     if (payload.category) await rememberFormValue("instrument_category", payload.category, user?.id);
     if (payload.name) await rememberFormValue("instrument_name", payload.name, user?.id);
@@ -246,7 +247,7 @@ export default function InstrumentsTab() {
     if (!window.confirm(`Batchni o'chirish: ${it.name} (${it.quantity} dona)?`)) return;
     const { error } = await supabase.from("instruments").delete().eq("id", it.id);
     if (error) { toast.error(error.message); return; }
-    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Instrument batch o'chirildi", entity: "instrument", details: it.name });
+    await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Instrument batch o'chirildi", entity: "instrument", details: it.name });
     toast.success("O'chirildi");
   };
 
@@ -257,7 +258,7 @@ export default function InstrumentsTab() {
     if (!issueForm.employee_id || !g || !qty) { toast.error("Maydonlarni to'ldiring"); return; }
     if (!ensureOnline((m) => toast.error(m))) return;
     if (qty > g.totalQty) {
-      await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Instrument berish BLOKLANDI", entity: "instrument_assignment", details: `${g.name}: so'ralgan ${qty}, mavjud ${g.totalQty}` });
+      await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Instrument berish BLOKLANDI", entity: "instrument_assignment", details: `${g.name}: so'ralgan ${qty}, mavjud ${g.totalQty}` });
       toast.error(`Skladda yetarli emas (${g.totalQty})`); return;
     }
     // FIFO: oldest active batches first
@@ -282,7 +283,7 @@ export default function InstrumentsTab() {
       remaining -= take;
     }
     if (remaining > 0) { toast.error("Faol batchlarda yetarli emas"); return; }
-    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Instrument berildi", entity: "instrument_assignment", details: `${g.name} ×${qty} → ${emp?.full_name}` });
+    await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Instrument berildi", entity: "instrument_assignment", details: `${g.name} ×${qty} → ${emp?.full_name}` });
     toast.success("Berildi");
     setIssueForm({ employee_id: "", group_key: "", quantity: "1", issued_at: new Date().toISOString().slice(0, 10), comment: "", box_number: "" });
     setIssueOpen(false);
@@ -299,7 +300,7 @@ export default function InstrumentsTab() {
       returned_by: user?.id,
     }).eq("id", returnAssignment);
     if (error) { toast.error(error.message); return; }
-    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Instrument qaytarildi", entity: "instrument_assignment", details: `${a.instrument?.name} ×${a.quantity} ← ${a.employee?.full_name}` });
+    await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Instrument qaytarildi", entity: "instrument_assignment", details: `${a.instrument?.name} ×${a.quantity} ← ${a.employee?.full_name}` });
     toast.success("Qaytarildi");
     setReturnEmp(""); setReturnAssignment(""); setReturnComment("");
     setReturnOpen(false);

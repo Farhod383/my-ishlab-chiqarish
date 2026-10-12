@@ -16,6 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import { OrderUnreadBadge } from "@/components/OrderUnreadBadge";
 import { fetchStageGroups, groupStages, type StageGroup } from "@/lib/stageGroups";
 import { fmtDate } from "@/lib/format";
+import { currentUserName } from "@/lib/userNames";
 
 interface OrderWithStages extends OrderRow { stages: StageRow[]; client?: any }
 
@@ -73,7 +74,7 @@ export default function ProductionBoard() {
     // Mark exception on moved order
     await supabase.from("orders").update({ priority: "exception", exception_approved_by: user?.id }).eq("id", moveOrder.id);
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: "Istisno tasdiqlandi", entity: "order", order_id: moveOrder.id,
       details: `${moveOrder.order_number} → tartib ${target}`,
     });

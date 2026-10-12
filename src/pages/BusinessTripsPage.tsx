@@ -20,6 +20,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Plus, Search, Plane, Paperclip, Trash2, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
+import { currentUserName } from "@/lib/userNames";
 
 interface Trip {
   id: string;
@@ -189,7 +190,7 @@ export default function BusinessTripsPage() {
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: "Kamandirovka yaratildi", entity: "business_trip",
       details: `${emp.full_name} — ${fDest.trim()}`,
     });
@@ -267,7 +268,7 @@ export default function BusinessTripsPage() {
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: "Kamandirovka tahrirlandi", entity: "business_trip",
       details: `${emp.full_name} — ${fDest.trim()} · ${givenAmount} ${fCurrency}`,
     });
@@ -289,7 +290,7 @@ export default function BusinessTripsPage() {
     setDeleting(false);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: "Kamandirovka o'chirildi", entity: "business_trip",
       details: `${trip.employee_name} — ${trip.destination} · ${trip.given_amount} ${trip.currency}`,
     });
@@ -352,7 +353,7 @@ export default function BusinessTripsPage() {
       .update({ status: detail.status === "closed" ? "active" : "closed" } as any).eq("id", detail.id);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: detail.status === "closed" ? "Kamandirovka qayta ochildi" : "Kamandirovka yakunlandi",
       entity: "business_trip", details: `${detail.employee_name} — ${detail.destination}`,
     });

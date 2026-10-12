@@ -20,6 +20,7 @@ import { useI18n, useLocalize } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
 import { toast } from "sonner";
 import { useEmployees, refreshEmployees } from "@/hooks/useEmployees";
+import { currentUserName } from "@/lib/userNames";
 
 // Uzbek phone format validator: +998 XX XXX XX XX  or XX XXX XX XX  (spaces optional)
 const PHONE_RE = /^(\+?998)?\s*\d{2}\s*\d{3}\s*\d{2}\s*\d{2}$/;
@@ -136,7 +137,7 @@ export default function HRPage() {
         if (held.length > 0) {
           const list = held.map(h => `• ${h.name} ×${h.quantity}`).join("\n");
           toast.error("Xodimda topshirilmagan instrumentlar mavjud:\n" + list, { duration: 8000 });
-          await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Bo'shatish bloklandi", entity: "employee", details: `${composedName}: ${held.map(h => `${h.name} ×${h.quantity}`).join(", ")}` });
+          await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Bo'shatish bloklandi", entity: "employee", details: `${composedName}: ${held.map(h => `${h.name} ×${h.quantity}`).join(", ")}` });
           return;
         }
       }
@@ -162,21 +163,21 @@ export default function HRPage() {
     if (editId) {
       const { error } = await supabase.from("employees").update(payload).eq("id", editId);
       if (error) { toast.error(error.message); return; }
-      await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Xodim tahrirlandi", entity: "employee", details: composedName });
+      await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Xodim tahrirlandi", entity: "employee", details: composedName });
       if (payload.status === "inactive" || payload.leave_date) {
-        await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Xodim bo'shatildi", entity: "employee", details: composedName });
+        await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Xodim bo'shatildi", entity: "employee", details: composedName });
       }
     } else {
       const { error } = await supabase.from("employees").insert(payload);
       if (error) { toast.error(error.message); return; }
-      await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Xodim qo'shildi", entity: "employee", details: composedName });
+      await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Xodim qo'shildi", entity: "employee", details: composedName });
       const { notify } = await import("@/lib/notify");
       await notify({
         type: "info", title: `Yangi xodim — ${composedName}`,
         body: `${payload.position ?? ""} · ${payload.department ?? ""}`,
         link: "/hr", entity: "employee",
         recipient_role: ["hr", "manager", "cashier"],
-        sender_id: user?.id, sender_name: user?.email,
+        sender_id: user?.id, sender_name: currentUserName(user),
       });
     }
     toast.success(hr.saved ?? "Saqlandi");
@@ -228,7 +229,7 @@ export default function HRPage() {
     }).eq("id", emp.id);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: goingInactive ? "Xodim bo'shatildi" : "Xodim qayta faollashtirildi",
       entity: "employee", details: emp.full_name,
     });

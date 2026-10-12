@@ -22,6 +22,7 @@ import { useNotifications, notifOrderId } from "@/notifications/NotificationsCon
 import { resolveModule } from "@/lib/notifModules";
 import SupplyOrderHistory from "@/components/SupplyOrderHistory";
 import { logSupplyChange } from "@/lib/supplyHistory";
+import { currentUserName } from "@/lib/userNames";
 
 interface Props {
   orderId: string;
@@ -115,10 +116,10 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
       entity: "supply_request",
       recipient_role: ["supply", "warehouse"],
       sender_id: user?.id,
-      sender_name: user?.email,
+      sender_name: currentUserName(user),
     });
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: "Ta'minot so'rovi qo'shildi", entity: "supply_request",
       order_id: orderId,
       details: `${name} · ${qty} ${unit ?? ""}`,
@@ -130,7 +131,7 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
       action: "Yangi ta'minot so'rovi qo'shildi",
       before: { quantity: "—" },
       after: { quantity: `${qty} ${unit ?? ""}`.trim() },
-      actorId: user?.id, actorName: user?.email, role: primaryRole || null,
+      actorId: user?.id, actorName: currentUserName(user), role: primaryRole || null,
     });
     toast.success("Qo'shildi");
 
@@ -145,7 +146,7 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
     const { error } = await supabase.from("order_supply_requests").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: "Ta'minot so'rovi o'chirildi", entity: "supply_request",
       order_id: orderId,
       details: `${target?.product_name ?? id} · ${target?.quantity ?? ""} ${target?.unit ?? ""}`,
@@ -157,7 +158,7 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
       action: "Ta'minot so'rovi o'chirildi",
       before: { quantity: `${target?.quantity ?? ""} ${target?.unit ?? ""}`.trim() },
       after: { quantity: "—" },
-      actorId: user?.id, actorName: user?.email, role: primaryRole || null,
+      actorId: user?.id, actorName: currentUserName(user), role: primaryRole || null,
     });
     load();
   };

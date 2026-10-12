@@ -20,6 +20,7 @@ import SearchableSelect from "@/components/SearchableSelect";
 import { fetchGroupsWithItems, guessGroupId, type StageGroup, type StageGroupItem } from "@/lib/stageGroups";
 import { ChevronDown, ChevronRight, Layers } from "lucide-react";
 import { ClipboardList as TplIcon } from "lucide-react";
+import { currentUserName } from "@/lib/userNames";
 
 interface StageDraft { name: string; norm_days: number; qc_required: boolean; group_id: string | null }
 
@@ -234,7 +235,7 @@ export default function NewOrder() {
       }
 
       await logAudit(supabase, {
-        actor_id: user?.id, actor_name: user?.email,
+        actor_id: user?.id, actor_name: currentUserName(user),
         action: priority === "exception" ? "Istisno zakaz yaratildi" : "Zakaz yaratildi",
         entity: "order", order_id: order.id,
         details: `${orderNumber}, ${clientName || "—"}`,
@@ -245,7 +246,7 @@ export default function NewOrder() {
         body: `${productName}${clientName ? ` · ${clientName}` : ""}`,
         link: `/orders/${order.id}`,
         entity: "order", entity_id: order.id,
-        sender_id: user?.id, sender_name: user?.email,
+        sender_id: user?.id, sender_name: currentUserName(user),
       });
 
       toast.success(t.newOrder.created);

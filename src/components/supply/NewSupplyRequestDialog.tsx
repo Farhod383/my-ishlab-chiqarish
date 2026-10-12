@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/auth/AuthContext";
 import { logAudit } from "@/types/erp";
 import { notify } from "@/lib/notify";
+import { currentUserName } from "@/lib/userNames";
 
 const UNITS = ["dona", "kg", "tonna", "metr", "litr", "rulon", "komplekt"];
 
@@ -84,10 +85,10 @@ export default function NewSupplyRequestDialog({ open, onOpenChange, initialProd
       link: mode === "order" ? `/orders/${orderId}` : `/supply`,
       entity: "supply_request",
       recipient_role: ["supply", "warehouse"],
-      sender_id: user?.id, sender_name: user?.email,
+      sender_id: user?.id, sender_name: currentUserName(user),
     });
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: mode === "order" ? "Zakaz uchun buyurtma berildi" : "Zavod uchun buyurtma berildi",
       entity: "supply_request", order_id: mode === "order" ? orderId : null,
       details: `${name} · ${qty} ${u}`,

@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
 import { notify } from "@/lib/notify";
 import { fmtDate } from "@/lib/format";
+import { currentUserName } from "@/lib/userNames";
 
 type Status = "pending" | "in_progress" | "completed" | "cancelled";
 const STATUS_LABEL: Record<Status, string> = {
@@ -108,8 +109,8 @@ export default function ServicePage() {
       notes: fNotes.trim() || null, created_by: user?.id ?? null,
     }).select().single();
     if (error) { toast.error(error.message); return; }
-    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Servis so'rovi yaratildi", entity: "service_request", details: `${fClient} — ${fDevice}` });
-    await notify({ type: "service_request", title: `Yangi servis so'rovi — ${fDevice}`, body: `${fClient}`, link: "/service", entity: "service_request", entity_id: (data as any).id, sender_id: user?.id, sender_name: user?.email });
+    await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Servis so'rovi yaratildi", entity: "service_request", details: `${fClient} — ${fDevice}` });
+    await notify({ type: "service_request", title: `Yangi servis so'rovi — ${fDevice}`, body: `${fClient}`, link: "/service", entity: "service_request", entity_id: (data as any).id, sender_id: user?.id, sender_name: currentUserName(user) });
     setAddOpen(false); setFClient(""); setFPhone(""); setFDevice(""); setFProblem(""); setFDeadline(""); setFNotes("");
     toast.success("Yaratildi"); load();
   };
@@ -119,7 +120,7 @@ export default function ServicePage() {
     if (s === "completed") patch.finished_at = new Date().toISOString();
     const { error } = await supabase.from("service_requests" as any).update(patch).eq("id", r.id);
     if (error) { toast.error(error.message); return; }
-    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: `Servis statusi: ${STATUS_LABEL[s]}`, entity: "service_request", details: `${r.device_name}` });
+    await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: `Servis statusi: ${STATUS_LABEL[s]}`, entity: "service_request", details: `${r.device_name}` });
     load();
   };
 
@@ -149,7 +150,7 @@ export default function ServicePage() {
   const removeRequest = async (r: ServiceRow) => {
     if (!confirm(`"${r.device_name}" servisini o'chirish?`)) return;
     await supabase.from("service_requests" as any).delete().eq("id", r.id);
-    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Servis so'rovi o'chirildi", entity: "service_request", details: r.device_name });
+    await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Servis so'rovi o'chirildi", entity: "service_request", details: r.device_name });
     if (detailId === r.id) setDetailId(null);
     load();
   };

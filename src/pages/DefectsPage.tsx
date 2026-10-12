@@ -20,6 +20,7 @@ import { logAudit } from "@/types/erp";
 import { notify } from "@/lib/notify";
 import { useEmployees } from "@/hooks/useEmployees";
 import { fmtDateTime24 } from "@/lib/format";
+import { currentUserName } from "@/lib/userNames";
 
 type ItemType = "product" | "instrument";
 
@@ -147,7 +148,7 @@ export default function DefectsPage() {
       ? (products.find((p: any) => p.id === form.product_id)?.name ?? "—")
       : (instruments.find((i: any) => i.id === payload.instrument_id)?.name ?? "—");
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: "Brak qayd etildi", entity: "defect",
       order_id: payload.order_id,
       details: `${itemName} · ${form.quantity} · ${form.reason.trim() || "sabab ko'rsatilmagan"}`,
@@ -159,7 +160,7 @@ export default function DefectsPage() {
       link: "/defects",
       entity: "defect",
       recipient_role: ["otk", "manager", "warehouse"],
-      sender_id: user?.id, sender_name: user?.email,
+      sender_id: user?.id, sender_name: currentUserName(user),
     });
     toast.success(d.saved ?? "Saqlandi");
     setKind(form.item_type);
@@ -174,7 +175,7 @@ export default function DefectsPage() {
     const { error } = await supabase.from("defects").delete().eq("id", def.id);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: "Brak bekor qilindi", entity: "defect", order_id: def.order_id ?? null,
       details: `${def.item_type === "instrument" ? "Instrument" : "Mahsulot"}: ${itemName(def)} · ${def.quantity} · ${def.reason ?? ""}`,
     });
@@ -187,7 +188,7 @@ export default function DefectsPage() {
     await supabase.from("defects").update({ resolution } as any).eq("id", id);
     const def = defects.find((x: any) => x.id === id);
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: "Brak yechimi o'zgartirildi", entity: "defect",
       order_id: def?.order_id ?? null,
       details: `${def?.product?.name ?? def?.instrument?.name ?? id}: ${resolution}`,

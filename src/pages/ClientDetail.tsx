@@ -17,6 +17,7 @@ import { toast } from "@/hooks/use-toast";
 import { useEmployees } from "@/hooks/useEmployees";
 import { CLIENT_TYPES } from "@/pages/ClientsPage";
 import {
+import { currentUserName } from "@/lib/userNames";
   ArrowLeft, Phone, MapPin, Mail, User as UserIcon, Loader2, Plus, MessageSquare,
   FileText, History, Pencil, Upload, ExternalLink, Briefcase, CalendarDays,
 } from "lucide-react";
@@ -159,7 +160,7 @@ export default function ClientDetail() {
     await supabase.from("entity_audit").insert({
       entity: "client", entity_id: id!, action: `Klient ma'lumotlari o'zgartirildi: ${changed.join(", ") || "—"}`,
       old_value: client as any, new_value: patch as any,
-      actor_id: user?.id ?? null, actor_name: user?.email ?? null,
+      actor_id: user?.id ?? null, actor_name: currentUserName(user),
     });
     toast({ title: "Saqlandi" });
     setEditOpen(false);
@@ -172,7 +173,7 @@ export default function ClientDetail() {
     const { error } = await supabase.from("client_interactions").insert({
       client_id: id!, kind: intForm.kind, content: intForm.content.trim(),
       next_contact_date: intForm.next_contact_date || null, comment: intForm.comment || null,
-      actor_id: user?.id ?? null, actor_name: user?.email ?? null,
+      actor_id: user?.id ?? null, actor_name: currentUserName(user),
     });
     setSaving(false);
     if (error) { toast({ title: "Xatolik", description: error.message, variant: "destructive" }); return; }
@@ -195,13 +196,13 @@ export default function ClientDetail() {
     const { error } = await supabase.from("client_documents").insert({
       client_id: id!, name: docForm.name.trim(), doc_type: docForm.doc_type || null,
       status: docForm.status, issued_at: docForm.issued_at || null, comment: docForm.comment || null,
-      file_url: fileUrl, created_by: user?.id ?? null, created_by_name: user?.email ?? null,
+      file_url: fileUrl, created_by: user?.id ?? null, created_by_name: currentUserName(user),
     });
     setSaving(false);
     if (error) { toast({ title: "Xatolik", description: error.message, variant: "destructive" }); return; }
     await supabase.from("entity_audit").insert({
       entity: "client", entity_id: id!, action: `Hujjat qo'shildi: ${docForm.name}`,
-      actor_id: user?.id ?? null, actor_name: user?.email ?? null,
+      actor_id: user?.id ?? null, actor_name: currentUserName(user),
     });
     toast({ title: "Hujjat qo'shildi" });
     setDocOpen(false);

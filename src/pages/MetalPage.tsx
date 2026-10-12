@@ -19,6 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PRIORITY_OPTIONS } from "@/components/PriorityDot";
 import { Plus, Layers3, Scissors, PackagePlus, Pencil } from "lucide-react";
+import { currentUserName } from "@/lib/userNames";
 
 const UNITS = ["dona", "kg", "tonna", "metr", "litr", "rulon", "komplekt"] as const;
 const CURRENCIES = ["UZS", "USD"] as const;
@@ -99,7 +100,7 @@ export default function MetalPage() {
   const totalInKg = useMemo(() => moves.filter((m) => m.direction === "in").reduce((a, m) => a + n(m.weight_kg), 0), [moves]);
   const totalOutKg = useMemo(() => moves.filter((m) => m.direction === "out").reduce((a, m) => a + n(m.weight_kg), 0), [moves]);
 
-  const actorName = user?.email ?? null;
+  const actorName = currentUserName(user);
   const [busy, setBusy] = useState(false);
 
   /* ---------------- Kirim (Sklad "Mahsulot qo'shish" formasi bilan bir xil) ---------------- */

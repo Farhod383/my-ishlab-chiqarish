@@ -33,6 +33,7 @@ import { getStockStatus, stockStatusMeta, StockDot, type StockStatus } from "@/l
 import { useEmployees } from "@/hooks/useEmployees";
 import { Link, useNavigate } from "react-router-dom";
 import { getOpenSession, getOrStartSession, closeInvoice, discardDraftSessions, addOrMergeItem, intakeCode, itemsTotal, type IntakeSession, type IntakeItem } from "@/lib/intake";
+import { currentUserName } from "@/lib/userNames";
 
 const UNITS = ["dona", "kg", "tonna", "metr", "litr", "rulon", "komplekt"] as const;
 
@@ -256,7 +257,7 @@ export default function WarehousePage() {
     const prod = products.find(p => p.id === outProduct);
     const avail = Number(prod?.stock_qty ?? 0);
     if (Number(outQty) > avail) {
-      await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Sklad chiqimi BLOKLANDI", entity: "stock_movement", details: `${prod?.name}: so'ralgan ${outQty}, mavjud ${avail}` });
+      await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Sklad chiqimi BLOKLANDI", entity: "stock_movement", details: `${prod?.name}: so'ralgan ${outQty}, mavjud ${avail}` });
       toast.error(`Yetarli qoldiq mavjud emas (mavjud: ${avail})`);
       return;
     }
@@ -288,7 +289,7 @@ export default function WarehousePage() {
     } as any);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: crossOrderReason ? "Sklad chiqimi (boshqa zakazga)" : "Sklad chiqimi",
       entity: "stock_movement", order_id: outOrder || null,
       details: `${products.find(p=>p.id===outProduct)?.name} — ${outQty}, ${outRecipient}${crossOrderReason ? ` · manba zakaz: ${crossInfo?.sourceOrderNumber} · sabab: ${crossOrderReason}` : ""}`,
@@ -301,7 +302,7 @@ export default function WarehousePage() {
         body: `${outQty} · ${outRecipient}`,
         link: "/warehouse", entity: "stock_movement",
         recipient_role: ["warehouse", "manager", "supply"],
-        sender_id: user?.id, sender_name: user?.email,
+        sender_id: user?.id, sender_name: currentUserName(user),
       });
     }
     toast.success(t.warehouse.outRecorded);
@@ -391,7 +392,7 @@ export default function WarehousePage() {
       }
     }
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: "Mahsulot qo'shildi", entity: "product",
       details: `${newName.trim()}${qtyN > 0 ? `: +${qtyN} ${newUnit}` : ""}`,
     });
@@ -409,7 +410,7 @@ export default function WarehousePage() {
     const prod = products.find(p => p.id === otherProduct);
     const avail = Number(prod?.stock_qty ?? 0);
     if (Number(otherQty) > avail) {
-      await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Sklad chiqimi (boshqa) BLOKLANDI", entity: "stock_movement", details: `${prod?.name}: so'ralgan ${otherQty}, mavjud ${avail}` });
+      await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Sklad chiqimi (boshqa) BLOKLANDI", entity: "stock_movement", details: `${prod?.name}: so'ralgan ${otherQty}, mavjud ${avail}` });
       toast.error(`Yetarli qoldiq mavjud emas (mavjud: ${avail})`);
       return;
     }
@@ -420,7 +421,7 @@ export default function WarehousePage() {
     });
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email, action: "Sklad chiqimi (boshqa)",
+      actor_id: user?.id, actor_name: currentUserName(user), action: "Sklad chiqimi (boshqa)",
       entity: "stock_movement",
       details: `${products.find(p=>p.id===otherProduct)?.name} — ${otherQty}, sabab: ${otherReason}`,
     });
@@ -547,7 +548,7 @@ export default function WarehousePage() {
       merged = res.merged;
     } catch (e: any) { toast.error(e.message ?? "Xatolik"); return; }
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: "Nakladnoyga mahsulot qo'shildi", entity: "intake_item",
       order_id: impOrderId || null,
       details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${impCurrency}${impKg > 0 ? ` · ${fmt(impKg)} kg = ${(impKg / 1000).toFixed(4)} t` : ""}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
@@ -614,7 +615,7 @@ export default function WarehousePage() {
     try {
       await closeInvoice(openSession.id);
       await logAudit(supabase, {
-        actor_id: user?.id, actor_name: user?.email,
+        actor_id: user?.id, actor_name: currentUserName(user),
         action: "Nakladnoy yakunlandi", entity: "intake_session",
         details: `Nakladnoy ${intakeCode(openSession)} · ${sessionItems.length} mahsulot · ${fmt(itemsTotal(sessionItems as any))}`,
       });
@@ -670,7 +671,7 @@ export default function WarehousePage() {
         created_by: user?.id,
       } as any);
       await logAudit(supabase, {
-        actor_id: user?.id, actor_name: user?.email,
+        actor_id: user?.id, actor_name: currentUserName(user),
         action: "Qoldiq tuzatildi", entity: "product",
         details: `${editProd.name}: ${oldStock} → ${newStock} (${delta > 0 ? "+" : ""}${delta} ${editProd.unit ?? ""})${epStockReason ? ` · ${epStockReason}` : ""}`,
       });
@@ -678,7 +679,7 @@ export default function WarehousePage() {
     }
 
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: "Mahsulot tahrirlandi", entity: "product",
       details: diffs.length ? `${editProd.name}: ${diffs.join("; ")}` : `${editProd.name}: o'zgarish yo'q`,
     });
@@ -727,7 +728,7 @@ export default function WarehousePage() {
     }
 
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: editMov.direction === "in" ? "Kirim tahrirlandi" : "Chiqim tahrirlandi",
       entity: "stock_movement", order_id: editMov.order_id ?? null,
       details: diffs.length ? diffs.join("; ") : "o'zgarish yo'q",
@@ -744,7 +745,7 @@ export default function WarehousePage() {
     setDelBusy(false);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: "Mahsulot o'chirildi", entity: "product",
       details: `${delTarget.name} (${delTarget.ids.length} partiya, qoldiq: ${delTarget.qty} ${delTarget.unit})`,
     });
@@ -775,7 +776,7 @@ export default function WarehousePage() {
     const { error } = await supabase.from("stock_movements").delete().eq("id", m.id);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: m.direction === "in" ? "Kirim o'chirildi" : "Chiqim o'chirildi",
       entity: "stock_movement", order_id: m.order_id ?? null,
       details: `${m.product?.name ?? "—"}: ${m.direction === "in" ? "+" : "-"}${m.quantity}${m.recipient_name ? `, ${m.recipient_name}` : ""}`,
