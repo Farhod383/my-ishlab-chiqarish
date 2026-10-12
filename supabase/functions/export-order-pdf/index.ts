@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { jsPDF } from "https://esm.sh/jspdf@2.5.1";
 import autoTable from "https://esm.sh/jspdf-autotable@3.8.2";
+import { uzLabel, uzDate, uzDateTime } from "../_shared/uzLabels.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,7 +11,7 @@ const corsHeaders = {
 
 const fmt = (n: number) => new Intl.NumberFormat("en-US").format(Math.round(n));
 const fmtDate = (d?: string | null) => (d ? new Date(d).toISOString().slice(0, 10) : "—");
-const fmtDT = (d?: string | null) => (d ? new Date(d).toLocaleString("ru-RU") : "—");
+const fmtDT = (d?: string | null) => uzDateTime(d);
 
 // ---- Unicode font (cached across invocations) ---------------------------
 // Roboto supports Latin, Cyrillic and Uzbek diacritics — renders identically
@@ -147,7 +148,7 @@ Deno.serve(async (req) => {
     doc.text("ZAKAZ HISOBOTI", 40, 32);
     doc.setFont("Roboto", "normal");
     doc.setFontSize(10);
-    doc.text(`Hujjat sanasi: ${new Date().toLocaleString("ru-RU")}`, 40, 50);
+    doc.text(`Hujjat sanasi: ${uzDateTime(new Date().toISOString())}`, 40, 50);
     doc.setFont("Roboto", "bold");
     doc.setFontSize(14);
     doc.text(String(order.order_number ?? ""), W - 40, 40, { align: "right" });
@@ -170,10 +171,10 @@ Deno.serve(async (req) => {
         ["Mijoz", order.client?.name ?? "—"],
         ["Telefon", order.client?.phone ?? "—"],
         ["Mahsulot", `${order.product_name} × ${order.quantity}`],
-        ["Olingan sana", fmtDate(order.order_date)],
-        ["Tugash sanasi", fmtDate(order.deadline)],
-        ["Holat", String(order.status)],
-        ["Prioritet", String(order.priority)],
+        ["Olingan sana", uzDate(order.order_date)],
+        ["Tugash sanasi", uzDate(order.deadline)],
+        ["Holat", uzLabel(order.status)],
+        ["Prioritet", uzLabel(order.priority)],
         ["Izoh", order.comment ?? "—"],
       ],
       columnStyles: {
@@ -194,7 +195,7 @@ Deno.serve(async (req) => {
       alternateRowStyles: { fillColor: [250, 248, 255] },
       body: events.length === 0
         ? [["—", "—", "—", "Hodisalar mavjud emas"]]
-        : events.map((e, i) => [String(i + 1), e.date, e.who, e.what]),
+        : events.map((e, i) => [String(i + 1), uzDate(e.date), e.who, e.what]),
       columnStyles: { 0: { cellWidth: 32, halign: "right" }, 1: { cellWidth: 80 }, 2: { cellWidth: 110 } },
     });
     y = (doc as any).lastAutoTable.finalY + 18;
@@ -210,7 +211,7 @@ Deno.serve(async (req) => {
       headStyles: { font: "Roboto", fontStyle: "bold", fillColor: BRAND, textColor: 255 },
       body: (stages ?? []).map((s: any, i: number) => [
         String(i + 1), s.name, s.worker_name ?? "—",
-        fmtDT(s.started_at), fmtDT(s.finished_at), s.status,
+        fmtDT(s.started_at), fmtDT(s.finished_at), uzLabel(s.status),
         s.handover_comment ?? "—",
       ]),
       columnStyles: {
@@ -232,7 +233,7 @@ Deno.serve(async (req) => {
         ? [["—", "Sarflangan mahsulot yo'q", "", "", "", "", ""]]
         : costRows.map((r, i) => [
             String(i + 1), r.name, `${r.qty} ${r.unit}`, fmt(r.price), fmt(r.total),
-            r.recipient, r.date,
+            r.recipient, uzDate(r.date),
           ]),
       columnStyles: {
         0: { cellWidth: 28, halign: "right" },
