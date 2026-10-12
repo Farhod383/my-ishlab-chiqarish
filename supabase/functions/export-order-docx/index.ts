@@ -3,6 +3,7 @@ import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   HeadingLevel, AlignmentType, WidthType, BorderStyle, ShadingType,
 } from "https://esm.sh/docx@8.5.0";
+import { uzLabel, uzDate } from "../_shared/uzLabels.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -86,10 +87,10 @@ Deno.serve(async (req) => {
             rows: [
               new TableRow({ children: [cell("Mijoz", { bold: true, fill: "F2F2F2", width: 3000 }), cell(order.client?.name ?? "—", { width: 6000 })] }),
               new TableRow({ children: [cell("Mahsulot", { bold: true, fill: "F2F2F2", width: 3000 }), cell(`${order.product_name} × ${order.quantity}`, { width: 6000 })] }),
-              new TableRow({ children: [cell("Olingan sana", { bold: true, fill: "F2F2F2", width: 3000 }), cell(order.order_date, { width: 6000 })] }),
-              new TableRow({ children: [cell("Tugash sanasi", { bold: true, fill: "F2F2F2", width: 3000 }), cell(order.deadline, { width: 6000 })] }),
-              new TableRow({ children: [cell("Holat", { bold: true, fill: "F2F2F2", width: 3000 }), cell(order.status, { width: 6000 })] }),
-              new TableRow({ children: [cell("Prioritet", { bold: true, fill: "F2F2F2", width: 3000 }), cell(order.priority, { width: 6000 })] }),
+              new TableRow({ children: [cell("Olingan sana", { bold: true, fill: "F2F2F2", width: 3000 }), cell(uzDate(order.order_date), { width: 6000 })] }),
+              new TableRow({ children: [cell("Tugash sanasi", { bold: true, fill: "F2F2F2", width: 3000 }), cell(uzDate(order.deadline), { width: 6000 })] }),
+              new TableRow({ children: [cell("Holat", { bold: true, fill: "F2F2F2", width: 3000 }), cell(uzLabel(order.status), { width: 6000 })] }),
+              new TableRow({ children: [cell("Prioritet", { bold: true, fill: "F2F2F2", width: 3000 }), cell(uzLabel(order.priority), { width: 6000 })] }),
             ],
           }),
 
@@ -110,7 +111,7 @@ Deno.serve(async (req) => {
                 cell(s.name, { width: 4400 }),
                 cell(String(s.norm_days), { width: 1500, align: AlignmentType.RIGHT }),
                 cell(s.otk_required || s.qc_required ? (s.qc_passed ? "✓ O'tdi" : (s.otk_comment ? "Izoh" : "Tekshirilmagan")) : "—", { width: 1500 }),
-                cell(s.status, { width: 1000 }),
+                cell(uzLabel(s.status), { width: 1000 }),
               ] })),
             ],
           }),
@@ -144,7 +145,7 @@ Deno.serve(async (req) => {
 
           new Paragraph({ children: [new TextRun(" ")] }),
           new Paragraph({ alignment: AlignmentType.RIGHT,
-            children: [new TextRun({ text: `Hisobot sanasi: ${new Date().toLocaleDateString("uz-UZ")}`, italics: true, size: 18, color: "808080" })] }),
+            children: [new TextRun({ text: `Hisobot sanasi: ${uzDate(new Date().toISOString())}`, italics: true, size: 18, color: "808080" })] }),
         ],
       }],
     });

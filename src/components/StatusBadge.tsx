@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { uzAction, uzText, uzField, uzLabel } from "@/lib/uzLabels";
 import { CheckCircle2, Clock, AlertTriangle, Loader2, XCircle } from "lucide-react";
 import { useI18n } from "@/i18n/context";
 
@@ -21,7 +22,7 @@ export function StatusBadge({ status, className, label }: { status: Status; clas
   return (
     <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium", m.cls, className)}>
       <Icon className={cn("h-3 w-3", status === "in_progress" && "animate-spin")} />
-      {label ?? (t.status as any)[status] ?? status}
+      {label ?? (t.status as any)[status] ?? uzLabel(status)}
     </span>
   );
 }

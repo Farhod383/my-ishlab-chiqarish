@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { uzAction, uzText, uzField, uzLabel } from "@/lib/uzLabels";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchSupplyHistory, type SupplyHistoryItem } from "@/lib/supplyHistory";
 import { fmtDateTime24 } from "@/lib/format";
@@ -40,7 +41,7 @@ export default function SupplyOrderHistory({ orderId, title = "O'zgarishlar tari
           <div key={h.id} className="rounded border bg-background px-2.5 py-1.5 text-xs">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <span className="font-semibold">
-                {h.product ? `${h.product} — ` : ""}{h.action}
+                {h.product ? `${h.product} — ` : ""}{uzAction(h.action)}
               </span>
               <span className="font-mono text-[11px] text-muted-foreground">{fmtDateTime24(h.at)}</span>
             </div>

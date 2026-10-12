@@ -11,7 +11,7 @@ export const uz = {
     supply: "Ta'minot (Buyurtmalar)",
     otk: "OTK (Sifat nazorati)",
     chat: "Suhbatlar (Chat)",
-    audit: "Audit log",
+    audit: "Audit jurnali",
     nachalnik: "Nachalnik",
     hr: "Xodimlar (HR)",
     faceId: "Face_id (Davomat)",

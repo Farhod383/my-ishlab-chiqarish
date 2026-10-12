@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { uzAction, uzText, uzField, uzLabel } from "@/lib/uzLabels";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchStageGroups, groupStages, type StageGroup } from "@/lib/stageGroups";
@@ -549,9 +550,9 @@ export default function OrderDetail() {
                                 {" — "}
                                 <span className="font-medium">{ev.dept}</span>
                                 {" · "}
-                                <span>{ev.action}</span>
+                                <span>{uzAction(ev.action)}</span>
                                 {ev.actor && <span className="text-muted-foreground"> · {localize(ev.actor)}</span>}
-                                {ev.details && <div className="text-muted-foreground">{fmtLegacyDurations(ev.details)}</div>}
+                                {ev.details && <div className="text-muted-foreground">{uzText(fmtLegacyDurations(ev.details))}</div>}
                               </div>
                             ))}
                           </div>
@@ -630,9 +631,9 @@ export default function OrderDetail() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant="outline" className="text-[10px]">{ev.dept}</Badge>
-                      <span className="font-semibold text-sm">{ev.action}</span>
+                      <span className="font-semibold text-sm">{uzAction(ev.action)}</span>
                     </div>
-                    {ev.details && <div className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">{fmtLegacyDurations(ev.details)}</div>}
+                    {ev.details && <div className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">{uzText(fmtLegacyDurations(ev.details))}</div>}
                     <div className="text-[11px] text-muted-foreground/80 mt-1">
                       {fmtDateTime24(ev.at)} · {ev.actor ? localize(ev.actor) : t.common.system}
                     </div>
@@ -650,8 +651,8 @@ export default function OrderDetail() {
             <CardContent className="space-y-2">
               {logs.map((l) => (
                 <div key={l.id} className="text-sm border-l-2 border-border pl-3 py-1">
-                  <div><span className="font-semibold">{l.action}</span> — <span className="text-muted-foreground">{l.actor_name ? localize(l.actor_name) : t.common.system}</span></div>
-                  {l.details && <div className="text-xs text-muted-foreground">{fmtLegacyDurations(l.details)}</div>}
+                  <div><span className="font-semibold">{uzAction(l.action)}</span> — <span className="text-muted-foreground">{l.actor_name ? localize(l.actor_name) : t.common.system}</span></div>
+                  {l.details && <div className="text-xs text-muted-foreground">{uzText(fmtLegacyDurations(l.details))}</div>}
                   <div className="text-[10px] text-muted-foreground">{fmtDateTime24(l.created_at)}</div>
                 </div>
               ))}
