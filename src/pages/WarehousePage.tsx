@@ -933,7 +933,7 @@ export default function WarehousePage() {
             )}
             {inStep === "variant" && (
               <Button
-                className="mt-3 self-start rounded-xl bg-primary px-5 font-semibold text-primary-foreground shadow-sm hover:bg-primary/85"
+                className="mt-3 self-start justify-self-start w-fit rounded-xl bg-primary px-5 font-semibold text-primary-foreground shadow-sm hover:bg-primary/85"
                 onClick={() => setInStep("loc")}
               >
                 <span aria-hidden className="mr-1 text-base leading-none">←</span>
