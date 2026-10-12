@@ -314,8 +314,7 @@ export default function WarehousePage() {
   };
 
   const confirmCrossRelease = async () => {
-    if (crossReason.trim().length < 5) { toast.error("Izoh yozing (kamida 5 belgi)"); return; }
-    await finalizeRelease(crossReason.trim(), crossInfo?.sourceOrderId ?? null);
+    await finalizeRelease(crossReason.trim() || null as any, crossInfo?.sourceOrderId ?? null);
   };
 
 
@@ -612,7 +611,6 @@ export default function WarehousePage() {
   const doFinishSession = async () => {
     if (!openSession) return;
     if (sessionItems.length === 0) { toast.error("Avval mahsulot qo'shing"); return; }
-    if (!openSession.image_url) { toast.error("Avval nakladnoy rasmini yuklang"); return; }
     setNaklBusy(true);
     try {
       await closeInvoice(openSession.id);
@@ -1857,13 +1855,13 @@ export default function WarehousePage() {
             <DialogTitle>Boshqa zakazga berilyapti</DialogTitle>
             <DialogDescription>
               Bu mahsulot dastlab <b>{crossInfo?.sourceOrderNumber}</b> zakazi uchun olib kelingan.
-              Boshqa zakazga chiqim uchun majburiy izoh kiriting.
+              Izoh ixtiyoriy.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label>Nega boshqa zakazga berilyapti? *</Label>
-              <Textarea rows={4} value={crossReason} onChange={(e) => setCrossReason(e.target.value)} placeholder="Sabab (kamida 5 belgi)..." />
+              <Label>Nega boshqa zakazga berilyapti? (ixtiyoriy)</Label>
+              <Textarea rows={4} value={crossReason} onChange={(e) => setCrossReason(e.target.value)} placeholder="Sabab (ixtiyoriy)" />
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setCrossOpen(false)}>{t.common.cancel ?? "Bekor qilish"}</Button>
