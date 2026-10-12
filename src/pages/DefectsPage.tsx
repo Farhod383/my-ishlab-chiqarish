@@ -32,6 +32,7 @@ export default function DefectsPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [instruments, setInstruments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [profileNames, setProfileNames] = useState<Map<string, string>>(new Map());
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [kind, setKind] = useState<ItemType>("product");
@@ -58,6 +59,8 @@ export default function DefectsPage() {
       supabase.from("products").select("id, name, unit, stock_qty").order("name"),
       supabase.from("instruments").select("id, name, quantity, status, inventory_number").order("name"),
     ]);
+    const { data: profs } = await supabase.from("profiles").select("id, full_name");
+    setProfileNames(new Map((profs ?? []).map((p: any) => [p.id, p.full_name])));
     const orderById = new Map((ord ?? []).map((o: any) => [o.id, o]));
     setDefects((def ?? []).map((x: any) => ({ ...x, order: x.order_id ? orderById.get(x.order_id) ?? null : null })));
     setOrders(ord ?? []);
@@ -148,6 +151,8 @@ export default function DefectsPage() {
       sender_id: user?.id, sender_name: user?.email,
     });
     toast.success(d.saved ?? "Saqlandi");
+    setKind(form.item_type);
+    setSearch("");
     setForm({ item_type: "product", order_id: "", product_id: "", instrument_id: "", quantity: 1, detected_by_id: "", reason: "", comment: "", resolution: "pending", image: null });
     setOpen(false);
     load();
@@ -296,12 +301,13 @@ export default function DefectsPage() {
                   <TableHead className="text-right">{d.qty ?? "Miqdor"}</TableHead>
                   <TableHead>{d.detectedBy ?? "Kim aniqladi"}</TableHead>
                   <TableHead>{d.reason ?? "Sabab"}</TableHead>
+                  <TableHead>Kim kiritdi</TableHead>
                   <TableHead>{d.resolution ?? "Qaror"}</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
+                {loading && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                 {!loading && filteredDefects.map(def => (
                   <TableRow key={def.id}>
                     <TableCell className="text-sm whitespace-nowrap">{new Date(def.created_at).toLocaleString()}</TableCell>
@@ -315,6 +321,7 @@ export default function DefectsPage() {
                     <TableCell className="text-right font-mono">{def.quantity} {def.item_type === "instrument" ? "dona" : (def.product?.unit ?? "")}</TableCell>
                     <TableCell className="text-sm">{localize(def.detected_by?.full_name ?? def.detected_by_name) || "—"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{def.reason ?? "—"}</TableCell>
+                    <TableCell className="text-sm">{localize(profileNames.get(def.created_by) ?? "") || "—"}</TableCell>
                     <TableCell>
                       {hasRole(["admin", "warehouse"]) ? (
                         <Select value={def.resolution} onValueChange={v => updateResolution(def.id, v)}>
@@ -340,7 +347,7 @@ export default function DefectsPage() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {!loading && filteredDefects.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{d.empty ?? "Brak yo'q"}</TableCell></TableRow>}
+                {!loading && filteredDefects.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">{d.empty ?? "Brak yo'q"}</TableCell></TableRow>}
               </TableBody>
             </Table>
           </div>
