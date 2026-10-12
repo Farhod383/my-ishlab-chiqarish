@@ -52,12 +52,14 @@ export default function DefectsPage() {
 
   const load = async () => {
     const [{ data: def }, { data: ord }, { data: prod }, { data: instr }] = await Promise.all([
-      supabase.from("defects").select("*, product:products(name, unit), detected_by:employees(full_name), order:orders(order_number, product_name)").order("created_at", { ascending: false }),
+      // defects.order_id has no FK to orders, so embedding orders breaks the whole query — join orders client-side.
+      supabase.from("defects").select("*, product:products(name, unit), detected_by:employees(full_name)").order("created_at", { ascending: false }),
       supabase.from("orders").select("id, order_number, product_name").order("order_number", { ascending: false }),
       supabase.from("products").select("id, name, unit, stock_qty").order("name"),
       supabase.from("instruments").select("id, name, quantity, status, inventory_number").order("name"),
     ]);
-    setDefects(def ?? []);
+    const orderById = new Map((ord ?? []).map((o: any) => [o.id, o]));
+    setDefects((def ?? []).map((x: any) => ({ ...x, order: x.order_id ? orderById.get(x.order_id) ?? null : null })));
     setOrders(ord ?? []);
     setProducts(prod ?? []);
     setInstruments(instr ?? []);
