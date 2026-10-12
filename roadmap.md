@@ -7,5 +7,5 @@
 - Daily tasks module (admin/otk/manager) — done
 
 ## Zakaz hisoboti kartochkalari
-- [ ] Rangli kartochkalar, umumiy status filtri va mos hisoblagichlarni amalga oshirish va tekshirish.
-- [ ] Asosiy Admin va Admin 2 hisoblarida kartochkalarni amalda tekshirish.
+- [x] Rangli kartochkalar, umumiy status filtri va mos hisoblagichlarni amalga oshirish va tekshirish.
+- [x] Asosiy Admin va Admin 2 hisoblarida kartochkalarni amalda tekshirish.
