@@ -794,6 +794,7 @@ export type Database = {
       }
       defects: {
         Row: {
+          assignment_id: string | null
           comment: string | null
           created_at: string
           created_by: string | null
@@ -812,6 +813,7 @@ export type Database = {
           stock_applied: boolean
         }
         Insert: {
+          assignment_id?: string | null
           comment?: string | null
           created_at?: string
           created_by?: string | null
@@ -830,6 +832,7 @@ export type Database = {
           stock_applied?: boolean
         }
         Update: {
+          assignment_id?: string | null
           comment?: string | null
           created_at?: string
           created_by?: string | null
@@ -848,6 +851,13 @@ export type Database = {
           stock_applied?: boolean
         }
         Relationships: [
+          {
+            foreignKeyName: "defects_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "instrument_assignments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "defects_detected_by_id_fkey"
             columns: ["detected_by_id"]
@@ -1150,6 +1160,7 @@ export type Database = {
           return_comment: string | null
           returned_at: string | null
           returned_by: string | null
+          written_off: boolean
         }
         Insert: {
           box_number?: string | null
@@ -1164,6 +1175,7 @@ export type Database = {
           return_comment?: string | null
           returned_at?: string | null
           returned_by?: string | null
+          written_off?: boolean
         }
         Update: {
           box_number?: string | null
@@ -1178,6 +1190,7 @@ export type Database = {
           return_comment?: string | null
           returned_at?: string | null
           returned_by?: string | null
+          written_off?: boolean
         }
         Relationships: [
           {
