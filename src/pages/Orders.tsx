@@ -11,7 +11,7 @@ import { StatusBadge, PriorityBadge, HealthDot } from "@/components/StatusBadge"
 import { orderHealth, type OrderRow } from "@/types/erp";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n, useLocalize } from "@/i18n/context";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, ChevronDown, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { matchesAcrossScripts } from "@/lib/translit";
 import { recalcOrdersBatch, sortOrdersByStatusAndDate } from "@/lib/orderStatus";
@@ -29,6 +29,7 @@ export default function Orders() {
   const [filter, setFilter] = useState<FilterKey>(initial);
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
+  const [selOpen, setSelOpen] = useState(false);
 
   useEffect(() => {
     const f = (params.get("filter") as FilterKey) || "all";
@@ -129,7 +130,33 @@ export default function Orders() {
               </TableHeader>
               <TableBody>
                 {loading && <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
-                {!loading && filtered.map((o, idx) => {
+                {!loading && (() => {
+                  const isSel = (o: any) => /selnometal|сельнометал/i.test(String(o.product_name ?? "").replace(/[’'ʼ`]/g, ""));
+                  const selRows = filtered.filter(isSel);
+                  const out: any[] = [];
+                  let groupInserted = false;
+                  for (const o of filtered) {
+                    if (isSel(o)) {
+                      if (!groupInserted) { out.push({ __group: true }); groupInserted = true; if (selOpen) out.push(...selRows); }
+                    } else out.push(o);
+                  }
+                  return out;
+                })().map((o: any, idx: number) => {
+                  if (o.__group) {
+                    const sel = filtered.filter((x: any) => /selnometal|сельнометал/i.test(String(x.product_name ?? "").replace(/[’'ʼ`]/g, "")));
+                    const done = sel.filter((x: any) => x.status === "completed").length;
+                    return (
+                      <TableRow key="__sel" className="cursor-pointer bg-muted/40 hover:bg-muted" onClick={() => setSelOpen(v => !v)}>
+                        <TableCell colSpan={12} className="font-semibold">
+                          <span className="inline-flex items-center gap-2">
+                            {selOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            Sel'nometalika — FAW (VUM)
+                            <span className="text-xs font-normal text-muted-foreground">{sel.length} ta zakaz · {done} tugallangan · {sel.length - done} jarayonda/kutilmoqda</span>
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }
                   const today0 = new Date(); today0.setHours(0,0,0,0);
                   const dl = new Date(o.deadline); dl.setHours(0,0,0,0);
                   const diffDays = Math.ceil((dl.getTime() - today0.getTime()) / 86400000);
