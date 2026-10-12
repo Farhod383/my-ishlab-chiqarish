@@ -36,6 +36,22 @@ import { fmtDateTime24 } from "@/lib/format";
 import { getOpenSession, getOrStartSession, closeInvoice, discardDraftSessions, addOrMergeItem, intakeCode, itemsTotal, type IntakeSession, type IntakeItem } from "@/lib/intake";
 
 const UNITS = ["dona", "kg", "tonna", "metr", "litr", "rulon", "komplekt"] as const;
+
+/**
+ * Kirim miqdorini mahsulot birligiga aniq o'tkazadi. kg↔tonna doim; dona↔kg/tonna
+ * faqat 1 dona og'irlik normasi bo'lsa. Aks holda null (birliklar aralashtirilmaydi).
+ */
+export function convertQty(q: number, from: string, to: string, kgPerPiece: number): number | null {
+  const f = (from || "").trim().toLowerCase(), t = (to || "").trim().toLowerCase();
+  if (f === t) return q;
+  const toKg = (u: string, v: number) => u === "kg" ? v : u === "tonna" ? v * 1000 : u === "dona" && kgPerPiece > 0 ? v * kgPerPiece : null;
+  const kg = toKg(f, q);
+  if (kg === null) return null;
+  if (t === "kg") return kg;
+  if (t === "tonna") return kg / 1000;
+  if (t === "dona" && kgPerPiece > 0) return kg / kgPerPiece;
+  return null;
+}
 const CURRENCIES = ["UZS", "USD"] as const;
 
 export default function WarehousePage() {
@@ -452,12 +468,29 @@ export default function WarehousePage() {
     let productId: string;
 
     let unitToSave = impUnit || "dona";
+    let qtySave = qtyN;
+    let priceSave = priceN;
+    let resolvedId: string | null = null;
     if (impProductId) {
-      productId = impProductId;
-      const pu = (products.find((x: any) => x.id === impProductId) as any)?.unit;
-      if (pu) unitToSave = pu;
+      const prod: any = products.find((x: any) => x.id === impProductId);
+      const conv = convertQty(qtyN, impUnit || "dona", prod?.unit || "dona", Number(prod?.weight_kg) || 0);
+      if (conv !== null) {
+        // Bir xil birlik yoki norma asosida aniq konvertatsiya
+        resolvedId = impProductId;
+        unitToSave = prod?.unit || unitToSave;
+        qtySave = conv;
+        priceSave = conv > 0 && priceN > 0 ? (priceN * qtyN) / conv : priceN;
+      } else {
+        // Konvertatsiya mumkin emas — shu nom + tanlangan birlikdagi alohida pozitsiya
+        const { data: ex } = await supabase.from("products").select("id")
+          .ilike("name", trimmedName).eq("unit", unitToSave).limit(1);
+        if (ex && ex.length) resolvedId = ex[0].id;
+      }
+    }
+    if (resolvedId) {
+      productId = resolvedId;
       const patch: any = {};
-      if (priceN > 0) patch.last_price = priceN;
+      if (priceSave > 0) patch.last_price = priceSave;
       if (impPhone) patch.phone = impPhone;
       if (imgUrl) patch.image_url = imgUrl;
       if (impSource.trim()) patch.source = impSource.trim();
@@ -500,9 +533,9 @@ export default function WarehousePage() {
         product_id: productId,
         product_name: trimmedName,
         unit: unitToSave,
-        quantity: qtyN,
+        quantity: qtySave,
         weight_kg: impKg > 0 ? impKg : null,
-        unit_price: priceN,
+        unit_price: priceSave,
         currency: impCurrency || "UZS",
         location: impLocation || "Asosiy zavod",
         order_id: impOrderId || null,
@@ -1145,11 +1178,16 @@ export default function WarehousePage() {
                   <div className="grid grid-cols-3 gap-3">
                     <div className="col-span-2"><Label>{t.supply.qty} *</Label><NumberInput min={0.001} step={0.001} value={impQty} onChange={e => setImpQty(e.target.value)} placeholder={(impUnit || "").toLowerCase() === "tonna" ? "0.5 / 1.25 / 6.940" : (t.warehouse as any).qtyPh} /></div>
                     <div><Label>{t.warehouse.unit}</Label>
-                      <Select value={impUnit} onValueChange={setImpUnit} disabled={!!impProductId}>
+                      <Select value={impUnit} onValueChange={setImpUnit}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+                        <SelectContent>{Array.from(new Set<string>([...UNITS, ...products.map((p: any) => String(p.unit || "").trim()), impUnit].filter(Boolean))).map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
                       </Select>
-                      {impProductId && <p className="text-[11px] text-muted-foreground mt-1">Mahsulot profilidan</p>}
+                      {impProductId && (() => {
+                        const pr: any = products.find((x: any) => x.id === impProductId);
+                        if (!pr || (pr.unit || "").toLowerCase() === (impUnit || "").toLowerCase()) return null;
+                        const c = convertQty(Number(impQty) || 0, impUnit, pr.unit, Number(pr.weight_kg) || 0);
+                        return <p className="text-[11px] text-muted-foreground mt-1">{c !== null ? `= ${fmt(c)} ${pr.unit} (qoldiqqa)` : `Alohida "${impUnit}" pozitsiya`}</p>;
+                      })()}
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-3 items-end">
