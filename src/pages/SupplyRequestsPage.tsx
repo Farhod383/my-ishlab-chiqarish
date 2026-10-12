@@ -29,6 +29,7 @@ import { resolveModule } from "@/lib/notifModules";
 import SupplyOrderHistory from "@/components/SupplyOrderHistory";
 import { logSupplyChange } from "@/lib/supplyHistory";
 import NumberInput from "@/components/NumberInput";
+import { currentUserName } from "@/lib/userNames";
 
 type Filter = "all" | Status;
 
@@ -212,7 +213,7 @@ export default function SupplyRequestsPage() {
       .eq("id", item.id);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: "Ta'minot izohi saqlandi", entity: "supply_request",
       order_id: item.order_id ?? null,
       details: `${item.product_name}: ${e.supply_comment || "—"}`,
@@ -222,7 +223,7 @@ export default function SupplyRequestsPage() {
       action: "Ta'minot izohi o'zgartirildi",
       before: { supply_comment: item.supply_comment ?? "" },
       after: { supply_comment: e.supply_comment || "" },
-      actorId: user?.id, actorName: user?.email, role: myRole,
+      actorId: user?.id, actorName: currentUserName(user), role: myRole,
     });
     toast.success("Izoh saqlandi");
     load();
@@ -238,10 +239,10 @@ export default function SupplyRequestsPage() {
       action: "Miqdor o'zgartirildi",
       before: { quantity: `${item.quantity} ${item.unit ?? ""}`.trim() },
       after: { quantity: `${next} ${item.unit ?? ""}`.trim() },
-      actorId: user?.id, actorName: user?.email, role: myRole,
+      actorId: user?.id, actorName: currentUserName(user), role: myRole,
     });
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: "Ta'minot miqdori o'zgartirildi", entity: "supply_request",
       order_id: item.order_id ?? null,
       details: `${item.product_name}: ${item.quantity} → ${next} ${item.unit ?? ""}`,
@@ -255,7 +256,7 @@ export default function SupplyRequestsPage() {
       entity_id: item.id,
       recipient_role: ["supply", "warehouse", "manager"],
       sender_id: user?.id,
-      sender_name: user?.email,
+      sender_name: currentUserName(user),
     });
     setQtyEdit((p) => ({ ...p, [item.id]: "" }));
     toast.success("Miqdor yangilandi");
@@ -289,7 +290,7 @@ export default function SupplyRequestsPage() {
       [item.id]: { ...(prev[item.id] ?? { supply_comment: item.supply_comment ?? "", dirty: false }), status, dirty: false },
     }));
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: status === "fulfilled" ? "Ta'minot bajarildi" : "Ta'minot kutilmoqdaga qaytarildi",
       entity: "supply_request",
       order_id: item.order_id ?? null,
@@ -300,7 +301,7 @@ export default function SupplyRequestsPage() {
       action: status === "fulfilled" ? "Mahsulot ta'minlandi" : "Holat qaytarildi",
       before: { status: normalizeStatus(item.status) },
       after: { status },
-      actorId: user?.id, actorName: user?.email, role: myRole,
+      actorId: user?.id, actorName: currentUserName(user), role: myRole,
     });
     await notify({
       type: status === "fulfilled" ? "supply_fulfilled" : "supply_request",
@@ -311,7 +312,7 @@ export default function SupplyRequestsPage() {
       entity_id: item.id,
       recipient_role: ["warehouse", "manager", "supply"],
       sender_id: user?.id,
-      sender_name: user?.email,
+      sender_name: currentUserName(user),
     });
     if (item.created_by && item.created_by !== user?.id) {
       await notify({
@@ -323,7 +324,7 @@ export default function SupplyRequestsPage() {
         entity_id: item.id,
         recipient_id: item.created_by,
         sender_id: user?.id,
-        sender_name: user?.email,
+        sender_name: currentUserName(user),
       });
     }
     toast.success(status === "fulfilled" ? "Ta'minlandi — omborga kirim qilindi" : "Kutilmoqda holatiga qaytarildi");

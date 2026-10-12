@@ -25,6 +25,7 @@ import { recalcOrderStatus } from "@/lib/orderStatus";
 import OrderSupplyRequests from "@/components/OrderSupplyRequests";
 import { useNotifications, notifStageId } from "@/notifications/NotificationsContext";
 import { fmtDateTime24, fmtDuration, fmtLegacyDurations, fmtDate } from "@/lib/format";
+import { currentUserName, displayUser } from "@/lib/userNames";
 
 
 export default function OrderDetail() {
@@ -134,7 +135,7 @@ export default function OrderDetail() {
     } as any).eq("id", stage.id);
     if (order?.status === "pending") await supabase.from("orders").update({ status: "in_progress" }).eq("id", order.id);
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: "Bosqich boshlandi", entity: "stage",
       order_id: order!.id, stage_id: stage.id,
       details: `${stage.name} · Ishchilar: ${workerStr} · ${fmtDateTime24(startedAtIso)}`,
@@ -145,7 +146,7 @@ export default function OrderDetail() {
       body: `${stage.name} · ${workerStr}`,
       link: `/orders/${order!.id}`,
       entity: "stage", entity_id: stage.id,
-      sender_id: user?.id, sender_name: user?.email,
+      sender_id: user?.id, sender_name: currentUserName(user),
     });
     load();
     return true;
@@ -157,28 +158,28 @@ export default function OrderDetail() {
     const finishedTs = Date.now();
     const durationMin = startedTs ? Math.round((finishedTs - startedTs) / 60000) : 0;
     await supabase.from("order_stages").update({ status: "completed", finished_at: new Date(finishedTs).toISOString() }).eq("id", stage.id);
-    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Bosqich tugatildi", entity: "stage", order_id: order!.id, stage_id: stage.id, details: `${stage.name} · ishchi: ${(stage as any).worker_name ?? "—"} · davomiyligi: ${fmtDuration(durationMin)}` });
+    await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Bosqich tugatildi", entity: "stage", order_id: order!.id, stage_id: stage.id, details: `${stage.name} · ishchi: ${(stage as any).worker_name ?? "—"} · davomiyligi: ${fmtDuration(durationMin)}` });
     await notify({
       type: "stage_finished",
       title: `Bosqich tugatildi — ${order?.order_number}`,
       body: `${stage.name} · ${fmtDuration(durationMin)}`,
       link: `/orders/${order!.id}`,
       entity: "stage", entity_id: stage.id,
-      sender_id: user?.id, sender_name: user?.email,
+      sender_id: user?.id, sender_name: currentUserName(user),
     });
     // Re-fetch fresh stage state, then evaluate completion (all completed + OTK approved where required).
     const { data: fresh } = await supabase.from("order_stages").select("status, qc_required, qc_passed").eq("order_id", order!.id);
     const allDone = (fresh ?? []).length > 0 && (fresh ?? []).every((x: any) => x.status === "completed" && (!x.qc_required || x.qc_passed === true));
     if (allDone) {
       await supabase.from("orders").update({ status: "completed" }).eq("id", order!.id).neq("status", "completed");
-      await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Zakaz tugatildi", entity: "order", order_id: order!.id, details: order!.order_number });
+      await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Zakaz tugatildi", entity: "order", order_id: order!.id, details: order!.order_number });
       await notify({
         type: "order_completed",
         title: `Zakaz tugatildi — ${order?.order_number}`,
         body: order?.product_name ?? "",
         link: `/orders/${order!.id}`,
         entity: "order", entity_id: order!.id,
-        sender_id: user?.id, sender_name: user?.email,
+        sender_id: user?.id, sender_name: currentUserName(user),
       });
     }
     load();
@@ -189,14 +190,14 @@ export default function OrderDetail() {
       qc_passed: val,
       otk_checked_at: val ? new Date().toISOString() : null,
     }).eq("id", stage.id);
-    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: val ? "OTK o'tdi" : "OTK bekor", entity: "stage", order_id: order!.id, stage_id: stage.id, details: stage.name });
+    await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: val ? "OTK o'tdi" : "OTK bekor", entity: "stage", order_id: order!.id, stage_id: stage.id, details: stage.name });
     load();
   };
 
   const saveOtkComment = async (stage: StageRow) => {
     const c = otkEdit[stage.id] ?? "";
     await supabase.from("order_stages").update({ otk_comment: c || null }).eq("id", stage.id);
-    await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "OTK izoh", entity: "stage", order_id: order!.id, stage_id: stage.id, details: `${stage.name}: ${c}` });
+    await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "OTK izoh", entity: "stage", order_id: order!.id, stage_id: stage.id, details: `${stage.name}: ${c}` });
     toast.success(t.otk.save);
     load();
   };
@@ -226,7 +227,7 @@ export default function OrderDetail() {
     ...logs.map((l: any) => ({
       key: `a-${l.id}`,
       at: l.created_at,
-      actor: l.actor_name as string | null,
+      actor: (displayUser(l.actor_name) || null) as string | null,
       action: l.action as string,
       details: l.details as string | null,
       dept: l.entity === "stage" ? "Ishlab chiqarish"
@@ -522,7 +523,7 @@ export default function OrderDetail() {
                                 <div className="text-xs font-medium">{n.title}</div>
                                 {n.body && <div className="text-[11px] text-muted-foreground whitespace-pre-wrap">{fmtLegacyDurations(n.body)}</div>}
                                 <div className="mt-0.5 text-[11px] text-muted-foreground">
-                                  {n.sender_name ?? "Tizim"} · {fmtDateTime24(n.created_at)}
+                                  {displayUser(n.sender_name) || "Tizim"} · {fmtDateTime24(n.created_at)}
                                 </div>
                               </div>
                             ))}
@@ -684,7 +685,7 @@ function StageAssignDialog({ stage, onSaved }: { stage: any; onSaved: () => void
     const added = workers.filter((w) => !prev.includes(w));
     const removed = prev.filter((w) => !workers.includes(w));
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: changed ? "Ishchilar o'zgartirildi" : "Bosqich tayinlandi", entity: "stage",
       order_id: stage.order_id, stage_id: stage.id,
       details: `${stage.name} · Eski: ${prev.join(", ") || "—"} · Yangi: ${workers.join(", ") || "—"}${added.length ? ` · +${added.join(", ")}` : ""}${removed.length ? ` · -${removed.join(", ")}` : ""}${handover ? ` · ${handover}` : ""}`,

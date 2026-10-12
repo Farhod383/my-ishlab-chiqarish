@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { matchesAcrossScripts } from "@/lib/translit";
 import DailyTasksRating from "@/components/DailyTasksRating";
 import { fmtDate as fmtDateG, fmtDateTime24 } from "@/lib/format";
+import { currentUserName, displayUser } from "@/lib/userNames";
 
 type Status = "in_progress" | "closed" | "cancelled";
 interface Task {
@@ -104,7 +105,7 @@ export default function DailyTasksPage() {
       task_date: date, employee_id: form.employee_id, order_id: form.order_id,
       task_title: form.task_title.trim(), description: form.description.trim() || null,
       progress: Math.max(0, Math.min(100, Math.round(form.progress))),
-      assigned_by_name: user ? profiles[user.id] ?? user.email : null,
+      assigned_by_name: user ? profiles[user.id] ?? currentUserName(user) : null,
     } as any).select().single();
     setSaving(false);
     if (error) {
@@ -112,7 +113,7 @@ export default function DailyTasksPage() {
       return;
     }
     const o = orderMap[form.order_id];
-    await supabase.from("audit_log").insert({ actor_id: user?.id, actor_name: profiles[user?.id ?? ""] ?? user?.email, action: "daily_task.create", entity: "daily_task", order_id: form.order_id, details: `${empMap[form.employee_id]?.full_name} — ${form.task_title}` } as any);
+    await supabase.from("audit_log").insert({ actor_id: user?.id, actor_name: profiles[user?.id ?? ""] ?? currentUserName(user), action: "daily_task.create", entity: "daily_task", order_id: form.order_id, details: `${empMap[form.employee_id]?.full_name} — ${form.task_title}` } as any);
     toast.success(`Topshiriq berildi${o ? ` (#${o.order_number})` : ""}`);
     setNewOpen(false); setForm({ employee_id: "", order_id: "", task_title: "", description: "", progress: 0 });
     setDetail(data as any); setProg((data as any).progress);

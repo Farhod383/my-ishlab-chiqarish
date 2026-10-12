@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Search } from "lucide-react";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { searchNorm } from "@/lib/translit";
-import { fmtDateTime24 } from "@/lib/format";
+import { fmtDateTime24, fmtLegacyDurations } from "@/lib/format";
 
 export default function AuditLog() {
   const { t } = useI18n();
@@ -151,7 +151,7 @@ export default function AuditLog() {
                     <TableCell className="text-sm font-medium">{l.action}</TableCell>
                     <TableCell className="text-sm font-mono">{l.order?.order_number ?? "—"}</TableCell>
                     <TableCell className="text-xs">{l.stage?.name ?? "—"}{l.stage?.worker_name ? ` · ${String(l.stage.worker_name).split(",").map((n: string) => localize(n.trim())).join(", ")}` : ""}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{l.details ?? "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{l.details ? fmtLegacyDurations(l.details) : "—"}</TableCell>
                   </TableRow>
                 ))}
                 {filtered.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{t.audit.none}</TableCell></TableRow>}

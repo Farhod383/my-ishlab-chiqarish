@@ -20,6 +20,7 @@ import { logAudit } from "@/types/erp";
 import { notify } from "@/lib/notify";
 import { useEmployees } from "@/hooks/useEmployees";
 import { fmtDateTime24 } from "@/lib/format";
+import { currentUserName } from "@/lib/userNames";
 
 export default function ReturnsPage() {
   const { user, hasRole } = useAuth();
@@ -74,7 +75,7 @@ export default function ReturnsPage() {
     if (error) { toast.error(error.message); return; }
     const pname = products.find((p: any) => p.id === form.product_id)?.name ?? "—";
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: "Vozvrat qayd etildi", entity: "return",
       order_id: form.order_id || null,
       details: `${pname} · ${form.quantity} · ${emp?.full_name ?? "—"}`,
@@ -86,7 +87,7 @@ export default function ReturnsPage() {
       link: "/returns",
       entity: "return",
       recipient_role: ["warehouse", "manager", "otk"],
-      sender_id: user?.id, sender_name: user?.email,
+      sender_id: user?.id, sender_name: currentUserName(user),
     });
     toast.success(r.saved ?? "Saqlandi");
     setForm({ product_id: "", quantity: 1, returned_by_id: "", return_type: "worker_to_warehouse", reason: "", comment: "", image: null, order_id: "" });

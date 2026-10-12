@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
+import { currentUserName } from "@/lib/userNames";
 
 interface StageDraft { id?: string; name: string; norm_days: number; qc_required: boolean; group_id: string | null }
 
@@ -186,7 +187,7 @@ export default function EditOrder() {
       }
 
       await logAudit(supabase, {
-        actor_id: user?.id, actor_name: user?.email,
+        actor_id: user?.id, actor_name: currentUserName(user),
         action: "Zakaz tahrirlandi",
         entity: "order", order_id: id!,
         details: `${orderNumber}`,
@@ -200,7 +201,7 @@ export default function EditOrder() {
         link: `/orders/${id}`,
         entity: "order", entity_id: id!,
         recipient_role: ["manager", "marketing", "warehouse", "supply", "otk", "engineer"],
-        sender_id: user?.id, sender_name: user?.email,
+        sender_id: user?.id, sender_name: currentUserName(user),
       });
 
       toast.success(t.editOrder?.saved ?? "Zakaz yangilandi");

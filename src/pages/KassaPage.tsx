@@ -21,6 +21,7 @@ import { notify } from "@/lib/notify";
 import { fmtKassaAmount, fmtNum, fmtDateTime24, fmtDate } from "@/lib/format";
 import SupplyFinancePage from "@/pages/SupplyFinancePage";
 import { useEmployees, refreshEmployees } from "@/hooks/useEmployees";
+import { currentUserName, displayUser } from "@/lib/userNames";
 
 const PAYMENT_TYPES = ["cash", "transfer", "corporate_card"] as const;
 type PaymentType = typeof PAYMENT_TYPES[number] | "other";
@@ -122,7 +123,7 @@ export default function KassaPage() {
   const [incFile, setIncFile] = useState<File | null>(null);
   const [incDelete, setIncDelete] = useState<any>(null);
 
-  const actorName = profile?.full_name || user?.email || null;
+  const actorName = profile?.full_name || currentUserName(user);
 
   // Oxirgi valyuta kirimidagi kurs (valyuta bo'yicha) — chiqimda avtomatik qo'llanadi.
   const lastRateByCur = useMemo(() => {

@@ -15,6 +15,7 @@ import { logAudit } from "@/types/erp";
 import { toast } from "sonner";
 import { notify } from "@/lib/notify";
 import { fmtDateTime24 } from "@/lib/format";
+import { currentUserName } from "@/lib/userNames";
 
 type Filter = "all" | "red" | "yellow" | "green";
 type Color = "red" | "yellow" | "green" | "none";
@@ -104,7 +105,7 @@ export default function OtkPage() {
     const { error } = await supabase.from("order_stages").update(patch).eq("id", s.id);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: e.passed ? "OTK o'tdi" : (e.comment ? "OTK izoh" : "OTK saqlandi"),
       entity: "stage", order_id: s.order_id, stage_id: s.id,
       details: `${s.order?.order_number} → ${s.name}: ${e.comment || (e.passed ? "o'tdi" : "")}`,
@@ -116,7 +117,7 @@ export default function OtkPage() {
       body: `${s.name}${e.comment ? ` · ${e.comment}` : ""}`,
       link: `/orders/${s.order_id}`,
       entity: "stage", entity_id: s.id,
-      sender_id: user?.id, sender_name: user?.email,
+      sender_id: user?.id, sender_name: currentUserName(user),
     });
     toast.success(t.otk.save);
     load();

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { loadUserNames, currentUserName } from "@/lib/userNames";
 
 export type AppRole = "admin" | "marketing" | "manager" | "warehouse" | "supply" | "otk" | "hr" | "cashier" | "chief_accountant" | "engineer" | "worker";
 
@@ -49,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        setTimeout(() => loadRoles(s.user.id), 0);
+        setTimeout(() => { loadRoles(s.user.id); loadUserNames(); }, 0);
       } else {
         setRoles([]);
       }
@@ -57,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
       setUser(s?.user ?? null);
-      if (s?.user) loadRoles(s.user.id);
+      if (s?.user) { loadRoles(s.user.id); loadUserNames(); }
       setLoading(false);
     });
     return () => sub.subscription.unsubscribe();
@@ -66,8 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     if (user) {
       await supabase.from("audit_log").insert({
-        actor_id: user.id, actor_name: user.email, action: "Tizimdan chiqish",
-        entity: "auth", details: `Logout: ${user.email}`,
+        actor_id: user.id, actor_name: currentUserName(user), action: "Tizimdan chiqish",
+        entity: "auth", details: `Logout: ${currentUserName(user)}`,
       });
     }
     await supabase.auth.signOut();

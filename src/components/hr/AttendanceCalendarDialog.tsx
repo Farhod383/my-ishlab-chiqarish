@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
 import { useLocalize } from "@/i18n/context";
 import { fmtDate } from "@/lib/format";
+import { currentUserName } from "@/lib/userNames";
 
 type AttRow = {
   id: string;
@@ -186,7 +187,7 @@ export default function AttendanceCalendarDialog({ employee, open, onOpenChange 
     const { error } = await supabase.from("attendance").upsert(payload, { onConflict: "employee_id,date" });
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: "Davomat yangilandi", entity: "attendance",
       details: `${employee.full_name} — ${fmtDate(editForm.date)} (${STATUS_META[status]?.label ?? status})`,
     });

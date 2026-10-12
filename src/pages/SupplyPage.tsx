@@ -15,6 +15,7 @@ import { fmtNum } from "@/lib/format";
 import { toast } from "sonner";
 import ProductPicker from "@/components/ProductPicker";
 import SmartAutocomplete, { rememberFormValue } from "@/components/SmartAutocomplete";
+import { currentUserName } from "@/lib/userNames";
 
 export default function SupplyPage() {
   const { user, hasRole } = useAuth();
@@ -59,7 +60,7 @@ export default function SupplyPage() {
     if (imgUrl) patch.image_url = imgUrl;
     if (Object.keys(patch).length) await supabase.from("products").update(patch).eq("id", pid);
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: "Mahsulot keltirildi", entity: "stock_movement",
       details: `${products.find(p=>p.id===pid)?.name}: +${qty} × ${fmt(price)} = ${fmt(qty * price)} ${t.common.sum}`,
     });

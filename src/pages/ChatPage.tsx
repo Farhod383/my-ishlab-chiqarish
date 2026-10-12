@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MessageSquare, Plus, Send, Globe, User as UserIcon, Mic, Square, Video } from "lucide-react";
 import { toast } from "sonner";
 import { fmtTime24 } from "@/lib/format";
+import { currentUserName, displayUser } from "@/lib/userNames";
 
 interface Conversation {
   id: string;
@@ -107,7 +108,7 @@ export default function ChatPage() {
   const send = async () => {
     if (!text.trim() || !active || !user) return;
     const myProfile = profiles.find((p) => p.id === user.id);
-    const senderName = myProfile?.full_name || user.email;
+    const senderName = myProfile?.full_name || currentUserName(user);
     const body = text.trim();
     setText("");
     const { error } = await supabase.from("chat_messages").insert({
@@ -127,7 +128,7 @@ export default function ChatPage() {
       const myProfile = profiles.find((p) => p.id === user.id);
       const { error } = await supabase.from("chat_messages").insert({
         conversation_id: active, sender_id: user.id,
-        sender_name: myProfile?.full_name || user.email,
+        sender_name: myProfile?.full_name || currentUserName(user),
         body: "", media_url: url, media_type: type,
       });
       if (error) throw error;

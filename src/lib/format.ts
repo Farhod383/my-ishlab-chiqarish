@@ -1,3 +1,4 @@
+import { displayUser } from "@/lib/userNames";
 // Global number formatting for the ERP.
 // Uses dot as thousands separator (1.000.000) per project spec.
 // Database keeps real numeric values; this is display-only.
@@ -59,7 +60,7 @@ export function fmtDuration(minutes: number | null | undefined): string {
  */
 export function fmtLegacyDurations(text: string | null | undefined): string {
   if (!text) return "";
-  return String(text).replace(/(\d[\d\s.,]*)\s*daq\.?/gi, (_, raw) => {
+  return displayUser(String(text)).replace(/(\d[\d\s.,]*)\s*daq\.?/gi, (_, raw) => {
     const n = Number(String(raw).replace(/[\s.,]/g, ""));
     return Number.isFinite(n) ? fmtDuration(n) : raw;
   });

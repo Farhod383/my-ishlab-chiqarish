@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNotifications } from "@/notifications/NotificationsContext";
 import logo from "@/assets/logo.png"
+import { currentUserName, displayUser } from "@/lib/userNames";
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -132,7 +133,7 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="border-t">
         {!collapsed && user && (
-          <div className="px-2 py-2 text-xs text-muted-foreground truncate">{user.email}</div>
+          <div className="px-2 py-2 text-xs text-muted-foreground truncate">{currentUserName(user)}</div>
         )}
         <Button variant="ghost" size="sm" onClick={signOut} className="w-full justify-start">
           <LogOut className="h-4 w-4" />

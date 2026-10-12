@@ -14,6 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import { Users, Plus, Loader2, Search, X } from "lucide-react";
 import { notify } from "@/lib/notify";
 import { fmtDate } from "@/lib/format";
+import { currentUserName } from "@/lib/userNames";
 
 export const CLIENT_TYPES = ["Mijoz", "Diler"];
 
@@ -175,7 +176,7 @@ export default function ClientsPage() {
     }
     await supabase.from("entity_audit").insert({
       entity: "client", entity_id: data!.id, action: "Klient yaratildi",
-      new_value: payload, actor_id: user?.id ?? null, actor_name: user?.email ?? null,
+      new_value: payload, actor_id: user?.id ?? null, actor_name: currentUserName(user),
     });
     await notify({
       type: "info",
@@ -186,7 +187,7 @@ export default function ClientsPage() {
       entity_id: data!.id,
       recipient_role: ["marketing", "manager"],
       sender_id: user?.id ?? null,
-      sender_name: user?.email ?? null,
+      sender_name: currentUserName(user),
     });
     toast({ title: "Klient qo'shildi" });
     setOpen(false);

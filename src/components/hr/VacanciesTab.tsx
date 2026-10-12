@@ -14,6 +14,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { logAudit } from "@/types/erp";
 import { toast } from "sonner";
 import { refreshEmployees } from "@/hooks/useEmployees";
+import { currentUserName } from "@/lib/userNames";
 
 type VacancyStatus = "new" | "invited" | "interviewed" | "hired" | "rejected" | "reserve";
 
@@ -102,12 +103,12 @@ export default function VacanciesTab() {
     if (editId) {
       const { error } = await (supabase as any).from("vacancies").update(payload).eq("id", editId);
       if (error) { toast.error(error.message); return; }
-      await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Vakansiya tahrirlandi", entity: "vacancy", details: `${payload.last_name} ${payload.first_name}` });
+      await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Vakansiya tahrirlandi", entity: "vacancy", details: `${payload.last_name} ${payload.first_name}` });
     } else {
       payload.created_by = user?.id;
       const { error } = await (supabase as any).from("vacancies").insert(payload);
       if (error) { toast.error(error.message); return; }
-      await logAudit(supabase, { actor_id: user?.id, actor_name: user?.email, action: "Vakansiya qo'shildi", entity: "vacancy", details: `${payload.last_name} ${payload.first_name}` });
+      await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Vakansiya qo'shildi", entity: "vacancy", details: `${payload.last_name} ${payload.first_name}` });
     }
     toast.success("Saqlandi");
     setAddOpen(false); resetForm(); load();
@@ -163,7 +164,7 @@ export default function VacanciesTab() {
     }).eq("id", v.id);
 
     await logAudit(supabase, {
-      actor_id: user?.id, actor_name: user?.email,
+      actor_id: user?.id, actor_name: currentUserName(user),
       action: "Nomzod ishga qabul qilindi",
       entity: "vacancy", details: `${v.last_name} ${v.first_name} → xodimlar`,
     });
@@ -172,7 +173,7 @@ export default function VacanciesTab() {
       type: "info", title: `Nomzod ishga qabul qilindi — ${v.last_name} ${v.first_name}`,
       body: v.position ?? undefined, link: "/hr", entity: "vacancy",
       recipient_role: ["hr", "manager", "cashier"],
-      sender_id: user?.id, sender_name: user?.email,
+      sender_id: user?.id, sender_name: currentUserName(user),
     });
     toast.success("Nomzod ishga qabul qilindi va Xodimlar ro'yxatiga ko'chirildi");
     setHireId(null);

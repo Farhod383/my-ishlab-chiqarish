@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNotifications, type Notif } from "@/notifications/NotificationsContext";
 import { NOTIF_MODULES, MODULE_BY_KEY, resolveModule, resolveLink, type NotifModuleKey } from "@/lib/notifModules";
 import { fmtTime24, fmtDateTime24, fmtLegacyDurations } from "@/lib/format";
+import { currentUserName, displayUser } from "@/lib/userNames";
 
 const TYPE_DOT: Record<string, string> = {
   otk_approved: "bg-status-green",
@@ -176,7 +177,7 @@ export function NotificationBell() {
                   {n.body && <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{fmtLegacyDurations(n.body)}</div>}
                   <div className="text-[11px] text-muted-foreground/80 mt-1.5 flex flex-wrap items-center gap-x-2">
                     <span>{fmtTime(n.created_at)}</span>
-                    {n.sender_name && <span>· {n.sender_name}</span>}
+                    {n.sender_name && <span>· {displayUser(n.sender_name)}</span>}
                   </div>
                 </div>
               </button>
