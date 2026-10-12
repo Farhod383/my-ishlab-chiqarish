@@ -1,3 +1,4 @@
+import { fmtDate, fmtDateTime24 } from "@/lib/format";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +17,6 @@ import { toast } from "@/hooks/use-toast";
 import { useEmployees } from "@/hooks/useEmployees";
 import { CLIENT_TYPES } from "@/pages/ClientsPage";
 import {
-import { fmtDate, fmtDateTime24 } from "@/lib/format";
   ArrowLeft, Phone, MapPin, Mail, User as UserIcon, Loader2, Plus, MessageSquare,
   FileText, History, Pencil, Upload, ExternalLink, Briefcase, CalendarDays,
 } from "lucide-react";
