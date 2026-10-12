@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { fmtNum, fmtDate as fmtDateG, fmtDateTime24 } from "@/lib/format";
+import { displayUser } from "@/lib/userNames";
 
 export default function OrderReport() {
   const { id } = useParams();
@@ -105,7 +106,7 @@ export default function OrderReport() {
     logs.forEach((l) => {
       events.push({
         date: new Date(l.created_at).toISOString().slice(0, 10),
-        who: l.actor_name ?? "—",
+        who: displayUser(l.actor_name) || "—",
         what: `${l.action}${l.details ? ` — ${l.details}` : ""}`,
       });
     });
