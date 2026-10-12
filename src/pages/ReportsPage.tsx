@@ -8,12 +8,13 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileBarChart, Search, ExternalLink, Download } from "lucide-react";
+import { FileBarChart, Search, ExternalLink, ClipboardList, CircleCheck, Clock, TriangleAlert } from "lucide-react";
 import { useI18n } from "@/i18n/context";
 import { sortOrdersByStatusAndDate } from "@/lib/orderStatus";
 import { fmtDate } from "@/lib/format";
+import { matchesReportStatus, matchesReportSearch, reportDay, type OrderReportFilter } from "@/lib/orderReportFilters";
 
-type Filter = "all" | "completed" | "in_progress" | "delayed";
+type Filter = OrderReportFilter;
 
 export default function ReportsPage() {
   const { t } = useI18n();
@@ -26,35 +27,27 @@ export default function ReportsPage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("orders")
-        .select("*, client:clients(name), order_stages(stage_order, status, worker_name, started_at, finished_at, qc_required, qc_passed)")
-        .order("created_at", { ascending: false });
-      setOrders(data ?? []);
+      const allOrders: any[] = [];
+      for (let offset = 0; ; offset += 1000) {
+        const { data, error } = await supabase
+          .from("orders")
+          .select("*, client:clients(name), order_stages(stage_order, status, worker_name, started_at, finished_at, qc_required, qc_passed)")
+          .order("created_at", { ascending: false }).order("id")
+          .range(offset, offset + 999);
+        if (error) return;
+        allOrders.push(...(data ?? []));
+        if (!data || data.length < 1000) break;
+      }
+      setOrders(allOrders);
     })();
   }, []);
 
-  const isDelayed = (o: any) =>
-    o.status === "delayed" ||
-    (o.status !== "completed" && o.status !== "cancelled" && o.deadline && new Date(o.deadline) < new Date(new Date().toDateString()));
-
-  const matchesTab = (o: any, f: Filter) => {
-    if (f === "all") return true;
-    if (f === "delayed") return isDelayed(o);
-    if (f === "completed") return o.status === "completed";
-    if (f === "in_progress") return o.status === "in_progress" && !isDelayed(o);
-    return true;
-  };
+  const today = reportDay();
 
   // search + date filters applied first (tab counts respect them)
-  const base = useMemo(() => orders.filter((o) => {
-    if (q && !`${o.order_number} ${o.product_name} ${o.client?.name ?? ""}`.toLowerCase().includes(q.toLowerCase())) return false;
-    if (from && new Date(o.order_date) < new Date(from)) return false;
-    if (to && new Date(o.order_date) > new Date(to)) return false;
-    return true;
-  }), [orders, q, from, to]);
+  const base = useMemo(() => orders.filter((o) => matchesReportSearch(o, q, from, to)), [orders, q, from, to]);
 
-  const filteredRaw = useMemo(() => base.filter((o) => matchesTab(o, filter)), [base, filter]);
+  const filteredRaw = useMemo(() => base.filter((o) => matchesReportStatus(o, filter, today)), [base, filter, today]);
   const filtered = useMemo(
     () => (filter === "all" ? sortOrdersByStatusAndDate(filteredRaw) : filteredRaw),
     [filteredRaw, filter]
@@ -62,10 +55,10 @@ export default function ReportsPage() {
 
   const totals = useMemo(() => ({
     total: base.length,
-    completed: base.filter(o => matchesTab(o, "completed")).length,
-    in_progress: base.filter(o => matchesTab(o, "in_progress")).length,
-    delayed: base.filter(o => matchesTab(o, "delayed")).length,
-  }), [base]);
+    completed: base.filter(o => matchesReportStatus(o, "completed", today)).length,
+    in_progress: base.filter(o => matchesReportStatus(o, "in_progress", today)).length,
+    delayed: base.filter(o => matchesReportStatus(o, "delayed", today)).length,
+  }), [base, today]);
 
 
   const fmtDur = (start?: string | null, end?: string | null) => {
@@ -85,10 +78,18 @@ export default function ReportsPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{r.total}</div><div className="text-2xl font-bold mt-1">{totals.total}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{r.completed}</div><div className="text-2xl font-bold mt-1 text-status-green">{totals.completed}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{r.inProgress}</div><div className="text-2xl font-bold mt-1 text-status-blue">{totals.in_progress}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{r.delayed}</div><div className="text-2xl font-bold mt-1 text-status-red">{totals.delayed}</div></CardContent></Card>
+        {([
+          { value: "all", label: r.total, count: totals.total, icon: ClipboardList, tone: "total" },
+          { value: "completed", label: r.completed, count: totals.completed, icon: CircleCheck, tone: "completed" },
+          { value: "in_progress", label: r.inProgress, count: totals.in_progress, icon: Clock, tone: "progress" },
+          { value: "delayed", label: r.delayed, count: totals.delayed, icon: TriangleAlert, tone: "delayed" },
+        ] as const).map(({ value, label, count, icon: Icon, tone }) => (
+          <Button key={value} variant="outline" aria-pressed={filter === value} onClick={() => setFilter(value)}
+            data-tone={tone} className="order-report-stat h-auto min-h-28 w-full justify-between whitespace-normal rounded-lg p-4 text-left">
+            <span className="min-w-0"><span className="block text-sm font-semibold">{label}</span><span className="mt-2 block text-3xl font-bold tabular-nums">{count}</span></span>
+            <Icon className="!h-6 !w-6" aria-hidden="true" />
+          </Button>
+        ))}
       </div>
 
       <Card>

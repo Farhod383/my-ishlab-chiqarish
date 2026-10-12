@@ -50,6 +50,10 @@
     --status-green-solid: 143 62% 24%;
     --status-green-solid-hover: 143 66% 17%;
     --status-solid-foreground: 0 0% 100%;
+    --report-total: 262 55% 42%;
+    --report-completed: 143 62% 26%;
+    --report-progress: 215 65% 36%;
+    --report-delayed: 0 72% 34%;
 
     /* Sidebar - purple/violet */
     --sidebar-background: 265 45% 14%;
@@ -136,6 +140,16 @@ input, textarea, [contenteditable="true"] {
 }
 
 /* ===== Printable reports ===== */
+@layer components {
+  .order-report-stat { --report-tone: var(--report-total); background: hsl(var(--report-tone) / 0.1); color: hsl(var(--report-tone)); border: 2px solid hsl(var(--report-tone) / 0.3); touch-action: manipulation; }
+  .order-report-stat[data-tone="completed"] { --report-tone: var(--report-completed); }
+  .order-report-stat[data-tone="progress"] { --report-tone: var(--report-progress); }
+  .order-report-stat[data-tone="delayed"] { --report-tone: var(--report-delayed); }
+  .order-report-stat:hover { background: hsl(var(--report-tone) / 0.18); color: hsl(var(--report-tone)); border-color: hsl(var(--report-tone)); }
+  .order-report-stat[aria-pressed="true"] { background: hsl(var(--report-tone)); color: hsl(var(--status-solid-foreground)); border-color: hsl(var(--report-tone)); box-shadow: 0 0 0 3px hsl(var(--report-tone) / 0.22); }
+  .order-report-stat[aria-pressed="true"]:hover { background: hsl(var(--report-tone) / 0.9); }
+}
+
 .report-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 .report-table th, .report-table td { border: 1px solid hsl(var(--border)); padding: 4px 6px; text-align: left; vertical-align: top; }
 .report-table th { background: hsl(var(--muted)); font-weight: 600; }
