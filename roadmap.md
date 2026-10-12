@@ -8,3 +8,4 @@
 
 ## Zakaz hisoboti kartochkalari
 - [ ] Rangli kartochkalar, umumiy status filtri va mos hisoblagichlarni amalga oshirish va tekshirish.
+- [ ] Asosiy Admin va Admin 2 hisoblarida kartochkalarni amalda tekshirish.
