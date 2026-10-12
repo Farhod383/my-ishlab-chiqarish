@@ -254,13 +254,14 @@ export default function SupplyFinancePage() {
                     <TableHead className="text-right">Miqdori</TableHead>
                     <TableHead className="text-right">Birlik narxi</TableHead>
                     <TableHead className="text-right">Jami</TableHead>
+                    <TableHead>Valyuta</TableHead>
                     <TableHead>Zakaz</TableHead>
-                    <TableHead>Kim kirim qilgan</TableHead>
+                    <TableHead>Kim olib kelgan</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {!loading && fOuts.length === 0 && (
-                    <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">Chiqim yo'q</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-6">Chiqim yo'q</TableCell></TableRow>
                   )}
                   {fOuts.map((r, i) => (
                     <TableRow key={r.id}>
@@ -269,7 +270,8 @@ export default function SupplyFinancePage() {
                       <TableCell className="font-medium">{r.product_name}</TableCell>
                       <TableCell className="text-right font-mono">{fmtNum(r.quantity)} {r.unit ?? ""}</TableCell>
                       <TableCell className="text-right font-mono">{fmtNum(r.unit_price)}</TableCell>
-                      <TableCell className="text-right font-semibold">{fmtNum(r.total)} so'm</TableCell>
+                      <TableCell className="text-right font-semibold">{fmtNum(r.total)}</TableCell>
+                      <TableCell><Badge variant="outline">{r.currency}</Badge></TableCell>
                       <TableCell>{r.order_number ? <Badge variant="outline">{r.order_number}</Badge> : <span className="text-muted-foreground">—</span>}</TableCell>
                       <TableCell className="text-sm">{r.actor}</TableCell>
                     </TableRow>
