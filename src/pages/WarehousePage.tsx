@@ -1662,7 +1662,7 @@ export default function WarehousePage() {
 
 
 
-              <Tabs defaultValue="in" className="mt-2">
+              <Tabs key={focusEntity === "stock_movement" ? "f" : "n"} defaultValue={focusEntity === "stock_movement" ? "all" : "in"} className="mt-2">
                 <TabsList>
                   <TabsTrigger value="in"><ArrowUpCircle className="h-3.5 w-3.5 mr-1" />{t.warehouse.inHistory}</TabsTrigger>
                   <TabsTrigger value="out"><ArrowDownCircle className="h-3.5 w-3.5 mr-1" />{t.warehouse.outHistory}</TabsTrigger>
