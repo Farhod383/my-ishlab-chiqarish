@@ -225,6 +225,13 @@
       "when": 1791287748493,
       "tag": "0031_daily_tasks",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1791780012931,
+      "tag": "0032_instrument_defect_from_assignment",
+      "breakpoints": true
     }
   ]
 }
