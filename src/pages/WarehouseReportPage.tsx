@@ -171,8 +171,8 @@ export default function WarehouseReportPage() {
   };
 
   const sel = (label: string, v: string, set: (s: string) => void, list: { v: string; l: string }[]) => (
-    <div className="space-y-1 min-w-[160px] flex-1">
-      <Label className="text-xs">{label} (ixtiyoriy)</Label>
+    <div className="space-y-1 basis-40 min-w-0 flex-1">
+      <Label className="text-xs whitespace-normal break-words">{label} (ixtiyoriy)</Label>
       <Select value={v} onValueChange={set}>
         <SelectTrigger><SelectValue /></SelectTrigger>
         <SelectContent><SelectItem value={ALL}>Barchasi</SelectItem>{list.map((o) => <SelectItem key={o.v} value={o.v}>{o.l}</SelectItem>)}</SelectContent>
@@ -229,19 +229,19 @@ export default function WarehouseReportPage() {
           {show("products") && (
             <section>
               <h3 className="font-semibold mb-2">1. Mahsulotlar ({fProducts.length})</h3>
-              <table className="report-table"><thead><tr><th>№</th><th>Nomi</th><th>Qoldiq</th><th>Birlik</th><th>Narxi</th><th>Jami qiymati</th></tr></thead>
+              <div className="report-scroll overflow-x-auto max-w-full overscroll-x-contain"><table className="report-table"><thead><tr><th>№</th><th>Nomi</th><th>Qoldiq</th><th>Birlik</th><th>Narxi</th><th>Jami qiymati</th></tr></thead>
                 <tbody>{fProducts.map((p, i) => (
                   <tr key={p.id}><td>{i + 1}</td><td>{p.name}</td><td className="num">{fmtNum(p.stock_qty)}</td><td>{p.unit}</td><td className="num">{money(p.price, p.currency)}</td><td className="num">{p.price == null ? "" : money(Number(p.stock_qty) * p.price, p.currency)}</td></tr>
                 ))}</tbody>
                 <tfoot><tr><td colSpan={2}>Jami</td><td colSpan={2}>{qtyByUnit(fProducts.map((p) => ({ q: Number(p.stock_qty), u: p.unit })))}</td><td></td><td className="num">{sumByCur(fProducts.filter((p) => p.price != null).map((p) => ({ v: Number(p.stock_qty) * p.price, c: p.currency })))}</td></tr></tfoot>
-              </table>
+              </table></div>
             </section>
           )}
 
           {show("instruments") && (
             <section>
               <h3 className="font-semibold mb-2">2. Instrumentlar ({fInstruments.length})</h3>
-              <table className="report-table"><thead><tr><th>№</th><th>Nomi</th><th>Umumiy soni</th><th>Skladda</th><th>Xodimlarda</th><th>Narxi</th><th>Jami qiymati</th></tr></thead>
+              <div className="report-scroll overflow-x-auto max-w-full overscroll-x-contain"><table className="report-table"><thead><tr><th>№</th><th>Nomi</th><th>Umumiy soni</th><th>Skladda</th><th>Xodimlarda</th><th>Narxi</th><th>Jami qiymati</th></tr></thead>
                 <tbody>{fInstruments.map((x, i) => (
                   <tr key={x.id}><td>{i + 1}</td><td>{x.name}</td><td className="num">{fmtNum(x.total)}</td><td className="num">{fmtNum(x.quantity)}</td><td className="num">{fmtNum(x.issued)}</td><td className="num">{money(x.price, x.currency)}</td><td className="num">{x.price == null ? "" : money(x.total * x.price, x.currency)}</td></tr>
                 ))}</tbody>
@@ -250,14 +250,14 @@ export default function WarehouseReportPage() {
                   <td className="num">{fmtNum(fInstruments.reduce((s, x) => s + Number(x.quantity), 0))}</td>
                   <td className="num">{fmtNum(fInstruments.reduce((s, x) => s + x.issued, 0))}</td><td></td>
                   <td className="num">{sumByCur(fInstruments.filter((x) => x.price != null).map((x) => ({ v: x.total * x.price, c: x.currency })))}</td></tr></tfoot>
-              </table>
+              </table></div>
             </section>
           )}
 
           {show("movements") && (
             <section>
               <h3 className="font-semibold mb-2">3. Harakatlar tarixi ({fMoves.length})</h3>
-              <table className="report-table"><thead><tr><th>Sana/vaqt</th><th>Turi</th><th>Nomi</th><th>Yo'nalish</th><th>Miqdor</th><th>Birlik</th><th>1 birlik narxi</th><th>Jami summa</th><th>Kiritgan</th><th>Xodim / oluvchi</th><th>Zakaz</th><th>Joylashuv</th><th>Izoh</th></tr></thead>
+              <div className="report-scroll overflow-x-auto max-w-full overscroll-x-contain"><table className="report-table"><thead><tr><th>Sana/vaqt</th><th>Turi</th><th>Nomi</th><th>Yo'nalish</th><th>Miqdor</th><th>Birlik</th><th>1 birlik narxi</th><th>Jami summa</th><th>Kiritgan</th><th>Xodim / oluvchi</th><th>Zakaz</th><th>Joylashuv</th><th>Izoh</th></tr></thead>
                 <tbody>{fMoves.map((m) => (
                   <tr key={m.id}><td>{fmtDateTime24(m.at)}</td><td>{m.kind}</td><td>{m.name}</td><td>{m.dir === "in" ? "Kirim" : "Chiqim"}</td><td className="num">{fmtNum(m.qty)}</td><td>{m.unit}</td><td className="num">{money(m.price, m.currency)}</td><td className="num">{m.price == null ? "" : money(m.qty * m.price, m.currency)}</td><td>{m.person}</td><td>{m.employee}</td><td>{m.order}</td><td>{m.location}</td><td>{m.comment}</td></tr>
                 ))}</tbody>
@@ -265,7 +265,7 @@ export default function WarehouseReportPage() {
                   <tr><td colSpan={4}>Jami kirim</td><td colSpan={9}>{qtyByUnit(fMoves.filter((m) => m.dir === "in").map((m) => ({ q: m.qty, u: m.unit })))} — qiymati {sumByCur(fMoves.filter((m) => m.dir === "in").filter((m) => m.price != null).map((m) => ({ v: m.qty * (m.price as number), c: m.currency })))}</td></tr>
                   <tr><td colSpan={4}>Jami chiqim</td><td colSpan={9}>{qtyByUnit(fMoves.filter((m) => m.dir === "out").map((m) => ({ q: m.qty, u: m.unit })))} — qiymati {sumByCur(fMoves.filter((m) => m.dir === "out").filter((m) => m.price != null).map((m) => ({ v: m.qty * (m.price as number), c: m.currency })))}</td></tr>
                 </tfoot>
-              </table>
+              </table></div>
             </section>
           )}
         </div>

@@ -264,8 +264,8 @@ export default function NewOrder() {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl">
-      <div className="flex items-center gap-3">
+    <div className="space-y-6 w-full">
+      <div className="flex flex-wrap items-center gap-3">
         <Button variant="ghost" size="sm" onClick={() => nav(-1)}><ArrowLeft className="h-4 w-4 mr-1" /> {t.common.back}</Button>
         <h1 className="text-2xl font-bold">{t.newOrder.title}</h1>
       </div>
@@ -296,7 +296,7 @@ export default function NewOrder() {
 
       {tplSuggest && !selectedTplId && (
         <Card className="border-primary/40 bg-primary/5">
-          <CardContent className="p-3 flex items-center justify-between gap-3 text-sm">
+          <CardContent className="p-3 flex flex-wrap items-center justify-between gap-2 gap-3 text-sm">
             <span>O'xshash avvalgi zakaz topildi: <b>{tplSuggest.order_number}</b> — {tplSuggest.product_name}. Workflow ko'chirilsinmi?</span>
             <div className="flex gap-2">
               <Button size="sm" onClick={() => applyTemplate(tplSuggest.id)}>Ha, ko'chirish</Button>
@@ -372,7 +372,7 @@ export default function NewOrder() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex flex-wrap items-center justify-between gap-2 gap-3 flex-wrap">
             <div>
               <CardTitle className="text-base flex items-center gap-2"><Layers className="h-4 w-4" />Bosqich guruhlari</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">Avval guruhni oching, keyin kerakli bosqichlarni belgilang.</p>
@@ -423,7 +423,7 @@ export default function NewOrder() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <CardTitle className="text-base">{t.newOrder.stages}</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">Tanlangan bosqichlar tartibi va normalari</p>
@@ -433,7 +433,7 @@ export default function NewOrder() {
         </CardHeader>
         <CardContent className="space-y-2">
           {stages.map((s, i) => (
-            <div key={i} className="grid grid-cols-12 gap-2 items-center p-2 border rounded-md">
+            <div key={i} className="order-form-row grid grid-cols-1 sm:grid-cols-12 gap-2 items-center p-2 border rounded-md">
               <div className="col-span-1 text-center text-sm font-bold text-muted-foreground">{i + 1}</div>
               <Input className="col-span-4" value={s.name} onChange={(e) => updateStage(i, { name: e.target.value })} placeholder={t.newOrder.stageNamePh} />
               <div className="col-span-3">
@@ -462,7 +462,7 @@ export default function NewOrder() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <CardTitle className="text-base">{t.newOrder.parts}</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">{t.newOrder.partsDesc}</p>
@@ -472,7 +472,7 @@ export default function NewOrder() {
         </CardHeader>
         <CardContent className="space-y-2">
           {parts.map((p, i) => (
-            <div key={i} className="grid grid-cols-12 gap-2 items-center">
+            <div key={i} className="order-form-row grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
               <Select value={p.product_id} onValueChange={(v) => updatePart(i, { product_id: v })}>
                 <SelectTrigger className="col-span-7"><SelectValue placeholder={t.newOrder.selectProduct} /></SelectTrigger>
                 <SelectContent>{products.map((pr) => <SelectItem key={pr.id} value={pr.id}>{pr.name} ({pr.unit})</SelectItem>)}</SelectContent>

@@ -344,7 +344,7 @@ export default function MetalPage() {
           <h1 className="text-2xl font-bold">{tm.title}</h1>
           <p className="text-sm text-muted-foreground">{tm.subtitle}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {canIntake && (
             <Dialog open={inOpen} onOpenChange={setInOpen}>
               <DialogTrigger asChild>
@@ -544,7 +544,7 @@ export default function MetalPage() {
 
         <TabsContent value="norms">
           <Card>
-            <CardHeader className="flex-row items-center justify-between space-y-0">
+            <CardHeader className="flex-row flex-wrap gap-2 items-center justify-between space-y-0">
               <CardTitle className="text-base flex items-center gap-2"><Layers3 className="h-4 w-4" /> {tm.normsTitle}</CardTitle>
               {canNorm && (
                 <Dialog open={normOpen} onOpenChange={setNormOpen}>

@@ -224,8 +224,8 @@ export default function EditOrder() {
   const visibleFiles = existingFiles.filter((f) => !deletedFileIds.includes(f.id));
 
   return (
-    <div className="space-y-6 max-w-5xl">
-      <div className="flex items-center gap-3">
+    <div className="space-y-6 w-full">
+      <div className="flex flex-wrap items-center gap-3">
         <Button variant="ghost" size="sm" onClick={() => nav(-1)}><ArrowLeft className="h-4 w-4 mr-1" /> {t.common.back}</Button>
         <h1 className="text-2xl font-bold">{t.editOrder?.title ?? "Zakazni tahrirlash"}</h1>
       </div>
@@ -302,7 +302,7 @@ export default function EditOrder() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <CardTitle className="text-base">{t.newOrder.stages}</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">{t.newOrder.stagesDesc}</p>
@@ -312,7 +312,7 @@ export default function EditOrder() {
         </CardHeader>
         <CardContent className="space-y-2">
           {stages.map((s, i) => (
-            <div key={i} className="grid grid-cols-12 gap-2 items-center p-2 border rounded-md">
+            <div key={i} className="order-form-row grid grid-cols-1 sm:grid-cols-12 gap-2 items-center p-2 border rounded-md">
               <div className="col-span-1 text-center text-sm font-bold text-muted-foreground">{i + 1}</div>
               <Input className="col-span-4" value={s.name} onChange={(e) => updateStage(i, { name: e.target.value })} placeholder={t.newOrder.stageNamePh} />
               <div className="col-span-3">
@@ -341,7 +341,7 @@ export default function EditOrder() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <CardTitle className="text-base">{t.newOrder.parts}</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">{t.newOrder.partsDesc}</p>
@@ -351,7 +351,7 @@ export default function EditOrder() {
         </CardHeader>
         <CardContent className="space-y-2">
           {parts.map((p, i) => (
-            <div key={i} className="grid grid-cols-12 gap-2 items-center">
+            <div key={i} className="order-form-row grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
               <Select value={p.product_id} onValueChange={(v) => updatePart(i, { product_id: v })}>
                 <SelectTrigger className="col-span-7"><SelectValue placeholder={t.newOrder.selectProduct} /></SelectTrigger>
                 <SelectContent>{products.map((pr) => <SelectItem key={pr.id} value={pr.id}>{pr.name} ({pr.unit})</SelectItem>)}</SelectContent>
