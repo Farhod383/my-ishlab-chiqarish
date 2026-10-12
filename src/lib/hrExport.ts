@@ -60,7 +60,7 @@ export async function exportEmployeesPDF(list: ExportEmployee[], actor: string) 
   const W = doc.internal.pageSize.getWidth();
   const logo = await loadLogo();
   const groups = groupByPosition(list);
-  const date = fmtDateG();
+  const date = fmtDate();
 
   const header = () => {
     let y = 36;
@@ -161,7 +161,7 @@ function cell(text: string, opts: { bold?: boolean; width: number; fill?: string
 export async function exportEmployeesDocx(list: ExportEmployee[], actor: string) {
   const logo = await loadLogo();
   const groups = groupByPosition(list);
-  const date = fmtDateG();
+  const date = fmtDate();
 
   const children: any[] = [];
 

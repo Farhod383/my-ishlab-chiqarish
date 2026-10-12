@@ -188,7 +188,7 @@ export default function EmployeesView() {
                             <TableCell className="font-medium">{a.instrument?.name ?? "—"} {a.instrument?.inventory_number && <span className="text-xs text-muted-foreground">#{a.instrument.inventory_number}</span>}</TableCell>
                             <TableCell className="text-right font-mono">{a.quantity}</TableCell>
                             <TableCell className="text-right font-mono text-sm">{Number(a.instrument?.price ?? 0) > 0 ? `${Number(a.instrument?.price).toLocaleString("ru-RU")} ${a.instrument?.currency ?? ""}` : "—"}</TableCell>
-                            <TableCell className="text-xs whitespace-nowrap">{fmtDateG(a.issued_at)}</TableCell>
+                            <TableCell className="text-xs whitespace-nowrap">{fmtDateTime24(a.issued_at)}</TableCell>
                             <TableCell className="text-xs text-muted-foreground">{a.issued_by ? (profiles[a.issued_by] ?? "—") : "—"}</TableCell>
                             <TableCell className="text-xs italic text-muted-foreground max-w-[220px] truncate">{a.issue_comment ?? "—"}</TableCell>
                           </TableRow>
@@ -221,8 +221,8 @@ export default function EmployeesView() {
                             <TableCell className="font-medium">{a.instrument?.name ?? "—"}</TableCell>
                             <TableCell className="text-right font-mono">{a.quantity}</TableCell>
                             <TableCell className="text-right font-mono text-sm">{Number(a.instrument?.price ?? 0) > 0 ? `${Number(a.instrument?.price).toLocaleString("ru-RU")} ${a.instrument?.currency ?? ""}` : "—"}</TableCell>
-                            <TableCell className="text-xs whitespace-nowrap">{fmtDateG(a.issued_at)}</TableCell>
-                            <TableCell className="text-xs whitespace-nowrap text-status-green">{fmtDateG(a.returned_at)}</TableCell>
+                            <TableCell className="text-xs whitespace-nowrap">{fmtDateTime24(a.issued_at)}</TableCell>
+                            <TableCell className="text-xs whitespace-nowrap text-status-green">{fmtDateTime24(a.returned_at)}</TableCell>
                             <TableCell className="text-xs text-muted-foreground">{a.issued_by ? (profiles[a.issued_by] ?? "—") : "—"}</TableCell>
                             <TableCell className="text-xs text-muted-foreground">{a.returned_by ? (profiles[a.returned_by] ?? "—") : "—"}</TableCell>
                             <TableCell className="text-xs italic text-muted-foreground max-w-[200px] truncate">{a.return_comment ?? a.issue_comment ?? "—"}</TableCell>

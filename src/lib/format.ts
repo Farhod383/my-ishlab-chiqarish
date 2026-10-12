@@ -3,9 +3,18 @@
 // Database keeps real numeric values; this is display-only.
 
 /** 24-hour date+time, e.g. 12.09.2026 15:40 */
+/** Parses a value; plain "YYYY-MM-DD" is read as a local calendar day so it never shifts by timezone. */
+export function parseDateValue(v: string | number | Date): Date {
+  if (typeof v === "string") {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v.trim());
+    if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  }
+  return v instanceof Date ? v : new Date(v);
+}
+
 export function fmtDateTime24(v: string | number | Date | null | undefined): string {
   if (!v) return "—";
-  const d = new Date(v);
+  const d = parseDateValue(v);
   if (Number.isNaN(d.getTime())) return "—";
   const p = (n: number) => String(n).padStart(2, "0");
   return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
@@ -23,7 +32,7 @@ export function fmtTime24(v: string | number | Date | null | undefined): string 
 /** Date only, e.g. 12.09.2026 */
 export function fmtDate(v: string | number | Date | null | undefined): string {
   if (!v) return "—";
-  const d = new Date(v);
+  const d = parseDateValue(v);
   if (Number.isNaN(d.getTime())) return "—";
   const p = (n: number) => String(n).padStart(2, "0");
   return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()}`;
