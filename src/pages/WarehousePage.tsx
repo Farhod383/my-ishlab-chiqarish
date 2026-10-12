@@ -287,12 +287,12 @@ export default function WarehousePage() {
     const { data: _ins, error } = await supabase.from("stock_movements").insert({
       product_id: outProduct, order_id: outOrder || null, direction: "out",
       quantity: outQty, recipient_name: empName(outRecipient), recipient_employee_id: outRecipient || null, comment: outComment, created_by: user?.id, taken_by: user?.id,
-      ...(crossOrderReason ? { cross_order_reason: crossOrderReason, source_order_id: sourceOrderId } : {}),
+      ...(crossOrderReason || sourceOrderId ? { cross_order_reason: crossOrderReason, source_order_id: sourceOrderId } : {}),
     } as any).select("id").single();
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: currentUserName(user),
-      action: crossOrderReason ? "Sklad chiqimi (boshqa zakazga)" : "Sklad chiqimi",
+      action: crossOrderReason || sourceOrderId ? "Sklad chiqimi (boshqa zakazga)" : "Sklad chiqimi",
       entity: "stock_movement", order_id: outOrder || null,
       details: `${products.find(p=>p.id===outProduct)?.name} — ${outQty}, ${outRecipient}${crossOrderReason ? ` · manba zakaz: ${crossInfo?.sourceOrderNumber} · sabab: ${crossOrderReason}` : ""}`,
     });
@@ -314,7 +314,7 @@ export default function WarehousePage() {
   };
 
   const confirmCrossRelease = async () => {
-    await finalizeRelease(crossReason.trim() || null as any, crossInfo?.sourceOrderId ?? null);
+    await finalizeRelease(crossReason.trim() || null, crossInfo?.sourceOrderId ?? null);
   };
 
 
