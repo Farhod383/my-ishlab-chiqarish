@@ -131,7 +131,7 @@ export default function Orders() {
               <TableBody>
                 {loading && <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                 {!loading && (() => {
-                  const isSel = (o: any) => /sel'?ь?nometal|сельнометал|selnometal/i.test(String(o.product_name ?? "").replace(/[’'ʼ`]/g, ""));
+                  const isSel = (o: any) => /selnometal|сельнометал/i.test(String(o.product_name ?? "").replace(/[’'ʼ`]/g, ""));
                   const selRows = filtered.filter(isSel);
                   const out: any[] = [];
                   let groupInserted = false;
