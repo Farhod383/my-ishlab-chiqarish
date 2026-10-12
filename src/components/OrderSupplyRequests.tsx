@@ -95,7 +95,7 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
   const add = async () => {
     const name = pname.trim();
     if (!name || !qty) { toast.error("Mahsulot va miqdorni kiriting"); return; }
-    const { error } = await supabase.from("order_supply_requests").insert({
+    const { data: _ins, error } = await supabase.from("order_supply_requests").insert({
       order_id: orderId,
       product_id: pid || null,
       product_name: name,
@@ -106,14 +106,14 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
       created_by: user?.id ?? null,
       department: primaryRole || null,
       source: "order",
-    } as any);
+    } as any).select("id").single();
     if (error) { toast.error(error.message); return; }
     await notify({
       type: "supply_request",
       title: `Yangi ta'minot so'rovi — ${orderNumber}`,
       body: `${name} · ${qty} ${unit ?? ""}${date ? ` · kerak: ${date}` : ""}`,
       link: `/orders/${orderId}`,
-      entity: "supply_request",
+      entity: "supply_request", entity_id: (_ins as any)?.id,
       recipient_role: ["supply", "warehouse"],
       sender_id: user?.id,
       sender_name: currentUserName(user),

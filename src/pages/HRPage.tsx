@@ -168,14 +168,14 @@ export default function HRPage() {
         await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Xodim bo'shatildi", entity: "employee", details: composedName });
       }
     } else {
-      const { error } = await supabase.from("employees").insert(payload);
+      const { data: _ins, error } = await supabase.from("employees").insert(payload).select("id").single();
       if (error) { toast.error(error.message); return; }
       await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Xodim qo'shildi", entity: "employee", details: composedName });
       const { notify } = await import("@/lib/notify");
       await notify({
         type: "info", title: `Yangi xodim — ${composedName}`,
         body: `${payload.position ?? ""} · ${payload.department ?? ""}`,
-        link: "/hr", entity: "employee",
+        link: "/hr", entity: "employee", entity_id: (_ins as any)?.id,
         recipient_role: ["hr", "manager", "cashier"],
         sender_id: user?.id, sender_name: currentUserName(user),
       });

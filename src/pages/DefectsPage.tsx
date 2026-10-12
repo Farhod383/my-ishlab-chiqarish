@@ -142,7 +142,7 @@ export default function DefectsPage() {
       image_url,
       created_by: user?.id,
     };
-    const { error } = await supabase.from("defects").insert(payload);
+    const { data: _ins, error } = await supabase.from("defects").insert(payload).select("id").single();
     if (error) { toast.error(error.message); return; }
     const itemName = form.item_type === "product"
       ? (products.find((p: any) => p.id === form.product_id)?.name ?? "—")
@@ -158,7 +158,7 @@ export default function DefectsPage() {
       title: `Yangi brak — ${itemName}`,
       body: `${form.quantity} dona${form.reason.trim() ? ` · ${form.reason.trim()}` : ""}`,
       link: "/defects",
-      entity: "defect",
+      entity: "defect", entity_id: (_ins as any)?.id,
       recipient_role: ["otk", "manager", "warehouse"],
       sender_id: user?.id, sender_name: currentUserName(user),
     });

@@ -63,7 +63,7 @@ export default function NewSupplyRequestDialog({ open, onOpenChange, initialProd
     if (!name || !qty) { toast.error("Mahsulot va miqdorni kiriting"); return; }
     if (mode === "order" && !orderId) { toast.error("Zakazni tanlang"); return; }
     setSaving(true);
-    const { error } = await supabase.from("order_supply_requests").insert({
+    const { data: _ins, error } = await supabase.from("order_supply_requests").insert({
       order_id: mode === "order" ? orderId : null,
       product_id: pid || null,
       product_name: name,
@@ -74,7 +74,7 @@ export default function NewSupplyRequestDialog({ open, onOpenChange, initialProd
       created_by: user?.id ?? null,
       department: ((roles as string[]) ?? [])[0] || null,
       source,
-    } as any);
+    } as any).select("id").single();
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     const u = selected?.unit || unit;
@@ -83,7 +83,7 @@ export default function NewSupplyRequestDialog({ open, onOpenChange, initialProd
       title: `Yangi ta'minot so'rovi${mode === "order" ? "" : " (zavod uchun)"}`,
       body: `${name} · ${qty} ${u}${date ? ` · kerak: ${date}` : ""}`,
       link: mode === "order" ? `/orders/${orderId}` : `/supply`,
-      entity: "supply_request",
+      entity: "supply_request", entity_id: (_ins as any)?.id,
       recipient_role: ["supply", "warehouse"],
       sender_id: user?.id, sender_name: currentUserName(user),
     });

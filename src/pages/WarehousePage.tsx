@@ -282,11 +282,11 @@ export default function WarehousePage() {
   };
 
   const finalizeRelease = async (crossOrderReason: string | null, sourceOrderId: string | null) => {
-    const { error } = await supabase.from("stock_movements").insert({
+    const { data: _ins, error } = await supabase.from("stock_movements").insert({
       product_id: outProduct, order_id: outOrder || null, direction: "out",
       quantity: outQty, recipient_name: empName(outRecipient), recipient_employee_id: outRecipient || null, comment: outComment, created_by: user?.id, taken_by: user?.id,
       ...(crossOrderReason ? { cross_order_reason: crossOrderReason, source_order_id: sourceOrderId } : {}),
-    } as any);
+    } as any).select("id").single();
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: currentUserName(user),
@@ -300,7 +300,7 @@ export default function WarehousePage() {
         type: "info",
         title: `Sklad chiqimi — ${products.find(p=>p.id===outProduct)?.name ?? ""}`,
         body: `${outQty} · ${outRecipient}`,
-        link: "/warehouse", entity: "stock_movement",
+        link: "/warehouse", entity: "stock_movement", entity_id: (_ins as any)?.id,
         recipient_role: ["warehouse", "manager", "supply"],
         sender_id: user?.id, sender_name: currentUserName(user),
       });
