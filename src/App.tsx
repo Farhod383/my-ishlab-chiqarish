@@ -24,6 +24,7 @@ import DailyTasksPage from "./pages/DailyTasksPage";
 import ProductionBoard from "./pages/ProductionBoard";
 import StageGroupsPage from "./pages/StageGroupsPage";
 import WarehousePage from "./pages/WarehousePage";
+import WarehouseReportPage from "./pages/WarehouseReportPage";
 import OtkPage from "./pages/OtkPage";
 import ChatPage from "./pages/ChatPage";
 import NachalnikPage from "./pages/NachalnikPage";
@@ -81,6 +82,7 @@ const App = () => (
                       <Route path="/stage-groups" element={<ProtectedRoute roles={["admin","manager"]}><StageGroupsPage /></ProtectedRoute>} />
                       <Route path="/otk" element={<ProtectedRoute roles={["otk","admin"]}><OtkPage /></ProtectedRoute>} />
                       <Route path="/warehouse" element={<WarehousePage />} />
+                      <Route path="/warehouse/report" element={<WarehouseReportPage />} />
                       <Route path="/daily-tasks" element={<ProtectedRoute roles={["admin","otk","manager"]}><DailyTasksPage /></ProtectedRoute>} />
                       <Route path="/invoices" element={<ProtectedRoute roles={["admin","warehouse","supply"]}><InvoicesPage /></ProtectedRoute>} />
                       <Route path="/metal" element={<ProtectedRoute roles={["admin","engineer","warehouse"]}><MetalPage /></ProtectedRoute>} />
