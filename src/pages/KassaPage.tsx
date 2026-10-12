@@ -18,7 +18,7 @@ import { useI18n, useLocalize } from "@/i18n/context";
 import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
 import { notify } from "@/lib/notify";
-import { fmtKassaAmount, fmtNum, fmtDateTime24 } from "@/lib/format";
+import { fmtKassaAmount, fmtNum, fmtDateTime24, fmtDate } from "@/lib/format";
 import SupplyFinancePage from "@/pages/SupplyFinancePage";
 import { useEmployees, refreshEmployees } from "@/hooks/useEmployees";
 
@@ -1257,7 +1257,7 @@ export default function KassaPage() {
                         <TableCell className="text-right font-mono">{fmtCash(Number(d.amount), d.currency)} {d.currency}</TableCell>
                         <TableCell className="text-right font-mono text-status-green">{fmtCash(paid, d.currency)}</TableCell>
                         <TableCell className="text-right font-mono font-semibold text-status-red">{fmtCash(left, d.currency)}</TableCell>
-                        <TableCell className="text-sm whitespace-nowrap">{d.due_date ?? "—"}</TableCell>
+                        <TableCell className="text-sm whitespace-nowrap">{fmtDate(d.due_date)}</TableCell>
                         <TableCell>
                           <Badge variant={d.status === "paid" ? "secondary" : overdue ? "destructive" : "outline"}>
                             {d.status === "paid" ? "To'langan" : overdue ? "Muddati o'tgan" : "Ochiq"}

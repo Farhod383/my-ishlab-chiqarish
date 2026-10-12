@@ -19,6 +19,7 @@ import ProductPicker from "@/components/ProductPicker";
 import { logAudit } from "@/types/erp";
 import { notify } from "@/lib/notify";
 import { useEmployees } from "@/hooks/useEmployees";
+import { fmtDateTime24 } from "@/lib/format";
 
 export default function ReturnsPage() {
   const { user, hasRole } = useAuth();
@@ -172,7 +173,7 @@ export default function ReturnsPage() {
                 {loading && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                 {!loading && returns.map(ret => (
                   <TableRow key={ret.id}>
-                    <TableCell className="text-sm whitespace-nowrap">{new Date(ret.created_at).toLocaleString()}</TableCell>
+                    <TableCell className="text-sm whitespace-nowrap">{fmtDateTime24(ret.created_at)}</TableCell>
                     <TableCell className="text-sm font-medium">{ret.product?.name ?? "—"}</TableCell>
                     <TableCell className="text-right font-mono">{ret.quantity} {ret.product?.unit ?? ""}</TableCell>
                     <TableCell className="text-sm">{localize(ret.returned_by?.full_name ?? ret.returned_by_name) || "—"}</TableCell>

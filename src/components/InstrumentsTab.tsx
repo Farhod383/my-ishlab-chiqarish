@@ -19,6 +19,7 @@ import SearchableSelect from "@/components/SearchableSelect";
 import SmartAutocomplete, { rememberFormValue } from "@/components/SmartAutocomplete";
 import { ensureOnline } from "@/components/OnlineGuard";
 import { useEmployees } from "@/hooks/useEmployees";
+import { fmtDate as fmtDateG } from "@/lib/format";
 
 type Instrument = {
   id: string;
@@ -63,7 +64,7 @@ const STATUSES = [
   { v: "written_off", l: "Hisobdan chiqarilgan" },
 ];
 
-const fmtDate = (s?: string | null) => s ? new Date(s).toLocaleDateString() : "—";
+const fmtDate = (s?: string | null) => s ? fmtDateG(s) : "—";
 const daysBetween = (a: string, b?: string | null) => {
   const end = b ? new Date(b).getTime() : Date.now();
   return Math.max(0, Math.floor((end - new Date(a).getTime()) / 86400000));
@@ -365,7 +366,7 @@ export default function InstrumentsTab() {
                       onChange={setReturnAssignment}
                       disabled={!returnEmp}
                       placeholder={returnEmp ? "Tanlang" : "Avval xodimni tanlang"}
-                      options={empHeld.map(a => ({ value: a.id, label: `${a.instrument?.name} ×${a.quantity}`, hint: new Date(a.issued_at).toLocaleDateString() }))}
+                      options={empHeld.map(a => ({ value: a.id, label: `${a.instrument?.name} ×${a.quantity}`, hint: fmtDateG(a.issued_at) }))}
                     />
                   </div>
                   <div><Label>Izoh</Label><Textarea value={returnComment} onChange={e => setReturnComment(e.target.value)} /></div>
@@ -456,7 +457,7 @@ export default function InstrumentsTab() {
                     </TableCell>
                     <TableCell>{a.instrument?.name ?? "—"}{a.instrument?.inventory_number && <span className="text-xs text-muted-foreground ml-1">№{a.instrument.inventory_number}</span>}{a.returned_at && <span className="text-xs text-muted-foreground ml-1">(qaytarilgan)</span>}</TableCell>
                     <TableCell className="text-right font-mono">{a.quantity}</TableCell>
-                    <TableCell className="text-xs whitespace-nowrap">{new Date(a.issued_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-xs whitespace-nowrap">{fmtDateG(a.issued_at)}</TableCell>
                     <TableCell className="text-xs font-mono whitespace-nowrap">
                       {a.box_number || "—"}
                       {canManage && (
@@ -533,7 +534,7 @@ export default function InstrumentsTab() {
                           <TableRow key={b.id}>
                             <TableCell className="font-mono text-xs">#{idx + 1}</TableCell>
                             <TableCell className="font-mono text-xs">{b.inventory_number || "—"}</TableCell>
-                            <TableCell className="text-xs whitespace-nowrap">{fmtDate(b.created_at)}</TableCell>
+                            <TableCell className="text-xs whitespace-nowrap">{fmtDateG(b.created_at)}</TableCell>
                             <TableCell className="text-right font-mono">{b.quantity}</TableCell>
                             <TableCell className="text-right font-mono text-xs">{Number(b.price) > 0 ? `${Number(b.price).toLocaleString("ru-RU")} ${b.currency}` : "—"}</TableCell>
                             <TableCell><Badge variant={b.status === "active" ? "default" : "secondary"}>{st?.l ?? b.status}</Badge></TableCell>
@@ -573,11 +574,11 @@ export default function InstrumentsTab() {
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1.5 text-xs">
                           <div>
                             <div className="text-muted-foreground">Berildi</div>
-                            <div className="font-mono">{fmtDate(a.issued_at)}</div>
+                            <div className="font-mono">{fmtDateG(a.issued_at)}</div>
                           </div>
                           <div>
                             <div className="text-muted-foreground">Qaytarildi</div>
-                            <div className="font-mono">{a.returned_at ? fmtDate(a.returned_at) : "—"}</div>
+                            <div className="font-mono">{a.returned_at ? fmtDateG(a.returned_at) : "—"}</div>
                           </div>
                           <div>
                             <div className="text-muted-foreground">Kun</div>

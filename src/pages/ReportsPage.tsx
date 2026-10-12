@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { FileBarChart, Search, ExternalLink, Download } from "lucide-react";
 import { useI18n } from "@/i18n/context";
 import { sortOrdersByStatusAndDate } from "@/lib/orderStatus";
+import { fmtDate } from "@/lib/format";
 
 type Filter = "all" | "completed" | "in_progress" | "delayed";
 
@@ -140,8 +141,8 @@ export default function ReportsPage() {
                       <TableCell className="text-sm">{o.client?.name ?? "—"}</TableCell>
                       <TableCell className="text-sm">{done}/{stages.length}</TableCell>
                       <TableCell><Badge variant={o.status === "completed" ? "default" : o.status === "delayed" ? "destructive" : "secondary"}>{(t.status as any)[o.status] ?? o.status}</Badge></TableCell>
-                      <TableCell className="text-xs whitespace-nowrap">{o.order_date}</TableCell>
-                      <TableCell className="text-xs whitespace-nowrap">{o.deadline}</TableCell>
+                      <TableCell className="text-xs whitespace-nowrap">{fmtDate(o.order_date)}</TableCell>
+                      <TableCell className="text-xs whitespace-nowrap">{fmtDate(o.deadline)}</TableCell>
                       <TableCell className="text-xs whitespace-nowrap">{fmtDur(firstStart, lastFin)}</TableCell>
                       <TableCell className="whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <Button asChild size="sm" variant="ghost"><Link to={`/orders/${o.id}/report`}><ExternalLink className="h-3 w-3 mr-1" />{r.open}</Link></Button>

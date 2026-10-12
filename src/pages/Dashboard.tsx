@@ -12,7 +12,7 @@ import { orderHealth, type OrderRow } from "@/types/erp";
 import { ClipboardList, Activity, AlertTriangle, AlertOctagon, Package, History, Clock, CheckCircle2, Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useI18n, useLocalize } from "@/i18n/context";
-import { fmtNum } from "@/lib/format";
+import { fmtNum, fmtDateTime24, fmtDate } from "@/lib/format";
 import { sortOrdersByStatusAndDate, recalcOrdersBatch } from "@/lib/orderStatus";
 import { matchesAcrossScripts } from "@/lib/translit";
 import { useInfiniteList } from "@/hooks/useInfiniteList";
@@ -169,7 +169,7 @@ export default function Dashboard() {
                   {!loading && pageRows.map((o, idx) => {
                     const stages = ((o as any).order_stages ?? []).slice().sort((a:any,b:any)=>a.stage_order-b.stage_order);
                     const startedAt = stages[0]?.started_at;
-                    const startStr = startedAt ? new Date(startedAt).toISOString().slice(0,10) : "—";
+                    const startStr = startedAt ? fmtDate(startedAt) : "—";
                     const totalSt = stages.length || 0;
                     const doneSt = stages.filter((s:any)=> s.status === "completed").length;
                     const progress = o.status === "completed" ? 100 : totalSt ? Math.round((doneSt / totalSt) * 100) : 0;
@@ -187,7 +187,7 @@ export default function Dashboard() {
                         <TableCell><StatusBadge status={o.status as any} /></TableCell>
                         <TableCell><PriorityBadge priority={o.priority} /></TableCell>
                         <TableCell className="text-xs whitespace-nowrap text-muted-foreground">{startStr}</TableCell>
-                        <TableCell className="text-xs whitespace-nowrap">{o.deadline}</TableCell>
+                        <TableCell className="text-xs whitespace-nowrap">{fmtDate(o.deadline)}</TableCell>
                         <TableCell className="text-xs whitespace-nowrap">
                           {isDone ? <span className="text-status-green font-medium">{t.orders.finished}</span>
                             : diffDays < 0 ? <span className="text-status-red font-semibold">{Math.abs(diffDays)} {t.orders.daysLate}</span>
@@ -231,7 +231,7 @@ export default function Dashboard() {
             <div key={l.id} className="text-xs border-l-2 border-primary/30 pl-2 py-1">
               <div className="font-medium">{localize(l.action)}</div>
               <div className="text-muted-foreground truncate">{localize(l.details)}</div>
-              <div className="text-[10px] text-muted-foreground">{new Date(l.created_at).toLocaleString()}</div>
+              <div className="text-[10px] text-muted-foreground">{fmtDateTime24(l.created_at)}</div>
             </div>
           ))}
           {recentLog.length === 0 && <p className="text-sm text-muted-foreground">{t.common.noRecords}</p>}

@@ -13,6 +13,7 @@ import { matchesAcrossScripts } from "@/lib/translit";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useEmployees } from "@/hooks/useEmployees";
+import { fmtDate as fmtDateG, fmtDateTime24 } from "@/lib/format";
 
 type Employee = {
   id: string;
@@ -97,7 +98,7 @@ export default function EmployeesView() {
   const empCurrent = empAssignments.filter(a => !a.returned_at);
   const empHistory = empAssignments.filter(a => a.returned_at);
 
-  const fmtDate = (s: string | null) => s ? new Date(s).toLocaleString() : "—";
+  const fmtDate = (s: string | null) => s ? fmtDateTime24(s) : "—";
 
   return (
     <div className="space-y-3">
@@ -187,7 +188,7 @@ export default function EmployeesView() {
                             <TableCell className="font-medium">{a.instrument?.name ?? "—"} {a.instrument?.inventory_number && <span className="text-xs text-muted-foreground">#{a.instrument.inventory_number}</span>}</TableCell>
                             <TableCell className="text-right font-mono">{a.quantity}</TableCell>
                             <TableCell className="text-right font-mono text-sm">{Number(a.instrument?.price ?? 0) > 0 ? `${Number(a.instrument?.price).toLocaleString("ru-RU")} ${a.instrument?.currency ?? ""}` : "—"}</TableCell>
-                            <TableCell className="text-xs whitespace-nowrap">{fmtDate(a.issued_at)}</TableCell>
+                            <TableCell className="text-xs whitespace-nowrap">{fmtDateTime24(a.issued_at)}</TableCell>
                             <TableCell className="text-xs text-muted-foreground">{a.issued_by ? (profiles[a.issued_by] ?? "—") : "—"}</TableCell>
                             <TableCell className="text-xs italic text-muted-foreground max-w-[220px] truncate">{a.issue_comment ?? "—"}</TableCell>
                           </TableRow>
@@ -220,8 +221,8 @@ export default function EmployeesView() {
                             <TableCell className="font-medium">{a.instrument?.name ?? "—"}</TableCell>
                             <TableCell className="text-right font-mono">{a.quantity}</TableCell>
                             <TableCell className="text-right font-mono text-sm">{Number(a.instrument?.price ?? 0) > 0 ? `${Number(a.instrument?.price).toLocaleString("ru-RU")} ${a.instrument?.currency ?? ""}` : "—"}</TableCell>
-                            <TableCell className="text-xs whitespace-nowrap">{fmtDate(a.issued_at)}</TableCell>
-                            <TableCell className="text-xs whitespace-nowrap text-status-green">{fmtDate(a.returned_at)}</TableCell>
+                            <TableCell className="text-xs whitespace-nowrap">{fmtDateTime24(a.issued_at)}</TableCell>
+                            <TableCell className="text-xs whitespace-nowrap text-status-green">{fmtDateTime24(a.returned_at)}</TableCell>
                             <TableCell className="text-xs text-muted-foreground">{a.issued_by ? (profiles[a.issued_by] ?? "—") : "—"}</TableCell>
                             <TableCell className="text-xs text-muted-foreground">{a.returned_by ? (profiles[a.returned_by] ?? "—") : "—"}</TableCell>
                             <TableCell className="text-xs italic text-muted-foreground max-w-[200px] truncate">{a.return_comment ?? a.issue_comment ?? "—"}</TableCell>
@@ -244,7 +245,7 @@ export default function EmployeesView() {
 }
 
 const fmtMoney = (n: number) => Number(n || 0).toLocaleString("ru-RU");
-const fmtDT = (s?: string | null) => s ? new Date(s).toLocaleString("ru-RU") : "—";
+const fmtDT = (s?: string | null) => s ? fmtDateTime24(s) : "—";
 
 function exportEmployeePDF(
   emp: Employee,
@@ -264,7 +265,7 @@ function exportEmployeePDF(
   doc.setTextColor(0, 0, 0);
   y += 14;
   doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(120, 120, 120);
-  doc.text(`Yaratilgan: ${new Date().toLocaleString("ru-RU")}`, W / 2, y, { align: "center" });
+  doc.text(`Yaratilgan: ${fmtDateTime24(new Date())}`, W / 2, y, { align: "center" });
   doc.setTextColor(0, 0, 0);
   y += 14;
 

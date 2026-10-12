@@ -15,6 +15,7 @@ import { ChevronLeft, ChevronRight, Plus, Lock, RotateCcw, Ban, Search, Trophy }
 import { toast } from "sonner";
 import { matchesAcrossScripts } from "@/lib/translit";
 import DailyTasksRating from "@/components/DailyTasksRating";
+import { fmtDate as fmtDateG, fmtDateTime24 } from "@/lib/format";
 
 type Status = "in_progress" | "closed" | "cancelled";
 interface Task {
@@ -35,7 +36,7 @@ const STATUS_CLS: Record<Status, string> = {
 const todayTashkent = () => new Date(Date.now() + 5 * 3600_000).toISOString().slice(0, 10);
 const shiftDate = (d: string, n: number) => { const x = new Date(d + "T00:00:00Z"); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
 const fmtDate = (d: string) => d.split("-").reverse().join(".");
-const fmtDT = (s: string) => new Date(s).toLocaleString("ru-RU", { hour12: false, timeZone: "Asia/Tashkent" });
+const fmtDT = (s: string) => fmtDateTime24(s);
 
 export default function DailyTasksPage() {
   const { user } = useAuth();
@@ -151,7 +152,7 @@ export default function DailyTasksPage() {
         <Input type="date" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} className="w-44" />
         <Button variant="outline" size="icon" onClick={() => setDate(shiftDate(date, 1))} aria-label="Keyingi kun"><ChevronRight className="h-4 w-4" /></Button>
         {date !== todayTashkent() && <Button variant="ghost" onClick={() => setDate(todayTashkent())}>Bugun</Button>}
-        <span className="font-semibold ml-2">{fmtDate(date)}</span>
+        <span className="font-semibold ml-2">{fmtDateG(date)}</span>
         <div className="relative ml-auto w-full sm:w-72">
           <Search className="h-4 w-4 absolute left-2.5 top-2.5 text-muted-foreground" />
           <Input className="pl-8" placeholder="Ishchi, zakaz, topshiriq, status..." value={q} onChange={(e) => setQ(e.target.value)} />
@@ -196,7 +197,7 @@ export default function DailyTasksPage() {
             <div><Label>Sana</Label><Input type="date" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} /></div>
             <div><Label>Ishchi *</Label>
               <SearchableSelect value={form.employee_id} onChange={(v) => setForm({ ...form, employee_id: v })} placeholder="Xodimni tanlang" options={empOptions} />
-              {blockedFor && <p className="text-sm text-destructive mt-1">Bu xodimning joriy topshirig'i hali yopilmagan ({fmtDate(blockedFor.task_date)}: {blockedFor.task_title}, {blockedFor.progress}%). Avval mavjud topshiriqni yakunlang.</p>}
+              {blockedFor && <p className="text-sm text-destructive mt-1">Bu xodimning joriy topshirig'i hali yopilmagan ({fmtDateG(blockedFor.task_date)}: {blockedFor.task_title}, {blockedFor.progress}%). Avval mavjud topshiriqni yakunlang.</p>}
             </div>
             <div><Label>Zakaz *</Label><SearchableSelect value={form.order_id} onChange={(v) => setForm({ ...form, order_id: v })} placeholder="Zakazni tanlang" options={orderOptions} /></div>
             <div><Label>Ish / topshiriq *</Label><Input value={form.task_title} onChange={(e) => setForm({ ...form, task_title: e.target.value })} placeholder="Masalan: Chizma chizish" /></div>
@@ -220,7 +221,7 @@ export default function DailyTasksPage() {
                   <span className="text-muted-foreground">Mahsulot:</span><span>{o?.product_name ?? "—"}</span>
                   <span className="text-muted-foreground">Bajarishi kerak:</span><span className="font-semibold">{detail.task_title}</span>
                   {detail.description && <><span className="text-muted-foreground">Izoh:</span><span>{detail.description}</span></>}
-                  <span className="text-muted-foreground">Sana:</span><span>{fmtDate(detail.task_date)}</span>
+                  <span className="text-muted-foreground">Sana:</span><span>{fmtDateG(detail.task_date)}</span>
                   <span className="text-muted-foreground">Bergan:</span><span>{detail.assigned_by_name ?? (detail.assigned_by ? profiles[detail.assigned_by] : "—")}</span>
                   <span className="text-muted-foreground">Status:</span><span><Badge variant="outline" className={STATUS_CLS[detail.status]}>{STATUS_LABEL[detail.status]}</Badge></span>
                   {detail.closed_at && <><span className="text-muted-foreground">Yopilgan:</span><span>{fmtDT(detail.closed_at)}</span></>}

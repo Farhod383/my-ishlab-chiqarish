@@ -10,6 +10,7 @@ import { useI18n, useLocalize } from "@/i18n/context";
 import { sortOrdersByStatusAndDate } from "@/lib/orderStatus";
 import { ClipboardList, Search } from "lucide-react";
 import { searchNorm } from "@/lib/translit";
+import { fmtDate } from "@/lib/format";
 
 type Filter = "all" | "in_progress" | "pending" | "delayed";
 
@@ -137,7 +138,7 @@ export default function NachalnikPage() {
                         ? String(st.worker_name).split(",").map((n: string) => localize(n.trim())).join(", ")
                         : "—"}
                     </TableCell>
-                    <TableCell className="text-xs font-mono whitespace-nowrap">{o.deadline}</TableCell>
+                    <TableCell className="text-xs font-mono whitespace-nowrap">{fmtDate(o.deadline)}</TableCell>
                     <TableCell>
                       <div
                         className="flex items-center gap-1.5"

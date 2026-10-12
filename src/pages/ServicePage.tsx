@@ -16,6 +16,7 @@ import { Plus, Wrench, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
 import { notify } from "@/lib/notify";
+import { fmtDate } from "@/lib/format";
 
 type Status = "pending" | "in_progress" | "completed" | "cancelled";
 const STATUS_LABEL: Record<Status, string> = {
@@ -231,7 +232,7 @@ export default function ServicePage() {
                   <TableCell className="font-medium">{r.client_name}{r.client_phone ? <div className="text-xs text-muted-foreground">{r.client_phone}</div> : null}</TableCell>
                   <TableCell>{r.device_name}</TableCell>
                   <TableCell className="max-w-[280px] truncate" title={r.problem_description}>{r.problem_description}</TableCell>
-                  <TableCell>{r.received_at}</TableCell>
+                  <TableCell>{fmtDate(r.received_at)}</TableCell>
                   <TableCell>{r.deadline ?? "—"}</TableCell>
                   <TableCell>
                     {canManage ? (
@@ -269,8 +270,8 @@ export default function ServicePage() {
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div><span className="text-muted-foreground">Telefon: </span>{detail.client_phone ?? "—"}</div>
                 <div><span className="text-muted-foreground">Status: </span><Badge variant="outline" className={STATUS_COLOR[detail.status]}>{STATUS_LABEL[detail.status]}</Badge></div>
-                <div><span className="text-muted-foreground">Qabul: </span>{detail.received_at}</div>
-                <div><span className="text-muted-foreground">Muddat: </span>{detail.deadline ?? "—"}</div>
+                <div><span className="text-muted-foreground">Qabul: </span>{fmtDate(detail.received_at)}</div>
+                <div><span className="text-muted-foreground">Muddat: </span>{fmtDate(detail.deadline)}</div>
                 <div className="col-span-2"><span className="text-muted-foreground">Muammo: </span>{detail.problem_description}</div>
                 {detail.notes && <div className="col-span-2"><span className="text-muted-foreground">Izoh: </span>{detail.notes}</div>}
               </div>

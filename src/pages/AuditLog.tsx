@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Search } from "lucide-react";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { searchNorm } from "@/lib/translit";
+import { fmtDateTime24 } from "@/lib/format";
 
 export default function AuditLog() {
   const { t } = useI18n();
@@ -144,7 +145,7 @@ export default function AuditLog() {
                 {filtered.map((l, idx) => (
                   <TableRow key={l.id}>
                     <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
-                    <TableCell className="text-xs whitespace-nowrap">{new Date(l.created_at).toLocaleString()}</TableCell>
+                    <TableCell className="text-xs whitespace-nowrap">{fmtDateTime24(l.created_at)}</TableCell>
                     <TableCell className="text-sm">{l.actor_name ? localize(l.actor_name) : t.common.system}</TableCell>
                     <TableCell className="text-xs"><Badge variant="secondary">{roleLabel(l)}</Badge></TableCell>
                     <TableCell className="text-sm font-medium">{l.action}</TableCell>

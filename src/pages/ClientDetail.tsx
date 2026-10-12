@@ -1,3 +1,4 @@
+import { fmtDate, fmtDateTime24 } from "@/lib/format";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,8 +28,8 @@ const DOC_STATUS: Record<string, { label: string; cls: string }> = {
   missing: { label: "Berilmagan", cls: "bg-status-red/10 text-status-red border-status-red/30" },
 };
 
-const fmt = (d?: string | null) => (d ? new Date(d).toLocaleString("uz-UZ", { dateStyle: "short", timeStyle: "short" }) : "—");
-const fmtD = (d?: string | null) => (d ? new Date(d).toLocaleDateString("uz-UZ") : "—");
+const fmt = (d?: string | null) => (d ? fmtDateTime24(d) : "—");
+const fmtD = (d?: string | null) => (d ? fmtDate(d) : "—");
 
 const FIELD_LABELS: Record<string, string> = {
   name: "Nomi", phone: "Telefon", phone2: "Qo'shimcha telefon", contact_person: "Kontakt shaxs",
@@ -477,7 +478,7 @@ export default function ClientDetail() {
         <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>Aloqa qo'shish</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div className="text-xs text-muted-foreground">Sana va xodim avtomatik yoziladi: {new Date().toLocaleString("uz-UZ")} — {user?.email}</div>
+            <div className="text-xs text-muted-foreground">Sana va xodim avtomatik yoziladi: {fmtDateTime24(new Date())} — {user?.email}</div>
             <div><Label>Aloqa turi</Label>
               <Select value={intForm.kind} onValueChange={(v) => setIntForm({ ...intForm, kind: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>

@@ -15,7 +15,7 @@ import {
   Package, Wrench, ClipboardList, MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
-import { fmtNum } from "@/lib/format";
+import { fmtNum, fmtDate as fmtDateG, fmtDateTime24 } from "@/lib/format";
 
 export default function OrderReport() {
   const { id } = useParams();
@@ -47,9 +47,9 @@ export default function OrderReport() {
 
   const fmtMoney = (n: number) => fmtNum(n);
   const fmtDate = (d?: string | null) =>
-    d ? new Date(d).toLocaleDateString("uz-UZ") : "—";
+    d ? fmtDateG(d) : "—";
   const fmtDateTime = (d?: string | null) =>
-    d ? new Date(d).toLocaleString("uz-UZ") : "—";
+    d ? fmtDateTime24(d) : "—";
 
   // Cost rows (out movements)
   const costRows = useMemo(
@@ -234,12 +234,12 @@ export default function OrderReport() {
               <div className="flex items-center gap-2 justify-end">
                 <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="text-muted-foreground">{t.report.startDate}:</span>
-                <span className="font-mono font-semibold">{fmtDate(startedAt ?? order.order_date)}</span>
+                <span className="font-mono font-semibold">{fmtDateG(startedAt ?? order.order_date)}</span>
               </div>
               <div className="flex items-center gap-2 justify-end">
                 <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="text-muted-foreground">{t.report.endDate}:</span>
-                <span className="font-mono font-semibold">{fmtDate(finishedAt)}</span>
+                <span className="font-mono font-semibold">{fmtDateG(finishedAt)}</span>
               </div>
               <div className="flex items-center gap-2 justify-end">
                 <User className="h-3.5 w-3.5 text-muted-foreground" />
@@ -365,7 +365,7 @@ export default function OrderReport() {
                   <TableCell className="text-right font-mono font-semibold">{fmtMoney(r.total)}</TableCell>
                   <TableCell className="text-sm">{localize(r.recipient) || "—"}</TableCell>
                   <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                    {fmtDate(r.date)}
+                    {fmtDateG(r.date)}
                   </TableCell>
                 </TableRow>
               ))}
@@ -424,7 +424,7 @@ export default function OrderReport() {
 
       <Separator />
       <p className="text-xs text-muted-foreground text-right italic">
-        {t.report.generatedOn}: {new Date().toLocaleString("uz-UZ")}
+        {t.report.generatedOn}: {fmtDateTime24(new Date())}
       </p>
     </div>
   );

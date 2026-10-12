@@ -13,6 +13,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
 import { useLocalize } from "@/i18n/context";
+import { fmtDate } from "@/lib/format";
 
 type AttRow = {
   id: string;
@@ -187,7 +188,7 @@ export default function AttendanceCalendarDialog({ employee, open, onOpenChange 
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: user?.email,
       action: "Davomat yangilandi", entity: "attendance",
-      details: `${employee.full_name} — ${editForm.date} (${STATUS_META[status]?.label ?? status})`,
+      details: `${employee.full_name} — ${fmtDate(editForm.date)} (${STATUS_META[status]?.label ?? status})`,
     });
     toast.success("Saqlandi");
     setEditOpen(false);
@@ -422,7 +423,7 @@ export default function AttendanceCalendarDialog({ employee, open, onOpenChange 
         {/* Edit sub-dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>Davomat — {editForm.date}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Davomat — {fmtDate(editForm.date)}</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div>
                 <Label>Holat</Label>
