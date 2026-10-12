@@ -455,7 +455,7 @@ export default function OrderDetail() {
             const actualMs = s.started_at ? (new Date(s.finished_at ?? Date.now()).getTime() - new Date(s.started_at).getTime()) : 0;
             const actualTxt = s.started_at ? fmtDuration(actualMs / 60000) : "—";
             return (
-              <Card key={s.id} className={s.status === "delayed" ? "border-status-red/50" : s.status === "in_progress" ? "border-status-blue/50" : ""}>
+              <Card key={s.id} data-focus-id={s.id} className={s.status === "delayed" ? "border-status-red/50" : s.status === "in_progress" ? "border-status-blue/50" : ""}>
                 <CardContent className="p-4">
                   <div
                     className="flex items-start justify-between gap-4 flex-wrap cursor-pointer"

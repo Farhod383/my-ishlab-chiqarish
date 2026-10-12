@@ -960,7 +960,7 @@ export default function KassaPage() {
                 <TableBody>
                   {loading && <TableRow><TableCell colSpan={canManage ? 10 : 9} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                   {!loading && fInc.map(i => (
-                    <TableRow key={i.id}>
+                    <TableRow key={i.id} data-focus-id={i.id} data-focus-at={i.created_at} data-focus-entity="cash_income">
                       <TableCell className="text-sm whitespace-nowrap">{fmtDateTime24(i.income_date)}</TableCell>
                       <TableCell className="text-right font-mono font-semibold text-status-green">{fmtCash(Number(i.amount), i.currency)}</TableCell>
                       <TableCell className="text-xs"><Badge variant="secondary">{i.currency ?? "UZS"}</Badge></TableCell>
@@ -1091,7 +1091,7 @@ export default function KassaPage() {
                 <TableBody>
                   {loading && <TableRow><TableCell colSpan={canManage ? 10 : 9} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                   {!loading && fExp.map(e => (
-                    <TableRow key={e.id}>
+                    <TableRow key={e.id} data-focus-id={e.id} data-focus-at={e.created_at} data-focus-entity="cash_expense">
                       <TableCell className="text-sm whitespace-nowrap">{fmtDateTime24(e.expense_date)}</TableCell>
                       <TableCell className="text-right font-mono font-semibold text-status-red">{fmtCash(Number(e.amount), e.currency)}</TableCell>
                       <TableCell className="text-xs"><Badge variant="secondary">{e.currency ?? "UZS"}</Badge></TableCell>

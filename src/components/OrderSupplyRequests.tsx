@@ -211,7 +211,7 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
       <CardContent className="space-y-1.5 px-3 pb-3">
         {items.length === 0 && <p className="text-sm text-muted-foreground">So'rovlar yo'q</p>}
         {items.map((it) => (
-          <div key={it.id} className="flex items-center justify-between gap-2 p-1.5 rounded border">
+          <div key={it.id} data-focus-id={it.id} data-focus-at={it.created_at} data-focus-entity="supply_request" className="flex items-center justify-between gap-2 p-1.5 rounded border">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="font-medium text-xs truncate">{it.product_name}</span>

@@ -345,7 +345,7 @@ export default function DefectsPage() {
               <TableBody>
                 {loading && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                 {!loading && filteredDefects.map(def => (
-                  <TableRow key={def.id}>
+                  <TableRow key={def.id} data-focus-id={def.id} data-focus-at={def.created_at} data-focus-entity="defect">
                     <TableCell className="text-sm whitespace-nowrap">{fmtDateTime24(def.created_at)}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-xs">

@@ -358,6 +358,7 @@ export default function HRPage() {
                   return (
                   <TableRow
                     key={e.id}
+                    data-focus-id={e.id} data-focus-at={e.created_at} data-focus-entity="employee"
                     className={`${canManage ? "cursor-pointer hover:bg-muted/40" : ""} ${isNew(e) ? "bg-status-green/5" : ""}`.trim() || undefined}
                     onClick={canManage ? () => openEdit(e) : undefined}
                   >

@@ -1683,7 +1683,7 @@ export default function WarehousePage() {
                       </TableRow></TableHeader>
                       <TableBody>
                         {productMovements.filter(m => m.direction === "in").map(m => (
-                          <TableRow key={m.id}>
+                          <TableRow key={m.id} data-focus-id={m.id} data-focus-at={m.created_at} data-focus-entity="stock_movement">
                             <TableCell className="text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</TableCell>
                             <TableCell className="text-xs text-muted-foreground">{localize(profiles[m.created_by]) || "—"}</TableCell>
                             <TableCell className="text-sm">{localize(m.recipient_name) || "—"}</TableCell>
@@ -1714,7 +1714,7 @@ export default function WarehousePage() {
                       </TableRow></TableHeader>
                       <TableBody>
                         {productMovements.filter(m => m.direction === "out").map(m => (
-                          <TableRow key={m.id}>
+                          <TableRow key={m.id} data-focus-id={m.id} data-focus-at={m.created_at} data-focus-entity="stock_movement">
                             <TableCell className="text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</TableCell>
                             <TableCell className="text-sm">{localize(m.recipient_name) || "—"}</TableCell>
                             <TableCell className="text-sm font-mono">{m.order?.order_number ?? <span className="text-muted-foreground">{t.warehouse.common}</span>}</TableCell>
@@ -1734,7 +1734,7 @@ export default function WarehousePage() {
                   <div className="space-y-2 max-h-96 overflow-y-auto">
                     {productMovements.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">{t.warehouse.noMov}</p>}
                     {productMovements.map(m => (
-                      <div key={m.id} className={`text-sm border-l-2 pl-3 py-1.5 ${m.direction === "out" ? "border-status-red/60" : "border-status-green/60"}`}>
+                      <div key={m.id} data-focus-id={m.id} data-focus-at={m.created_at} data-focus-entity="stock_movement" className={`text-sm border-l-2 pl-3 py-1.5 ${m.direction === "out" ? "border-status-red/60" : "border-status-green/60"}`}>
                         <div className="flex items-center justify-between">
                           <span className="font-medium flex items-center gap-1.5">
                             {m.direction === "out" ? <ArrowDownCircle className="h-3.5 w-3.5 text-status-red" /> : <ArrowUpCircle className="h-3.5 w-3.5 text-status-green" />}

@@ -173,7 +173,7 @@ export default function ReturnsPage() {
               <TableBody>
                 {loading && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                 {!loading && returns.map(ret => (
-                  <TableRow key={ret.id}>
+                  <TableRow key={ret.id} data-focus-id={ret.id} data-focus-at={ret.created_at} data-focus-entity="return">
                     <TableCell className="text-sm whitespace-nowrap">{fmtDateTime24(ret.created_at)}</TableCell>
                     <TableCell className="text-sm font-medium">{ret.product?.name ?? "—"}</TableCell>
                     <TableCell className="text-right font-mono">{ret.quantity} {ret.product?.unit ?? ""}</TableCell>
