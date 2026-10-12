@@ -147,7 +147,7 @@ input, textarea, [contenteditable="true"] {
   .order-report-stat[data-tone="delayed"] { --report-tone: var(--report-delayed); }
   .order-report-stat:hover { background: hsl(var(--report-tone) / 0.18); color: hsl(var(--report-tone)); border-color: hsl(var(--report-tone)); }
   .order-report-stat[aria-pressed="true"] { background: hsl(var(--report-tone)); color: hsl(var(--status-solid-foreground)); border-color: hsl(var(--report-tone)); box-shadow: 0 0 0 3px hsl(var(--report-tone) / 0.22); }
-  .order-report-stat[aria-pressed="true"]:hover { background: hsl(var(--report-tone) / 0.9); }
+  .order-report-stat[aria-pressed="true"]:hover { background: hsl(var(--report-tone) / 0.9); color: hsl(var(--status-solid-foreground)); }
 }
 
 .report-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
