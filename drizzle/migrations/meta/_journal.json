@@ -260,6 +260,13 @@
       "when": 1791792042305,
       "tag": "0036_supply_spendings_view",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1791794382753,
+      "tag": "0037_link_reclassified_products_to_instruments",
+      "breakpoints": true
     }
   ]
 }
