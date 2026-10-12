@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ChevronLeft, ChevronRight, Plus, Lock, RotateCcw, Ban, Search, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { matchesAcrossScripts } from "@/lib/translit";
+import DateInput from "@/components/DateInput";
 import DailyTasksRating from "@/components/DailyTasksRating";
 import { fmtDate as fmtDateG, fmtDateTime24 } from "@/lib/format";
 import { currentUserName, displayUser } from "@/lib/userNames";
