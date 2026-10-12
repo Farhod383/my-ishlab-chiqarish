@@ -33,7 +33,7 @@ import { getStockStatus, stockStatusMeta, StockDot, type StockStatus } from "@/l
 import { useEmployees } from "@/hooks/useEmployees";
 import { Link, useNavigate } from "react-router-dom";
 import { getOpenSession, getOrStartSession, closeInvoice, discardDraftSessions, addOrMergeItem, intakeCode, itemsTotal, type IntakeSession, type IntakeItem } from "@/lib/intake";
-import { currentUserName } from "@/lib/userNames";
+import { currentUserName, displayUser } from "@/lib/userNames";
 
 const UNITS = ["dona", "kg", "tonna", "metr", "litr", "rulon", "komplekt"] as const;
 
@@ -371,7 +371,7 @@ export default function WarehousePage() {
       // Qoldiq faqat Nakladnoy rasm bilan yakunlangandan keyin oshadi —
       // shuning uchun miqdor kirim sessiyasiga yoziladi
       try {
-        const session = await getOrStartSession(user?.id, user?.email ?? null, newSupplier || null);
+        const session = await getOrStartSession(user?.id, currentUserName(user), newSupplier || null);
         await addOrMergeItem(session.id, {
           product_id: created.id,
           product_name: newName.trim(),
@@ -524,7 +524,7 @@ export default function WarehousePage() {
     // Kirim sessiyasi (Nakladnoy) — ochiq bo'lmasa avtomatik boshlanadi
     let session: any;
     try {
-      session = await getOrStartSession(user?.id, user?.email ?? null, impSupplier || null);
+      session = await getOrStartSession(user?.id, currentUserName(user), impSupplier || null);
     } catch (e: any) { toast.error(e.message ?? "Kirim sessiyasini ochib bo'lmadi"); return; }
 
     let merged = false;

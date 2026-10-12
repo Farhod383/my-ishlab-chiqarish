@@ -20,7 +20,7 @@ import { useI18n, useLocalize } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
 import { toast } from "sonner";
 import { useEmployees, refreshEmployees } from "@/hooks/useEmployees";
-import { currentUserName } from "@/lib/userNames";
+import { currentUserName, displayUser } from "@/lib/userNames";
 
 // Uzbek phone format validator: +998 XX XXX XX XX  or XX XXX XX XX  (spaces optional)
 const PHONE_RE = /^(\+?998)?\s*\d{2}\s*\d{3}\s*\d{2}\s*\d{2}$/;
@@ -86,7 +86,7 @@ export default function HRPage() {
       if (error) throw error;
       const rows = (data ?? []).filter((e: any) => (e.status ?? "active") === "active");
       if (rows.length === 0) { toast.error("Eksport uchun xodimlar topilmadi"); return; }
-      const actor = user?.email ?? "—";
+      const actor = currentUserName(user) ?? "—";
       if (kind === "pdf") await exportEmployeesPDF(rows as any, actor);
       else await exportEmployeesDocx(rows as any, actor);
       toast.success("Eksport tayyor");

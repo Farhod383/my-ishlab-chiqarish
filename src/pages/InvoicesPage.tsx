@@ -16,6 +16,7 @@ import { FileText, Image as ImageIcon, CheckCircle2, Clock, Search, Trash2 } fro
 import { toast } from "sonner";
 import { fmtNum, fmtDateTime24 } from "@/lib/format";
 import {
+import { currentUserName, displayUser } from "@/lib/userNames";
   INTAKE_STATUS_META, intakeCode, intakeDuration, itemsTotal,
   closeInvoice,
   type IntakeItem, type IntakeSession,
@@ -307,7 +308,7 @@ export default function InvoicesPage() {
                         <TableCell className="whitespace-nowrap text-sm">{fmtDateTime24(s.started_at)}</TableCell>
                         <TableCell className="whitespace-nowrap text-sm">{s.finished_at ? fmtDateTime24(s.finished_at) : "—"}</TableCell>
                         <TableCell className="whitespace-nowrap text-sm">{intakeDuration(s)}</TableCell>
-                        <TableCell className="text-sm">{s.created_by_name ?? "—"}</TableCell>
+                        <TableCell className="text-sm">{displayUser(s.created_by_name) || "—"}</TableCell>
                         <TableCell className="text-sm">{s.supplier ?? "—"}</TableCell>
                         <TableCell>{s.image_url ? <ImageIcon className="h-4 w-4 text-status-green" /> : <Clock className="h-4 w-4 text-muted-foreground" />}</TableCell>
                         {canEdit && (
@@ -337,7 +338,7 @@ export default function InvoicesPage() {
                   <Badge variant="outline" className={INTAKE_STATUS_META[current.status].cls}>{INTAKE_STATUS_META[current.status].label}</Badge>
                 </DialogTitle>
                 <DialogDescription>
-                  Kim kiritgan: {current.created_by_name ?? "—"}
+                  Kim kiritgan: {displayUser(current.created_by_name) || "—"}
                   {current.supplier ? ` · Olib keldi: ${current.supplier}` : ""}
                 </DialogDescription>
               </DialogHeader>

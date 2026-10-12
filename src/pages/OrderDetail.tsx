@@ -25,7 +25,7 @@ import { recalcOrderStatus } from "@/lib/orderStatus";
 import OrderSupplyRequests from "@/components/OrderSupplyRequests";
 import { useNotifications, notifStageId } from "@/notifications/NotificationsContext";
 import { fmtDateTime24, fmtDuration, fmtLegacyDurations, fmtDate } from "@/lib/format";
-import { currentUserName } from "@/lib/userNames";
+import { currentUserName, displayUser } from "@/lib/userNames";
 
 
 export default function OrderDetail() {
@@ -227,7 +227,7 @@ export default function OrderDetail() {
     ...logs.map((l: any) => ({
       key: `a-${l.id}`,
       at: l.created_at,
-      actor: l.actor_name as string | null,
+      actor: (displayUser(l.actor_name) || null) as string | null,
       action: l.action as string,
       details: l.details as string | null,
       dept: l.entity === "stage" ? "Ishlab chiqarish"
@@ -523,7 +523,7 @@ export default function OrderDetail() {
                                 <div className="text-xs font-medium">{n.title}</div>
                                 {n.body && <div className="text-[11px] text-muted-foreground whitespace-pre-wrap">{fmtLegacyDurations(n.body)}</div>}
                                 <div className="mt-0.5 text-[11px] text-muted-foreground">
-                                  {n.sender_name ?? "Tizim"} · {fmtDateTime24(n.created_at)}
+                                  {displayUser(n.sender_name) || "Tizim"} · {fmtDateTime24(n.created_at)}
                                 </div>
                               </div>
                             ))}

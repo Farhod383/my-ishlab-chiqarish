@@ -17,7 +17,7 @@ import { toast } from "@/hooks/use-toast";
 import { useEmployees } from "@/hooks/useEmployees";
 import { CLIENT_TYPES } from "@/pages/ClientsPage";
 import {
-import { currentUserName } from "@/lib/userNames";
+import { currentUserName, displayUser } from "@/lib/userNames";
   ArrowLeft, Phone, MapPin, Mail, User as UserIcon, Loader2, Plus, MessageSquare,
   FileText, History, Pencil, Upload, ExternalLink, Briefcase, CalendarDays,
 } from "lucide-react";
@@ -98,9 +98,9 @@ export default function ClientDetail() {
     setInteractions(ints ?? []);
     setDocs(dcs ?? []);
     setAudit([
-      ...(ea ?? []).map((r: any) => ({ at: r.created_at, who: r.actor_name, action: r.action, details: auditDetails(r) })),
-      ...oa.map((r: any) => ({ at: r.created_at, who: r.actor_name, action: r.action, details: r.details ?? "" })),
-      ...(ints ?? []).map((r: any) => ({ at: r.occurred_at, who: r.actor_name, action: `Aloqa: ${KINDS[r.kind] ?? r.kind}`, details: r.content })),
+      ...(ea ?? []).map((r: any) => ({ at: r.created_at, who: displayUser(r.actor_name), action: r.action, details: displayUser(auditDetails(r)) })),
+      ...oa.map((r: any) => ({ at: r.created_at, who: displayUser(r.actor_name), action: r.action, details: displayUser(r.details ?? "") })),
+      ...(ints ?? []).map((r: any) => ({ at: r.occurred_at, who: displayUser(r.actor_name), action: `Aloqa: ${KINDS[r.kind] ?? r.kind}`, details: r.content })),
     ].sort((a, b) => (b.at ?? "").localeCompare(a.at ?? "")));
     setLoading(false);
   };
@@ -289,7 +289,7 @@ export default function ClientDetail() {
               <CardHeader className="pb-2"><CardTitle className="text-base">Aloqa holati</CardTitle></CardHeader>
               <CardContent className="text-sm space-y-1.5">
                 <div><span className="text-muted-foreground">Oxirgi aloqa: </span>{lastContact ? `${fmt(lastContact.occurred_at)} — ${KINDS[lastContact.kind] ?? lastContact.kind}` : "—"}</div>
-                <div><span className="text-muted-foreground">Kim: </span>{lastContact?.actor_name || "—"}</div>
+                <div><span className="text-muted-foreground">Kim: </span>{displayUser(lastContact?.actor_name) || "—"}</div>
                 <div><span className="text-muted-foreground">Keyingi aloqa: </span>{fmtD(nextContact)}</div>
                 <div className="pt-2"><Button size="sm" onClick={() => setIntOpen(true)}><Plus className="h-4 w-4 mr-1" /> Aloqa qo'shish</Button></div>
               </CardContent>
@@ -310,7 +310,7 @@ export default function ClientDetail() {
                   <div className="flex flex-wrap items-center gap-2 text-sm">
                     <MessageSquare className="h-4 w-4 text-primary" />
                     <span className="font-semibold">{fmt(i.occurred_at)}</span>
-                    <span className="text-muted-foreground">— {i.actor_name || "—"}</span>
+                    <span className="text-muted-foreground">— {displayUser(i.actor_name) || "—"}</span>
                     <span className="rounded-full border border-primary/30 bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium">{KINDS[i.kind] ?? i.kind}</span>
                     {i.next_contact_date && <span className="rounded-full border border-status-yellow/30 bg-status-yellow/15 text-status-yellow px-2 py-0.5 text-xs">Keyingi: {fmtD(i.next_contact_date)}</span>}
                   </div>
@@ -410,7 +410,7 @@ export default function ClientDetail() {
                         <TableCell>{d.doc_type || "—"}</TableCell>
                         <TableCell><span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${st.cls}`}>{st.label}</span></TableCell>
                         <TableCell>{fmtD(d.issued_at)}</TableCell>
-                        <TableCell>{d.created_by_name || "—"}</TableCell>
+                        <TableCell>{displayUser(d.created_by_name) || "—"}</TableCell>
                         <TableCell>
                           {d.file_url ? (
                             <a href={d.file_url} target="_blank" rel="noreferrer" className="text-primary inline-flex items-center gap-1 hover:underline">
@@ -479,7 +479,7 @@ export default function ClientDetail() {
         <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>Aloqa qo'shish</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div className="text-xs text-muted-foreground">Sana va xodim avtomatik yoziladi: {fmtDateTime24(new Date())} — {user?.email}</div>
+            <div className="text-xs text-muted-foreground">Sana va xodim avtomatik yoziladi: {fmtDateTime24(new Date())} — {currentUserName(user)}</div>
             <div><Label>Aloqa turi</Label>
               <Select value={intForm.kind} onValueChange={(v) => setIntForm({ ...intForm, kind: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
