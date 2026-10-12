@@ -269,7 +269,7 @@ export default function OrderReport() {
                 <div key={date} className="flex gap-4">
                   <div className="shrink-0 w-28 pt-1">
                     <Badge variant="outline" className="font-mono">
-                      {date}
+                      {fmtDateG(date)}
                     </Badge>
                   </div>
                   <div className="flex-1 space-y-1.5 border-l-2 border-primary/30 pl-4">

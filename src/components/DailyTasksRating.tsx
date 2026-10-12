@@ -3,8 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useLocalize } from "@/i18n/context";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { computeRating, type StatTask } from "@/lib/dailyTaskStats";
+import DateInput from "@/components/DateInput";
 
 interface Row extends StatTask { id: string; task_title: string; order_id: string }
 
@@ -44,8 +44,8 @@ export default function DailyTasksRating({ empMap, orderMap }: { empMap: Record<
         {([["day", "Kun"], ["week", "Shu hafta"], ["month", "Shu oy"], ["range", "Oraliq"]] as [Mode, string][]).map(([m, l]) => (
           <Button key={m} variant={mode === m ? "default" : "outline"} size="sm" onClick={() => setMode(m)}>{l}</Button>
         ))}
-        {(mode === "day" || mode === "range") && <Input type="date" className="w-44" value={from} onChange={(e) => e.target.value && setFrom(e.target.value)} />}
-        {mode === "range" && <Input type="date" className="w-44" value={to} onChange={(e) => e.target.value && setTo(e.target.value)} />}
+        {(mode === "day" || mode === "range") && <DateInput className="w-44" value={from} onChange={setFrom} />}
+        {mode === "range" && <DateInput className="w-44" value={to} onChange={setTo} />}
         <span className="font-semibold ml-2">{fmt(range[0])}{range[0] !== range[1] && ` — ${fmt(range[1])}`}</span>
       </div>
 

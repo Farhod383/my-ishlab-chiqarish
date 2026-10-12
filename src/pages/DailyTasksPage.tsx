@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ChevronLeft, ChevronRight, Plus, Lock, RotateCcw, Ban, Search, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { matchesAcrossScripts } from "@/lib/translit";
+import DateInput from "@/components/DateInput";
 import DailyTasksRating from "@/components/DailyTasksRating";
 import { fmtDate as fmtDateG, fmtDateTime24 } from "@/lib/format";
 import { currentUserName, displayUser } from "@/lib/userNames";
@@ -150,7 +151,7 @@ export default function DailyTasksPage() {
 
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" size="icon" onClick={() => setDate(shiftDate(date, -1))} aria-label="Oldingi kun"><ChevronLeft className="h-4 w-4" /></Button>
-        <Input type="date" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} className="w-44" />
+        <DateInput value={date} onChange={setDate} className="w-44" />
         <Button variant="outline" size="icon" onClick={() => setDate(shiftDate(date, 1))} aria-label="Keyingi kun"><ChevronRight className="h-4 w-4" /></Button>
         {date !== todayTashkent() && <Button variant="ghost" onClick={() => setDate(todayTashkent())}>Bugun</Button>}
         <span className="font-semibold ml-2">{fmtDateG(date)}</span>
@@ -195,7 +196,7 @@ export default function DailyTasksPage() {
         <DialogContent>
           <DialogHeader><DialogTitle>Yangi topshiriq</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>Sana</Label><Input type="date" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} /></div>
+            <div><Label>Sana</Label><DateInput value={date} onChange={setDate} className="w-44" /></div>
             <div><Label>Ishchi *</Label>
               <SearchableSelect value={form.employee_id} onChange={(v) => setForm({ ...form, employee_id: v })} placeholder="Xodimni tanlang" options={empOptions} />
               {blockedFor && <p className="text-sm text-destructive mt-1">Bu xodimning joriy topshirig'i hali yopilmagan ({fmtDateG(blockedFor.task_date)}: {blockedFor.task_title}, {blockedFor.progress}%). Avval mavjud topshiriqni yakunlang.</p>}
