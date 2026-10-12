@@ -32,7 +32,6 @@ import { PriorityDot, PRIORITY_OPTIONS } from "@/components/PriorityDot";
 import { getStockStatus, stockStatusMeta, StockDot, type StockStatus } from "@/lib/stockStatus";
 import { useEmployees } from "@/hooks/useEmployees";
 import { Link, useNavigate } from "react-router-dom";
-import { fmtDateTime24 } from "@/lib/format";
 import { getOpenSession, getOrStartSession, closeInvoice, discardDraftSessions, addOrMergeItem, intakeCode, itemsTotal, type IntakeSession, type IntakeItem } from "@/lib/intake";
 
 const UNITS = ["dona", "kg", "tonna", "metr", "litr", "rulon", "komplekt"] as const;
