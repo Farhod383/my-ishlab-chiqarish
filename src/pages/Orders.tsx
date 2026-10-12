@@ -165,7 +165,7 @@ export default function Orders() {
                   const isDone = o.status === "completed";
                   const stages = ((o as any).order_stages ?? []).slice().sort((a:any,b:any)=>a.stage_order-b.stage_order);
                   const startedAt = stages[0]?.started_at;
-                  const startStr = startedAt ? new Date(startedAt).toISOString().slice(0,10) : "—";
+                  const startStr = startedAt ? fmtDate(startedAt) : "—";
                   return (
                     <TableRow key={o.id} className="cursor-pointer hover:bg-muted/50" onClick={() => nav(`/orders/${o.id}`)}>
                       <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>

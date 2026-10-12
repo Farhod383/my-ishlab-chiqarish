@@ -1575,7 +1575,7 @@ export default function WarehousePage() {
                     {groupModal.batches.map((b: any, i: number) => (
                       <TableRow key={b.id} className="cursor-pointer hover:bg-muted/40" onClick={() => { setSelectedProduct(b); setGroupModal(null); }}>
                         <TableCell className="text-right text-xs font-mono text-muted-foreground">{i + 1}</TableCell>
-                        <TableCell className="text-xs whitespace-nowrap">{b.created_at ? new Date(b.created_at).toISOString().slice(0,10) : "—"}</TableCell>
+                        <TableCell className="text-xs whitespace-nowrap">{b.created_at ? fmtDate(b.created_at) : "—"}</TableCell>
                         <TableCell className="text-right font-mono">{b.stock_qty} {b.unit}</TableCell>
                         <TableCell className="text-right font-mono text-sm">{fmt(Number(b.last_price ?? 0))} {b.currency ?? "UZS"}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{b.source ?? "—"}</TableCell>

@@ -169,7 +169,7 @@ export default function Dashboard() {
                   {!loading && pageRows.map((o, idx) => {
                     const stages = ((o as any).order_stages ?? []).slice().sort((a:any,b:any)=>a.stage_order-b.stage_order);
                     const startedAt = stages[0]?.started_at;
-                    const startStr = startedAt ? new Date(startedAt).toISOString().slice(0,10) : "—";
+                    const startStr = startedAt ? fmtDate(startedAt) : "—";
                     const totalSt = stages.length || 0;
                     const doneSt = stages.filter((s:any)=> s.status === "completed").length;
                     const progress = o.status === "completed" ? 100 : totalSt ? Math.round((doneSt / totalSt) * 100) : 0;
