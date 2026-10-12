@@ -133,7 +133,7 @@ export default function OtkPage() {
         <p className="text-sm text-muted-foreground">{t.otk.subtitle}</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {(["red", "yellow", "green"] as const).map((c) => (
           <Card key={c} className={`cursor-pointer ${filter === c ? "ring-2 ring-primary" : ""}`} onClick={() => setFilter(filter === c ? "all" : c)}>
             <CardContent className="p-4 flex items-center justify-between">

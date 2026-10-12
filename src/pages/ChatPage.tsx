@@ -232,10 +232,10 @@ export default function ChatPage() {
         </Dialog>
       </div>
 
-      <div className="grid lg:grid-cols-[280px_1fr] gap-4 h-[70vh]">
-        <Card className="overflow-hidden flex flex-col">
+      <div className="grid grid-rows-[minmax(120px,22dvh)_minmax(360px,60dvh)] lg:grid-rows-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-4 lg:h-[70dvh]">
+        <Card className="min-h-0 overflow-hidden flex flex-col">
           <CardHeader className="py-3"><CardTitle className="text-sm">{t.chat.title}</CardTitle></CardHeader>
-          <ScrollArea className="flex-1">
+          <ScrollArea className="min-h-0 flex-1">
             <div className="p-2 space-y-1">
               {sortedConvs.map((c) => (
                 <button
@@ -251,11 +251,11 @@ export default function ChatPage() {
           </ScrollArea>
         </Card>
 
-        <Card className="flex flex-col overflow-hidden">
+        <Card className="min-h-0 flex flex-col overflow-hidden">
           <CardHeader className="py-3 border-b">
             <CardTitle className="text-sm">{active ? labelOf(convs.find((c) => c.id === active)!) : "—"}</CardTitle>
           </CardHeader>
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2 bg-muted/20">
+          <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-2 bg-muted/20">
             {msgs.length === 0 && <p className="text-center text-sm text-muted-foreground py-12">{t.chat.empty}</p>}
             {msgs.map((m) => {
               const mine = m.sender_id === user?.id;

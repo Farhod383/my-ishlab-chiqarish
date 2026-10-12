@@ -105,7 +105,7 @@ export default function ProductionBoard() {
               onClick={() => nav(`/orders/${o.id}`)}
             >
               <CardContent className="p-4">
-                <div className="flex items-start gap-4 flex-wrap">
+                <div className="production-order-row flex items-start gap-4 flex-wrap">
                   <div className="flex items-center gap-2">
                     <GripVertical className="h-4 w-4 text-muted-foreground" />
                     <div className="text-2xl font-bold text-muted-foreground w-8 text-center">{idx + 1}</div>
@@ -114,7 +114,7 @@ export default function ProductionBoard() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 flex-wrap">
                       <div className="min-w-0">
-                        <div className="text-lg sm:text-xl font-bold text-foreground leading-tight truncate" title={o.product_name}>
+                        <div className="text-lg sm:text-xl font-bold text-foreground leading-tight break-words" title={o.product_name}>
                           {o.product_name}
                         </div>
                         <div className="flex items-center gap-2 flex-wrap mt-0.5">
@@ -138,7 +138,7 @@ export default function ProductionBoard() {
                       {o.client?.name ?? "—"} · {o.quantity} {t.common.pieces} · {t.dashboard.deadline}: <span className="text-status-green font-medium">{fmtDate(o.deadline)}</span>
                     </div>
                     <div className="mt-3">
-                      <div className="flex items-center justify-between text-xs mb-1">
+                      <div className="flex items-center justify-between flex-wrap gap-2 text-xs mb-1">
                         <span>{t.production.currentStage}: <strong>{active?.name ?? "—"}</strong></span>
                         <span className="text-muted-foreground">{t.production.progress.replace("{a}", String(completed)).replace("{b}", String(total))}</span>
                       </div>

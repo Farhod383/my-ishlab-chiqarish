@@ -101,6 +101,25 @@ input, textarea, [contenteditable="true"] {
 }
 
 /* ===== Unified ERP tabs ===== */
+/* Intrinsic table/grid widths must not widen the application shell. */
+.erp-main > * { min-width: 0; }
+.erp-main .grid > *, .erp-main .flex > * { min-width: 0; }
+.erp-main .erp-tabs-list { min-width: 0; max-width: 100%; }
+.erp-main .erp-tab { flex-shrink: 0; }
+.kassa-summary { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+.kassa-payment-summary { grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); }
+.kassa-payment-values { grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); }
+[data-erp-dialog] { max-width: calc(100dvw - 1.5rem); max-height: calc(100dvh - 1.5rem); }
+[data-erp-dialog] .grid > *, [data-erp-dialog] .flex > * { min-width: 0; }
+@media (max-width: 639px) {
+  .production-order-row > .flex-1 { flex-basis: 100%; }
+  .order-form-row > * { grid-column: auto; }
+  .order-form-row > button { justify-self: end; }
+}
+@media (max-width: 479px) {
+  [data-erp-dialog] .grid-cols-2 { grid-template-columns: minmax(0, 1fr); }
+}
+
 @layer components {
   .erp-tabs-list {
     max-width: 100%;
@@ -165,4 +184,5 @@ input, textarea, [contenteditable="true"] {
   #print-area tr { break-inside: avoid; }
   #print-area thead { display: table-header-group; }
   .no-print { display: none !important; }
+  #print-area .report-scroll { overflow: visible; max-width: none; }
 }

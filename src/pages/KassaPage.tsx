@@ -736,7 +736,7 @@ export default function KassaPage() {
 
   return (
     <div className="space-y-6">
-      <div className="sticky top-0 z-30 -mx-4 px-4 py-3 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b flex items-center justify-between flex-wrap gap-3 min-h-[4rem]">
+      <div className="sticky top-0 z-30 -mx-3 px-3 sm:-mx-4 sm:px-4 py-3 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b flex items-center justify-between flex-wrap gap-3 min-h-[4rem]">
         <div className="flex items-center gap-4 flex-wrap min-w-0">
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><Wallet className="h-6 w-6" />{k.title ?? "Kassa"}</h1>
           {/* Asosiy navigatsiya: Kassa | Ta'minot */}
@@ -808,7 +808,7 @@ export default function KassaPage() {
                 : "Barcha davr ko'rsatilmoqda"}
           </span>
         </div>
-        <div className="grid sm:grid-cols-4 gap-4">
+        <div className="kassa-summary grid gap-4">
           {selectedMonth && (
             <Card><CardContent className="p-4 space-y-2">
               <div className="text-xs text-muted-foreground">Boshlang'ich qoldiq (oy boshi)</div>
@@ -831,12 +831,12 @@ export default function KassaPage() {
 
         {/* To'lov turi kartalari faqat Kassa tablarida; Ta'minot tabida o'z alohida kartalari bor (takrorlanmasin) */}
         {tab !== "supply" && (
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="kassa-payment-summary grid gap-4">
           <Card className="border-status-green/30"><CardContent className="p-4 space-y-3">
             <div className="text-xs font-semibold uppercase tracking-wide text-status-green">
               💵 {PAYMENT_LABELS[locale]?.cash ?? "Naqd pul"}
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="kassa-payment-values grid gap-3">
               <div><div className="text-[10px] text-muted-foreground mb-1">{k.balance ?? "Balans"}</div>{renderCurrencies(cashBal, "balance")}</div>
               <div><div className="text-[10px] text-muted-foreground mb-1">{k.income ?? "Kirim"}</div>{renderCurrencies(cashIn, "in")}</div>
               <div><div className="text-[10px] text-muted-foreground mb-1">{k.expense ?? "Chiqim"}</div>{renderCurrencies(cashOut, "out")}</div>
@@ -847,7 +847,7 @@ export default function KassaPage() {
             <div className="text-xs font-semibold uppercase tracking-wide text-primary">
               💳 {PAYMENT_LABELS[locale]?.corporate_card ?? "Korporativ karta"}
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="kassa-payment-values grid gap-3">
               <div><div className="text-[10px] text-muted-foreground mb-1">{k.balance ?? "Balans"}</div>{renderCurrencies(cardBal, "balance")}</div>
               <div><div className="text-[10px] text-muted-foreground mb-1">{k.income ?? "Kirim"}</div>{renderCurrencies(cardIn, "in")}</div>
               <div><div className="text-[10px] text-muted-foreground mb-1">{k.expense ?? "Chiqim"}</div>{renderCurrencies(cardOut, "out")}</div>

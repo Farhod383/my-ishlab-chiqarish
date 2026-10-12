@@ -2,3 +2,4 @@ Display employee names through the shared locale-aware name helper while retaini
 - Required-field highlighting is global (RequiredFieldMarker in App): every field inside a form or dialog is treated as required unless its label or placeholder says "ixtiyoriy"/optional (search boxes excluded); keep that label convention in new forms instead of per-form red styling.
 - Nakladnoy image and comment/reason fields are optional everywhere (UI, RequiredFieldMarker, DB); the only mandatory comment is the late reason when fulfilling an overdue supply request, enforced by trigger enforce_supply_late_reason — mark such fields with data-required.
 - Order report cards, tabs, and counts share the tested orderReportFilters predicates after search/date filtering, so displayed counts match table results.
+- The shared ERP layout and table wrappers must shrink to the available sidebar-adjusted width; dialogs are bounded by the dynamic viewport to keep local scrolling accessible.

@@ -304,7 +304,7 @@ export default function DefectsPage() {
         </Dialog>
       </div>
 
-      <div className="inline-flex rounded-lg border bg-muted p-1 gap-1">
+      <div className="flex flex-wrap w-fit max-w-full rounded-lg border bg-muted p-1 gap-1">
         {(["product", "instrument"] as ItemType[]).map(k => (
           <Button key={k} size="sm" variant={kind === k ? "default" : "ghost"} onClick={() => setKind(k)}>
             {k === "product" ? "Mahsulot braklari" : "Instrument braklari"}
