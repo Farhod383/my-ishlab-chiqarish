@@ -66,12 +66,16 @@ export default function SupplyFinancePage() {
         .select("id,amount,total_uzs,currency,reason,comment,payment_type,expense_date,created_at,created_by,recipient_name")
         .eq("purpose", "supply")
         .order("created_at", { ascending: false }),
-      supabase
-        .from("stock_movements")
-        .select("id,quantity,unit_price,currency,created_at,created_by,comment,products(name,unit),orders(order_number)")
-        .eq("direction", "in")
-        .order("created_at", { ascending: false })
-        .limit(1000),
+      (async () => {
+        const all: any[] = [];
+        for (let f = 0; ; f += 1000) {
+          const { data, error } = await (supabase as any).from("supply_spendings").select("*").order("created_at", { ascending: false }).range(f, f + 999);
+          if (error) return { data: all };
+          all.push(...(data ?? []));
+          if (!data || data.length < 1000) break;
+        }
+        return { data: all };
+      })(),
       supabase.from("profiles").select("id,full_name,email"),
     ]);
 
@@ -100,16 +104,16 @@ export default function SupplyFinancePage() {
         const price = Number(m.unit_price) || 0;
         const qty = Number(m.quantity) || 0;
         return {
-          id: m.id,
+          id: m.stock_movement_id,
           created_at: m.created_at,
-          product_name: m.products?.name ?? "—",
+          product_name: m.product_name ?? "",
           quantity: qty,
-          unit: m.products?.unit ?? null,
+          unit: m.unit ?? null,
           unit_price: price,
-          total: qty * price,
+          total: Number(m.total) || 0,
           currency: normCur(m.currency),
-          order_number: m.orders?.order_number ?? null,
-          actor: nameOf(m.created_by),
+          order_number: m.order_number ?? null,
+          actor: m.brought_by || nameOf(m.created_by),
         };
       }),
     );
@@ -156,7 +160,7 @@ export default function SupplyFinancePage() {
         </div>
       </div>
       <p className="text-sm text-muted-foreground">
-        Faqat kuzatuv sahifasi. Kirim — Kassadan Ta'minotga ajratilgan pul, chiqim — Skladga kirim qilingan tovarlar qiymati.
+        Kirim — Kassadan Ta'minotga berilgan pul. Chiqim — Ta'minotga birinchi pul berilgandan keyin Sanjar olib kelgan Sklad kirimlari (narx × miqdor). Qoldiq = berilgan − sarflangan.
       </p>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
