@@ -522,9 +522,6 @@ export default function KassaPage() {
 
   const saveExpense = async () => {
     if (!expForm.amount || !expForm.reason.trim()) { toast.error(k.fillFields ?? "Maydonlarni to'ldiring"); return; }
-    if (expForm.reason.trim().toLowerCase() === "prochi" && !expForm.comment.trim()) {
-      toast.error("Prochi chiqimi uchun izoh kiritilishi shart"); return;
-    }
     const isDebtPay = expForm.reason.trim().toLowerCase() === "qarz uchun";
     if (isDebtPay && !expForm.debt_id) { toast.error("Qarzni tanlang"); return; }
     if (!ensureOnline((m) => toast.error(m))) return;
@@ -1008,13 +1005,12 @@ export default function KassaPage() {
                   </div>
                   {expForm.reason.trim().toLowerCase() === "prochi" && (
                     <div>
-                      <Label htmlFor="expense-comment">Izoh *</Label>
+                      <Label htmlFor="expense-comment">Izoh (ixtiyoriy)</Label>
                       <Textarea
                         id="expense-comment"
                         value={expForm.comment}
                         onChange={(e) => setExpForm({ ...expForm, comment: e.target.value })}
-                        placeholder="Prochi chiqimi izohini kiriting"
-                        required
+                        placeholder="Prochi chiqimi izohi (ixtiyoriy)"
                       />
                     </div>
                   )}

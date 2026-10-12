@@ -647,6 +647,7 @@ export default function SupplyRequestsPage() {
           )}
           <Textarea
             rows={4}
+            data-required
             placeholder="Kechikish sababini kamida 10 ta belgi bilan yozing..."
             value={lateReason}
             onChange={(e) => setLateReason(e.target.value)}

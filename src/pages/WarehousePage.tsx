@@ -287,12 +287,12 @@ export default function WarehousePage() {
     const { data: _ins, error } = await supabase.from("stock_movements").insert({
       product_id: outProduct, order_id: outOrder || null, direction: "out",
       quantity: outQty, recipient_name: empName(outRecipient), recipient_employee_id: outRecipient || null, comment: outComment, created_by: user?.id, taken_by: user?.id,
-      ...(crossOrderReason ? { cross_order_reason: crossOrderReason, source_order_id: sourceOrderId } : {}),
+      ...(crossOrderReason || sourceOrderId ? { cross_order_reason: crossOrderReason, source_order_id: sourceOrderId } : {}),
     } as any).select("id").single();
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: currentUserName(user),
-      action: crossOrderReason ? "Sklad chiqimi (boshqa zakazga)" : "Sklad chiqimi",
+      action: crossOrderReason || sourceOrderId ? "Sklad chiqimi (boshqa zakazga)" : "Sklad chiqimi",
       entity: "stock_movement", order_id: outOrder || null,
       details: `${products.find(p=>p.id===outProduct)?.name} — ${outQty}, ${outRecipient}${crossOrderReason ? ` · manba zakaz: ${crossInfo?.sourceOrderNumber} · sabab: ${crossOrderReason}` : ""}`,
     });
@@ -314,8 +314,7 @@ export default function WarehousePage() {
   };
 
   const confirmCrossRelease = async () => {
-    if (crossReason.trim().length < 5) { toast.error("Izoh yozing (kamida 5 belgi)"); return; }
-    await finalizeRelease(crossReason.trim(), crossInfo?.sourceOrderId ?? null);
+    await finalizeRelease(crossReason.trim() || null, crossInfo?.sourceOrderId ?? null);
   };
 
 
@@ -612,7 +611,6 @@ export default function WarehousePage() {
   const doFinishSession = async () => {
     if (!openSession) return;
     if (sessionItems.length === 0) { toast.error("Avval mahsulot qo'shing"); return; }
-    if (!openSession.image_url) { toast.error("Avval nakladnoy rasmini yuklang"); return; }
     setNaklBusy(true);
     try {
       await closeInvoice(openSession.id);
@@ -1857,13 +1855,13 @@ export default function WarehousePage() {
             <DialogTitle>Boshqa zakazga berilyapti</DialogTitle>
             <DialogDescription>
               Bu mahsulot dastlab <b>{crossInfo?.sourceOrderNumber}</b> zakazi uchun olib kelingan.
-              Boshqa zakazga chiqim uchun majburiy izoh kiriting.
+              Izoh ixtiyoriy.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label>Nega boshqa zakazga berilyapti? *</Label>
-              <Textarea rows={4} value={crossReason} onChange={(e) => setCrossReason(e.target.value)} placeholder="Sabab (kamida 5 belgi)..." />
+              <Label>Nega boshqa zakazga berilyapti? (ixtiyoriy)</Label>
+              <Textarea rows={4} value={crossReason} onChange={(e) => setCrossReason(e.target.value)} placeholder="Sabab (ixtiyoriy)" />
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setCrossOpen(false)}>{t.common.cancel ?? "Bekor qilish"}</Button>

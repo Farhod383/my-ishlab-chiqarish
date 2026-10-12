@@ -13,8 +13,11 @@ function isEmpty(el: Element): boolean {
   return el.hasAttribute("data-empty") || el.hasAttribute("data-placeholder");
 }
 
-const OPTIONAL = /ixtiyoriy|ихтиёрий|необязат|optional/i;
+const OPTIONAL = /ixtiyoriy|ихтиёрий|необязат|optional|izoh|изоҳ|изох|коммент|comment|nakladnoy|накладн|sabab|причин/i;
+// Ta'minot: muddati o'tgan buyurtmani yopishdagi izoh majburiy qoladi
+const FORCE_REQUIRED = "[data-required]";
 function isOptional(el: Element): boolean {
+  if (el.matches(FORCE_REQUIRED)) return false;
   if (el.hasAttribute("cmdk-input") || (el as HTMLInputElement).type === "search") return true;
   const ph = el.getAttribute("placeholder") ?? "";
   if (/qidir|поиск|search/i.test(ph) || OPTIONAL.test(ph)) return true;

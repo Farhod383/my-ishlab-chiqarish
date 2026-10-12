@@ -239,6 +239,20 @@
       "when": 1791791457064,
       "tag": "0033_out_movement_unit_price",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1791791607739,
+      "tag": "0034_intake_image_optional",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1791791639423,
+      "tag": "0035_supply_late_reason_required",
+      "breakpoints": true
     }
   ]
 }
