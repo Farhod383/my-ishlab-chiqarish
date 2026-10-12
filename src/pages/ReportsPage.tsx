@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { uzAction, uzText, uzField, uzLabel } from "@/lib/uzLabels";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -140,7 +141,7 @@ export default function ReportsPage() {
                       <TableCell className="text-sm">{o.product_name}</TableCell>
                       <TableCell className="text-sm">{o.client?.name ?? "—"}</TableCell>
                       <TableCell className="text-sm">{done}/{stages.length}</TableCell>
-                      <TableCell><Badge variant={o.status === "completed" ? "default" : o.status === "delayed" ? "destructive" : "secondary"}>{(t.status as any)[o.status] ?? o.status}</Badge></TableCell>
+                      <TableCell><Badge variant={o.status === "completed" ? "default" : o.status === "delayed" ? "destructive" : "secondary"}>{(t.status as any)[o.status] ?? uzLabel(o.status)}</Badge></TableCell>
                       <TableCell className="text-xs whitespace-nowrap">{fmtDate(o.order_date)}</TableCell>
                       <TableCell className="text-xs whitespace-nowrap">{fmtDate(o.deadline)}</TableCell>
                       <TableCell className="text-xs whitespace-nowrap">{fmtDur(firstStart, lastFin)}</TableCell>

@@ -1,4 +1,5 @@
 import { currentUserName, displayUser } from "@/lib/userNames";
+import { uzAction, uzText, uzField, uzLabel } from "@/lib/uzLabels";
 import { fmtDate, fmtDateTime24 } from "@/lib/format";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -379,8 +380,8 @@ export default function ClientDetail() {
                       <TableCell>{i + 1}</TableCell>
                       <TableCell className="whitespace-nowrap">{fmt(a.at)}</TableCell>
                       <TableCell>{a.who || "—"}</TableCell>
-                      <TableCell className="font-medium"><span className="inline-flex items-center gap-1.5"><History className="h-3.5 w-3.5 text-muted-foreground" />{a.action}</span></TableCell>
-                      <TableCell className="max-w-[420px] truncate text-muted-foreground">{a.details}</TableCell>
+                      <TableCell className="font-medium"><span className="inline-flex items-center gap-1.5"><History className="h-3.5 w-3.5 text-muted-foreground" />{uzAction(a.action)}</span></TableCell>
+                      <TableCell className="max-w-[420px] truncate text-muted-foreground">{uzText(a.details)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

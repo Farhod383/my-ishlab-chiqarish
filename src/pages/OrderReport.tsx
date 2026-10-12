@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { uzAction, uzText, uzField, uzLabel } from "@/lib/uzLabels";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -107,7 +108,7 @@ export default function OrderReport() {
       events.push({
         date: new Date(l.created_at).toISOString().slice(0, 10),
         who: displayUser(l.actor_name) || "—",
-        what: `${l.action}${l.details ? ` — ${l.details}` : ""}`,
+        what: `${uzAction(l.action)}${l.details ? ` — ${uzText(l.details)}` : ""}`,
       });
     });
     // Group by date

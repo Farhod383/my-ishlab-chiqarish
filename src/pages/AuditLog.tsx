@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { uzAction, uzText, uzField, uzLabel } from "@/lib/uzLabels";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -33,7 +34,7 @@ export default function AuditLog() {
         if (!v) return "";
         try {
           const o = typeof v === "string" ? JSON.parse(v) : v;
-          return Object.entries(o).map(([k, val]) => `${k}: ${val ?? "—"}`).join(", ").slice(0, 200);
+          return Object.entries(o).map(([k, val]) => `${uzField(k)}: ${uzText(val ?? "—")}`).join(", ").slice(0, 200);
         } catch { return String(v).slice(0, 200); }
       };
       const mapped = (ea ?? []).map((x: any) => ({
@@ -67,7 +68,7 @@ export default function AuditLog() {
   const actions = useMemo(() => Array.from(new Set(logs.map(l => l.action))).sort(), [logs]);
 
   const filtered = useMemo(() => logs.filter(l => {
-    if (q && !(searchNorm(`${l.action} ${l.details ?? ""} ${l.actor_name ?? ""}`).includes(searchNorm(q)))) return false;
+    if (q && !(searchNorm(`${l.action} ${uzAction(l.action)} ${l.details ?? ""} ${l.actor_name ?? ""}`).includes(searchNorm(q)))) return false;
     if (userFilter !== "all" && l.actor_name !== userFilter) return false;
     if (actionFilter !== "all" && l.action !== actionFilter) return false;
     if (roleFilter !== "all") {
@@ -148,10 +149,10 @@ export default function AuditLog() {
                     <TableCell className="text-xs whitespace-nowrap">{fmtDateTime24(l.created_at)}</TableCell>
                     <TableCell className="text-sm">{l.actor_name ? localize(l.actor_name) : t.common.system}</TableCell>
                     <TableCell className="text-xs"><Badge variant="secondary">{roleLabel(l)}</Badge></TableCell>
-                    <TableCell className="text-sm font-medium">{l.action}</TableCell>
+                    <TableCell className="text-sm font-medium">{uzAction(l.action)}</TableCell>
                     <TableCell className="text-sm font-mono">{l.order?.order_number ?? "—"}</TableCell>
                     <TableCell className="text-xs">{l.stage?.name ?? "—"}{l.stage?.worker_name ? ` · ${String(l.stage.worker_name).split(",").map((n: string) => localize(n.trim())).join(", ")}` : ""}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{l.details ? fmtLegacyDurations(l.details) : "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{l.details ? uzText(fmtLegacyDurations(l.details)) : "—"}</TableCell>
                   </TableRow>
                 ))}
                 {filtered.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{t.audit.none}</TableCell></TableRow>}
