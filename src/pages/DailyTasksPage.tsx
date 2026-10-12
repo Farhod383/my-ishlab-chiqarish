@@ -39,6 +39,32 @@ const shiftDate = (d: string, n: number) => { const x = new Date(d + "T00:00:00Z
 const fmtDate = (d: string) => d.split("-").reverse().join(".");
 const fmtDT = (s: string) => fmtDateTime24(s);
 
+/** Date picker that displays DD.MM.YYYY (e.g. 12.10.2026) instead of the browser's native format. */
+function DateInput({ value, onChange, className }: { value: string; onChange: (v: string) => void; className?: string }) {
+  const [text, setText] = useState(() => fmtDate(value));
+  useEffect(() => { setText(fmtDate(value)); }, [value]);
+  const commit = (raw: string) => {
+    const trimmed = raw.trim();
+    let m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(trimmed);
+    let day = 0, month = 0, year = 0;
+    if (m) { day = +m[1]; month = +m[2]; year = +m[3]; }
+    else {
+      m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+      if (m) { year = +m[1]; month = +m[2]; day = +m[3]; }
+    }
+    if (m && year >= 1900 && year <= 2200 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      const d = new Date(year, month - 1, day);
+      if (d.getFullYear() === year && d.getMonth() === month - 1 && d.getDate() === day) {
+        const iso = `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        if (iso !== value) onChange(iso);
+        return;
+      }
+    }
+    setText(fmtDate(value));
+  };
+  return <Input value={text} onChange={(e) => setText(e.target.value)} onBlur={(e) => commit(e.target.value)} className={className} inputMode="numeric" placeholder="KK.OY.YYYY" />;
+}
+
 export default function DailyTasksPage() {
   const { user } = useAuth();
   const localize = useLocalize();
@@ -150,7 +176,7 @@ export default function DailyTasksPage() {
 
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" size="icon" onClick={() => setDate(shiftDate(date, -1))} aria-label="Oldingi kun"><ChevronLeft className="h-4 w-4" /></Button>
-        <Input type="date" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} className="w-44" />
+        <DateInput value={date} onChange={setDate} className="w-44" />
         <Button variant="outline" size="icon" onClick={() => setDate(shiftDate(date, 1))} aria-label="Keyingi kun"><ChevronRight className="h-4 w-4" /></Button>
         {date !== todayTashkent() && <Button variant="ghost" onClick={() => setDate(todayTashkent())}>Bugun</Button>}
         <span className="font-semibold ml-2">{fmtDateG(date)}</span>
@@ -195,7 +221,7 @@ export default function DailyTasksPage() {
         <DialogContent>
           <DialogHeader><DialogTitle>Yangi topshiriq</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>Sana</Label><Input type="date" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} /></div>
+            <div><Label>Sana</Label><DateInput value={date} onChange={setDate} className="w-44" /></div>
             <div><Label>Ishchi *</Label>
               <SearchableSelect value={form.employee_id} onChange={(v) => setForm({ ...form, employee_id: v })} placeholder="Xodimni tanlang" options={empOptions} />
               {blockedFor && <p className="text-sm text-destructive mt-1">Bu xodimning joriy topshirig'i hali yopilmagan ({fmtDateG(blockedFor.task_date)}: {blockedFor.task_title}, {blockedFor.progress}%). Avval mavjud topshiriqni yakunlang.</p>}
