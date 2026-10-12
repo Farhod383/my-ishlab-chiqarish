@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { isWarehouseProduct } from "@/lib/productClassification";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -51,7 +52,7 @@ export default function WarehouseReportPage() {
     (async () => {
       try {
         const [prods, insts, asg, sm, emps, ords, profs, intake] = await Promise.all([
-          fetchAll<any>((a, b) => supabase.from("products").select("id,name,unit,stock_qty,last_price,currency").order("name").range(a, b)),
+          fetchAll<any>((a, b) => supabase.from("products").select("id,name,unit,stock_qty,last_price,currency,instrument_id").order("name").range(a, b)),
           fetchAll<any>((a, b) => supabase.from("instruments").select("id,name,quantity,status,price,currency").order("name").range(a, b)),
           fetchAll<any>((a, b) => supabase.from("instrument_assignments").select("*").order("issued_at", { ascending: false }).range(a, b)),
           fetchAll<any>((a, b) => supabase.from("stock_movements").select("id,product_id,order_id,direction,quantity,recipient_name,recipient_employee_id,comment,created_by,created_at,unit_price,currency,location,intake_item_id").order("created_at", { ascending: false }).range(a, b)),
@@ -91,7 +92,7 @@ export default function WarehouseReportPage() {
         const uMap = new Map(profs.map((u) => [u.id, u.full_name]));
         const issued = new Map<string, number>();
         for (const a of asg) if (!a.returned_at && !a.written_off) issued.set(a.instrument_id, (issued.get(a.instrument_id) ?? 0) + Number(a.quantity));
-        setProducts(prods.map((p) => {
+        setProducts(prods.filter(isWarehouseProduct).map((p) => {
           const h = priceHist.get(p.id); const last = h?.[h.length - 1];
           const price = Number(p.last_price) > 0 ? Number(p.last_price) : last ? last.price : null;
           return { ...p, price, currency: Number(p.last_price) > 0 ? p.currency : last?.cur ?? p.currency };
@@ -106,7 +107,7 @@ export default function WarehouseReportPage() {
             ?? (p && Number(p.last_price) > 0 ? { price: Number(p.last_price), cur: p.currency } : null);
           const employee = m.recipient_employee_id ? eMap.get(m.recipient_employee_id) ?? "" : m.recipient_name ?? "";
           return {
-            id: m.id, at: m.created_at, kind: "Mahsulot", name: p?.name ?? it?.product_name ?? commentName(m.comment) ?? "", dir: m.direction, qty: Number(m.quantity),
+            id: m.id, at: m.created_at, kind: p?.instrument_id ? "Instrument" : "Mahsulot", name: p?.name ?? it?.product_name ?? commentName(m.comment) ?? "", dir: m.direction, qty: Number(m.quantity),
             unit: p?.unit ?? it?.unit ?? "", person: displayUser(uMap.get(m.created_by) ?? ""), employee: displayUser(employee),
             order: m.order_id ? oMap.get(m.order_id) ?? "" : "", location: m.location ?? "", comment: m.comment ?? "",
             price: pr ? pr.price : null, currency: pr?.cur ?? m.currency ?? "UZS",

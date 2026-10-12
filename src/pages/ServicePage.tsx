@@ -79,7 +79,7 @@ export default function ServicePage() {
     const map: Record<string, Item[]> = {};
     ((it as any) ?? []).forEach((x: Item) => { (map[x.service_request_id] ??= []).push(x); });
     setItems(map);
-    const { data: prods } = await supabase.from("products").select("id, name, unit, last_price").order("name");
+    const { data: prods } = await supabase.from("products").select("id, name, unit, last_price").is("instrument_id", null).order("name");
     setProducts((prods as any) ?? []);
   };
   useEffect(() => { load(); }, []);

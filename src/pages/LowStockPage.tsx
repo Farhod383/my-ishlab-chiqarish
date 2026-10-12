@@ -17,7 +17,7 @@ export default function LowStockPage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("products").select("*");
+      const { data } = await supabase.from("products").select("*").is("instrument_id", null);
       // Only include yellow + red (not enough)
       setItems((data ?? []).filter((p: any) => getStockStatus(p.stock_qty, p.min_limit) !== "green"));
       setLoading(false);

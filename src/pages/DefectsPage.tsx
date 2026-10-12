@@ -62,7 +62,7 @@ export default function DefectsPage() {
       // defects.order_id has no FK to orders, so embedding orders breaks the whole query — join orders client-side.
       supabase.from("defects").select("*, product:products(name, unit), detected_by:employees(full_name)").order("created_at", { ascending: false }),
       supabase.from("orders").select("id, order_number, product_name").order("order_number", { ascending: false }),
-      supabase.from("products").select("id, name, unit, stock_qty").order("name"),
+      supabase.from("products").select("id, name, unit, stock_qty").is("instrument_id", null).order("name"),
       supabase.from("instruments").select("id, name, quantity, status, inventory_number").order("name"),
     ]);
     const { data: asg } = await supabase.from("instrument_assignments").select("id, instrument_id, quantity, returned_at, box_number, employee:employees(full_name), instrument:instruments(name)").order("issued_at", { ascending: false });

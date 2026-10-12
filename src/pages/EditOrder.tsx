@@ -51,7 +51,7 @@ export default function EditOrder() {
         supabase.from("orders").select("*, client:clients(*)").eq("id", id).single(),
         supabase.from("order_stages").select("*").eq("order_id", id).order("stage_order"),
         supabase.from("order_parts").select("*").eq("order_id", id),
-        supabase.from("products").select("id, name, unit"),
+        supabase.from("products").select("id, name, unit").is("instrument_id", null),
         supabase.from("order_files").select("*").eq("order_id", id).order("created_at"),
       ]);
       const o = orderRes.data as any;

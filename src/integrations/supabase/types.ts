@@ -2035,6 +2035,7 @@ export type Database = {
           currency: string
           id: string
           image_url: string | null
+          instrument_id: string | null
           last_price: number
           length_mm: number | null
           metal_type: string | null
@@ -2054,6 +2055,7 @@ export type Database = {
           currency?: string
           id?: string
           image_url?: string | null
+          instrument_id?: string | null
           last_price?: number
           length_mm?: number | null
           metal_type?: string | null
@@ -2073,6 +2075,7 @@ export type Database = {
           currency?: string
           id?: string
           image_url?: string | null
+          instrument_id?: string | null
           last_price?: number
           length_mm?: number | null
           metal_type?: string | null
@@ -2087,7 +2090,15 @@ export type Database = {
           weight_kg?: number | null
           width_mm?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_instrument_id_fkey"
+            columns: ["instrument_id"]
+            isOneToOne: false
+            referencedRelation: "instruments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
