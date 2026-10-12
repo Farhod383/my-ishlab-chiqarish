@@ -14,9 +14,10 @@ import { useI18n, useLocalize } from "@/i18n/context";
 import { Plus, Search, ChevronDown, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { matchesAcrossScripts } from "@/lib/translit";
+import { ClientOrdersView } from "@/components/ClientOrdersView";
 import { recalcOrdersBatch, sortOrdersByStatusAndDate } from "@/lib/orderStatus";
 
-type FilterKey = "all" | "active" | "exception" | "delayed" | "completed" | "today";
+type FilterKey = "all" | "active" | "exception" | "delayed" | "completed" | "today" | "clients";
 
 export default function Orders() {
   const { hasRole } = useAuth();
@@ -48,7 +49,7 @@ export default function Orders() {
     (async () => {
       const { data } = await supabase
         .from("orders")
-        .select("*, client:clients(name, client_type), order_stages(stage_order, started_at, status, qc_required, qc_passed), order_parts(part_name)")
+        .select("*, client:clients(name, client_type), order_stages(name, stage_order, started_at, status, qc_required, qc_passed), order_parts(part_name)")
         .order("priority", { ascending: false })
         .order("queue_position");
       const list = (data as any[]) ?? [];
@@ -103,13 +104,14 @@ export default function Orders() {
                 <TabsTrigger value="exception">{t.orders.tabs.exception}</TabsTrigger>
                 <TabsTrigger value="delayed">{t.orders.tabs.delayed}</TabsTrigger>
                 <TabsTrigger value="completed">{t.orders.tabs.completed}</TabsTrigger>
+                <TabsTrigger value="clients">Mijozlar</TabsTrigger>
               </TabsList>
             </Tabs>
-            <PartSearchBox rows={rows} value={q} onChange={setQ} placeholder={t.common.search} />
+            {filter !== "clients" && <PartSearchBox rows={rows} value={q} onChange={setQ} placeholder={t.common.search} />}
           </div>
         </CardHeader>
 
-        <CardContent>
+        {filter === "clients" ? <CardContent><ClientOrdersView rows={rows} /></CardContent> : <CardContent>
           <div className="border rounded-md overflow-x-auto">
             <Table>
               <TableHeader>
@@ -204,7 +206,7 @@ export default function Orders() {
               </TableBody>
             </Table>
           </div>
-        </CardContent>
+        </CardContent>}
       </Card>
     </div>
   );
