@@ -106,6 +106,9 @@ input, textarea, [contenteditable="true"] {
 .erp-main .grid > *, .erp-main .flex > * { min-width: 0; }
 .erp-main .erp-tabs-list { min-width: 0; max-width: 100%; }
 .erp-main .erp-tab { flex-shrink: 0; }
+.kassa-summary { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+.kassa-payment-summary { grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); }
+.kassa-payment-values { grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); }
 [data-erp-dialog] { max-width: calc(100dvw - 1.5rem); max-height: calc(100dvh - 1.5rem); }
 [data-erp-dialog] .grid > *, [data-erp-dialog] .flex > * { min-width: 0; }
 @media (max-width: 639px) {

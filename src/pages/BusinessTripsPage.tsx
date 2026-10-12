@@ -402,7 +402,7 @@ export default function BusinessTripsPage() {
                 <TabsTrigger value="all">Hammasi</TabsTrigger>
               </TabsList>
             </Tabs>
-            <div className="relative min-w-[240px] flex-1">
+            <div className="relative min-w-0 basis-60 flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input className="pl-9" placeholder="Xodim, manzil yoki maqsad bo'yicha qidirish..." value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
