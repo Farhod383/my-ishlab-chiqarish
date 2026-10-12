@@ -165,7 +165,7 @@ export default function WarehousePage() {
 
   const load = async () => {
     const [p, o, m] = await Promise.all([
-      supabase.from("products").select("*").order("name"),
+      supabase.from("products").select("*").is("instrument_id", null).order("name"),
       supabase.from("orders").select("id, order_number, product_name, status, client:clients(name)").order("created_at", { ascending: false }),
       supabase.from("stock_movements").select("*, product:products(name, unit), order:orders(order_number, product_name), intake_session:intake_sessions(id, started_at, finished_at, supplier, created_by_name)").order("created_at", { ascending: false }).limit(200),
     ]);

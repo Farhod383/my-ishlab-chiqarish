@@ -46,7 +46,7 @@ export default function Dashboard() {
           .select("*, client:clients(name), order_stages(stage_order, started_at, status, qc_required, qc_passed)")
           .order("priority", { ascending: false })
           .order("queue_position"),
-        supabase.from("products").select("*"),
+        supabase.from("products").select("*").is("instrument_id", null),
         supabase.from("audit_log").select("*").order("created_at", { ascending: false }).limit(8),
       ]);
       const all = (orderRows as any[]) ?? [];

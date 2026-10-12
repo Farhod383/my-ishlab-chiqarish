@@ -30,7 +30,7 @@ export default function SupplyPage() {
   const [open, setOpen] = useState(false);
 
   const load = async () => {
-    const { data } = await supabase.from("products").select("*").order("name");
+    const { data } = await supabase.from("products").select("*").is("instrument_id", null).order("name");
     setProducts(data ?? []);
   };
   useEffect(() => { load(); }, []);

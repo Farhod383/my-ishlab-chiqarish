@@ -46,7 +46,7 @@ export default function NewSupplyRequestDialog({ open, onOpenChange, initialProd
     setMode(initialMode); setQty(0); setDate(""); setComment(""); setOrderId("");
     (async () => {
       const [p, o] = await Promise.all([
-        supabase.from("products").select("id,name,unit,stock_qty").order("name"),
+        supabase.from("products").select("id,name,unit,stock_qty").is("instrument_id", null).order("name"),
         supabase.from("orders").select("id,order_number,product_name").in("status", ["pending", "in_progress", "delayed"]).order("created_at", { ascending: false }),
       ]);
       const list = p.data ?? [];
