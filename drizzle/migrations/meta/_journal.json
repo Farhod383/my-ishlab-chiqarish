@@ -253,6 +253,13 @@
       "when": 1791791639423,
       "tag": "0035_supply_late_reason_required",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1791792042305,
+      "tag": "0036_supply_spendings_view",
+      "breakpoints": true
     }
   ]
 }
