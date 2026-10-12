@@ -877,6 +877,9 @@ export default function WarehousePage() {
           <p className="text-sm text-muted-foreground">{t.warehouse.subtitle}</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" className="min-h-11" asChild>
+            <Link to="/warehouse/report"><ClipboardList className="h-4 w-4 mr-2" />Hisobot (atshot)</Link>
+          </Button>
           {canManage && (
             <Button className="min-h-11 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm" onClick={() => setChooseIn(true)}>
               <ArrowDownToLine className="h-4 w-4 mr-2" />Kirim qilish
