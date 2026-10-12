@@ -11,6 +11,6 @@
 - [x] Asosiy Admin va Admin 2 hisoblarida kartochkalarni amalda tekshirish.
 
 ## ERP ekran kengligiga moslashish
-- [ ] Umumiy sahifa, jadval va modal kengliklarini tuzatish.
-- [ ] Har bir moduldagi kenglik, grid va ichki ro‘yxat muammolarini tekshirish va tuzatish.
-- [ ] Desktop, laptop, planshet va telefonda haqiqiy sahifalar, menyu holatlari va oynalarni tekshirish.
+- [x] Umumiy sahifa, jadval va modal kengliklarini tuzatish.
+- [x] 26 modulni 1280, 1024, 768 va 390 px kengliklarda tekshirish; tashqi gorizontal overflow qolmadi.
+- [x] Kirilgan hisobda haqiqiy zakaz tafsiloti/hisoboti/tahriri, mijoz, menyu ochiq/yopiq holati va yettita modalni tekshirish; 13 regressiya testi o‘tdi. Mobil tekshiruv Chromium ekran emulyatsiyasida bajarildi, fizik Android/iPhone qurilmalari tekshirilmadi.
