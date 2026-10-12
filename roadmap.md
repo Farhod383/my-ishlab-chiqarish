@@ -16,5 +16,5 @@
 - [x] Kirilgan hisobda haqiqiy zakaz tafsiloti/hisoboti/tahriri, mijoz, menyu ochiq/yopiq holati va yettita modalni tekshirish; 13 regressiya testi o‘tdi. Mobil tekshiruv Chromium ekran emulyatsiyasida bajarildi, fizik Android/iPhone qurilmalari tekshirilmadi.
 
 ## Сварочные перчатки
-- [ ] Mavjud 20 dona qoldiqni mavjud instrumentga bir marta o‘tkazish, kirim va berish/qaytarish tarixini saqlash.
-- [ ] Oddiy mahsulot ro‘yxatlaridan chiqarish va real ilovada tekshirish.
+- [x] Mavjud 20 dona qoldiq mavjud instrumentga bir marta o‘tkazildi; 2 kirim va 12 berish/qaytarish yozuvi saqlandi, yangi instrument yaratilmadi.
+- [x] Oddiy mahsulotlardan chiqarildi; real ilovada qoldiq, instrument berish tanlovi va hisobot tarixi tekshirildi. Qaytarish/berish va bog‘langan stock triggerlari rollback bilan tekshirildi; tasnif testi o‘tdi.
