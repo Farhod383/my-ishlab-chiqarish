@@ -62,8 +62,7 @@ export function AppSidebar() {
   const isAdmin = roles.includes("admin");
   const hiddenByRole: Record<string, string[]> = {
     warehouse: ["/", "/production", "/otk"],
-    marketing: ["/defects"],
-    supply: ["/", "/production", "/otk", "/defects"],
+    supply: ["/", "/production", "/otk"],
   };
   const extraByRole: Record<string, string[]> = {
     supply: ["/returns"],

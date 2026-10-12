@@ -31,6 +31,8 @@ export default function DefectsPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [instruments, setInstruments] = useState<any[]>([]);
+  const [openAssignments, setOpenAssignments] = useState<any[]>([]);
+  const [assignById, setAssignById] = useState<Map<string, any>>(new Map());
   const [loading, setLoading] = useState(true);
   const [profileNames, setProfileNames] = useState<Map<string, string>>(new Map());
   const [open, setOpen] = useState(false);
@@ -41,6 +43,8 @@ export default function DefectsPage() {
     order_id: "",
     product_id: "",
     instrument_id: "",
+    source: "stock" as "stock" | "employee",
+    assignment_id: "",
     quantity: 1,
     detected_by_id: "",
     reason: "",
@@ -59,6 +63,9 @@ export default function DefectsPage() {
       supabase.from("products").select("id, name, unit, stock_qty").order("name"),
       supabase.from("instruments").select("id, name, quantity, status, inventory_number").order("name"),
     ]);
+    const { data: asg } = await supabase.from("instrument_assignments").select("id, instrument_id, quantity, returned_at, box_number, employee:employees(full_name), instrument:instruments(name)").order("issued_at", { ascending: false });
+    setOpenAssignments((asg ?? []).filter((a: any) => !a.returned_at));
+    setAssignById(new Map((asg ?? []).map((a: any) => [a.id, a])));
     const { data: profs } = await supabase.from("profiles").select("id, full_name");
     setProfileNames(new Map((profs ?? []).map((p: any) => [p.id, p.full_name])));
     const orderById = new Map((ord ?? []).map((o: any) => [o.id, o]));
@@ -102,12 +109,14 @@ export default function DefectsPage() {
 
   const save = async () => {
     if (form.item_type === "product" && !form.product_id) { toast.error(d.fillFields ?? "Maydonlarni to'ldiring"); return; }
-    if (form.item_type === "instrument" && !form.instrument_id) { toast.error(d.fillFields ?? "Maydonlarni to'ldiring"); return; }
+    const fromEmp = form.item_type === "instrument" && form.source === "employee";
+    if (fromEmp && !form.assignment_id) { toast.error(d.fillFields ?? "Maydonlarni to'ldiring"); return; }
+    if (form.item_type === "instrument" && !fromEmp && !form.instrument_id) { toast.error(d.fillFields ?? "Maydonlarni to'ldiring"); return; }
     if (!form.quantity || form.quantity <= 0) { toast.error(d.fillFields ?? "Maydonlarni to'ldiring"); return; }
     const avail = form.item_type === "instrument"
       ? Number(instruments.find((i: any) => i.id === form.instrument_id)?.quantity ?? 0)
       : Number(products.find((p: any) => p.id === form.product_id)?.stock_qty ?? 0);
-    if (form.quantity > avail) { toast.error(`Brak miqdori mavjud qoldiqdan oshib ketishi mumkin emas (mavjud: ${avail})`); return; }
+    if (!fromEmp && form.quantity > avail) { toast.error(`Brak miqdori mavjud qoldiqdan oshib ketishi mumkin emas (mavjud: ${avail})`); return; }
 
     let image_url: string | null = null;
     if (form.image) {
@@ -120,8 +129,9 @@ export default function DefectsPage() {
       item_type: form.item_type,
       order_id: form.item_type === "product" ? (form.order_id || null) : null,
       product_id: form.item_type === "product" ? form.product_id : null,
-      instrument_id: form.item_type === "instrument" ? form.instrument_id : null,
-      quantity: form.quantity,
+      instrument_id: form.item_type === "instrument" ? (fromEmp ? openAssignments.find(a => a.id === form.assignment_id)?.instrument_id : form.instrument_id) : null,
+      assignment_id: fromEmp ? form.assignment_id : null,
+      quantity: fromEmp ? Number(openAssignments.find(a => a.id === form.assignment_id)?.quantity ?? 1) : form.quantity,
       detected_by_id: form.detected_by_id || null,
       detected_by_name: emp?.full_name ?? null,
       reason: form.reason.trim() || null,
@@ -134,7 +144,7 @@ export default function DefectsPage() {
     if (error) { toast.error(error.message); return; }
     const itemName = form.item_type === "product"
       ? (products.find((p: any) => p.id === form.product_id)?.name ?? "—")
-      : (instruments.find((i: any) => i.id === form.instrument_id)?.name ?? "—");
+      : (instruments.find((i: any) => i.id === payload.instrument_id)?.name ?? "—");
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: user?.email,
       action: "Brak qayd etildi", entity: "defect",
@@ -153,7 +163,7 @@ export default function DefectsPage() {
     toast.success(d.saved ?? "Saqlandi");
     setKind(form.item_type);
     setSearch("");
-    setForm({ item_type: "product", order_id: "", product_id: "", instrument_id: "", quantity: 1, detected_by_id: "", reason: "", comment: "", resolution: "pending", image: null });
+    setForm({ item_type: "product", order_id: "", product_id: "", instrument_id: "", source: "stock", assignment_id: "", quantity: 1, detected_by_id: "", reason: "", comment: "", resolution: "pending", image: null });
     setOpen(false);
     load();
   };
@@ -231,6 +241,29 @@ export default function DefectsPage() {
               )}
 
               {form.item_type === "instrument" && (
+                <div><Label>Qayerdan</Label>
+                  <Select value={form.source} onValueChange={v => setForm({ ...form, source: v as any, instrument_id: "", assignment_id: "" })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="stock">Sklad qoldig'idan</SelectItem>
+                      <SelectItem value="employee">Xodimga berilgan instrument</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {form.item_type === "instrument" && form.source === "employee" && (
+                <div><Label>Xodimdagi instrument</Label>
+                  <SearchableSelect
+                    value={form.assignment_id}
+                    onChange={v => setForm({ ...form, assignment_id: v })}
+                    placeholder="Tanlang"
+                    options={openAssignments.map(a => ({ value: a.id, label: `${a.instrument?.name ?? "—"} → ${localize(a.employee?.full_name ?? "")}`, hint: `${a.quantity} dona${a.box_number ? " · " + a.box_number : ""}` }))}
+                  />
+                </div>
+              )}
+
+              {form.item_type === "instrument" && form.source === "stock" && (
                 <div><Label>{d.instrument ?? "Instrument"}</Label>
                   <SearchableSelect
                     value={form.instrument_id}
@@ -241,7 +274,7 @@ export default function DefectsPage() {
                 </div>
               )}
 
-              <div><Label>{d.qty ?? "Miqdor"}</Label><NumberInput min={0.1} step={0.1} value={form.quantity} onChange={e => setForm({ ...form, quantity: Number(e.target.value) })} /></div>
+              {!(form.item_type === "instrument" && form.source === "employee") && <div><Label>{d.qty ?? "Miqdor"}</Label><NumberInput min={0.1} step={0.1} value={form.quantity} onChange={e => setForm({ ...form, quantity: Number(e.target.value) })} /></div>}
               <div><Label>{d.detectedBy ?? "Kim aniqladi"}</Label>
                 <SearchableSelect
                   value={form.detected_by_id}
@@ -298,6 +331,7 @@ export default function DefectsPage() {
                   <TableHead>{d.type ?? "Turi"}</TableHead>
                   <TableHead>{d.order ?? "Zakaz"}</TableHead>
                   <TableHead>{d.product ?? "Mahsulot"} / {d.instrument ?? "Instrument"}</TableHead>
+                  <TableHead>Kimga berilgan</TableHead>
                   <TableHead className="text-right">{d.qty ?? "Miqdor"}</TableHead>
                   <TableHead>{d.detectedBy ?? "Kim aniqladi"}</TableHead>
                   <TableHead>{d.reason ?? "Sabab"}</TableHead>
@@ -307,7 +341,7 @@ export default function DefectsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
+                {loading && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                 {!loading && filteredDefects.map(def => (
                   <TableRow key={def.id}>
                     <TableCell className="text-sm whitespace-nowrap">{new Date(def.created_at).toLocaleString()}</TableCell>
@@ -318,6 +352,7 @@ export default function DefectsPage() {
                     </TableCell>
                     <TableCell className="text-sm font-mono">{def.order?.order_number ?? "—"}</TableCell>
                     <TableCell className="text-sm font-medium">{itemName(def)}</TableCell>
+                    <TableCell className="text-sm">{def.assignment_id ? localize(assignById.get(def.assignment_id)?.employee?.full_name ?? "") || "—" : "Sklad"}</TableCell>
                     <TableCell className="text-right font-mono">{def.quantity} {def.item_type === "instrument" ? "dona" : (def.product?.unit ?? "")}</TableCell>
                     <TableCell className="text-sm">{localize(def.detected_by?.full_name ?? def.detected_by_name) || "—"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{def.reason ?? "—"}</TableCell>
@@ -347,7 +382,7 @@ export default function DefectsPage() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {!loading && filteredDefects.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">{d.empty ?? "Brak yo'q"}</TableCell></TableRow>}
+                {!loading && filteredDefects.length === 0 && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">{d.empty ?? "Brak yo'q"}</TableCell></TableRow>}
               </TableBody>
             </Table>
           </div>
