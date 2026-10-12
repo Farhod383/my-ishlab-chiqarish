@@ -1178,11 +1178,16 @@ export default function WarehousePage() {
                   <div className="grid grid-cols-3 gap-3">
                     <div className="col-span-2"><Label>{t.supply.qty} *</Label><NumberInput min={0.001} step={0.001} value={impQty} onChange={e => setImpQty(e.target.value)} placeholder={(impUnit || "").toLowerCase() === "tonna" ? "0.5 / 1.25 / 6.940" : (t.warehouse as any).qtyPh} /></div>
                     <div><Label>{t.warehouse.unit}</Label>
-                      <Select value={impUnit} onValueChange={setImpUnit} disabled={!!impProductId}>
+                      <Select value={impUnit} onValueChange={setImpUnit}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>{UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+                        <SelectContent>{Array.from(new Set<string>([...UNITS, ...products.map((p: any) => String(p.unit || "").trim()), impUnit].filter(Boolean))).map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
                       </Select>
-                      {impProductId && <p className="text-[11px] text-muted-foreground mt-1">Mahsulot profilidan</p>}
+                      {impProductId && (() => {
+                        const pr: any = products.find((x: any) => x.id === impProductId);
+                        if (!pr || (pr.unit || "").toLowerCase() === (impUnit || "").toLowerCase()) return null;
+                        const c = convertQty(Number(impQty) || 0, impUnit, pr.unit, Number(pr.weight_kg) || 0);
+                        return <p className="text-[11px] text-muted-foreground mt-1">{c !== null ? `= ${fmt(c)} ${pr.unit} (qoldiqqa)` : `Alohida "${impUnit}" pozitsiya`}</p>;
+                      })()}
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-3 items-end">
