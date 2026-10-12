@@ -60,7 +60,7 @@ export default function ReturnsPage() {
       if (!up.error) image_url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
     }
     const emp = employees.find(e => e.id === form.returned_by_id);
-    const { error } = await supabase.from("returns").insert({
+    const { data: _ins, error } = await supabase.from("returns").insert({
       product_id: form.product_id,
       quantity: form.quantity,
       returned_by_id: form.returned_by_id,
@@ -71,7 +71,7 @@ export default function ReturnsPage() {
       image_url,
       created_by: user?.id,
       order_id: form.order_id || null,
-    } as any);
+    } as any).select("id").single();
     if (error) { toast.error(error.message); return; }
     const pname = products.find((p: any) => p.id === form.product_id)?.name ?? "—";
     await logAudit(supabase, {
@@ -85,7 +85,7 @@ export default function ReturnsPage() {
       title: `Vozvrat — ${pname}`,
       body: `${form.quantity} dona · ${emp?.full_name ?? "—"}`,
       link: "/returns",
-      entity: "return",
+      entity: "return", entity_id: (_ins as any)?.id,
       recipient_role: ["warehouse", "manager", "otk"],
       sender_id: user?.id, sender_name: currentUserName(user),
     });
@@ -173,7 +173,7 @@ export default function ReturnsPage() {
               <TableBody>
                 {loading && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                 {!loading && returns.map(ret => (
-                  <TableRow key={ret.id}>
+                  <TableRow key={ret.id} data-focus-id={ret.id} data-focus-at={ret.created_at} data-focus-entity="return">
                     <TableCell className="text-sm whitespace-nowrap">{fmtDateTime24(ret.created_at)}</TableCell>
                     <TableCell className="text-sm font-medium">{ret.product?.name ?? "—"}</TableCell>
                     <TableCell className="text-right font-mono">{ret.quantity} {ret.product?.unit ?? ""}</TableCell>

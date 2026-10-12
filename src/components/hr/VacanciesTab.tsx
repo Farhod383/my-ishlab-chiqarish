@@ -273,6 +273,7 @@ export default function VacanciesTab() {
                   return (
                     <TableRow
                       key={v.id}
+                      data-focus-id={v.id} data-focus-at={v.created_at} data-focus-entity="vacancy"
                       className={canManage ? "cursor-pointer hover:bg-muted/40" : undefined}
                       onClick={canManage ? () => openEdit(v) : undefined}
                     >

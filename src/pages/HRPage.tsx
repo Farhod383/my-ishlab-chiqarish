@@ -21,6 +21,7 @@ import { logAudit } from "@/types/erp";
 import { toast } from "sonner";
 import { useEmployees, refreshEmployees } from "@/hooks/useEmployees";
 import { currentUserName, displayUser } from "@/lib/userNames";
+import { useFocusEntity } from "@/notifications/FocusHighlighter";
 
 // Uzbek phone format validator: +998 XX XXX XX XX  or XX XXX XX XX  (spaces optional)
 const PHONE_RE = /^(\+?998)?\s*\d{2}\s*\d{3}\s*\d{2}\s*\d{2}$/;
@@ -98,6 +99,11 @@ export default function HRPage() {
   };
 
   const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "all" | "vacancy">("active");
+  const focusEntity = useFocusEntity();
+  useEffect(() => {
+    if (focusEntity === "employee") setStatusFilter("all");
+    else if (focusEntity === "vacancy") setStatusFilter("vacancy");
+  }, [focusEntity]);
   const [empSearch, setEmpSearch] = useState("");
   const filteredEmployees = useMemo(() => {
     const base = statusFilter === "all" || statusFilter === "vacancy"
@@ -168,14 +174,14 @@ export default function HRPage() {
         await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Xodim bo'shatildi", entity: "employee", details: composedName });
       }
     } else {
-      const { error } = await supabase.from("employees").insert(payload);
+      const { data: _ins, error } = await supabase.from("employees").insert(payload).select("id").single();
       if (error) { toast.error(error.message); return; }
       await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Xodim qo'shildi", entity: "employee", details: composedName });
       const { notify } = await import("@/lib/notify");
       await notify({
         type: "info", title: `Yangi xodim — ${composedName}`,
         body: `${payload.position ?? ""} · ${payload.department ?? ""}`,
-        link: "/hr", entity: "employee",
+        link: "/hr", entity: "employee", entity_id: (_ins as any)?.id,
         recipient_role: ["hr", "manager", "cashier"],
         sender_id: user?.id, sender_name: currentUserName(user),
       });
@@ -352,6 +358,7 @@ export default function HRPage() {
                   return (
                   <TableRow
                     key={e.id}
+                    data-focus-id={e.id} data-focus-at={e.created_at} data-focus-entity="employee"
                     className={`${canManage ? "cursor-pointer hover:bg-muted/40" : ""} ${isNew(e) ? "bg-status-green/5" : ""}`.trim() || undefined}
                     onClick={canManage ? () => openEdit(e) : undefined}
                   >

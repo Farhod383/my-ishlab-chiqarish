@@ -95,7 +95,7 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
   const add = async () => {
     const name = pname.trim();
     if (!name || !qty) { toast.error("Mahsulot va miqdorni kiriting"); return; }
-    const { error } = await supabase.from("order_supply_requests").insert({
+    const { data: _ins, error } = await supabase.from("order_supply_requests").insert({
       order_id: orderId,
       product_id: pid || null,
       product_name: name,
@@ -106,14 +106,14 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
       created_by: user?.id ?? null,
       department: primaryRole || null,
       source: "order",
-    } as any);
+    } as any).select("id").single();
     if (error) { toast.error(error.message); return; }
     await notify({
       type: "supply_request",
       title: `Yangi ta'minot so'rovi — ${orderNumber}`,
       body: `${name} · ${qty} ${unit ?? ""}${date ? ` · kerak: ${date}` : ""}`,
       link: `/orders/${orderId}`,
-      entity: "supply_request",
+      entity: "supply_request", entity_id: (_ins as any)?.id,
       recipient_role: ["supply", "warehouse"],
       sender_id: user?.id,
       sender_name: currentUserName(user),
@@ -211,7 +211,7 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
       <CardContent className="space-y-1.5 px-3 pb-3">
         {items.length === 0 && <p className="text-sm text-muted-foreground">So'rovlar yo'q</p>}
         {items.map((it) => (
-          <div key={it.id} className="flex items-center justify-between gap-2 p-1.5 rounded border">
+          <div key={it.id} data-focus-id={it.id} data-focus-at={it.created_at} data-focus-entity="supply_request" className="flex items-center justify-between gap-2 p-1.5 rounded border">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="font-medium text-xs truncate">{it.product_name}</span>

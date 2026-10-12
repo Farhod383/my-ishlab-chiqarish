@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/auth/ProtectedRoute";
 import { Layout } from "@/components/Layout";
 import OnlineGuard from "@/components/OnlineGuard";
 import { RouteReadMarker } from "@/notifications/RouteReadMarker";
+import { FocusHighlighter } from "@/notifications/FocusHighlighter";
 import { RequiredFieldMarker } from "@/components/RequiredFieldMarker";
 import { NotificationsProvider } from "@/notifications/NotificationsContext";
 import Auth from "./pages/Auth";
@@ -58,6 +59,7 @@ const App = () => (
           <OnlineGuard>
           <BrowserRouter>
             <RouteReadMarker />
+            <FocusHighlighter />
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/*" element={

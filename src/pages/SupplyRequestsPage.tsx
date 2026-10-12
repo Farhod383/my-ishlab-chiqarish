@@ -359,6 +359,19 @@ export default function SupplyRequestsPage() {
   const fmtDate = (v?: string | null) => v ?? "—";
 
   const openedOrder = openOrderId ? groups.find((o) => o.key === openOrderId) : null;
+  // Opened from a notification: open the group that holds the exact request.
+  const focusId = searchParams.get("focus");
+  const focusAt = searchParams.get("focus_at");
+  useEffect(() => {
+    if ((!focusId && !focusAt) || groups.length === 0) return;
+    const t = focusAt ? new Date(focusAt).getTime() : 0;
+    let hit: any = null; let gap = Infinity;
+    for (const g of groups) for (const it of g.items as any[]) {
+      if (focusId && it.id === focusId) { hit = g; gap = 0; }
+      else if (!focusId && focusAt) { const d = Math.abs(new Date(it.created_at).getTime() - t); if (d < gap) { gap = d; hit = g; } }
+    }
+    if (hit && gap <= 3 * 60 * 1000) { setFilter("all"); setOpenOrderId(hit.key); }
+  }, [focusId, focusAt, groups.length]);
   const isGeneralOpen = openedOrder?.key === GENERAL_KEY;
   const isAllOrdersOpen = openedOrder?.key === ALL_ORDERS_KEY;
   const hideOrderNumber = isGeneralOpen || isAllOrdersOpen;
@@ -479,7 +492,7 @@ export default function SupplyRequestsPage() {
               const e = edit[item.id] ?? { status: normalizeStatus(item.status), supply_comment: "", dirty: false };
               const color = normalizeStatus(item.status);
               return (
-                <Card key={item.id} className={`border-l-4 ${color === "pending" ? "bg-status-red/10 border-status-red/30" : ""}`} style={{ borderLeftColor: color === "pending" ? "hsl(var(--status-red))" : "hsl(var(--status-green))" }}>
+                <Card key={item.id} data-focus-id={item.id} data-focus-at={item.created_at} data-focus-entity="supply_request" className={`border-l-4 ${color === "pending" ? "bg-status-red/10 border-status-red/30" : ""}`} style={{ borderLeftColor: color === "pending" ? "hsl(var(--status-red))" : "hsl(var(--status-green))" }}>
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div className="flex items-start gap-3 min-w-0 flex-1">

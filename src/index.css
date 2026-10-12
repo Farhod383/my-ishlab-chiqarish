@@ -77,3 +77,11 @@
 [data-req-error] {
   border-color: hsl(var(--destructive)) !important;
 }
+
+/* Record opened from a notification */
+.notif-focus {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+  background-color: hsl(var(--primary) / 0.12) !important;
+  transition: background-color 0.4s ease;
+}

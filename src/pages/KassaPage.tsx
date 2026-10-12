@@ -22,6 +22,7 @@ import { fmtKassaAmount, fmtNum, fmtDateTime24, fmtDate } from "@/lib/format";
 import SupplyFinancePage from "@/pages/SupplyFinancePage";
 import { useEmployees, refreshEmployees } from "@/hooks/useEmployees";
 import { currentUserName, displayUser } from "@/lib/userNames";
+import { useFocusEntity } from "@/notifications/FocusHighlighter";
 
 const PAYMENT_TYPES = ["cash", "transfer", "corporate_card"] as const;
 type PaymentType = typeof PAYMENT_TYPES[number] | "other";
@@ -78,6 +79,11 @@ export default function KassaPage() {
   const { employees, allEmployees } = useEmployees({ activeOnly: true });
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"income" | "expense" | "report" | "debt" | "supply">("income");
+  const focusEntity = useFocusEntity();
+  useEffect(() => {
+    if (focusEntity === "cash_expense") setTab("expense");
+    else if (focusEntity === "cash_income") setTab("income");
+  }, [focusEntity]);
   // Qarz bo'limi
   const [debts, setDebts] = useState<any[]>([]);
   const [debtOpen, setDebtOpen] = useState(false);
@@ -561,14 +567,14 @@ export default function KassaPage() {
       const summary = diffSummary(expOrig, payload, ["amount", "currency", "exchange_rate", "total_uzs", "reason", "recipient_name", "comment", "payment_type"]);
       await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: "kassa.expense.update", entity: "cash_expenses", details: summary || "no changes" });
     } else {
-      const { error } = await supabase.from("cash_expenses").insert({ ...payload, created_by: user?.id });
+      const { data: _ins, error } = await supabase.from("cash_expenses").insert({ ...payload, created_by: user?.id }).select("id").single();
       if (error) { toast.error(error.message); return; }
       await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: "kassa.expense.create", entity: "cash_expenses", details: `${payload.amount} ${payload.currency} = ${fmt(total_uzs)} UZS · ${payload.reason}` });
       await notify({
         type: "info",
         title: `Kassa chiqimi — ${payload.reason}`,
         body: `${fmtKassaAmount(payload.amount, payload.currency)} ${payload.currency}${recipientName ? ` · ${recipientName}` : ""}`,
-        link: "/kassa", entity: "cash_expense",
+        link: "/kassa", entity: "cash_expense", entity_id: (_ins as any)?.id,
         recipient_role: ["cashier", "manager"],
         sender_id: user?.id, sender_name: actorName,
       });
@@ -657,14 +663,14 @@ export default function KassaPage() {
       const summary = diffSummary(incOrig, payload, ["amount", "currency", "exchange_rate", "total_uzs", "source", "payment_type", "comment"]);
       await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: "kassa.income.update", entity: "cash_incomes", details: summary || "no changes" });
     } else {
-      const { error } = await (supabase.from as any)("cash_incomes").insert({ ...payload, created_by: user?.id });
+      const { data: _ins, error } = await (supabase.from as any)("cash_incomes").insert({ ...payload, created_by: user?.id }).select("id").single();
       if (error) { toast.error(error.message); return; }
       await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: "kassa.income.create", entity: "cash_incomes", details: `${payload.amount} ${payload.currency} = ${fmt(total_uzs)} UZS · ${payload.source}` });
       await notify({
         type: "info",
         title: `Kassa kirimi — ${payload.source}`,
         body: `${fmtKassaAmount(payload.amount, payload.currency)} ${payload.currency}`,
-        link: "/kassa", entity: "cash_income",
+        link: "/kassa", entity: "cash_income", entity_id: (_ins as any)?.id,
         recipient_role: ["cashier", "manager"],
         sender_id: user?.id, sender_name: actorName,
       });
@@ -954,7 +960,7 @@ export default function KassaPage() {
                 <TableBody>
                   {loading && <TableRow><TableCell colSpan={canManage ? 10 : 9} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                   {!loading && fInc.map(i => (
-                    <TableRow key={i.id}>
+                    <TableRow key={i.id} data-focus-id={i.id} data-focus-at={i.created_at} data-focus-entity="cash_income">
                       <TableCell className="text-sm whitespace-nowrap">{fmtDateTime24(i.income_date)}</TableCell>
                       <TableCell className="text-right font-mono font-semibold text-status-green">{fmtCash(Number(i.amount), i.currency)}</TableCell>
                       <TableCell className="text-xs"><Badge variant="secondary">{i.currency ?? "UZS"}</Badge></TableCell>
@@ -1085,7 +1091,7 @@ export default function KassaPage() {
                 <TableBody>
                   {loading && <TableRow><TableCell colSpan={canManage ? 10 : 9} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                   {!loading && fExp.map(e => (
-                    <TableRow key={e.id}>
+                    <TableRow key={e.id} data-focus-id={e.id} data-focus-at={e.created_at} data-focus-entity="cash_expense">
                       <TableCell className="text-sm whitespace-nowrap">{fmtDateTime24(e.expense_date)}</TableCell>
                       <TableCell className="text-right font-mono font-semibold text-status-red">{fmtCash(Number(e.amount), e.currency)}</TableCell>
                       <TableCell className="text-xs"><Badge variant="secondary">{e.currency ?? "UZS"}</Badge></TableCell>

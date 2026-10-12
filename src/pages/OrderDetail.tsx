@@ -26,6 +26,7 @@ import OrderSupplyRequests from "@/components/OrderSupplyRequests";
 import { useNotifications, notifStageId } from "@/notifications/NotificationsContext";
 import { fmtDateTime24, fmtDuration, fmtLegacyDurations, fmtDate } from "@/lib/format";
 import { currentUserName, displayUser } from "@/lib/userNames";
+import { useFocusEntity } from "@/notifications/FocusHighlighter";
 
 
 export default function OrderDetail() {
@@ -48,6 +49,12 @@ export default function OrderDetail() {
   const [reportOpen, setReportOpen] = useState(false);
   const [otkEdit, setOtkEdit] = useState<Record<string, string>>({});
   const [tab, setTab] = useState("timeline");
+  const focusEntity = useFocusEntity();
+  const focusStageId = focusEntity === "stage" ? new URLSearchParams(window.location.search).get("focus") : null;
+  useEffect(() => {
+    if (focusEntity === "stage") { setTab("timeline"); if (focusStageId) setOpenStageId(focusStageId); }
+    else if (focusEntity === "supply_request") setTab("warehouse");
+  }, [focusEntity, focusStageId]);
   const [openStageId, setOpenStageId] = useState<string | null>(null);
   const { items: notifItems, markStageRead, unreadByStage } = useNotifications();
 
@@ -420,7 +427,7 @@ export default function OrderDetail() {
           {groupStages(stages as any, stageGroups).map((grp) => {
             const gDone = grp.items.filter((x: any) => x.status === "completed").length;
             const gUnread = grp.items.reduce((n: number, x: any) => n + (unreadByStage[x.id] ?? 0), 0);
-            const gExpanded = openGroupKey[grp.key] ?? false;
+            const gExpanded = openGroupKey[grp.key] ?? grp.items.some((x: any) => x.id === focusStageId);
             return (
             <div key={grp.key} className="rounded-lg border bg-muted/20">
               <button
@@ -449,7 +456,7 @@ export default function OrderDetail() {
             const actualMs = s.started_at ? (new Date(s.finished_at ?? Date.now()).getTime() - new Date(s.started_at).getTime()) : 0;
             const actualTxt = s.started_at ? fmtDuration(actualMs / 60000) : "—";
             return (
-              <Card key={s.id} className={s.status === "delayed" ? "border-status-red/50" : s.status === "in_progress" ? "border-status-blue/50" : ""}>
+              <Card key={s.id} data-focus-id={s.id} className={s.status === "delayed" ? "border-status-red/50" : s.status === "in_progress" ? "border-status-blue/50" : ""}>
                 <CardContent className="p-4">
                   <div
                     className="flex items-start justify-between gap-4 flex-wrap cursor-pointer"

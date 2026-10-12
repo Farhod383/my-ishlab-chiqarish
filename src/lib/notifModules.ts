@@ -117,8 +117,16 @@ export function resolveModule(n: ModuleResolvable): NotifModuleKey {
 }
 
 /** Where clicking a notification should navigate. */
-export function resolveLink(n: ModuleResolvable & { entity_id?: string | null }): string | null {
-  if (n.link) return n.link;
+export function resolveLink(n: ModuleResolvable & { entity_id?: string | null; created_at?: string | null }): string | null {
   const mod = MODULE_BY_KEY[resolveModule(n)];
-  return mod?.fallbackLink ?? null;
+  const base = n.link || mod?.fallbackLink || null;
+  if (!base) return null;
+  // Order-level notifications already open the exact order page.
+  if (n.entity === "order" || n.entity === "client") return base;
+  const q = new URLSearchParams();
+  if (n.entity) q.set("entity", n.entity);
+  if (n.entity_id) q.set("focus", n.entity_id);
+  else if (n.created_at) q.set("focus_at", n.created_at); // legacy rows without an ID: match by event time
+  else return base;
+  return `${base}${base.includes("?") ? "&" : "?"}${q.toString()}`;
 }

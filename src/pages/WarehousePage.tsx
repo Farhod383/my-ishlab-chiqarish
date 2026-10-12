@@ -34,6 +34,7 @@ import { useEmployees } from "@/hooks/useEmployees";
 import { Link, useNavigate } from "react-router-dom";
 import { getOpenSession, getOrStartSession, closeInvoice, discardDraftSessions, addOrMergeItem, intakeCode, itemsTotal, type IntakeSession, type IntakeItem } from "@/lib/intake";
 import { currentUserName, displayUser } from "@/lib/userNames";
+import { useFocusEntity } from "@/notifications/FocusHighlighter";
 
 const UNITS = ["dona", "kg", "tonna", "metr", "litr", "rulon", "komplekt"] as const;
 
@@ -58,6 +59,7 @@ export default function WarehousePage() {
   const { user, hasRole, roles } = useAuth() as any;
   const { t } = useI18n();
   const localize = useLocalize();
+  const focusEntity = useFocusEntity();
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [movements, setMovements] = useState<any[]>([]);
@@ -282,11 +284,11 @@ export default function WarehousePage() {
   };
 
   const finalizeRelease = async (crossOrderReason: string | null, sourceOrderId: string | null) => {
-    const { error } = await supabase.from("stock_movements").insert({
+    const { data: _ins, error } = await supabase.from("stock_movements").insert({
       product_id: outProduct, order_id: outOrder || null, direction: "out",
       quantity: outQty, recipient_name: empName(outRecipient), recipient_employee_id: outRecipient || null, comment: outComment, created_by: user?.id, taken_by: user?.id,
       ...(crossOrderReason ? { cross_order_reason: crossOrderReason, source_order_id: sourceOrderId } : {}),
-    } as any);
+    } as any).select("id").single();
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: currentUserName(user),
@@ -300,7 +302,7 @@ export default function WarehousePage() {
         type: "info",
         title: `Sklad chiqimi — ${products.find(p=>p.id===outProduct)?.name ?? ""}`,
         body: `${outQty} · ${outRecipient}`,
-        link: "/warehouse", entity: "stock_movement",
+        link: "/warehouse", entity: "stock_movement", entity_id: (_ins as any)?.id,
         recipient_role: ["warehouse", "manager", "supply"],
         sender_id: user?.id, sender_name: currentUserName(user),
       });
@@ -1373,7 +1375,7 @@ export default function WarehousePage() {
         </Card>
       )}
 
-      <Tabs defaultValue="stock">
+      <Tabs key={focusEntity === "stock_movement" ? "f" : "n"} defaultValue={focusEntity === "stock_movement" ? "history" : "stock"}>
         <TabsList>
           <TabsTrigger value="stock">{t.warehouse.tabs.stock}</TabsTrigger>
           <TabsTrigger value="history">{t.warehouse.tabs.history}</TabsTrigger>
@@ -1660,7 +1662,7 @@ export default function WarehousePage() {
 
 
 
-              <Tabs defaultValue="in" className="mt-2">
+              <Tabs key={focusEntity === "stock_movement" ? "f" : "n"} defaultValue={focusEntity === "stock_movement" ? "all" : "in"} className="mt-2">
                 <TabsList>
                   <TabsTrigger value="in"><ArrowUpCircle className="h-3.5 w-3.5 mr-1" />{t.warehouse.inHistory}</TabsTrigger>
                   <TabsTrigger value="out"><ArrowDownCircle className="h-3.5 w-3.5 mr-1" />{t.warehouse.outHistory}</TabsTrigger>
@@ -1681,7 +1683,7 @@ export default function WarehousePage() {
                       </TableRow></TableHeader>
                       <TableBody>
                         {productMovements.filter(m => m.direction === "in").map(m => (
-                          <TableRow key={m.id}>
+                          <TableRow key={m.id} data-focus-id={m.id} data-focus-at={m.created_at} data-focus-entity="stock_movement">
                             <TableCell className="text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</TableCell>
                             <TableCell className="text-xs text-muted-foreground">{localize(profiles[m.created_by]) || "—"}</TableCell>
                             <TableCell className="text-sm">{localize(m.recipient_name) || "—"}</TableCell>
@@ -1712,7 +1714,7 @@ export default function WarehousePage() {
                       </TableRow></TableHeader>
                       <TableBody>
                         {productMovements.filter(m => m.direction === "out").map(m => (
-                          <TableRow key={m.id}>
+                          <TableRow key={m.id} data-focus-id={m.id} data-focus-at={m.created_at} data-focus-entity="stock_movement">
                             <TableCell className="text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</TableCell>
                             <TableCell className="text-sm">{localize(m.recipient_name) || "—"}</TableCell>
                             <TableCell className="text-sm font-mono">{m.order?.order_number ?? <span className="text-muted-foreground">{t.warehouse.common}</span>}</TableCell>
@@ -1732,7 +1734,7 @@ export default function WarehousePage() {
                   <div className="space-y-2 max-h-96 overflow-y-auto">
                     {productMovements.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">{t.warehouse.noMov}</p>}
                     {productMovements.map(m => (
-                      <div key={m.id} className={`text-sm border-l-2 pl-3 py-1.5 ${m.direction === "out" ? "border-status-red/60" : "border-status-green/60"}`}>
+                      <div key={m.id} data-focus-id={m.id} data-focus-at={m.created_at} data-focus-entity="stock_movement" className={`text-sm border-l-2 pl-3 py-1.5 ${m.direction === "out" ? "border-status-red/60" : "border-status-green/60"}`}>
                         <div className="flex items-center justify-between">
                           <span className="font-medium flex items-center gap-1.5">
                             {m.direction === "out" ? <ArrowDownCircle className="h-3.5 w-3.5 text-status-red" /> : <ArrowUpCircle className="h-3.5 w-3.5 text-status-green" />}
