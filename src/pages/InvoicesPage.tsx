@@ -1,3 +1,4 @@
+import { currentUserName, displayUser } from "@/lib/userNames";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/auth/AuthContext";
@@ -16,7 +17,6 @@ import { FileText, Image as ImageIcon, CheckCircle2, Clock, Search, Trash2 } fro
 import { toast } from "sonner";
 import { fmtNum, fmtDateTime24 } from "@/lib/format";
 import {
-import { currentUserName, displayUser } from "@/lib/userNames";
   INTAKE_STATUS_META, intakeCode, intakeDuration, itemsTotal,
   closeInvoice,
   type IntakeItem, type IntakeSession,
