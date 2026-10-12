@@ -85,3 +85,13 @@
   background-color: hsl(var(--primary) / 0.12) !important;
   transition: background-color 0.4s ease;
 }
+
+/* Text fields: always selectable/tappable on phones; scroll areas scroll natively. */
+input, textarea, [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+  touch-action: manipulation;
+}
+.overflow-auto, .overflow-y-auto, .overflow-x-auto, .overflow-scroll {
+  -webkit-overflow-scrolling: touch;
+}

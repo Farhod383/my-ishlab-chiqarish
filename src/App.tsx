@@ -11,6 +11,7 @@ import OnlineGuard from "@/components/OnlineGuard";
 import { RouteReadMarker } from "@/notifications/RouteReadMarker";
 import { FocusHighlighter } from "@/notifications/FocusHighlighter";
 import { RequiredFieldMarker } from "@/components/RequiredFieldMarker";
+import { MobileInputFix } from "@/components/MobileInputFix";
 import { NotificationsProvider } from "@/notifications/NotificationsContext";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -53,6 +54,7 @@ const App = () => (
       <Toaster />
       <Sonner />
           <RequiredFieldMarker />
+          <MobileInputFix />
       <I18nProvider>
         <AuthProvider>
           <NotificationsProvider>
