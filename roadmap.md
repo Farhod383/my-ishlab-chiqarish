@@ -9,3 +9,8 @@
 ## Zakaz hisoboti kartochkalari
 - [x] Rangli kartochkalar, umumiy status filtri va mos hisoblagichlarni amalga oshirish va tekshirish.
 - [x] Asosiy Admin va Admin 2 hisoblarida kartochkalarni amalda tekshirish.
+
+## ERP ekran kengligiga moslashish
+- [ ] Umumiy sahifa, jadval va modal kengliklarini tuzatish.
+- [ ] Har bir moduldagi kenglik, grid va ichki ro‘yxat muammolarini tekshirish va tuzatish.
+- [ ] Desktop, laptop, planshet va telefonda haqiqiy sahifalar, menyu holatlari va oynalarni tekshirish.

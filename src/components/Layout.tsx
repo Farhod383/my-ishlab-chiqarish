@@ -8,7 +8,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-svh flex w-full min-w-0">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
           <header className="h-14 flex items-center border-b bg-card px-4 shrink-0 gap-3">
@@ -17,7 +17,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <NotificationBell />
             <LanguageSwitcher />
           </header>
-          <main className="flex-1 p-6 overflow-auto">{children}</main>
+          <main className="erp-main min-w-0 w-full flex-1 p-3 sm:p-4 lg:p-6">{children}</main>
         </div>
       </div>
     </SidebarProvider>
