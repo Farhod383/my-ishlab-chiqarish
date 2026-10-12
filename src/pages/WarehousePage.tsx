@@ -932,7 +932,13 @@ export default function WarehousePage() {
             </div>
             )}
             {inStep === "variant" && (
-              <Button variant="ghost" className="mt-2 self-start" onClick={() => setInStep("loc")}>← Bo'limni o'zgartirish</Button>
+              <Button
+                className="mt-3 self-start rounded-xl bg-primary px-5 font-semibold text-primary-foreground shadow-sm hover:bg-primary/85"
+                onClick={() => setInStep("loc")}
+              >
+                <span aria-hidden className="mr-1 text-base leading-none">←</span>
+                Bo'limni o'zgartirish
+              </Button>
             )}
           </DialogContent>
         </Dialog>
