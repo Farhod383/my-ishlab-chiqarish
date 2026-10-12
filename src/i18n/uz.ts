@@ -238,7 +238,7 @@ export const uz = {
     saveAssign: "Saqlash",
   },
   production: {
-    title: "Ishlab chiqarish taxtasi",
+    title: "Ishlab chiqarish rejasi",
     subtitle: "Faol zakazlar bajarilish rejasi. Muhim buyurtmalar birinchi navbatda ishlanadi.",
     currentStage: "Hozirgi bosqich",
     progress: "{a} / {b} bosqich",
