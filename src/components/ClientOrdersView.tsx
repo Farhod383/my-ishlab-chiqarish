@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { useLocalize } from "@/i18n/context";
 import { matchesAcrossScripts } from "@/lib/translit";
 import { ArrowDownAZ, ArrowUpZA, Search } from "lucide-react";
+import { fmtDate } from "@/lib/format";
 
 type Client = { id: string; name: string; client_type: string | null };
 
@@ -94,7 +95,7 @@ export function ClientOrdersView({ rows }: { rows: any[] }) {
                     <TableRow key={o.id} className="cursor-pointer hover:bg-muted/50" onClick={() => nav(`/orders/${o.id}`)}>
                       <TableCell className="font-mono text-sm">{o.order_number}</TableCell>
                       <TableCell className="text-sm">{localize(o.product_name)}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">{o.deadline}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{fmtDate(o.deadline)}</TableCell>
                       <TableCell className="text-sm">{o.status === "completed" ? "Tugallangan" : cur ? localize(cur.name) : "—"}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2"><Progress value={pct} className="h-2" /><span className="text-xs w-9">{pct}%</span></div>

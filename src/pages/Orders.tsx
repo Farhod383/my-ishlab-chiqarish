@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { matchesAcrossScripts } from "@/lib/translit";
 import { ClientOrdersView } from "@/components/ClientOrdersView";
 import { recalcOrdersBatch, sortOrdersByStatusAndDate } from "@/lib/orderStatus";
+import { fmtDate } from "@/lib/format";
 
 type FilterKey = "all" | "active" | "exception" | "delayed" | "completed" | "today" | "clients";
 
@@ -189,9 +190,9 @@ export default function Orders() {
                       <TableCell className="text-right text-sm">{o.quantity}</TableCell>
                       <TableCell><PriorityBadge priority={o.priority} /></TableCell>
                       <TableCell><StatusBadge status={o.status as any} /></TableCell>
-                      <TableCell className="text-sm whitespace-nowrap text-status-green font-medium">{o.order_date}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap text-status-green font-medium">{fmtDate(o.order_date)}</TableCell>
                       <TableCell className="text-sm whitespace-nowrap text-status-green font-medium">{startStr}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap text-status-green font-medium">{o.deadline}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap text-status-green font-medium">{fmtDate(o.deadline)}</TableCell>
 
                       <TableCell className="text-xs whitespace-nowrap">
                         {isDone ? <span className="text-status-green font-medium">{t.orders.finished}</span>

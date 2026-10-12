@@ -12,7 +12,7 @@ import { orderHealth, type OrderRow } from "@/types/erp";
 import { ClipboardList, Activity, AlertTriangle, AlertOctagon, Package, History, Clock, CheckCircle2, Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useI18n, useLocalize } from "@/i18n/context";
-import { fmtNum, fmtDateTime24 } from "@/lib/format";
+import { fmtNum, fmtDateTime24, fmtDate } from "@/lib/format";
 import { sortOrdersByStatusAndDate, recalcOrdersBatch } from "@/lib/orderStatus";
 import { matchesAcrossScripts } from "@/lib/translit";
 import { useInfiniteList } from "@/hooks/useInfiniteList";
@@ -187,7 +187,7 @@ export default function Dashboard() {
                         <TableCell><StatusBadge status={o.status as any} /></TableCell>
                         <TableCell><PriorityBadge priority={o.priority} /></TableCell>
                         <TableCell className="text-xs whitespace-nowrap text-muted-foreground">{startStr}</TableCell>
-                        <TableCell className="text-xs whitespace-nowrap">{o.deadline}</TableCell>
+                        <TableCell className="text-xs whitespace-nowrap">{fmtDate(o.deadline)}</TableCell>
                         <TableCell className="text-xs whitespace-nowrap">
                           {isDone ? <span className="text-status-green font-medium">{t.orders.finished}</span>
                             : diffDays < 0 ? <span className="text-status-red font-semibold">{Math.abs(diffDays)} {t.orders.daysLate}</span>

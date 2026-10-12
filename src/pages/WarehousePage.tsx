@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
-import { fmtNum, fmtDateTime24 } from "@/lib/format";
+import { fmtNum, fmtDateTime24, fmtDate } from "@/lib/format";
 import { matchesAcrossScripts } from "@/lib/translit";
 import { toast } from "sonner";
 import InstrumentsTab from "@/components/InstrumentsTab";
