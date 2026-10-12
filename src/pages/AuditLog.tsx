@@ -60,7 +60,7 @@ export default function AuditLog() {
 
   const users = useMemo(() => {
     const m = new Map<string, string>();
-    logs.forEach(l => { if (l.actor_name) m.set(l.actor_name, l.actor_name); });
+    logs.forEach(l => { if (l.actor_name) m.set(l.actor_name, displayUser(l.actor_name)); });
     return Array.from(m.values()).sort();
   }, [logs]);
 
