@@ -14,6 +14,7 @@ import { useI18n } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
 import { toast } from "sonner";
 import { notify } from "@/lib/notify";
+import { fmtDateTime24 } from "@/lib/format";
 
 type Filter = "all" | "red" | "yellow" | "green";
 type Color = "red" | "yellow" | "green" | "none";
@@ -255,7 +256,7 @@ export default function OtkPage() {
                           )}
                         </div>
                         {s.otk_checked_at && (
-                          <div className="text-[11px] text-muted-foreground">{t.otk.lastApprove}: {new Date(s.otk_checked_at).toLocaleString()}</div>
+                          <div className="text-[11px] text-muted-foreground">{t.otk.lastApprove}: {fmtDateTime24(s.otk_checked_at)}</div>
                         )}
                       </CardContent>
                     </Card>

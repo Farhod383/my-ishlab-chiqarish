@@ -6,6 +6,7 @@ import {
   AlignmentType, WidthType, BorderStyle, ShadingType, HeadingLevel, PageBreak,
 } from "docx";
 import logoUrl from "@/assets/logo.png";
+import { fmtDate as fmtDateG, fmtDateTime24 } from "@/lib/format";
 
 export const COMPANY_NAME = "MCITY / MACHINE CITY";
 export const DOC_TITLE = "XODIMLAR RO'YXATI";
@@ -33,7 +34,7 @@ export function groupByPosition(list: ExportEmployee[]): Group[] {
     }));
 }
 
-const fmtDate = () => new Date().toLocaleString("ru-RU");
+const fmtDate = () => fmtDateTime24(new Date());
 
 async function loadLogo(): Promise<{ dataUrl: string; buffer: ArrayBuffer } | null> {
   try {
@@ -59,7 +60,7 @@ export async function exportEmployeesPDF(list: ExportEmployee[], actor: string) 
   const W = doc.internal.pageSize.getWidth();
   const logo = await loadLogo();
   const groups = groupByPosition(list);
-  const date = fmtDate();
+  const date = fmtDateG();
 
   const header = () => {
     let y = 36;
@@ -160,7 +161,7 @@ function cell(text: string, opts: { bold?: boolean; width: number; fill?: string
 export async function exportEmployeesDocx(list: ExportEmployee[], actor: string) {
   const logo = await loadLogo();
   const groups = groupByPosition(list);
-  const date = fmtDate();
+  const date = fmtDateG();
 
   const children: any[] = [];
 

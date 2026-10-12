@@ -12,7 +12,7 @@ import { orderHealth, type OrderRow } from "@/types/erp";
 import { ClipboardList, Activity, AlertTriangle, AlertOctagon, Package, History, Clock, CheckCircle2, Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useI18n, useLocalize } from "@/i18n/context";
-import { fmtNum } from "@/lib/format";
+import { fmtNum, fmtDateTime24 } from "@/lib/format";
 import { sortOrdersByStatusAndDate, recalcOrdersBatch } from "@/lib/orderStatus";
 import { matchesAcrossScripts } from "@/lib/translit";
 import { useInfiniteList } from "@/hooks/useInfiniteList";
@@ -231,7 +231,7 @@ export default function Dashboard() {
             <div key={l.id} className="text-xs border-l-2 border-primary/30 pl-2 py-1">
               <div className="font-medium">{localize(l.action)}</div>
               <div className="text-muted-foreground truncate">{localize(l.details)}</div>
-              <div className="text-[10px] text-muted-foreground">{new Date(l.created_at).toLocaleString()}</div>
+              <div className="text-[10px] text-muted-foreground">{fmtDateTime24(l.created_at)}</div>
             </div>
           ))}
           {recentLog.length === 0 && <p className="text-sm text-muted-foreground">{t.common.noRecords}</p>}

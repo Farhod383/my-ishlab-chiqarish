@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "@/hooks/use-toast";
 import { Users, Plus, Loader2, Search, X } from "lucide-react";
 import { notify } from "@/lib/notify";
+import { fmtDate } from "@/lib/format";
 
 export const CLIENT_TYPES = ["Mijoz", "Diler"];
 
@@ -29,7 +30,7 @@ const emptyForm = {
 };
 
 const today = () => new Date().toISOString().slice(0, 10);
-const fmtD = (d?: string | null) => (d ? new Date(d).toLocaleDateString("uz-UZ") : "—");
+const fmtD = (d?: string | null) => (d ? fmtDate(d) : "—");
 
 export default function ClientsPage() {
   const nav = useNavigate();

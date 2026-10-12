@@ -13,6 +13,7 @@ import { useLocalize } from "@/i18n/context";
 import { matchesAcrossScripts } from "@/lib/translit";
 import { FaceEmployeeDialog, type FaceEmployee } from "@/components/faceid/FaceEmployeeDialog";
 import { buildDays, fmtHours, hhmm, SITE_LABEL, startOfWeek, ymd, type FaceEvent, type Shift } from "@/lib/faceid";
+import { fmtDateTime24 } from "@/lib/format";
 
 type Device = {
   id: string; name: string; site: string; ip_address: string | null;
@@ -151,10 +152,10 @@ export default function FaceIdPage() {
                     <Badge variant="outline">{d.ip_address ?? "—"}</Badge>
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    Oxirgi sinxronizatsiya: {d.last_sync_at ? new Date(d.last_sync_at).toLocaleString("uz-UZ") : "—"}
+                    Oxirgi sinxronizatsiya: {d.last_sync_at ? fmtDateTime24(d.last_sync_at) : "—"}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Oxirgi event: {d.last_event_at ? new Date(d.last_event_at).toLocaleString("uz-UZ") : "—"}
+                    Oxirgi event: {d.last_event_at ? fmtDateTime24(d.last_event_at) : "—"}
                   </div>
                   {d.last_error && <div className="text-xs text-rose-600 mt-1 truncate">{d.last_error}</div>}
                 </div>

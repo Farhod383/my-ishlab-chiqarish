@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
-import { fmtNum } from "@/lib/format";
+import { fmtNum, fmtDateTime24 } from "@/lib/format";
 import { matchesAcrossScripts } from "@/lib/translit";
 import { toast } from "sonner";
 import InstrumentsTab from "@/components/InstrumentsTab";
@@ -822,7 +822,7 @@ export default function WarehousePage() {
     [movements]
   );
 
-  const fmtDateTime = (s: string) => new Date(s).toLocaleString();
+  const fmtDateTime = (s: string) => fmtDateTime24(s);
   // Grouped products by name (for stat cards + reorder list)
   const productGroups = useMemo(() => {
     const map = new Map<string, any[]>();

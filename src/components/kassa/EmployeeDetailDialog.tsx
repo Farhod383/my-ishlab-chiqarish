@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Search, Wrench, Wallet } from "lucide-react";
-import { fmtKassaAmount, fmtNum } from "@/lib/format";
+import { fmtKassaAmount, fmtNum, fmtDateTime24 } from "@/lib/format";
 import { useLocalize } from "@/i18n/context";
 
 export const SALARY_KINDS = ["salary", "advance", "bonus", "penalty", "other"] as const;
@@ -152,7 +152,7 @@ export default function EmployeeDetailDialog({ employee, open, onOpenChange }: P
                     const creator = (p._creator?.full_name) || (p._creator?.email) || "—";
                     return (
                       <TableRow key={p.id}>
-                        <TableCell className="text-sm whitespace-nowrap">{new Date(p.expense_date).toLocaleString()}</TableCell>
+                        <TableCell className="text-sm whitespace-nowrap">{fmtDateTime24(p.expense_date)}</TableCell>
                         <TableCell><Badge variant={kind === "penalty" ? "destructive" : "secondary"}>{SALARY_KIND_LABELS[kind]}</Badge></TableCell>
                         <TableCell className="text-right font-mono font-semibold">{fmtKassaAmount(Number(p.amount), p.currency)}</TableCell>
                         <TableCell className="text-xs">{p.currency ?? "UZS"} <span className="text-muted-foreground">{CUR_SYMBOL[p.currency ?? "UZS"] ?? ""}</span></TableCell>
@@ -183,8 +183,8 @@ export default function EmployeeDetailDialog({ employee, open, onOpenChange }: P
                     <TableRow key={a.id}>
                       <TableCell className="text-sm">{a.instrument?.name ?? "—"}</TableCell>
                       <TableCell className="text-right font-mono">{fmtNum(Number(a.quantity))} {a.instrument?.unit ?? ""}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">{new Date(a.issued_at).toLocaleString()}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">{a.returned_at ? new Date(a.returned_at).toLocaleString() : <Badge variant="outline">Qaytarilmagan</Badge>}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{fmtDateTime24(a.issued_at)}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{a.returned_at ? fmtDateTime24(a.returned_at) : <Badge variant="outline">Qaytarilmagan</Badge>}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{[a.issue_comment, a.return_comment].filter(Boolean).join(" · ") || "—"}</TableCell>
                     </TableRow>
                   ))}

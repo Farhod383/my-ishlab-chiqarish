@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MessageSquare, Plus, Send, Globe, User as UserIcon, Mic, Square, Video } from "lucide-react";
 import { toast } from "sonner";
+import { fmtTime24 } from "@/lib/format";
 
 interface Conversation {
   id: string;
@@ -275,7 +276,7 @@ export default function ChatPage() {
                     )}
                     {m.body && <div className="whitespace-pre-wrap break-words">{m.body}</div>}
                     <div className={`text-[10px] mt-1 ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                      {new Date(m.created_at).toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}
+                      {fmtTime24(m.created_at)}
                     </div>
                   </div>
                 </div>

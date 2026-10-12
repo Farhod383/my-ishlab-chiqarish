@@ -19,6 +19,7 @@ import { matchesAcrossScripts } from "@/lib/translit";
 import { logAudit } from "@/types/erp";
 import { notify } from "@/lib/notify";
 import { useEmployees } from "@/hooks/useEmployees";
+import { fmtDateTime24 } from "@/lib/format";
 
 type ItemType = "product" | "instrument";
 
@@ -344,7 +345,7 @@ export default function DefectsPage() {
                 {loading && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                 {!loading && filteredDefects.map(def => (
                   <TableRow key={def.id}>
-                    <TableCell className="text-sm whitespace-nowrap">{new Date(def.created_at).toLocaleString()}</TableCell>
+                    <TableCell className="text-sm whitespace-nowrap">{fmtDateTime24(def.created_at)}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-xs">
                         {def.item_type === "instrument" ? (d.instrument ?? "Instrument") : (d.product ?? "Mahsulot")}
