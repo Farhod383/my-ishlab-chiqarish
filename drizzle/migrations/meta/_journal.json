@@ -232,6 +232,13 @@
       "when": 1791780012931,
       "tag": "0032_instrument_defect_from_assignment",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1791791457064,
+      "tag": "0033_out_movement_unit_price",
+      "breakpoints": true
     }
   ]
 }
