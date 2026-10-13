@@ -31,6 +31,7 @@ import { logSupplyChange } from "@/lib/supplyHistory";
 import NumberInput from "@/components/NumberInput";
 import { currentUserName } from "@/lib/userNames";
 import { fmtDate, fmtDateTime24 as fmtDT } from "@/lib/format";
+import { supplyRequestDates } from "@/lib/supplyRequestDates";
 
 type Filter = "all" | Status;
 
@@ -425,38 +426,59 @@ export default function SupplyRequestsPage() {
           </CardHeader>
           <CardContent className="space-y-2.5 px-4 pb-4">
             {visible.length === 0 && <p className="text-base text-muted-foreground text-center py-10">So'rovlar mavjud emas</p>}
-            {visible.map((o) => (
-              <Card
+            {visible.filter((o) => o.pinned).map((o) => (
+              <Button
                 key={o.key}
-                className="supply-tone supply-selectable cursor-pointer transition-colors"
-                data-tone={o.order.status === "completed" ? "fulfilled" : o.worst}
+                variant="outline"
+                className="h-auto min-h-12 w-full justify-between gap-3 whitespace-normal text-left px-4 py-3"
                 onClick={() => setOpenOrderId(o.key)}
               >
-                <CardContent className="p-5 flex items-center justify-between gap-3 flex-wrap">
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    {o.pinned ? <span className="text-2xl shrink-0">📌</span> : <span className={`h-3 w-3 rounded-full shrink-0 ${dotCls[o.worst]}`} />}
-                    <div className="min-w-0">
-                      {!o.pinned && <div className="font-mono font-bold text-base leading-tight">{o.order.order_number}{o.order.status === "completed" && <span className="font-sans ml-2">· Tugallangan</span>}</div>}
-                      <div className="text-lg break-words leading-snug font-bold">{o.order.product_name}</div>
+                <span className="font-bold">{o.order.product_name}</span>
+                <span className="shrink-0">{o.items.length} ta</span>
+              </Button>
+            ))}
+            {visible.filter((o) => o.pinned).flatMap((o) => o.items).sort(sortByStatus).map((item: any) => {
+              const status = normalizeStatus(item.status);
+              const dates = supplyRequestDates({ ...item, status });
+              return (
+              <Card
+                key={item.id}
+                data-focus-id={item.id}
+                data-focus-at={item.created_at}
+                data-focus-entity="supply_request"
+                className="supply-tone"
+                data-tone={status}
+              >
+                <CardContent className="p-5 space-y-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0 flex-1">
+                      <Package className="h-5 w-5 shrink-0 mt-1" />
+                      <div className="min-w-0 space-y-1">
+                        <div className="text-lg font-bold break-words">{item.product_name}</div>
+                        <div className="text-sm font-bold">{item.quantity} {item.unit ?? ""}</div>
+                      </div>
                     </div>
+                    <Badge variant="outline" className={`text-sm font-bold px-3 py-1 ${statusCls[status]}`}>{statusLabel[status]}</Badge>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    {!o.pinned && (supplyUnreadByOrder[o.key] ?? 0) > 0 && (
-                      <span
-                        title={`${supplyUnreadByOrder[o.key]} ta yangi o'zgarish`}
-                        className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-status-red px-1.5 text-xs font-bold leading-none text-status-red-foreground shadow-sm"
-                      >
-                        {supplyUnreadByOrder[o.key] > 99 ? "99+" : supplyUnreadByOrder[o.key]}
-                      </span>
-                    )}
-                    {o.counts.pending > 0 && <Badge variant="outline" className={`px-2.5 py-1 text-sm font-semibold ${statusCls.pending}`}>🔴 {o.counts.pending}</Badge>}
-                    {o.counts.fulfilled > 0 && <Badge variant="outline" className={`px-2.5 py-1 text-sm font-semibold ${statusCls.fulfilled}`}>🟢 {o.counts.fulfilled}</Badge>}
-                    <span className="text-base font-bold">{o.items.length} ta</span>
+                  <div className="text-sm font-semibold break-words">
+                    {item.order ? <>Zakaz: {item.order.order_number} · {item.order.product_name}</> : "Zavod uchun umumiy buyurtma"}
                   </div>
-
+                  <div className="supply-dates grid grid-cols-1 xl:grid-cols-3 gap-3 rounded-md p-3 text-sm font-semibold">
+                    <div className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 shrink-0" /><span>Berilgan:</span><span className="font-mono">{dates.given}</span></div>
+                    <div className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 shrink-0" /><span>Muddat:</span><div className="font-mono break-words">{dates.deadline}</div></div>
+                    <div className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 shrink-0" /><span>Ta'minlandi:</span><span className="font-mono">{dates.fulfilled}</span></div>
+                  </div>
+                  <div className="flex flex-wrap justify-between items-center gap-2">
+                    <span className="text-sm font-semibold">{requesterName(item.created_by)}</span>
+                    <Button variant="outline" size="sm" className="text-foreground" onClick={() => setOpenOrderId(item.order?.id ?? GENERAL_KEY)}>
+                      <ExternalLink className="h-4 w-4 mr-2" />Ko'rish
+                      {item.order?.id && (supplyUnreadByOrder[item.order.id] ?? 0) > 0 && <span className="ml-2">({supplyUnreadByOrder[item.order.id]})</span>}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
       )}
