@@ -158,15 +158,26 @@ input, textarea, [contenteditable="true"] {
   .erp-tab svg { width: 1rem; height: 1rem; flex-shrink: 0; }
 }
 
-/* Supply-only surfaces: cards stay white; color appears only in status text, dots and compact chips. */
-@layer components {
-  .supply-dates { border: 1px solid hsl(var(--border)); background: hsl(var(--muted) / 0.5); }
-  .supply-dates > div { flex-wrap: wrap; }
-  .supply-dates span { white-space: nowrap; }
-  .supply-tabs [data-state="inactive"] { background: hsl(var(--muted)); color: hsl(var(--foreground)); border-color: hsl(var(--border)); }
-  .supply-tabs [data-state="active"][data-tone="pending"] { background: hsl(var(--card)); border-color: hsl(var(--status-red)); color: hsl(var(--status-red-ink)); }
-  .supply-tabs [data-state="active"][data-tone="fulfilled"] { background: hsl(var(--card)); border-color: hsl(var(--status-green)); color: hsl(var(--status-green-ink)); }
-}
+/* Supply-only solid surfaces. Kept OUTSIDE @layer components on purpose: unlayered rules
+   outrank the card's own bg-card/text-foreground utilities, so a Kutilmoqda card is solid dark
+   red and a Ta'minlandi card solid dark green with white text. Scoped to .supply-tone only —
+   no other ERP module is recolored. */
+.supply-tone { --supply-tone: var(--status-red-solid); --supply-hover: var(--status-red-solid-hover); background: hsl(var(--supply-tone)); color: hsl(var(--status-solid-foreground)); border-color: hsl(var(--supply-tone)); }
+.supply-tone[data-tone="fulfilled"] { --supply-tone: var(--status-green-solid); --supply-hover: var(--status-green-solid-hover); }
+.supply-tone.supply-selectable { cursor: pointer; transition: background 150ms ease; }
+.supply-tone.supply-selectable:hover { background: hsl(var(--supply-hover)); }
+.supply-tone[aria-pressed="true"] { outline: 3px solid hsl(var(--supply-tone)); outline-offset: 3px; }
+.supply-tone .text-muted-foreground { color: hsl(var(--status-solid-foreground) / 0.82); }
+.supply-tone .supply-dates { background: hsl(var(--status-solid-foreground) / 0.1); border: 1px solid hsl(var(--status-solid-foreground) / 0.32); }
+.supply-tone .supply-action { background: hsl(var(--status-solid-foreground) / 0.14); border-color: hsl(var(--status-solid-foreground) / 0.4); color: hsl(var(--status-solid-foreground)); }
+.supply-tone .supply-action:hover { background: hsl(var(--status-solid-foreground) / 0.24); color: hsl(var(--status-solid-foreground)); }
+.supply-tone input, .supply-tone textarea { background: hsl(var(--status-solid-foreground) / 0.12); border-color: hsl(var(--status-solid-foreground) / 0.35); color: hsl(var(--status-solid-foreground)); }
+.supply-tone input::placeholder, .supply-tone textarea::placeholder { color: hsl(var(--status-solid-foreground) / 0.6); }
+.supply-dates > div { flex-wrap: wrap; }
+.supply-dates span { white-space: nowrap; }
+.supply-tabs [data-state="inactive"] { background: hsl(var(--muted)); color: hsl(var(--foreground)); border-color: hsl(var(--border)); }
+.supply-tabs [data-state="active"][data-tone="pending"] { background: hsl(var(--status-red-solid)); border-color: hsl(var(--status-red-solid)); color: hsl(var(--status-solid-foreground)); }
+.supply-tabs [data-state="active"][data-tone="fulfilled"] { background: hsl(var(--status-green-solid)); border-color: hsl(var(--status-green-solid)); color: hsl(var(--status-solid-foreground)); }
 
 
 /* ===== Printable reports ===== */

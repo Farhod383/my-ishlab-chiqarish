@@ -220,13 +220,13 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
           const dates = supplyRequestDates({ ...it, status: st });
           const late = st === "pending" && !!it.required_date && new Date() > new Date(`${it.required_date}T23:59:59`);
           return (
-          <div key={it.id} data-focus-id={it.id} data-focus-at={it.created_at} data-focus-entity="supply_request" className="flex items-center justify-between gap-3 p-4 rounded-md border bg-card">
+          <div key={it.id} data-focus-id={it.id} data-focus-at={it.created_at} data-focus-entity="supply_request" data-tone={st} className="supply-tone flex items-center justify-between gap-2 p-2.5 rounded-md border">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-bold text-lg break-words">{it.product_name}</span>
-                <Badge variant="outline" className={`px-3 py-1 text-base font-extrabold border-2 ${statusCls[st]}`}>{statusLabel[st]}</Badge>
+                <span className="font-bold text-base break-words leading-snug">{it.product_name}</span>
+                <Badge variant="outline" className={`px-2 py-0.5 text-sm font-extrabold border-2 ${statusCls[st]}`}>{statusLabel[st]}</Badge>
               </div>
-              <div className="text-base font-semibold leading-relaxed mt-1">
+              <div className="text-sm font-semibold leading-snug mt-0.5">
                 <span className="font-mono font-bold">{it.quantity} {it.unit ?? ""}</span>
                 {it.required_date && <> · Muddat: <span className={`font-mono font-bold ${late ? textCls.pending : ""}`}>{dates.deadline}</span>{dates.deadlineNote && <span className="text-sm font-medium text-muted-foreground"> · {dates.deadlineNote}</span>}</>}
                 <div>Berilgan: <span className="font-mono font-bold">{dates.given}</span>{st === "fulfilled" && <> · <span className={textCls.fulfilled}>Ta'minlandi: <span className="font-mono font-bold">{dates.fulfilled}</span></span></>}</div>

@@ -9,16 +9,16 @@ export function normalizeSupplyStatus(s: string): SupplyStatus {
   return s === "fulfilled" ? "fulfilled" : "pending";
 }
 
-/** Compact status chip on a white card: colored border + colored bold label, no filled background. */
+/** Status chip shown on a solid colored card: white border + white bold label. */
 export const supplyStatusCls: Record<SupplyStatus, string> = {
-  pending: "border-status-red text-status-red-ink",
-  fulfilled: "border-status-green text-status-green-ink",
+  pending: "border-status-solid-fg text-status-solid-fg",
+  fulfilled: "border-status-solid-fg text-status-solid-fg",
 };
 
-/** Status text color for labels and values shown on white card surfaces. */
+/** Labels and values inside a solid card stay white (the card itself carries the status color). */
 export const supplyStatusTextCls: Record<SupplyStatus, string> = {
-  pending: "text-status-red-ink",
-  fulfilled: "text-status-green-ink",
+  pending: "text-status-solid-fg",
+  fulfilled: "text-status-solid-fg",
 };
 
 
