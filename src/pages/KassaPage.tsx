@@ -12,13 +12,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Wallet, Plus, ArrowDownCircle, ArrowUpCircle, Edit2, Trash2, Search, FileBarChart, Truck, Download } from "lucide-react";
+import { Wallet, Plus, Minus, MoreHorizontal, ChevronLeft, ChevronRight, ArrowDownCircle, ArrowUpCircle, Edit2, Trash2, Search, FileBarChart, Truck, Download } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useI18n, useLocalize } from "@/i18n/context";
 import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
 import { notify } from "@/lib/notify";
 import { fmtKassaAmount, fmtNum, fmtDateTime24, fmtDate } from "@/lib/format";
+import KassaOverview from "@/components/kassa/KassaOverview";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import SupplyFinancePage from "@/pages/SupplyFinancePage";
 import { useEmployees, refreshEmployees } from "@/hooks/useEmployees";
 import { currentUserName, displayUser } from "@/lib/userNames";
@@ -734,154 +736,66 @@ export default function KassaPage() {
     </div>
   );
 
+  const isOverview = tab === "income" || tab === "expense";
+  const viewMonth = selectedMonth || currentMonth();
+  const shiftMonth = (delta: number) => {
+    const [y, m] = viewMonth.split("-").map(Number);
+    const d = new Date(y, m - 1 + delta, 1);
+    const b = monthBounds(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+    setFilterFrom(b.from); setFilterTo(b.to);
+  };
   return (
-    <div className="space-y-6">
-      <div className="sticky top-0 z-30 -mx-3 px-3 sm:-mx-4 sm:px-4 py-3 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b flex items-center justify-between flex-wrap gap-3 min-h-[4rem]">
-        <div className="flex items-center gap-4 flex-wrap min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><Wallet className="h-6 w-6" />{k.title ?? "Kassa"}</h1>
-          {/* Asosiy navigatsiya: Kassa | Ta'minot */}
+    <div className={`space-y-6 ${isOverview ? "kassa-page-bg -m-3 p-3 sm:-m-4 sm:p-4 min-h-full" : ""}`}>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-3 flex-wrap min-w-0">
+          <h1 className="text-2xl font-bold tracking-tight">{k.title ?? "Kassa"}</h1>
           <div className="inline-flex shrink-0 items-center rounded-lg border bg-muted p-1" role="tablist" aria-label="Kassa navigatsiya">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab !== "supply"}
-              onClick={() => setTab("income")}
-              className={`flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${tab !== "supply" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-            >
+            <button type="button" role="tab" aria-selected={tab !== "supply"} onClick={() => setTab("income")}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-sm font-medium ${tab !== "supply" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
               <Wallet className="h-4 w-4" />{k.title ?? "Kassa"}
             </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === "supply"}
-              onClick={() => setTab("supply")}
-              className={`flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${tab === "supply" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-            >
+            <button type="button" role="tab" aria-selected={tab === "supply"} onClick={() => setTab("supply")}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-sm font-medium ${tab === "supply" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
               <Truck className="h-4 w-4" />Ta'minot
             </button>
           </div>
-        </div>
-        {/* Asosiy funksiyalar: Hisobot va Qarz */}
-        <div className="flex items-center gap-2 shrink-0 ml-auto">
-          <Button
-            size="lg"
-            onClick={() => setTab(tab === "report" ? "income" : "report")}
-            className={`bg-status-blue text-white hover:bg-status-blue/90 border border-status-blue/60 shadow-sm px-5 h-11 text-base font-semibold shrink-0 whitespace-nowrap ${tab === "report" ? "ring-2 ring-status-blue ring-offset-2 ring-offset-background" : ""}`}
-          >
-            <FileBarChart className="h-5 w-5 mr-2" />Hisobot
-          </Button>
-          <Button
-            size="lg"
-            onClick={() => setTab(tab === "debt" ? "income" : "debt")}
-            className={`bg-status-yellow text-foreground hover:bg-status-yellow/90 border border-status-yellow/60 shadow-sm px-5 h-11 text-base font-semibold shrink-0 whitespace-nowrap ${tab === "debt" ? "ring-2 ring-status-yellow ring-offset-2 ring-offset-background" : ""}`}
-          >
-            <Wallet className="h-5 w-5 mr-2" />Qarz
-          </Button>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <Label className="text-xs">Davr (oy)</Label>
-          <Input
-            type="month"
-            className="w-[170px]"
-            value={selectedMonth}
-            onChange={(e) => {
-              const ym = e.target.value;
-              if (!ym) { setFilterFrom(""); setFilterTo(""); return; }
-              const b = monthBounds(ym);
-              setFilterFrom(b.from); setFilterTo(b.to);
-            }}
-          />
-          <Button variant="outline" size="sm" onClick={() => { const b = monthBounds(currentMonth()); setFilterFrom(b.from); setFilterTo(b.to); }}>
-            Joriy oy
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => { setFilterFrom(""); setFilterTo(""); }}>
-            Barcha davr
-          </Button>
-          <span className="text-xs text-muted-foreground">
-            {selectedMonth
-              ? `Ko'rsatilmoqda: ${monthLabel(selectedMonth)}`
-              : (filterFrom || filterTo)
-                ? `Tanlangan davr: ${filterFrom || "…"} → ${filterTo || "…"}`
-                : "Barcha davr ko'rsatilmoqda"}
-          </span>
-        </div>
-        <div className="kassa-summary grid gap-4">
-          {selectedMonth && (
-            <Card><CardContent className="p-4 space-y-2">
-              <div className="text-xs text-muted-foreground">Boshlang'ich qoldiq (oy boshi)</div>
-              {renderCurrencies(openingBal, "balance")}
-            </CardContent></Card>
+          {isOverview && (
+            <div className="inline-flex items-center gap-1 rounded-lg border bg-background px-1 py-0.5">
+              <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Oldingi oy" onClick={() => shiftMonth(-1)}><ChevronLeft className="h-4 w-4" /></Button>
+              <span className="min-w-[120px] text-center text-sm font-semibold">{monthLabel(viewMonth)}</span>
+              <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Keyingi oy" onClick={() => shiftMonth(1)}><ChevronRight className="h-4 w-4" /></Button>
+            </div>
           )}
-          <Card><CardContent className="p-4 space-y-2">
-            <div className="text-xs text-muted-foreground">{selectedMonth ? "Yakuniy qoldiq" : (k.balance ?? "Balans")}</div>
-            {renderCurrencies(selectedMonth ? closingBal : balByCur, "balance")}
-          </CardContent></Card>
-          <Card><CardContent className="p-4 space-y-2">
-            <div className="text-xs text-muted-foreground">{k.totalIncome ?? "Jami kirim"}</div>
-            {renderCurrencies(incByCur, "in")}
-          </CardContent></Card>
-          <Card><CardContent className="p-4 space-y-2">
-            <div className="text-xs text-muted-foreground">{k.totalExpenses ?? "Jami chiqim"}</div>
-            {renderCurrencies(expByCur, "out")}
-          </CardContent></Card>
         </div>
-
-        {/* To'lov turi kartalari faqat Kassa tablarida; Ta'minot tabida o'z alohida kartalari bor (takrorlanmasin) */}
-        {tab !== "supply" && (
-        <div className="kassa-payment-summary grid gap-4">
-          <Card className="border-status-green/30"><CardContent className="p-4 space-y-3">
-            <div className="text-xs font-semibold uppercase tracking-wide text-status-green">
-              💵 {PAYMENT_LABELS[locale]?.cash ?? "Naqd pul"}
-            </div>
-            <div className="kassa-payment-values grid gap-3">
-              <div><div className="text-[10px] text-muted-foreground mb-1">{k.balance ?? "Balans"}</div>{renderCurrencies(cashBal, "balance")}</div>
-              <div><div className="text-[10px] text-muted-foreground mb-1">{k.income ?? "Kirim"}</div>{renderCurrencies(cashIn, "in")}</div>
-              <div><div className="text-[10px] text-muted-foreground mb-1">{k.expense ?? "Chiqim"}</div>{renderCurrencies(cashOut, "out")}</div>
-            </div>
-          </CardContent></Card>
-
-          <Card className="border-primary/30"><CardContent className="p-4 space-y-3">
-            <div className="text-xs font-semibold uppercase tracking-wide text-primary">
-              💳 {PAYMENT_LABELS[locale]?.corporate_card ?? "Korporativ karta"}
-            </div>
-            <div className="kassa-payment-values grid gap-3">
-              <div><div className="text-[10px] text-muted-foreground mb-1">{k.balance ?? "Balans"}</div>{renderCurrencies(cardBal, "balance")}</div>
-              <div><div className="text-[10px] text-muted-foreground mb-1">{k.income ?? "Kirim"}</div>{renderCurrencies(cardIn, "in")}</div>
-              <div><div className="text-[10px] text-muted-foreground mb-1">{k.expense ?? "Chiqim"}</div>{renderCurrencies(cardOut, "out")}</div>
-            </div>
-          </CardContent></Card>
+        <div className="flex items-center gap-2 flex-wrap ml-auto">
+          <Button variant="outline" className={tab === "report" ? "ring-2 ring-ring" : ""} onClick={() => setTab(tab === "report" ? "income" : "report")}>
+            <FileBarChart className="h-4 w-4 mr-1.5" />Hisobot
+          </Button>
+          <Button variant="outline" className={tab === "debt" ? "ring-2 ring-ring" : ""} onClick={() => setTab(tab === "debt" ? "income" : "debt")}>
+            <Wallet className="h-4 w-4 mr-1.5" />Qarz
+          </Button>
+          {canManage && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild><Button variant="outline" size="icon" aria-label="Boshqa amallar"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+              <DropdownMenuContent align="end"><DropdownMenuItem onClick={() => setOpenFx(true)}>⇄ Valyuta almashtirish</DropdownMenuItem></DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          {canManage && <Button variant="destructive" onClick={() => setOpenExp(true)}><Minus className="h-4 w-4 mr-1" />Chiqim</Button>}
+          {canManage && <Button className="bg-status-green text-white hover:bg-status-green/90" onClick={() => setOpenInc(true)}><Plus className="h-4 w-4 mr-1" />Kirim</Button>}
         </div>
-        )}
       </div>
 
+      {isOverview && (
+        <KassaOverview
+          incomes={fInc} expenses={fExp} allIncomes={incomes} allExpenses={expenses}
+          month={viewMonth} opening={openingBal} canManage={canManage}
+          ptLabel={ptLabel} normalizePT={normalizePT} localize={(s) => localize(s) || ""}
+          onEditIncome={openEditInc} onDeleteIncome={setIncDelete} onEditExpense={openEditExp}
+        />
+      )}
 
-
-      <div className="flex gap-2 items-end flex-wrap">
-        <div className="relative flex-1 min-w-[220px]">
-          <Label className="text-xs">{k.search ?? "Qidirish"}</Label>
-          <div className="relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input className="pl-8" placeholder={k.searchPh ?? "Oluvchi, manba, summa, izoh, valyuta..."} value={searchQ} onChange={e => setSearchQ(e.target.value)} />
-          </div>
-        </div>
-        <div><Label className="text-xs">{k.from ?? "Dan"}</Label><Input type="date" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} /></div>
-        <div><Label className="text-xs">{k.to ?? "Gacha"}</Label><Input type="date" value={filterTo} onChange={e => setFilterTo(e.target.value)} /></div>
-        {(selectedMonth !== currentMonth() || searchQ) && <Button variant="outline" onClick={() => { const b = monthBounds(currentMonth()); setFilterFrom(b.from); setFilterTo(b.to); setSearchQ(""); }}>{k.reset ?? "Tozalash"}</Button>}
-      </div>
-
-      <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
-        <TabsList>
-          <TabsTrigger value="income"><ArrowDownCircle className="h-4 w-4 mr-1 text-status-green" />{k.income ?? "Kirim"}</TabsTrigger>
-          <TabsTrigger value="expense"><ArrowUpCircle className="h-4 w-4 mr-1 text-status-red" />{k.expense ?? "Chiqim"}</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="income" className="space-y-3">
           {canManage && (
             <Dialog open={openInc} onOpenChange={(o) => { setOpenInc(o); if (!o) { setIncEditId(null); setIncOrig(null); setIncForm({ amount: 0, source: "", payment_type: "cash", comment: "", currency: "UZS", exchange_rate: 1 }); setIncFile(null); } }}>
-              <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{k.addIncome ?? "Kirim qo'shish"}</Button></DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>{incEditId ? ((t as any).kassaExtra?.editIncome ?? "Kirimni tahrirlash") : (k.addIncome ?? "Kirim qo'shish")}</DialogTitle></DialogHeader>
                 <div className="space-y-3">
@@ -904,7 +818,6 @@ export default function KassaPage() {
           )}
           {canManage && (
             <Dialog open={openFx} onOpenChange={setOpenFx}>
-              <DialogTrigger asChild><Button variant="outline" className="ml-2">⇄ Valyuta almashtirish</Button></DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>Valyuta almashtirish</DialogTitle></DialogHeader>
                 <div className="space-y-3">
@@ -938,52 +851,8 @@ export default function KassaPage() {
               </DialogContent>
             </Dialog>
           )}
-
-          <Card><CardContent className="p-0">
-            <div className="border rounded-md overflow-x-auto">
-              <Table>
-                <TableHeader><TableRow>
-                  <TableHead>{k.date ?? "Sana"}</TableHead>
-                  <TableHead className="text-right">{k.amount ?? "Summa"}</TableHead>
-                  <TableHead>{k.currency ?? "Valyuta"}</TableHead>
-                  <TableHead className="text-right">{k.exchangeRate ?? "Kurs"}</TableHead>
-                  <TableHead className="text-right">{k.totalUzs ?? "UZS jami"}</TableHead>
-                  <TableHead>{k.source ?? "Manba"}</TableHead>
-                  <TableHead>{k.paymentType ?? "To'lov turi"}</TableHead>
-                  <TableHead>{k.comment ?? "Izoh"}</TableHead>
-                  <TableHead>{k.receipt ?? "Chek"}</TableHead>
-                  {canManage && <TableHead></TableHead>}
-                </TableRow></TableHeader>
-                <TableBody>
-                  {loading && <TableRow><TableCell colSpan={canManage ? 10 : 9} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
-                  {!loading && fInc.map(i => (
-                    <TableRow key={i.id} data-focus-id={i.id} data-focus-at={i.created_at} data-focus-entity="cash_income">
-                      <TableCell className="text-sm whitespace-nowrap">{fmtDateTime24(i.income_date)}</TableCell>
-                      <TableCell className="text-right font-mono font-semibold text-status-green">{fmtCash(Number(i.amount), i.currency)}</TableCell>
-                      <TableCell className="text-xs"><Badge variant="secondary">{i.currency ?? "UZS"}</Badge></TableCell>
-                      <TableCell className="text-right text-xs font-mono">{(i.currency ?? "UZS") === "UZS" ? "—" : fmt(Number(i.exchange_rate ?? 1))}</TableCell>
-                      <TableCell className="text-right font-mono text-status-green">{fmt(Number(i.total_uzs || i.amount))} {t.common.sum}</TableCell>
-                      <TableCell className="text-sm">{i.source}</TableCell>
-                      <TableCell className="text-sm">{ptLabel(i.payment_type)}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{i.comment ?? "—"}</TableCell>
-                      <TableCell>{i.receipt_url ? <a href={i.receipt_url} target="_blank" rel="noreferrer" className="text-primary underline text-xs">{k.view ?? "Ko'rish"}</a> : "—"}</TableCell>
-                      {canManage && <TableCell className="whitespace-nowrap">
-                        <Button size="sm" variant="ghost" onClick={() => openEditInc(i)}><Edit2 className="h-3 w-3" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => setIncDelete(i)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
-                      </TableCell>}
-                    </TableRow>
-                  ))}
-                  {!loading && fInc.length === 0 && <TableRow><TableCell colSpan={canManage ? 10 : 9} className="text-center text-muted-foreground py-8">{k.emptyIncome ?? "Kirimlar yo'q"}</TableCell></TableRow>}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent></Card>
-        </TabsContent>
-
-        <TabsContent value="expense" className="space-y-3">
           {canManage && (
             <Dialog open={openExp} onOpenChange={(o) => { setOpenExp(o); if (!o) { setExpEditId(null); setExpOrig(null); setExpForm({ amount: 0, reason: "", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash", salary_kind: "", is_supply: false, debt_id: "" }); setRecipientMode("employee"); } }}>
-              <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />Chiqim qilish</Button></DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>{expEditId ? "Chiqimni tahrirlash" : "Chiqim qilish"}</DialogTitle></DialogHeader>
                 <div className="space-y-3">
@@ -1069,45 +938,7 @@ export default function KassaPage() {
             </Dialog>
           )}
 
-          <Card><CardContent className="p-0">
-            <div className="border rounded-md overflow-x-auto">
-              <Table>
-                <TableHeader><TableRow>
-                  <TableHead>{k.date ?? "Sana"}</TableHead>
-                  <TableHead className="text-right">{k.amount ?? "Summa"}</TableHead>
-                  <TableHead>{k.currency ?? "Valyuta"}</TableHead>
-                  <TableHead className="text-right">{k.exchangeRate ?? "Kurs"}</TableHead>
-                  <TableHead className="text-right">{k.totalUzs ?? "UZS jami"}</TableHead>
-                  <TableHead>{k.reason ?? "Sabab"}</TableHead>
-                  <TableHead>{k.paymentType ?? "To'lov turi"}</TableHead>
-                  <TableHead>{k.recipient ?? "Oluvchi"}</TableHead>
-                  <TableHead>{k.comment ?? "Izoh"}</TableHead>
-                  {canManage && <TableHead></TableHead>}
-                </TableRow></TableHeader>
-                <TableBody>
-                  {loading && <TableRow><TableCell colSpan={canManage ? 10 : 9} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
-                  {!loading && fExp.map(e => (
-                    <TableRow key={e.id} data-focus-id={e.id} data-focus-at={e.created_at} data-focus-entity="cash_expense">
-                      <TableCell className="text-sm whitespace-nowrap">{fmtDateTime24(e.expense_date)}</TableCell>
-                      <TableCell className="text-right font-mono font-semibold text-status-red">{fmtCash(Number(e.amount), e.currency)}</TableCell>
-                      <TableCell className="text-xs"><Badge variant="secondary">{e.currency ?? "UZS"}</Badge></TableCell>
-                      <TableCell className="text-right text-xs font-mono">{(e.currency ?? "UZS") === "UZS" ? "—" : fmt(Number(e.exchange_rate ?? 1))}</TableCell>
-                      <TableCell className="text-right font-mono text-status-red">{fmt(Number(e.total_uzs || e.amount))} {t.common.sum}</TableCell>
-                      <TableCell className="text-sm">{e.reason}</TableCell>
-                      <TableCell className="text-sm">
-                        <Badge variant={normalizePT(e.payment_type) === "corporate_card" ? "default" : "outline"}>{ptLabel(e.payment_type)}</Badge>
-                      </TableCell>
-                      <TableCell className="text-sm">{localize(e.recipient?.full_name ?? e.recipient_name) || "—"}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{e.comment ?? "—"}</TableCell>
-                      {canManage && <TableCell><Button size="sm" variant="ghost" onClick={() => openEditExp(e)}><Edit2 className="h-3 w-3" /></Button></TableCell>}
-                    </TableRow>
-                  ))}
-                  {!loading && fExp.length === 0 && <TableRow><TableCell colSpan={canManage ? 10 : 9} className="text-center text-muted-foreground py-8">{k.empty ?? "Xarajatlar yo'q"}</TableCell></TableRow>}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent></Card>
-        </TabsContent>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
 
         <TabsContent value="report" className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -1117,24 +948,6 @@ export default function KassaPage() {
             <Button variant="outline" size="sm" onClick={downloadReport}><Download className="h-4 w-4 mr-1" />Yuklab olish</Button>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-4">
-            <Card><CardContent className="p-4">
-              <div className="text-xs text-muted-foreground">Boshlang'ich qoldiq</div>
-              <div className="text-lg font-bold font-mono mt-1">{curLine(report.opening)}</div>
-            </CardContent></Card>
-            <Card><CardContent className="p-4">
-              <div className="text-xs text-muted-foreground">Jami kirim</div>
-              <div className="text-lg font-bold font-mono mt-1 text-status-green">{curLine(report.totalIn)}</div>
-            </CardContent></Card>
-            <Card><CardContent className="p-4">
-              <div className="text-xs text-muted-foreground">Jami chiqim</div>
-              <div className="text-lg font-bold font-mono mt-1 text-status-red">{curLine(report.totalOut)}</div>
-            </CardContent></Card>
-            <Card><CardContent className="p-4">
-              <div className="text-xs text-muted-foreground">Yakuniy qoldiq</div>
-              <div className="text-lg font-bold font-mono mt-1">{curLine(report.closing)}</div>
-            </CardContent></Card>
-          </div>
 
           <Card><CardContent className="p-4 space-y-2">
             <div className="text-sm font-semibold">Chiqimlar sabab bo'yicha</div>
