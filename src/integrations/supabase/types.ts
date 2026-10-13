@@ -640,6 +640,42 @@ export type Database = {
           },
         ]
       }
+      daily_task_employee_aliases: {
+        Row: {
+          alias_id: string
+          canonical_id: string
+          created_at: string
+          reason: string | null
+        }
+        Insert: {
+          alias_id: string
+          canonical_id: string
+          created_at?: string
+          reason?: string | null
+        }
+        Update: {
+          alias_id?: string
+          canonical_id?: string
+          created_at?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_task_employee_aliases_alias_id_fkey"
+            columns: ["alias_id"]
+            isOneToOne: true
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_task_employee_aliases_canonical_id_fkey"
+            columns: ["canonical_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_task_history: {
         Row: {
           action: string
