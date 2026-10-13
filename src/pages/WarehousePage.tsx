@@ -348,6 +348,7 @@ export default function WarehousePage() {
       priority: newPriority, currency: newCurrency,
       ...metalFields,
     } as any).select("id").single();
+    if ((error as any)?.code === "23505") { toast.error("Bu mahsulot (nomi, birligi, o'lchami, valyutasi) allaqachon mavjud"); return; }
     if (error || !created) { toast.error(error?.message || "Error"); return; }
     // Metall normativi: Konstruktor sarfida ishlatilishi uchun saqlanadi
     if (isMetalProduct && newMetalType.trim() && num(newThick) && num(newWidth) && num(newLength) && num(newWeightKg)) {

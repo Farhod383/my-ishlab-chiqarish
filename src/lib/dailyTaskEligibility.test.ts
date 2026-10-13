@@ -13,3 +13,11 @@ describe("isDailyTaskEligible", () => {
       expect(ok({ status: "active", department, position })).toBe(false);
     });
 });
+
+import { isDailyTaskEligible as elig2 } from "./dailyTaskEligibility";
+import { it as it2, expect as expect2 } from "vitest";
+it2("excludes OTK staff but keeps production workers", () => {
+  expect2(elig2({ status: "active", department: "", position: "OTK" })).toBe(false);
+  expect2(elig2({ status: "active", department: "ОТК", position: "Контролёр" })).toBe(false);
+  expect2(elig2({ status: "active", department: "A blok", position: "Payvandchi" })).toBe(true);
+});
