@@ -1,4 +1,8 @@
 
+## Ta’minot dizayn va sana ko‘rinishi
+- [ ] Buyurtma berish tugmasi, solid status/kartochkalar va Muddat/sanalarni faqat ko‘rinishda yangilash.
+- [ ] Haqiqiy ma’lumotlar bilan desktop va mobil tekshiruv; sana regressiya testlarini bajarish.
+
 ## Kassa navigatsiya layout (yangi)
 - [x] Kassa/Ta'minot + Hisobot/Qarz tugmalari joyi barqaror (sticky header, shrink-0)
 
