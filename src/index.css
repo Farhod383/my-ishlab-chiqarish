@@ -163,9 +163,9 @@ input, textarea, [contenteditable="true"] {
    red and a Ta'minlandi card solid dark green with white text. Scoped to .supply-tone only —
    no other ERP module is recolored. */
 .supply-tone { --supply-tone: var(--status-red-solid); --supply-hover: var(--status-red-solid-hover); background: hsl(var(--supply-tone)); color: hsl(var(--status-solid-foreground)); border-color: hsl(var(--supply-tone)); }
-/* :hover/:focus variants are needed because Button's outline variant ships hover:text-* utilities
-   with the same specificity as a plain class rule — without them the label turns dark on hover. */
-.supply-tone:hover, .supply-tone:focus, .supply-tone:focus-visible, .supply-tone:active { color: hsl(var(--status-solid-foreground)); }
+/* The Button outline variant ships hover:/focus: text-color utilities that otherwise flip the label
+   to dark purple on the solid card, so the white label is pinned for every interaction state. */
+.supply-tone:hover, .supply-tone:focus, .supply-tone:focus-visible, .supply-tone:active { color: hsl(var(--status-solid-foreground)) !important; }
 .supply-tone[data-tone="fulfilled"] { --supply-tone: var(--status-green-solid); --supply-hover: var(--status-green-solid-hover); }
 .supply-tone.supply-selectable { cursor: pointer; transition: background 150ms ease; }
 .supply-tone.supply-selectable:hover { background: hsl(var(--supply-hover)); }
