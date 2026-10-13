@@ -90,12 +90,13 @@ export default function DailyTasksPage() {
     return matchesAcrossScripts(hay, q);
   });
 
+  const st = filtered;
   const stats = {
-    total: tasks.length,
-    closed: tasks.filter((t) => t.status === "closed").length,
-    prog: tasks.filter((t) => t.status === "in_progress").length,
-    cancelled: tasks.filter((t) => t.status === "cancelled").length,
-    avg: tasks.length ? Math.round(tasks.reduce((s, t) => s + t.progress, 0) / tasks.length) : 0,
+    total: st.length,
+    closed: st.filter((t) => t.status === "closed").length,
+    prog: st.filter((t) => t.status === "in_progress").length,
+    cancelled: st.filter((t) => t.status === "cancelled").length,
+    avg: st.length ? Math.round(st.reduce((s, t) => s + t.progress, 0) / st.length) : 0,
   };
 
   const blockedFor = form.employee_id ? openByEmp[form.employee_id] : undefined;
