@@ -20,6 +20,7 @@ import {
   normalizeSupplyStatus,
   supplyStatusLabel as statusLabel,
   supplyStatusCls as statusCls,
+  supplyStatusTextCls as textCls,
   supplyStatusDotCls as dotCls,
   supplyStatusActiveBtnCls as activeBtnCls,
   supplyStatusOutlineBtnCls as outlineBtnCls,
@@ -395,14 +396,14 @@ export default function SupplyRequestsPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {(["pending", "fulfilled"] as const).map((s) => (
-          <Button key={s} variant="outline" data-tone={s} aria-pressed={filter === s} className="supply-tone supply-selectable h-auto min-h-28 w-full justify-between whitespace-normal p-5 text-left" onClick={() => setFilter(filter === s ? "all" : s)}>
+          <Button key={s} variant="outline" data-tone={s} aria-pressed={filter === s} className={`h-auto min-h-28 w-full justify-between whitespace-normal p-5 text-left bg-card border-2 ${filter === s ? `ring-2 ring-offset-2 ${s === "pending" ? "ring-status-red" : "ring-status-green"}` : ""}`} onClick={() => setFilter(filter === s ? "all" : s)}>
               <div>
-                <div className="text-base font-bold">
+                <div className={`text-xl font-extrabold ${textCls[s]}`}>
                   {statusLabel[s]}
                 </div>
-                <div className="text-3xl font-bold leading-tight mt-1">{counts[s]} <span className="text-base font-semibold">ta so'rov</span></div>
+                <div className="text-3xl font-bold leading-tight mt-1">{counts[s]} <span className="text-base font-semibold text-muted-foreground">ta so'rov</span></div>
               </div>
-              {s === "pending" ? <Clock className="h-7 w-7" /> : <Check className="h-7 w-7" />}
+              {s === "pending" ? <Clock className={`h-8 w-8 ${textCls[s]}`} /> : <Check className={`h-8 w-8 ${textCls[s]}`} />}
           </Button>
         ))}
       </div>
@@ -430,11 +431,11 @@ export default function SupplyRequestsPage() {
               <Button
                 key={o.key}
                 variant="outline"
-                className="h-auto min-h-12 w-full justify-between gap-3 whitespace-normal text-left px-4 py-3"
+                className="h-auto min-h-12 w-full justify-between gap-3 whitespace-normal text-left px-4 py-3 bg-card border-2"
                 onClick={() => setOpenOrderId(o.key)}
               >
-                <span className="font-bold">{o.order.product_name}</span>
-                <span className="shrink-0">{o.items.length} ta</span>
+                <span className="text-base font-bold">{o.order.product_name}</span>
+                <span className="shrink-0 text-base font-bold">{o.items.length} ta</span>
               </Button>
             ))}
             {visible.filter((o) => o.pinned).flatMap((o) => o.items).sort(sortByStatus).map((item: any) => {
@@ -446,30 +447,29 @@ export default function SupplyRequestsPage() {
                 data-focus-id={item.id}
                 data-focus-at={item.created_at}
                 data-focus-entity="supply_request"
-                className="supply-tone"
-                data-tone={status}
+                className="border-2"
               >
                 <CardContent className="p-5 space-y-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex items-start gap-3 min-w-0 flex-1">
-                      <Package className="h-5 w-5 shrink-0 mt-1" />
+                      <Package className={`h-6 w-6 shrink-0 mt-1 ${textCls[status]}`} />
                       <div className="min-w-0 space-y-1">
-                        <div className="text-lg font-bold break-words">{item.product_name}</div>
-                        <div className="text-sm font-bold">{item.quantity} {item.unit ?? ""}</div>
+                        <div className="text-xl font-bold break-words">{item.product_name}</div>
+                        <div className="text-base font-bold">{item.quantity} {item.unit ?? ""}</div>
                       </div>
                     </div>
-                    <Badge variant="outline" className={`text-sm font-bold px-3 py-1 ${statusCls[status]}`}>{statusLabel[status]}</Badge>
+                    <Badge variant="outline" className={`text-base font-extrabold px-4 py-1.5 border-2 ${statusCls[status]}`}>{statusLabel[status]}</Badge>
                   </div>
                   <div className="text-sm font-semibold break-words">
-                    {item.order ? <>Zakaz: {item.order.order_number} · {item.order.product_name}</> : "Zavod uchun umumiy buyurtma"}
+                    {item.order ? <>Zakaz: <span className="font-mono font-bold">{item.order.order_number}</span> · {item.order.product_name}</> : "Zavod uchun umumiy buyurtma"}
                   </div>
-                  <div className="supply-dates grid grid-cols-1 xl:grid-cols-3 gap-3 rounded-md p-3 text-sm font-semibold">
-                    <div className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 shrink-0" /><span>Berilgan:</span><span className="font-mono">{dates.given}</span></div>
-                    <div className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 shrink-0" /><span>Muddat:</span><div className="font-mono break-words">{dates.deadline}</div></div>
-                    <div className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 shrink-0" /><span>Ta'minlandi:</span><span className="font-mono">{dates.fulfilled}</span></div>
+                  <div className="supply-dates grid grid-cols-1 xl:grid-cols-3 gap-3 rounded-md p-3 text-base font-semibold">
+                    <div className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 shrink-0" /><span>Berilgan:</span><span className="font-mono font-bold">{dates.given}</span></div>
+                    <div className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 shrink-0" /><span>Muddat:</span><div className={`font-mono font-bold break-words ${isLate(item) ? textCls.pending : ""}`}>{dates.deadline}</div></div>
+                    <div className="flex items-center gap-1.5"><CalendarDays className={`h-4 w-4 shrink-0 ${status === "fulfilled" ? textCls.fulfilled : ""}`} /><span className={status === "fulfilled" ? textCls.fulfilled : ""}>Ta'minlandi:</span><span className={`font-mono font-bold ${status === "fulfilled" ? textCls.fulfilled : ""}`}>{dates.fulfilled}</span></div>
                   </div>
                   <div className="flex flex-wrap justify-between items-center gap-2">
-                    <span className="text-sm font-semibold">{requesterName(item.created_by)}</span>
+                    <span className="text-base font-semibold">{requesterName(item.created_by)}</span>
                     <Button variant="outline" size="sm" className="text-foreground" onClick={() => setOpenOrderId(item.order?.id ?? GENERAL_KEY)}>
                       <ExternalLink className="h-4 w-4 mr-2" />Ko'rish
                       {item.order?.id && (supplyUnreadByOrder[item.order.id] ?? 0) > 0 && <span className="ml-2">({supplyUnreadByOrder[item.order.id]})</span>}
@@ -503,20 +503,26 @@ export default function SupplyRequestsPage() {
             {openedOrder.items.map((item: any) => {
               const e = edit[item.id] ?? { status: normalizeStatus(item.status), supply_comment: "", dirty: false };
               const color = normalizeStatus(item.status);
-              const cardTone = item.order?.status === "completed" ? "fulfilled" : color;
+              const dates = supplyRequestDates({ ...item, status: color });
               return (
-                <Card key={item.id} data-focus-id={item.id} data-focus-at={item.created_at} data-focus-entity="supply_request" data-tone={cardTone} className="supply-tone">
+                <Card key={item.id} data-focus-id={item.id} data-focus-at={item.created_at} data-focus-entity="supply_request" className="border-2">
                   <CardContent className="p-5 space-y-4">
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div className="flex items-start gap-3 min-w-0 flex-1">
-                        <Package className="h-6 w-6 shrink-0 mt-0.5" />
+                        <Package className={`h-6 w-6 shrink-0 mt-0.5 ${textCls[color]}`} />
                         <div className="min-w-0 flex-1">
-                          <div className="font-bold text-lg leading-snug">{item.product_name}</div>
-                          <div className="text-sm font-semibold flex flex-wrap gap-x-3 leading-tight mt-1">
+                          <div className="font-bold text-xl leading-snug">{item.product_name}</div>
+                          <div className="text-base font-semibold flex flex-wrap gap-x-3 leading-tight mt-1">
                             <span className="font-mono font-bold">{item.quantity} {item.unit ?? ""}</span>
                             <span>· {requesterName(item.created_by)}</span>
                             {item.department && <span className="uppercase">· {item.department}</span>}
                           </div>
+                          {!!item.order?.order_number && (
+                            <div className="text-base font-semibold mt-1 break-words">
+                              Zakaz: <span className="font-mono font-bold">{item.order.order_number}</span>
+                              {item.order.product_name ? ` · ${item.order.product_name}` : ""}
+                            </div>
+                          )}
                           {canEdit && (
                             <div className="mt-2 flex items-center gap-1.5">
                               <span className="text-sm font-semibold">Miqdorni o'zgartirish:</span>
@@ -547,7 +553,7 @@ export default function SupplyRequestsPage() {
                                 key={s}
                                 size="sm"
                                 aria-pressed={selected}
-                                className={`h-11 px-4 text-sm font-bold border-2 ${selected ? activeBtnCls[s] : outlineBtnCls[s]} ${selected ? "shadow-md" : "border-dashed"}`}
+                                className={`h-11 px-4 text-base font-bold border-2 ${selected ? activeBtnCls[s] : outlineBtnCls[s]} ${selected ? "shadow-md" : "border-dashed"}`}
                                 variant="outline"
                                 disabled={!!savingStatus[item.id]}
                                 onClick={() => markStatus(item, s)}
@@ -558,29 +564,29 @@ export default function SupplyRequestsPage() {
                             );
                           })
                         ) : (
-                          <div className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold ${statusCls[color]}`}>
-                            <span className={`h-2 w-2 rounded-full ${dotCls[color]}`} />
+                          <div className={`inline-flex items-center gap-2 rounded-full border-2 bg-card px-4 py-1.5 text-base font-extrabold ${statusCls[color]}`}>
+                            <span className={`h-2.5 w-2.5 rounded-full ${dotCls[color]}`} />
                             {statusLabel[color]}
                           </div>
                         )}
                       </div>
                     </div>
 
-                    <div className="supply-dates grid grid-cols-1 xl:grid-cols-3 gap-3 text-sm font-semibold rounded-md px-3 py-3">
+                    <div className="supply-dates grid grid-cols-1 xl:grid-cols-3 gap-3 text-base font-semibold rounded-md px-3 py-3">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <CalendarDays className="h-4 w-4 shrink-0" />
                         <span>Berilgan:</span>
-                        <span className="font-mono font-bold">{fmtDT(item.created_at)}</span>
+                        <span className="font-mono font-bold">{dates.given}</span>
                       </div>
                       <div className="flex items-center gap-1.5 min-w-0">
                         <CalendarDays className="h-4 w-4 shrink-0" />
                         <span>Muddat:</span>
-                        <span className="font-mono font-bold">{fmtDate(item.required_date)}</span>
+                        <span className={`font-mono font-bold ${isLate(item) ? textCls.pending : ""}`}>{dates.deadline}</span>
                       </div>
                       <div className="flex items-center gap-1.5 min-w-0">
                         <CalendarDays className="h-4 w-4 shrink-0" />
                         <span>Ta'minlandi:</span>
-                        <span className="font-mono font-bold">{color === "fulfilled" ? fmtDT(item.fulfilled_at) : "—"}</span>
+                        <span className={`font-mono font-bold ${color === "fulfilled" ? textCls.fulfilled : ""}`}>{dates.fulfilled}</span>
                       </div>
                     </div>
 
