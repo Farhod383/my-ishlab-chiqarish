@@ -4,7 +4,7 @@
 - [x] Kelmagan mahsulotning kelish sanasi yashirildi; vaqt saqlanmagan muddatda “Vaqt belgilanmagan” ko‘rsatiladi. 9 test o‘tdi; 1280 px va 390 px ekranlar hamda mavjud tafsilotga o‘tish tekshirildi, ma’lumotlar o‘zgarmadi.
 
 ## Ta’minot dizayn va sana ko‘rinishi
-- [x] Buyurtma berish tugmasi, solid status/kartochkalar va Muddat/sanalarni faqat ko‘rinishda yangilash.
+- [x] Buyurtma berish tugmasi, Muddat/sanalarni faqat ko‘rinishda yangilash. (Kartochkalardagi to‘q fon keyingi so‘rov bilan oq fonga qaytarildi.)
 - [x] Haqiqiy buyurtmalar va buyurtma oynasi 1280 px desktop hamda 390 px mobil ekranlarda tekshirildi; to‘q qizil/yashil fon, oq matn, DD.MM.YYYY va 24 soatlik sanalar tasdiqlandi. Besh regressiya testi o‘tdi; ma’lumotlar o‘zgartirilmadi.
 
 ## Kassa navigatsiya layout (yangi)
@@ -26,3 +26,8 @@
 ## Сварочные перчатки
 - [x] Mavjud 20 dona qoldiq mavjud instrumentga bir marta o‘tkazildi; 2 kirim va 12 berish/qaytarish yozuvi saqlandi, yangi instrument yaratilmadi.
 - [x] Oddiy mahsulotlardan chiqarildi; real ilovada qoldiq, instrument berish tanlovi va hisobot tarixi tekshirildi. Qaytarish/berish va bog‘langan stock triggerlari rollback bilan tekshirildi; tasnif testi o‘tdi.
+
+## Ta’minot kartochkalari: oq fon va rangli status yozuvlari
+- [x] Barcha buyurtma, kategoriya va filtr kartalari oq fonga qaytarildi; qizil/yashil faqat status yozuvi, belgi va ixcham chipda.
+- [x] Status, mahsulot nomi, miqdor va sanalar kattaroq/qalinroq qilindi; zakaz raqami har kartochkada, sanalar DD.MM.YYYY HH:mm.
+- [x] 1280 px va 390 pxda tekshirildi; 5 sana testi, typecheck va build toza; ma’lumotlar va biznes-logika o‘zgarmadi.
