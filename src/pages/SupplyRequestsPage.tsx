@@ -470,7 +470,7 @@ export default function SupplyRequestsPage() {
                   </div>
                   <div className="flex flex-wrap justify-between items-center gap-2">
                     <span className="text-sm font-semibold">{requesterName(item.created_by)}</span>
-                    <Button variant="outline" size="sm" onClick={() => setOpenOrderId(item.order?.id ?? GENERAL_KEY)}>
+                    <Button variant="outline" size="sm" className="text-foreground" onClick={() => setOpenOrderId(item.order?.id ?? GENERAL_KEY)}>
                       <ExternalLink className="h-4 w-4 mr-2" />Ko'rish
                       {item.order?.id && (supplyUnreadByOrder[item.order.id] ?? 0) > 0 && <span className="ml-2">({supplyUnreadByOrder[item.order.id]})</span>}
                     </Button>

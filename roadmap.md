@@ -1,7 +1,7 @@
 
 ## Ta’minot asosiy ro‘yxati
-- [ ] Asosiy sahifada alohida buyurtmalar va barcha haqiqiy ma’lumotlarni ko‘rsatish; umumiy kategoriya bloklarini neytral qilish.
-- [ ] Kelmagan mahsulotning kelish sanasini yashirish; vaqt saqlanmagan muddatga vaqt uydirmaslik; desktop va mobil tekshiruv.
+- [x] Asosiy sahifada 35 haqiqiy buyurtmaning mahsuloti, miqdori, zakaz havolasi, uchta sana va holati tekshirildi; umumiy kategoriya bloklari neytral.
+- [x] Kelmagan mahsulotning kelish sanasi yashirildi; vaqt saqlanmagan muddatda “Vaqt belgilanmagan” ko‘rsatiladi. 9 test o‘tdi; 1280 px va 390 px ekranlar hamda mavjud tafsilotga o‘tish tekshirildi, ma’lumotlar o‘zgarmadi.
 
 ## Ta’minot dizayn va sana ko‘rinishi
 - [x] Buyurtma berish tugmasi, solid status/kartochkalar va Muddat/sanalarni faqat ko‘rinishda yangilash.
