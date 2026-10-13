@@ -57,6 +57,7 @@ export default function DailyTasksPage() {
   const [prog, setProg] = useState(0);
   const [saving, setSaving] = useState(false);
   const [view, setView] = useState<"tasks" | "rating">("tasks");
+  const [aliasIds, setAliasIds] = useState<Set<string>>(new Set());
 
   const load = async () => {
     const [{ data: t }, { data: o }] = await Promise.all([
@@ -71,6 +72,8 @@ export default function DailyTasksPage() {
       .then(({ data }) => setOrders((data as any) ?? []));
     supabase.from("profiles").select("id,full_name").then(({ data }) =>
       setProfiles(Object.fromEntries(((data as any) ?? []).map((p: any) => [p.id, p.full_name]))));
+    supabase.from("daily_task_employee_aliases" as any).select("alias_id").then(({ data }) =>
+      setAliasIds(new Set(((data as any) ?? []).map((r: any) => r.alias_id))));
   }, []);
   useEffect(() => {
     const ch = supabase.channel("daily-tasks-" + date).on("postgres_changes", { event: "*", schema: "public", table: "daily_tasks" }, () => load()).subscribe();
@@ -134,7 +137,7 @@ export default function DailyTasksPage() {
   };
 
   const orderOptions = orders.filter((o) => o.status !== "cancelled").map((o) => ({ value: o.id, label: `#${o.order_number} — ${o.product_name}` }));
-  const empOptions = employees.filter(isDailyTaskEligible).map((e, i) => ({
+  const empOptions = employees.filter((e) => isDailyTaskEligible(e) && !aliasIds.has(e.id)).map((e, i) => ({
     value: e.id, label: `${i + 1}. ` + localize(e.full_name) + (openByEmp[e.id] ? " 🔒" : ""),
     hint: [e.position, e.department, openByEmp[e.id] ? "ochiq topshiriq bor" : null].filter(Boolean).join(" · "),
   }));
