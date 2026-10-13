@@ -18,6 +18,7 @@ import DateInput from "@/components/DateInput";
 import DailyTasksRating from "@/components/DailyTasksRating";
 import { fmtDate as fmtDateG, fmtDateTime24 } from "@/lib/format";
 import { currentUserName, displayUser } from "@/lib/userNames";
+import { isDailyTaskEligible } from "@/lib/dailyTaskEligibility";
 
 type Status = "in_progress" | "closed" | "cancelled";
 interface Task {
@@ -82,6 +83,7 @@ export default function DailyTasksPage() {
   const openByEmp = useMemo(() => Object.fromEntries(openTasks.map((t) => [t.employee_id, t])), [openTasks]);
 
   const filtered = tasks.filter((t) => {
+    if (!isDailyTaskEligible(empMap[t.employee_id])) return false;
     if (!q.trim()) return true;
     const o = orderMap[t.order_id];
     const hay = [empMap[t.employee_id]?.full_name, localize(empMap[t.employee_id]?.full_name), o?.order_number, o?.product_name, t.task_title, STATUS_LABEL[t.status]].filter(Boolean).join(" ");
@@ -131,8 +133,8 @@ export default function DailyTasksPage() {
   };
 
   const orderOptions = orders.filter((o) => o.status !== "cancelled").map((o) => ({ value: o.id, label: `#${o.order_number} — ${o.product_name}` }));
-  const empOptions = employees.map((e) => ({
-    value: e.id, label: localize(e.full_name) + (openByEmp[e.id] ? " 🔒" : ""),
+  const empOptions = employees.filter(isDailyTaskEligible).map((e, i) => ({
+    value: e.id, label: `${i + 1}. ` + localize(e.full_name) + (openByEmp[e.id] ? " 🔒" : ""),
     hint: [e.position, e.department, openByEmp[e.id] ? "ochiq topshiriq bor" : null].filter(Boolean).join(" · "),
   }));
 
