@@ -9,10 +9,10 @@ export function normalizeSupplyStatus(s: string): SupplyStatus {
   return s === "fulfilled" ? "fulfilled" : "pending";
 }
 
-/** Badge / read-only pill: light background, dark text, tinted border */
+/** Supply badges use the same solid palette as status actions. */
 export const supplyStatusCls: Record<SupplyStatus, string> = {
-  pending: "bg-status-red/10 text-status-red border-status-red/30",
-  fulfilled: "bg-status-green/10 text-status-green border-status-green/30",
+  pending: "bg-status-red-solid text-status-solid-fg border-status-red-solid",
+  fulfilled: "bg-status-green-solid text-status-solid-fg border-status-green-solid",
 };
 
 /** Solid dot used in lists and notifications */

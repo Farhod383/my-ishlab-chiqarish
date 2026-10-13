@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SearchableSelect from "@/components/SearchableSelect";
 import NumberInput from "@/components/NumberInput";
+import DateInput from "@/components/DateInput";
+import { fmtDate } from "@/lib/format";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/auth/AuthContext";
@@ -81,7 +83,7 @@ export default function NewSupplyRequestDialog({ open, onOpenChange, initialProd
     await notify({
       type: "supply_request",
       title: `Yangi ta'minot so'rovi${mode === "order" ? "" : " (zavod uchun)"}`,
-      body: `${name} · ${qty} ${u}${date ? ` · kerak: ${date}` : ""}`,
+      body: `${name} · ${qty} ${u}${date ? ` · Muddat: ${fmtDate(date)}` : ""}`,
       link: mode === "order" ? `/orders/${orderId}` : `/supply`,
       entity: "supply_request", entity_id: (_ins as any)?.id,
       recipient_role: ["supply", "warehouse"],
@@ -102,13 +104,13 @@ export default function NewSupplyRequestDialog({ open, onOpenChange, initialProd
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Yangi buyurtma</DialogTitle>
+          <DialogTitle>Buyurtma berish</DialogTitle>
           <DialogDescription>Ta'minot buyurtmasi</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-2">
-            <Button type="button" variant={mode === "factory" ? "default" : "outline"} onClick={() => setMode("factory")}>Zavod uchun</Button>
-            <Button type="button" variant={mode === "order" ? "default" : "outline"} onClick={() => setMode("order")}>Zakaz uchun</Button>
+            <Button type="button" className="font-bold" aria-pressed={mode === "factory"} variant={mode === "factory" ? "default" : "outline"} onClick={() => setMode("factory")}>Zavod uchun</Button>
+            <Button type="button" className="font-bold" aria-pressed={mode === "order"} variant={mode === "order" ? "default" : "outline"} onClick={() => setMode("order")}>Zakaz uchun</Button>
           </div>
           <div>
             <Label>Mahsulot nomi *</Label>
@@ -124,7 +126,7 @@ export default function NewSupplyRequestDialog({ open, onOpenChange, initialProd
               </Select>
             </div>
           </div>
-          <div><Label>Kerak bo'ladigan sana</Label><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
+          <div><Label>Muddat</Label><DateInput value={date} onChange={setDate} /></div>
           {mode === "order" && (
             <div>
               <Label>Zakaz *</Label>
@@ -133,7 +135,7 @@ export default function NewSupplyRequestDialog({ open, onOpenChange, initialProd
             </div>
           )}
           <div><Label>Izoh</Label><Textarea rows={2} value={comment} onChange={(e) => setComment(e.target.value)} /></div>
-          <Button className="w-full" onClick={submit} disabled={saving}><Plus className="h-4 w-4 mr-2" />Yuborish</Button>
+          <Button className="w-full h-12 text-base font-bold" onClick={submit} disabled={saving}><Plus className="h-5 w-5 mr-2" />Buyurtma berish</Button>
         </div>
       </DialogContent>
     </Dialog>

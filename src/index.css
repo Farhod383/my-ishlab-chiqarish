@@ -158,6 +158,21 @@ input, textarea, [contenteditable="true"] {
   .erp-tab svg { width: 1rem; height: 1rem; flex-shrink: 0; }
 }
 
+/* Supply-only solid surfaces; never resize or recolor other ERP modules. */
+@layer components {
+  .supply-tone { --supply-tone: var(--status-red-solid); --supply-hover: var(--status-red-solid-hover); background: hsl(var(--supply-tone)); color: hsl(var(--status-solid-foreground)); border-color: hsl(var(--supply-tone)); }
+  .supply-tone[data-tone="fulfilled"] { --supply-tone: var(--status-green-solid); --supply-hover: var(--status-green-solid-hover); }
+  .supply-tone.supply-selectable:hover { background: hsl(var(--supply-hover)); }
+  .supply-tone[aria-pressed="true"] { outline: 3px solid hsl(var(--supply-tone)); outline-offset: 3px; }
+  .supply-tone .supply-detail { color: hsl(var(--status-solid-foreground)); }
+  .supply-dates { border: 1px solid hsl(var(--status-solid-foreground) / 0.35); }
+  .supply-dates > div { flex-wrap: wrap; }
+  .supply-dates span { white-space: nowrap; }
+  .supply-tabs [data-state="inactive"] { background: hsl(var(--muted)); color: hsl(var(--foreground)); border-color: hsl(var(--border)); }
+  .supply-tabs [data-state="active"][data-tone="pending"] { background: hsl(var(--status-red-solid)); border-color: hsl(var(--status-red-solid)); color: hsl(var(--status-solid-foreground)); }
+  .supply-tabs [data-state="active"][data-tone="fulfilled"] { background: hsl(var(--status-green-solid)); border-color: hsl(var(--status-green-solid)); color: hsl(var(--status-solid-foreground)); }
+}
+
 /* ===== Printable reports ===== */
 @layer components {
   .order-report-stat { --report-tone: var(--report-total); background: hsl(var(--report-tone) / 0.1); color: hsl(var(--report-tone)); border: 2px solid hsl(var(--report-tone) / 0.3); touch-action: manipulation; }
