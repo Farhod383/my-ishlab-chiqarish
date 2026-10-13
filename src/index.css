@@ -160,7 +160,7 @@ input, textarea, [contenteditable="true"] {
 
 /* Supply-only solid surfaces; never resize or recolor other ERP modules. */
 @layer components {
-  .supply-tone { --supply-tone: var(--status-red-solid); --supply-hover: var(--status-red-solid-hover); background: hsl(var(--supply-tone)); color: hsl(var(--status-solid-foreground)); border-color: hsl(var(--supply-tone)); }
+  .supply-tone[data-tone] { --supply-tone: var(--status-red-solid); --supply-hover: var(--status-red-solid-hover); background: hsl(var(--supply-tone)); color: hsl(var(--status-solid-foreground)); border-color: hsl(var(--supply-tone)); }
   .supply-tone[data-tone="fulfilled"] { --supply-tone: var(--status-green-solid); --supply-hover: var(--status-green-solid-hover); }
   .supply-tone.supply-selectable:hover { background: hsl(var(--supply-hover)); }
   .supply-tone[aria-pressed="true"] { outline: 3px solid hsl(var(--supply-tone)); outline-offset: 3px; }
