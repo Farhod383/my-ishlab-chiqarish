@@ -554,7 +554,7 @@ export default function SupplyRequestsPage() {
                                 key={s}
                                 size="sm"
                                 aria-pressed={selected}
-                                className={`h-9 px-3 text-sm font-bold border-2 ${selected ? activeBtnCls[s] : outlineBtnCls[s]} ${selected ? "shadow-md" : "border-dashed"}`
+                                className={`h-9 px-3 text-sm font-bold border-2 ${selected ? activeBtnCls[s] : outlineBtnCls[s]} ${selected ? "shadow-md" : "border-dashed"}`}
                                 variant="outline"
                                 disabled={!!savingStatus[item.id]}
                                 onClick={() => markStatus(item, s)}
