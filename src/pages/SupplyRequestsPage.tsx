@@ -458,14 +458,14 @@ export default function SupplyRequestsPage() {
                         <div className="text-base font-bold">{item.quantity} {item.unit ?? ""}</div>
                       </div>
                     </div>
-                    <Badge variant="outline" className={`text-base font-extrabold px-4 py-1.5 border-2 ${statusCls[status]}`}>{statusLabel[status]}</Badge>
+                    <Badge variant="outline" className={`shrink-0 text-base font-extrabold px-4 py-1.5 border-2 ${statusCls[status]}`}>{statusLabel[status]}</Badge>
                   </div>
                   <div className="text-sm font-semibold break-words">
                     {item.order ? <>Zakaz: <span className="font-mono font-bold">{item.order.order_number}</span> · {item.order.product_name}</> : "Zavod uchun umumiy buyurtma"}
                   </div>
                   <div className="supply-dates grid grid-cols-1 xl:grid-cols-3 gap-3 rounded-md p-3 text-base font-semibold">
                     <div className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 shrink-0" /><span>Berilgan:</span><span className="font-mono font-bold">{dates.given}</span></div>
-                    <div className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 shrink-0" /><span>Muddat:</span><div className={`font-mono font-bold break-words ${isLate(item) ? textCls.pending : ""}`}>{dates.deadline}</div></div>
+                    <div className="flex items-start gap-1.5"><CalendarDays className="h-4 w-4 shrink-0 mt-0.5" /><div><span>Muddat:</span><div className={`font-mono font-bold ${isLate(item) ? textCls.pending : ""}`}>{dates.deadline}</div>{dates.deadlineNote && <div className="text-sm font-medium text-muted-foreground">{dates.deadlineNote}</div>}</div></div>
                     <div className="flex items-center gap-1.5"><CalendarDays className={`h-4 w-4 shrink-0 ${status === "fulfilled" ? textCls.fulfilled : ""}`} /><span className={status === "fulfilled" ? textCls.fulfilled : ""}>Ta'minlandi:</span><span className={`font-mono font-bold ${status === "fulfilled" ? textCls.fulfilled : ""}`}>{dates.fulfilled}</span></div>
                   </div>
                   <div className="flex flex-wrap justify-between items-center gap-2">
@@ -578,10 +578,13 @@ export default function SupplyRequestsPage() {
                         <span>Berilgan:</span>
                         <span className="font-mono font-bold">{dates.given}</span>
                       </div>
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <CalendarDays className="h-4 w-4 shrink-0" />
-                        <span>Muddat:</span>
-                        <span className={`font-mono font-bold ${isLate(item) ? textCls.pending : ""}`}>{dates.deadline}</span>
+                      <div className="flex items-start gap-1.5 min-w-0">
+                        <CalendarDays className="h-4 w-4 shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                          <span>Muddat:</span>
+                          <div className={`font-mono font-bold ${isLate(item) ? textCls.pending : ""}`}>{dates.deadline}</div>
+                          {dates.deadlineNote && <div className="text-sm font-medium text-muted-foreground">{dates.deadlineNote}</div>}
+                        </div>
                       </div>
                       <div className="flex items-center gap-1.5 min-w-0">
                         <CalendarDays className="h-4 w-4 shrink-0" />

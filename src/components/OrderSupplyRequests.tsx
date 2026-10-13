@@ -228,7 +228,7 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
               </div>
               <div className="text-base font-semibold leading-relaxed mt-1">
                 <span className="font-mono font-bold">{it.quantity} {it.unit ?? ""}</span>
-                {it.required_date && <> · Muddat: <span className={`font-mono font-bold ${late ? textCls.pending : ""}`}>{dates.deadline}</span></>}
+                {it.required_date && <> · Muddat: <span className={`font-mono font-bold ${late ? textCls.pending : ""}`}>{dates.deadline}</span>{dates.deadlineNote && <span className="text-sm font-medium text-muted-foreground"> · {dates.deadlineNote}</span>}</>}
                 <div>Berilgan: <span className="font-mono font-bold">{dates.given}</span>{st === "fulfilled" && <> · <span className={textCls.fulfilled}>Ta'minlandi: <span className="font-mono font-bold">{dates.fulfilled}</span></span></>}</div>
               </div>
               {it.comment && <div className="text-sm break-words">"{it.comment}"</div>}
