@@ -9,11 +9,18 @@ export function normalizeSupplyStatus(s: string): SupplyStatus {
   return s === "fulfilled" ? "fulfilled" : "pending";
 }
 
-/** Supply badges use the same solid palette as status actions. */
+/** Compact status chip on a white card: colored border + colored bold label, no filled background. */
 export const supplyStatusCls: Record<SupplyStatus, string> = {
-  pending: "bg-status-red-solid text-status-solid-fg border-status-red-solid",
-  fulfilled: "bg-status-green-solid text-status-solid-fg border-status-green-solid",
+  pending: "border-status-red text-status-red-ink",
+  fulfilled: "border-status-green text-status-green-ink",
 };
+
+/** Status text color for labels and values shown on white card surfaces. */
+export const supplyStatusTextCls: Record<SupplyStatus, string> = {
+  pending: "text-status-red-ink",
+  fulfilled: "text-status-green-ink",
+};
+
 
 /** Solid dot used in lists and notifications */
 export const supplyStatusDotCls: Record<SupplyStatus, string> = {

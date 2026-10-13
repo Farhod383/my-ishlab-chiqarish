@@ -158,20 +158,16 @@ input, textarea, [contenteditable="true"] {
   .erp-tab svg { width: 1rem; height: 1rem; flex-shrink: 0; }
 }
 
-/* Supply-only solid surfaces; never resize or recolor other ERP modules. */
+/* Supply-only surfaces: cards stay white; color appears only in status text, dots and compact chips. */
 @layer components {
-  .supply-tone[data-tone] { --supply-tone: var(--status-red-solid); --supply-hover: var(--status-red-solid-hover); background: hsl(var(--supply-tone)); color: hsl(var(--status-solid-foreground)); border-color: hsl(var(--supply-tone)); }
-  .supply-tone[data-tone="fulfilled"] { --supply-tone: var(--status-green-solid); --supply-hover: var(--status-green-solid-hover); }
-  .supply-tone.supply-selectable:hover { background: hsl(var(--supply-hover)); }
-  .supply-tone[aria-pressed="true"] { outline: 3px solid hsl(var(--supply-tone)); outline-offset: 3px; }
-  .supply-tone .supply-detail { color: hsl(var(--status-solid-foreground)); }
-  .supply-dates { border: 1px solid hsl(var(--status-solid-foreground) / 0.35); }
+  .supply-dates { border: 1px solid hsl(var(--border)); background: hsl(var(--muted) / 0.5); }
   .supply-dates > div { flex-wrap: wrap; }
   .supply-dates span { white-space: nowrap; }
   .supply-tabs [data-state="inactive"] { background: hsl(var(--muted)); color: hsl(var(--foreground)); border-color: hsl(var(--border)); }
-  .supply-tabs [data-state="active"][data-tone="pending"] { background: hsl(var(--status-red-solid)); border-color: hsl(var(--status-red-solid)); color: hsl(var(--status-solid-foreground)); }
-  .supply-tabs [data-state="active"][data-tone="fulfilled"] { background: hsl(var(--status-green-solid)); border-color: hsl(var(--status-green-solid)); color: hsl(var(--status-solid-foreground)); }
+  .supply-tabs [data-state="active"][data-tone="pending"] { background: hsl(var(--card)); border-color: hsl(var(--status-red)); color: hsl(var(--status-red-ink)); }
+  .supply-tabs [data-state="active"][data-tone="fulfilled"] { background: hsl(var(--card)); border-color: hsl(var(--status-green)); color: hsl(var(--status-green-ink)); }
 }
+
 
 /* ===== Printable reports ===== */
 @layer components {
