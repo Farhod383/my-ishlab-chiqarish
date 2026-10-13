@@ -4,3 +4,4 @@ Display employee names through the shared locale-aware name helper while retaini
 - Order report cards, tabs, and counts share the tested orderReportFilters predicates after search/date filtering, so displayed counts match table results.
 - The shared ERP layout and table wrappers must shrink to the available sidebar-adjusted width; dialogs are bounded by the dynamic viewport to keep local scrolling accessible.
 - Reclassified products retain their historical product ID and link through products.instrument_id to an existing instrument; exclude linked products from current stock/selectors, retain them in history joins, and route subsequent product stock deltas to the linked instrument to avoid double-counting.
+- Scope procurement surface styling to supply-tone/supply-tabs classes and use shared date formatters and DateInput in procurement views; this keeps other modules and stored dates unchanged.

@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Truck, Search, ExternalLink, ChevronLeft, Save, Loader2, Package, MessageSquare, Check, AlertTriangle, CalendarDays } from "lucide-react";
+import { Truck, Search, ExternalLink, ChevronLeft, Save, Loader2, Package, MessageSquare, Check, AlertTriangle, CalendarDays, Clock } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { toast } from "sonner";
 import { logAudit } from "@/types/erp";
