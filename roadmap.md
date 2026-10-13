@@ -1,4 +1,8 @@
 
+## Ta’minot dizayn va sana ko‘rinishi
+- [x] Buyurtma berish tugmasi, solid status/kartochkalar va Muddat/sanalarni faqat ko‘rinishda yangilash.
+- [x] Haqiqiy buyurtmalar va buyurtma oynasi 1280 px desktop hamda 390 px mobil ekranlarda tekshirildi; to‘q qizil/yashil fon, oq matn, DD.MM.YYYY va 24 soatlik sanalar tasdiqlandi. Besh regressiya testi o‘tdi; ma’lumotlar o‘zgartirilmadi.
+
 ## Kassa navigatsiya layout (yangi)
 - [x] Kassa/Ta'minot + Hisobot/Qarz tugmalari joyi barqaror (sticky header, shrink-0)
 

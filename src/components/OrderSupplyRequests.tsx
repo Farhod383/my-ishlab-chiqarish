@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Package, Trash2 } from "lucide-react";
 import ProductPicker from "@/components/ProductPicker";
 import NumberInput from "@/components/NumberInput";
+import DateInput from "@/components/DateInput";
+import { fmtDate, fmtDateTime24 } from "@/lib/format";
 import { useAuth } from "@/auth/AuthContext";
 import { toast } from "sonner";
 import { notify } from "@/lib/notify";
@@ -111,7 +113,7 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
     await notify({
       type: "supply_request",
       title: `Yangi ta'minot so'rovi — ${orderNumber}`,
-      body: `${name} · ${qty} ${unit ?? ""}${date ? ` · kerak: ${date}` : ""}`,
+      body: `${name} · ${qty} ${unit ?? ""}${date ? ` · Muddat: ${fmtDate(date)}` : ""}`,
       link: `/orders/${orderId}`,
       entity: "supply_request", entity_id: (_ins as any)?.id,
       recipient_role: ["supply", "warehouse"],
@@ -195,8 +197,8 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
                   <div><Label>O'lchov</Label><Input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="kg, dona..." /></div>
                 </div>
                 <div>
-                  <Label>Kerak bo'ladigan sana</Label>
-                  <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                  <Label>Muddat</Label>
+                  <DateInput value={date} onChange={setDate} />
                 </div>
                 <div>
                   <Label>Izoh</Label>
@@ -211,22 +213,23 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
       <CardContent className="space-y-1.5 px-3 pb-3">
         {items.length === 0 && <p className="text-sm text-muted-foreground">So'rovlar yo'q</p>}
         {items.map((it) => (
-          <div key={it.id} data-focus-id={it.id} data-focus-at={it.created_at} data-focus-entity="supply_request" className="flex items-center justify-between gap-2 p-1.5 rounded border">
+          <div key={it.id} data-focus-id={it.id} data-focus-at={it.created_at} data-focus-entity="supply_request" data-tone={it.status === "fulfilled" ? "fulfilled" : "pending"} className="supply-tone flex items-center justify-between gap-3 p-4 rounded-md border">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="font-medium text-xs truncate">{it.product_name}</span>
-                <Badge variant="outline" className={`px-1.5 py-0 text-[10px] ${statusCls[it.status] ?? ""}`}>{statusLabel[it.status] ?? it.status}</Badge>
+                <span className="font-bold text-base break-words">{it.product_name}</span>
+                <Badge variant="outline" className={`px-2 py-1 text-sm font-bold ${statusCls[it.status] ?? ""}`}>{statusLabel[it.status] ?? it.status}</Badge>
               </div>
-              <div className="text-[10px] text-muted-foreground leading-tight">
+              <div className="text-sm font-semibold leading-relaxed">
                 <span className="font-mono">{it.quantity} {it.unit ?? ""}</span>
-                {it.required_date && <> · kerak: <span className="font-mono">{it.required_date}</span></>}
+                {it.required_date && <> · Muddat: <span className="font-mono">{fmtDate(it.required_date)}</span></>}
+                <div>Berilgan: {fmtDateTime24(it.created_at)}{it.status === "fulfilled" && <> · Ta'minlandi: {fmtDateTime24(it.fulfilled_at)}</>}</div>
               </div>
-              {it.comment && <div className="text-[10px] text-muted-foreground italic truncate">"{it.comment}"</div>}
-              {it.supply_comment && <div className="text-[10px] text-primary truncate">Ta'minot: {it.supply_comment}</div>}
+              {it.comment && <div className="text-sm break-words">"{it.comment}"</div>}
+              {it.supply_comment && <div className="text-sm font-semibold break-words">Ta'minot: {it.supply_comment}</div>}
             </div>
             {canDelete && (
-              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => remove(it.id)}>
-                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+              <Button size="sm" variant="outline" className="h-9 w-9 p-0 text-destructive shrink-0" onClick={() => remove(it.id)}>
+                <Trash2 className="h-4 w-4" />
               </Button>
             )}
           </div>
