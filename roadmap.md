@@ -1,4 +1,8 @@
 
+## Ta’minot asosiy ro‘yxati
+- [ ] Asosiy sahifada alohida buyurtmalar va barcha haqiqiy ma’lumotlarni ko‘rsatish; umumiy kategoriya bloklarini neytral qilish.
+- [ ] Kelmagan mahsulotning kelish sanasini yashirish; vaqt saqlanmagan muddatga vaqt uydirmaslik; desktop va mobil tekshiruv.
+
 ## Ta’minot dizayn va sana ko‘rinishi
 - [x] Buyurtma berish tugmasi, solid status/kartochkalar va Muddat/sanalarni faqat ko‘rinishda yangilash.
 - [x] Haqiqiy buyurtmalar va buyurtma oynasi 1280 px desktop hamda 390 px mobil ekranlarda tekshirildi; to‘q qizil/yashil fon, oq matn, DD.MM.YYYY va 24 soatlik sanalar tasdiqlandi. Besh regressiya testi o‘tdi; ma’lumotlar o‘zgartirilmadi.
