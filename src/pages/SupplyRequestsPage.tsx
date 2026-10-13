@@ -465,7 +465,7 @@ export default function SupplyRequestsPage() {
                   </div>
                   <div className="supply-dates grid grid-cols-1 xl:grid-cols-3 gap-3 rounded-md p-3 text-sm font-semibold">
                     <div className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 shrink-0" /><span>Berilgan:</span><span className="font-mono">{dates.given}</span></div>
-                    <div className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 shrink-0" /><span>Muddat:</span><span className="font-mono">{dates.deadline}</span></div>
+                    <div className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 shrink-0" /><span>Muddat:</span><div className="font-mono break-words">{dates.deadline}</div></div>
                     <div className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 shrink-0" /><span>Ta'minlandi:</span><span className="font-mono">{dates.fulfilled}</span></div>
                   </div>
                   <div className="flex flex-wrap justify-between items-center gap-2">
