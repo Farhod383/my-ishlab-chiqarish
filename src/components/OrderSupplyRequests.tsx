@@ -11,14 +11,17 @@ import { Plus, Package, Trash2 } from "lucide-react";
 import ProductPicker from "@/components/ProductPicker";
 import NumberInput from "@/components/NumberInput";
 import DateInput from "@/components/DateInput";
-import { fmtDate, fmtDateTime24 } from "@/lib/format";
+import { fmtDate } from "@/lib/format";
+import { supplyRequestDates } from "@/lib/supplyRequestDates";
 import { useAuth } from "@/auth/AuthContext";
 import { toast } from "sonner";
 import { notify } from "@/lib/notify";
 import { logAudit } from "@/types/erp";
 import {
+  normalizeSupplyStatus,
   supplyStatusLabel as statusLabel,
   supplyStatusCls as statusCls,
+  supplyStatusTextCls as textCls,
 } from "@/lib/supplyStatus";
 import { useNotifications, notifOrderId } from "@/notifications/NotificationsContext";
 import { resolveModule } from "@/lib/notifModules";
@@ -212,17 +215,21 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
       </CardHeader>
       <CardContent className="space-y-1.5 px-3 pb-3">
         {items.length === 0 && <p className="text-sm text-muted-foreground">So'rovlar yo'q</p>}
-        {items.map((it) => (
-          <div key={it.id} data-focus-id={it.id} data-focus-at={it.created_at} data-focus-entity="supply_request" data-tone={it.status === "fulfilled" ? "fulfilled" : "pending"} className="supply-tone flex items-center justify-between gap-3 p-4 rounded-md border">
+        {items.map((it) => {
+          const st = normalizeSupplyStatus(it.status);
+          const dates = supplyRequestDates({ ...it, status: st });
+          const late = st === "pending" && !!it.required_date && new Date() > new Date(`${it.required_date}T23:59:59`);
+          return (
+          <div key={it.id} data-focus-id={it.id} data-focus-at={it.created_at} data-focus-entity="supply_request" className="flex items-center justify-between gap-3 p-4 rounded-md border bg-card">
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="font-bold text-base break-words">{it.product_name}</span>
-                <Badge variant="outline" className={`px-2 py-1 text-sm font-bold ${statusCls[it.status] ?? ""}`}>{statusLabel[it.status] ?? it.status}</Badge>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-lg break-words">{it.product_name}</span>
+                <Badge variant="outline" className={`px-3 py-1 text-base font-extrabold border-2 ${statusCls[st]}`}>{statusLabel[st]}</Badge>
               </div>
-              <div className="text-sm font-semibold leading-relaxed">
-                <span className="font-mono">{it.quantity} {it.unit ?? ""}</span>
-                {it.required_date && <> · Muddat: <span className="font-mono">{fmtDate(it.required_date)}</span></>}
-                <div>Berilgan: {fmtDateTime24(it.created_at)}{it.status === "fulfilled" && <> · Ta'minlandi: {fmtDateTime24(it.fulfilled_at)}</>}</div>
+              <div className="text-base font-semibold leading-relaxed mt-1">
+                <span className="font-mono font-bold">{it.quantity} {it.unit ?? ""}</span>
+                {it.required_date && <> · Muddat: <span className={`font-mono font-bold ${late ? textCls.pending : ""}`}>{dates.deadline}</span>{dates.deadlineNote && <span className="text-sm font-medium text-muted-foreground"> · {dates.deadlineNote}</span>}</>}
+                <div>Berilgan: <span className="font-mono font-bold">{dates.given}</span>{st === "fulfilled" && <> · <span className={textCls.fulfilled}>Ta'minlandi: <span className="font-mono font-bold">{dates.fulfilled}</span></span></>}</div>
               </div>
               {it.comment && <div className="text-sm break-words">"{it.comment}"</div>}
               {it.supply_comment && <div className="text-sm font-semibold break-words">Ta'minot: {it.supply_comment}</div>}
@@ -233,7 +240,8 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
               </Button>
             )}
           </div>
-        ))}
+          );
+        })}
 
         <div className="pt-2 mt-2 border-t">
           <SupplyOrderHistory orderId={orderId} title="Ta'minot o'zgarishlari tarixi" />

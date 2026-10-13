@@ -14,6 +14,13 @@ describe("supply request date sources", () => {
     expect(dates.fulfilled).toBe("13.10.2026 14:35");
   });
   it("does not invent a time or shift a date-only deadline", () => {
-    expect(supplyRequestDates({ status: "pending", required_date: "2026-10-13" }).deadline).toBe("13.10.2026 · Vaqt belgilanmagan");
+    const d = supplyRequestDates({ status: "pending", required_date: "2026-10-13" });
+    expect(d.deadline).toBe("13.10.2026");
+    expect(d.deadlineNote).toBe("Vaqt belgilanmagan");
+  });
+  it("leaves the note empty when the deadline carries a real time", () => {
+    const d = supplyRequestDates({ status: "pending", required_date: "2026-10-13T18:00:00" });
+    expect(d.deadline).toBe("13.10.2026 18:00");
+    expect(d.deadlineNote).toBe("");
   });
 });

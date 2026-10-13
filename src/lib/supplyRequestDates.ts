@@ -9,7 +9,8 @@ export function supplyRequestDates(item: {
   const dateOnly = !!item.required_date && /^\d{4}-\d{2}-\d{2}$/.test(item.required_date);
   return {
     given: fmtDateTime24(item.created_at),
-    deadline: dateOnly ? `${fmtDate(item.required_date)} · Vaqt belgilanmagan` : fmtDateTime24(item.required_date),
+    deadline: dateOnly ? fmtDate(item.required_date) : fmtDateTime24(item.required_date),
+    deadlineNote: dateOnly ? "Vaqt belgilanmagan" : "",
     fulfilled: item.status === "fulfilled" ? fmtDateTime24(item.fulfilled_at) : "—",
   };
 }
