@@ -30,6 +30,7 @@ import SupplyOrderHistory from "@/components/SupplyOrderHistory";
 import { logSupplyChange } from "@/lib/supplyHistory";
 import NumberInput from "@/components/NumberInput";
 import { currentUserName } from "@/lib/userNames";
+import { fmtDate, fmtDateTime24 as fmtDT } from "@/lib/format";
 
 type Filter = "all" | Status;
 
@@ -349,15 +350,6 @@ export default function SupplyRequestsPage() {
     if (ok) { setLateItem(null); setLateReason(""); }
   };
 
-  const fmtDT = (v?: string | null) => {
-    if (!v) return "—";
-    const d = new Date(v);
-    if (isNaN(d.getTime())) return v;
-    const p = (n: number) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
-  };
-  const fmtDate = (v?: string | null) => v ?? "—";
-
   const openedOrder = openOrderId ? groups.find((o) => o.key === openOrderId) : null;
   // Opened from a notification: open the group that holds the exact request.
   const focusId = searchParams.get("focus");
@@ -386,7 +378,7 @@ export default function SupplyRequestsPage() {
           <p className="text-sm text-muted-foreground">Ta'minot so'rovlari ro'yxati</p>
         </div>
         {canCreate && (
-          <Button onClick={() => setSearchParams({ new: "factory" })}><Plus className="h-4 w-4 mr-2" />Yangi buyurtma</Button>
+          <Button size="lg" className="h-12 w-full sm:w-auto text-base font-bold" onClick={() => setSearchParams({ new: "factory" })}><Plus className="h-5 w-5 mr-2" />Buyurtma berish</Button>
         )}
       </div>
       {canCreate && (
@@ -402,17 +394,15 @@ export default function SupplyRequestsPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {(["pending", "fulfilled"] as const).map((s) => (
-          <Card key={s} className={`cursor-pointer transition-all hover:shadow-md ${filter === s ? "ring-2 ring-primary" : ""}`} onClick={() => setFilter(filter === s ? "all" : s)}>
-            <CardContent className="p-4 flex items-center justify-between">
+          <Button key={s} variant="outline" data-tone={s} aria-pressed={filter === s} className="supply-tone supply-selectable h-auto min-h-28 w-full justify-between whitespace-normal p-5 text-left" onClick={() => setFilter(filter === s ? "all" : s)}>
               <div>
-                <div className={`text-xs uppercase tracking-wide font-semibold ${s === "pending" ? "text-status-red" : "text-status-green"}`}>
+                <div className="text-base font-bold">
                   {statusLabel[s]}
                 </div>
-                <div className="text-3xl font-bold leading-tight mt-1">{counts[s]} <span className="text-sm text-muted-foreground font-normal">ta so'rov</span></div>
+                <div className="text-3xl font-bold leading-tight mt-1">{counts[s]} <span className="text-base font-semibold">ta so'rov</span></div>
               </div>
-              <div className={`h-8 w-8 rounded-full ${dotCls[s]}`} />
-            </CardContent>
-          </Card>
+              {s === "pending" ? <Clock className="h-7 w-7" /> : <Check className="h-7 w-7" />}
+          </Button>
         ))}
       </div>
 
@@ -421,10 +411,10 @@ export default function SupplyRequestsPage() {
           <CardHeader className="py-3 px-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-                <TabsList className="h-10">
-                  <TabsTrigger className="h-9 text-sm px-3" value="all">Hammasi</TabsTrigger>
-                  <TabsTrigger className="h-9 text-sm px-3" value="pending">🔴 Kutilmoqda</TabsTrigger>
-                  <TabsTrigger className="h-9 text-sm px-3" value="fulfilled">🟢 Ta'minlandi</TabsTrigger>
+                <TabsList className="supply-tabs h-12">
+                  <TabsTrigger className="min-h-10 text-sm font-bold px-3" value="all">Hammasi</TabsTrigger>
+                  <TabsTrigger data-tone="pending" className="min-h-10 text-sm font-bold px-3" value="pending">Kutilmoqda</TabsTrigger>
+                  <TabsTrigger data-tone="fulfilled" className="min-h-10 text-sm font-bold px-3" value="fulfilled">Ta'minlandi</TabsTrigger>
                 </TabsList>
               </Tabs>
               <div className="relative">
@@ -438,16 +428,16 @@ export default function SupplyRequestsPage() {
             {visible.map((o) => (
               <Card
                 key={o.key}
-                className="cursor-pointer hover:bg-muted/40 hover:shadow-sm transition-all border-l-4"
-                style={{ borderLeftColor: o.worst === "pending" ? "hsl(var(--status-red))" : "hsl(var(--status-green))" }}
+                className="supply-tone supply-selectable cursor-pointer transition-colors"
+                data-tone={o.order.status === "completed" ? "fulfilled" : o.worst}
                 onClick={() => setOpenOrderId(o.key)}
               >
-                <CardContent className="p-3.5 flex items-center justify-between gap-3 flex-wrap">
+                <CardContent className="p-5 flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     {o.pinned ? <span className="text-2xl shrink-0">📌</span> : <span className={`h-3 w-3 rounded-full shrink-0 ${dotCls[o.worst]}`} />}
                     <div className="min-w-0">
-                      {!o.pinned && <div className="font-mono font-semibold text-primary text-sm leading-tight">{o.order.order_number}</div>}
-                      <div className="text-base sm:text-lg truncate leading-snug font-semibold">{o.order.product_name}</div>
+                      {!o.pinned && <div className="font-mono font-bold text-base leading-tight">{o.order.order_number}{o.order.status === "completed" && <span className="font-sans ml-2">· Tugallangan</span>}</div>}
+                      <div className="text-lg break-words leading-snug font-bold">{o.order.product_name}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
@@ -461,7 +451,7 @@ export default function SupplyRequestsPage() {
                     )}
                     {o.counts.pending > 0 && <Badge variant="outline" className={`px-2.5 py-1 text-sm font-semibold ${statusCls.pending}`}>🔴 {o.counts.pending}</Badge>}
                     {o.counts.fulfilled > 0 && <Badge variant="outline" className={`px-2.5 py-1 text-sm font-semibold ${statusCls.fulfilled}`}>🟢 {o.counts.fulfilled}</Badge>}
-                    <span className="text-sm text-muted-foreground font-medium">{o.items.length} ta</span>
+                    <span className="text-base font-bold">{o.items.length} ta</span>
                   </div>
 
                 </CardContent>
@@ -491,24 +481,25 @@ export default function SupplyRequestsPage() {
             {openedOrder.items.map((item: any) => {
               const e = edit[item.id] ?? { status: normalizeStatus(item.status), supply_comment: "", dirty: false };
               const color = normalizeStatus(item.status);
+              const cardTone = item.order?.status === "completed" ? "fulfilled" : color;
               return (
-                <Card key={item.id} data-focus-id={item.id} data-focus-at={item.created_at} data-focus-entity="supply_request" className={`border-l-4 ${color === "pending" ? "bg-status-red/10 border-status-red/30" : ""}`} style={{ borderLeftColor: color === "pending" ? "hsl(var(--status-red))" : "hsl(var(--status-green))" }}>
-                  <CardContent className="p-4 space-y-3">
+                <Card key={item.id} data-focus-id={item.id} data-focus-at={item.created_at} data-focus-entity="supply_request" data-tone={cardTone} className="supply-tone">
+                  <CardContent className="p-5 space-y-4">
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div className="flex items-start gap-3 min-w-0 flex-1">
-                        <Package className="h-6 w-6 text-primary shrink-0 mt-0.5" />
+                        <Package className="h-6 w-6 shrink-0 mt-0.5" />
                         <div className="min-w-0 flex-1">
                           <div className="font-bold text-lg leading-snug">{item.product_name}</div>
-                          <div className="text-sm text-muted-foreground flex flex-wrap gap-x-3 leading-tight mt-1">
-                            <span className="font-mono font-semibold text-foreground">{item.quantity} {item.unit ?? ""}</span>
+                          <div className="text-sm font-semibold flex flex-wrap gap-x-3 leading-tight mt-1">
+                            <span className="font-mono font-bold">{item.quantity} {item.unit ?? ""}</span>
                             <span>· {requesterName(item.created_by)}</span>
                             {item.department && <span className="uppercase">· {item.department}</span>}
                           </div>
                           {canEdit && (
                             <div className="mt-2 flex items-center gap-1.5">
-                              <span className="text-xs text-muted-foreground">Miqdorni o'zgartirish:</span>
+                              <span className="text-sm font-semibold">Miqdorni o'zgartirish:</span>
                               <NumberInput
-                                className="h-8 w-24 text-sm"
+                                className="h-10 w-24 text-sm text-foreground"
                                 min={0.01}
                                 step={0.01}
                                 value={qtyEdit[item.id] ?? ""}
@@ -533,7 +524,8 @@ export default function SupplyRequestsPage() {
                               <Button
                                 key={s}
                                 size="sm"
-                                className={`h-9 px-3 text-sm border ${selected ? activeBtnCls[s] : outlineBtnCls[s]}`}
+                                aria-pressed={selected}
+                                className={`h-11 px-4 text-sm font-bold border-2 ${selected ? activeBtnCls[s] : outlineBtnCls[s]} ${selected ? "shadow-md" : "border-dashed"}`}
                                 variant="outline"
                                 disabled={!!savingStatus[item.id]}
                                 onClick={() => markStatus(item, s)}
@@ -552,43 +544,43 @@ export default function SupplyRequestsPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm bg-muted/40 rounded-md px-3 py-2">
+                    <div className="supply-dates grid grid-cols-1 xl:grid-cols-3 gap-3 text-sm font-semibold rounded-md px-3 py-3">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <span className="text-muted-foreground">Berilgan:</span>
-                        <span className="font-mono font-medium truncate">{fmtDT(item.created_at)}</span>
+                        <CalendarDays className="h-4 w-4 shrink-0" />
+                        <span>Berilgan:</span>
+                        <span className="font-mono font-bold">{fmtDT(item.created_at)}</span>
                       </div>
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <span className="text-muted-foreground">Kerak:</span>
-                        <span className={`font-mono font-medium truncate ${color === "pending" && isLate(item) ? "text-status-red font-bold" : ""}`}>{fmtDate(item.required_date)}</span>
+                        <CalendarDays className="h-4 w-4 shrink-0" />
+                        <span>Muddat:</span>
+                        <span className="font-mono font-bold">{fmtDate(item.required_date)}</span>
                       </div>
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <span className="text-muted-foreground">Ta'minlandi:</span>
-                        <span className="font-mono font-medium truncate">{color === "fulfilled" ? fmtDT(item.fulfilled_at) : "—"}</span>
+                        <CalendarDays className="h-4 w-4 shrink-0" />
+                        <span>Ta'minlandi:</span>
+                        <span className="font-mono font-bold">{color === "fulfilled" ? fmtDT(item.fulfilled_at) : "—"}</span>
                       </div>
                     </div>
 
                     {isAdmin && item.late_reason && (
-                      <div className="text-[11px] flex items-start gap-1 border border-status-red/30 bg-status-red/5 text-status-red rounded px-2 py-1">
+                      <div className="text-sm flex items-start gap-2 border rounded px-3 py-2 font-semibold">
                         <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />
                         <span><b>Kechikish sababi (faqat Admin):</b> {item.late_reason}</span>
                       </div>
                     )}
 
                     {item.comment && (
-                      <div className="text-[11px] text-muted-foreground border-l-2 border-primary/40 pl-1.5 italic">
+                      <div className="text-sm font-semibold border-l-2 pl-2">
                         So'rov izohi: {item.comment}
                       </div>
                     )}
 
                     {canEdit ? (
                       <div className="flex items-start gap-1.5">
-                        <MessageSquare className="h-3.5 w-3.5 mt-2 shrink-0 text-muted-foreground" />
+                        <MessageSquare className="h-4 w-4 mt-2 shrink-0" />
                         <Textarea
                           rows={1}
-                          className="min-h-8 text-xs flex-1 py-1.5"
+                          className="min-h-10 text-sm text-foreground flex-1 py-2"
                           placeholder="Ta'minot izohi — yozing va Enter bosing..."
                           value={e.supply_comment}
                           onChange={(ev) => setEdit({ ...edit, [item.id]: { ...e, supply_comment: ev.target.value, dirty: true } })}
@@ -607,7 +599,7 @@ export default function SupplyRequestsPage() {
                         )}
                       </div>
                     ) : item.supply_comment ? (
-                      <div className="text-[11px] text-muted-foreground flex items-start gap-1">
+                      <div className="text-sm font-semibold flex items-start gap-2">
                         <MessageSquare className="h-3 w-3 mt-0.5 shrink-0" />
                         <span>Ta'minot: {item.supply_comment}</span>
                       </div>
@@ -642,7 +634,7 @@ export default function SupplyRequestsPage() {
           {lateItem && (
             <div className="text-xs text-muted-foreground space-y-0.5">
               <div><b className="text-foreground">{lateItem.product_name}</b> · {lateItem.quantity} {lateItem.unit ?? ""}</div>
-              <div>Kerak sana: <span className="font-mono">{fmtDate(lateItem.required_date)}</span> · Hozir: <span className="font-mono">{fmtDT(new Date().toISOString())}</span></div>
+              <div>Muddat: <span className="font-mono">{fmtDate(lateItem.required_date)}</span> · Hozir: <span className="font-mono">{fmtDT(new Date().toISOString())}</span></div>
             </div>
           )}
           <Textarea
