@@ -159,15 +159,16 @@ input, textarea, [contenteditable="true"] {
 }
 
 /* Supply-only light styling. Outside @layer on purpose: unlayered rules outrank the
-   card's own bg-card/text-foreground utilities. Cards stay white with a subtle border
-   and soft shadow; status color shows only in badges, buttons and tabs — never as a
-   card background. Scoped to .supply-tone, no other ERP module is affected. */
-.supply-tone { --supply-tone: var(--status-red-solid); background: hsl(var(--card)); color: hsl(var(--foreground)); border-color: hsl(var(--border)); box-shadow: 0 1px 2px hsl(var(--foreground) / 0.05), 0 2px 8px hsl(var(--foreground) / 0.06); }
-.supply-tone[data-tone="fulfilled"] { --supply-tone: var(--status-green-solid); }
+   card's own bg-card/text-foreground utilities. Fulfilled cards stay white; pending
+   cards get a soft, eye-friendly light red tint. Status color also shows in badges,
+   buttons and tabs — never as a strong card fill. Scoped to .supply-tone, no other
+   ERP module is affected. */
+.supply-tone { --supply-tone: var(--status-red-solid); --supply-tint: hsl(var(--status-red) / 0.07); --supply-tint-hover: hsl(var(--status-red) / 0.13); --supply-edge: hsl(var(--status-red) / 0.25); background: var(--supply-tint); color: hsl(var(--foreground)); border-color: var(--supply-edge); box-shadow: 0 1px 2px hsl(var(--foreground) / 0.05), 0 2px 8px hsl(var(--foreground) / 0.06); }
+.supply-tone[data-tone="fulfilled"] { --supply-tone: var(--status-green-solid); --supply-tint: hsl(var(--card)); --supply-tint-hover: hsl(var(--muted) / 0.55); --supply-edge: hsl(var(--border)); }
 .supply-tone.supply-selectable { cursor: pointer; transition: background 150ms ease, box-shadow 150ms ease; }
-.supply-tone.supply-selectable:hover { background: hsl(var(--muted) / 0.55); box-shadow: 0 2px 8px hsl(var(--foreground) / 0.1); }
+.supply-tone.supply-selectable:hover { background: var(--supply-tint-hover); box-shadow: 0 2px 8px hsl(var(--foreground) / 0.1); }
 .supply-tone[aria-pressed="true"] { outline: 3px solid hsl(var(--supply-tone)); outline-offset: 2px; }
-.supply-tone .supply-dates { background: hsl(var(--muted) / 0.5); border: 1px solid hsl(var(--border)); }
+.supply-tone .supply-dates { background: hsl(var(--card) / 0.75); border: 1px solid hsl(var(--border)); }
 .supply-tone .supply-action { background: hsl(var(--background)); border-color: hsl(var(--border)); color: hsl(var(--foreground)); }
 .supply-tone .supply-action:hover { background: hsl(var(--muted)); color: hsl(var(--foreground)); }
 .supply-dates > div { flex-wrap: wrap; }
