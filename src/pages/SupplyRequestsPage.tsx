@@ -396,14 +396,14 @@ export default function SupplyRequestsPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {(["pending", "fulfilled"] as const).map((s) => (
-          <Button key={s} variant="outline" data-tone={s} aria-pressed={filter === s} className={`supply-tone supply-selectable h-auto min-h-16 w-full justify-between whitespace-normal p-3 text-left border-2 ${filter === s ? "ring-2 ring-offset-2 ring-status-solid-fg" : ""}`} onClick={() => setFilter(filter === s ? "all" : s)}>
+          <Button key={s} variant="outline" data-tone={s} aria-pressed={filter === s} className={`supply-tone supply-selectable h-auto min-h-16 w-full justify-between whitespace-normal p-3 text-left border-2 ${filter === s ? `ring-2 ring-offset-2 ring-status-${s === "pending" ? "red" : "green"}` : ""}`} onClick={() => setFilter(filter === s ? "all" : s)}>
               <div>
                 <div className="text-base font-extrabold">
                   {statusLabel[s]}
                 </div>
                 <div className="text-2xl font-bold leading-tight mt-0.5">{counts[s]} <span className="text-sm font-semibold">ta so'rov</span></div>
               </div>
-              {s === "pending" ? <Clock className="h-6 w-6" /> : <Check className="h-6 w-6" />}
+              {s === "pending" ? <Clock className={`h-6 w-6 text-status-red`} /> : <Check className={`h-6 w-6 text-status-green`} />}
           </Button>
         ))}
       </div>
@@ -566,7 +566,7 @@ export default function SupplyRequestsPage() {
                           })
                         ) : (
                           <div className={`inline-flex items-center gap-2 rounded-full border-2 px-3 py-1 text-sm font-extrabold ${statusCls[color]}`}>
-                            <span className="h-2.5 w-2.5 rounded-full bg-status-solid-fg" />
+                            <span className={`h-2.5 w-2.5 rounded-full ${dotCls[color]}`} />
                             {statusLabel[color]}
                           </div>
                         )}
