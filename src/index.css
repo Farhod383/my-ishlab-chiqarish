@@ -158,24 +158,18 @@ input, textarea, [contenteditable="true"] {
   .erp-tab svg { width: 1rem; height: 1rem; flex-shrink: 0; }
 }
 
-/* Supply-only solid surfaces. Kept OUTSIDE @layer components on purpose: unlayered rules
-   outrank the card's own bg-card/text-foreground utilities, so a Kutilmoqda card is solid dark
-   red and a Ta'minlandi card solid dark green with white text. Scoped to .supply-tone only —
-   no other ERP module is recolored. */
-.supply-tone { --supply-tone: var(--status-red-solid); --supply-hover: var(--status-red-solid-hover); background: hsl(var(--supply-tone)); color: hsl(var(--status-solid-foreground)); border-color: hsl(var(--supply-tone)); }
-/* The Button outline variant ships hover:/focus: text-color utilities that otherwise flip the label
-   to dark purple on the solid card, so the white label is pinned for every interaction state. */
-.supply-tone:hover, .supply-tone:focus, .supply-tone:focus-visible, .supply-tone:active { color: hsl(var(--status-solid-foreground)) !important; }
-.supply-tone[data-tone="fulfilled"] { --supply-tone: var(--status-green-solid); --supply-hover: var(--status-green-solid-hover); }
-.supply-tone.supply-selectable { cursor: pointer; transition: background 150ms ease; }
-.supply-tone.supply-selectable:hover { background: hsl(var(--supply-hover)); }
-.supply-tone[aria-pressed="true"] { outline: 3px solid hsl(var(--supply-tone)); outline-offset: 3px; }
-.supply-tone .text-muted-foreground { color: hsl(var(--status-solid-foreground) / 0.82); }
-.supply-tone .supply-dates { background: hsl(var(--status-solid-foreground) / 0.1); border: 1px solid hsl(var(--status-solid-foreground) / 0.32); }
-.supply-tone .supply-action { background: hsl(var(--status-solid-foreground) / 0.14); border-color: hsl(var(--status-solid-foreground) / 0.4); color: hsl(var(--status-solid-foreground)); }
-.supply-tone .supply-action:hover { background: hsl(var(--status-solid-foreground) / 0.24); color: hsl(var(--status-solid-foreground)); }
-.supply-tone input, .supply-tone textarea { background: hsl(var(--status-solid-foreground) / 0.12); border-color: hsl(var(--status-solid-foreground) / 0.35); color: hsl(var(--status-solid-foreground)); }
-.supply-tone input::placeholder, .supply-tone textarea::placeholder { color: hsl(var(--status-solid-foreground) / 0.6); }
+/* Supply-only light styling. Outside @layer on purpose: unlayered rules outrank the
+   card's own bg-card/text-foreground utilities. Cards stay white with a subtle border
+   and soft shadow; status color shows only in badges, buttons and tabs — never as a
+   card background. Scoped to .supply-tone, no other ERP module is affected. */
+.supply-tone { --supply-tone: var(--status-red-solid); background: hsl(var(--card)); color: hsl(var(--foreground)); border-color: hsl(var(--border)); box-shadow: 0 1px 2px hsl(var(--foreground) / 0.05), 0 2px 8px hsl(var(--foreground) / 0.06); }
+.supply-tone[data-tone="fulfilled"] { --supply-tone: var(--status-green-solid); }
+.supply-tone.supply-selectable { cursor: pointer; transition: background 150ms ease, box-shadow 150ms ease; }
+.supply-tone.supply-selectable:hover { background: hsl(var(--muted) / 0.55); box-shadow: 0 2px 8px hsl(var(--foreground) / 0.1); }
+.supply-tone[aria-pressed="true"] { outline: 3px solid hsl(var(--supply-tone)); outline-offset: 2px; }
+.supply-tone .supply-dates { background: hsl(var(--muted) / 0.5); border: 1px solid hsl(var(--border)); }
+.supply-tone .supply-action { background: hsl(var(--background)); border-color: hsl(var(--border)); color: hsl(var(--foreground)); }
+.supply-tone .supply-action:hover { background: hsl(var(--muted)); color: hsl(var(--foreground)); }
 .supply-dates > div { flex-wrap: wrap; }
 .supply-dates span { white-space: nowrap; }
 .supply-tabs [data-state="inactive"] { background: hsl(var(--muted)); color: hsl(var(--foreground)); border-color: hsl(var(--border)); }
