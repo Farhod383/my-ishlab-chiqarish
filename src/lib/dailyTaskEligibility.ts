@@ -17,3 +17,8 @@ export function isDailyTaskEligible(e: { status?: string | null; department?: st
     ? new RegExp(`(^|[^a-zа-я])${k}([^a-zа-я]|$)`).test(text)
     : text.includes(k)));
 }
+
+/** Daily tasks only: an order is shown while it is active (pending / in_progress / delayed); completed and cancelled orders are hidden. */
+export function isDailyTaskOrderVisible(o: { status?: string | null } | null | undefined): boolean {
+  return !!o && o.status !== "completed" && o.status !== "cancelled";
+}

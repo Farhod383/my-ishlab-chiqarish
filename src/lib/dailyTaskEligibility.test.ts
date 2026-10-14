@@ -21,3 +21,10 @@ it2("excludes OTK staff but keeps production workers", () => {
   expect2(elig2({ status: "active", department: "ОТК", position: "Контролёр" })).toBe(false);
   expect2(elig2({ status: "active", department: "A blok", position: "Payvandchi" })).toBe(true);
 });
+
+import { isDailyTaskOrderVisible as vis } from "./dailyTaskEligibility";
+describe("isDailyTaskOrderVisible", () => {
+  it("hides completed orders", () => expect(vis({ status: "completed" })).toBe(false));
+  it("shows pending orders", () => expect(vis({ status: "pending" })).toBe(true));
+  it("shows in-progress orders again after reopening", () => expect(vis({ status: "in_progress" })).toBe(true));
+});
