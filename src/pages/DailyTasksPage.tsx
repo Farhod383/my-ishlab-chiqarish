@@ -18,7 +18,7 @@ import DateInput from "@/components/DateInput";
 import DailyTasksRating from "@/components/DailyTasksRating";
 import { fmtDate as fmtDateG, fmtDateTime24 } from "@/lib/format";
 import { currentUserName, displayUser } from "@/lib/userNames";
-import { isDailyTaskEligible } from "@/lib/dailyTaskEligibility";
+import { isDailyTaskEligible, isDailyTaskOrderVisible } from "@/lib/dailyTaskEligibility";
 
 type Status = "in_progress" | "closed" | "cancelled";
 interface Task {
@@ -87,6 +87,7 @@ export default function DailyTasksPage() {
 
   const filtered = tasks.filter((t) => {
     if (!isDailyTaskEligible(empMap[t.employee_id])) return false;
+    if (orderMap[t.order_id] && !isDailyTaskOrderVisible(orderMap[t.order_id])) return false;
     if (!q.trim()) return true;
     const o = orderMap[t.order_id];
     const hay = [empMap[t.employee_id]?.full_name, localize(empMap[t.employee_id]?.full_name), o?.order_number, o?.product_name, t.task_title, STATUS_LABEL[t.status]].filter(Boolean).join(" ");
@@ -136,7 +137,7 @@ export default function DailyTasksPage() {
     setDetail(data as any); toast.success(msg); load();
   };
 
-  const orderOptions = orders.filter((o) => o.status !== "cancelled").map((o) => ({ value: o.id, label: `#${o.order_number} — ${o.product_name}` }));
+  const orderOptions = orders.filter(isDailyTaskOrderVisible).map((o) => ({ value: o.id, label: `#${o.order_number} — ${o.product_name}` }));
   const empOptions = employees.filter((e) => isDailyTaskEligible(e) && !aliasIds.has(e.id)).map((e, i) => ({
     value: e.id, label: `${i + 1}. ` + localize(e.full_name) + (openByEmp[e.id] ? " 🔒" : ""),
     hint: [e.position, e.department, openByEmp[e.id] ? "ochiq topshiriq bor" : null].filter(Boolean).join(" · "),
