@@ -91,8 +91,8 @@ const App = () => (
                       <Route path="/service" element={<ProtectedRoute roles={["manager","admin"]}><ServicePage /></ProtectedRoute>} />
                       <Route path="/face-id" element={<ProtectedRoute roles={["hr","admin"]}><FaceIdPage /></ProtectedRoute>} />
                       <Route path="/hr" element={<ProtectedRoute roles={["hr","admin","cashier"]}><HRPage /></ProtectedRoute>} />
-                      <Route path="/kassa" element={<ProtectedRoute roles={["cashier","admin"]}><KassaPage /></ProtectedRoute>} />
-                      <Route path="/kassa-supply" element={<ProtectedRoute roles={["cashier","admin","supply"]}><SupplyFinancePage /></ProtectedRoute>} />
+                      <Route path="/kassa" element={<ProtectedRoute roles={["chief_accountant","admin"]}><KassaPage /></ProtectedRoute>} />
+                      <Route path="/kassa-supply" element={<ProtectedRoute roles={["chief_accountant","admin","supply"]}><SupplyFinancePage /></ProtectedRoute>} />
                       <Route path="/returns" element={<ProtectedRoute roles={["warehouse","admin"]}><ReturnsPage /></ProtectedRoute>} />
                       <Route path="/defects" element={<DefectsPage />} />
                       <Route path="/audit" element={<ProtectedRoute roles={["admin"]}><AuditLog /></ProtectedRoute>} />
