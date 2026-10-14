@@ -21,6 +21,7 @@ import { notify } from "@/lib/notify";
 import { fmtKassaAmount, fmtNum, fmtDateTime24, fmtDate } from "@/lib/format";
 import KassaOverview from "@/components/kassa/KassaOverview";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import ReasonOpsDialog from "@/components/kassa/ReasonOpsDialog";
 import SupplyFinancePage from "@/pages/SupplyFinancePage";
 import { useEmployees, refreshEmployees } from "@/hooks/useEmployees";
 import { currentUserName, displayUser } from "@/lib/userNames";
@@ -381,6 +382,7 @@ export default function KassaPage() {
   }, [openingBal, incByCur, expByCur]);
 
   // --- Hisobot (tanlangan oy) ---
+  const [reasonOpen, setReasonOpen] = useState<string | null>(null);
   const report = useMemo(() => {
     const b = monthBounds(reportMonth);
     const from = new Date(`${b.from}T00:00:00`).getTime();
@@ -960,8 +962,8 @@ export default function KassaPage() {
               <TableBody>
                 {report.groups.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-6">Chiqim yo'q</TableCell></TableRow>}
                 {report.groups.map((g) => (
-                  <TableRow key={g.reason}>
-                    <TableCell className="font-medium">{g.reason}</TableCell>
+                  <TableRow key={g.reason} className="cursor-pointer hover:bg-muted/50" onClick={() => setReasonOpen(g.reason)}>
+                    <TableCell className="font-medium underline-offset-2 hover:underline">{g.reason}</TableCell>
                     <TableCell className="text-right">{g.count}</TableCell>
                     <TableCell className="text-right font-mono text-status-red">{curLine(g.byCur)}</TableCell>
                   </TableRow>
@@ -1110,6 +1112,10 @@ export default function KassaPage() {
             </AlertDialogContent>
           </AlertDialog>
         </TabsContent>
+
+        <ReasonOpsDialog reason={reasonOpen} month={monthLabel(reportMonth)} onClose={() => setReasonOpen(null)}
+          rows={reasonOpen ? report.exRows.filter((e) => ((e.reason ?? "—").trim() || "—") === reasonOpen) : []}
+          ptLabel={ptLabel} curLine={curLine} fmt={(n) => fmtCash(n)} />
 
         <TabsContent value="supply" className="space-y-3">
           <SupplyFinancePage canManage={canManage} onGive={() => {
