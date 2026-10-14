@@ -34,7 +34,7 @@ export function AppSidebar() {
     { title: (t.nav as any).service ?? "Remont (Servis)", url: "/service", icon: Wrench, roles: ["manager", "admin"] },
     { title: t.nav.otk, url: "/otk", icon: ShieldCheck },
     { title: "Kunlik topshiriqlar", url: "/daily-tasks", icon: ListChecks, roles: ["admin", "otk", "manager"] },
-    { title: "Kassa", url: "/kassa", icon: Wallet, roles: ["cashier", "admin"] },
+    { title: "Kassa", url: "/kassa", icon: Wallet, roles: ["chief_accountant", "admin"] },
     { title: t.nav.warehouse, url: "/warehouse", icon: Warehouse },
     { title: "Nakladnoy", url: "/invoices", icon: FileText, roles: ["admin", "warehouse", "supply"] },
     { title: t.metal.title, url: "/metal", icon: Ruler, roles: ["admin", "engineer", "warehouse"] },

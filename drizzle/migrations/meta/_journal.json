@@ -281,6 +281,13 @@
       "when": 1791872748421,
       "tag": "0039_unique_product_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1791956284650,
+      "tag": "0040_kassa_only_chief_accountant",
+      "breakpoints": true
     }
   ]
 }

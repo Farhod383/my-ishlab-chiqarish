@@ -184,7 +184,7 @@ export default function KassaPage() {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  const canManage = hasRole(["cashier", "admin"]);
+  const canManage = hasRole(["chief_accountant", "admin"]);
   // Glavniy buxgalter (chief accountant) and admin can manage users / cashiers.
   const canManageUsers = roles.includes("admin") || roles.includes("chief_accountant");
   const fmt = (n: number) => fmtNum(n);

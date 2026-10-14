@@ -33,7 +33,9 @@ export default function Auth() {
 
   const signIn = async () => {
     setBusy(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const login = email.trim().toLowerCase();
+    // Short logins (e.g. "1constructor") map to their account email.
+    const { data, error } = await supabase.auth.signInWithPassword({ email: login.includes("@") ? login : `${login}@gmail.com`, password });
     setBusy(false);
     if (error) {
       await supabase.from("audit_log").insert({
@@ -117,7 +119,7 @@ export default function Auth() {
               </TabsList>
 
               <TabsContent value="login" className="space-y-3 mt-4">
-                <div><Label>{t.auth.email}</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" /></div>
+                <div><Label>{t.auth.email}</Label><Input type="text" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" /></div>
                 <div><Label>{t.auth.password}</Label><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" /></div>
                 <Button className="w-full" onClick={signIn} disabled={busy || !email || !password}>
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : t.auth.login}
