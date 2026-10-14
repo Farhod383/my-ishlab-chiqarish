@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Truck, ArrowDownCircle, ArrowUpCircle, Wallet, Search } from "lucide-react";
-import { fmtNum, fmtDateTime24, fmtMoney } from "@/lib/format";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, FileBarChart, Info, Plus } from "lucide-react";
+import { fmtDateTime24 } from "@/lib/format";
+import { fmtSpace } from "@/components/kassa/KassaOverview";
 
 const PT_LABEL: Record<string, string> = { cash: "Naqd pul", transfer: "O'tkazma", corporate_card: "Korporativ karta", card: "Karta", other: "Boshqa" };
 
@@ -52,11 +50,25 @@ const normCur = (c: string | null | undefined) => ((c ?? "UZS").toUpperCase() ==
  * CHIQIM = Skladga qilingan real kirimlar qiymati (stock_movements.direction = 'in')
  * Bu sahifada hech qanday yozuv yaratilmaydi — barchasi real bazadan o'qiladi.
  */
-export default function SupplyFinancePage() {
+const MONTHS = ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr"];
+const DAYS = ["yakshanba", "dushanba", "seshanba", "chorshanba", "payshanba", "juma", "shanba"];
+const sym = (c: string) => (c === "USD" ? "$" : "so'm");
+const money = (n: number, c: string) => `${fmtSpace(n)} ${sym(c)}`;
+const pad = (n: number) => String(n).padStart(2, "0");
+const ymOf = (iso: string) => { const d = new Date(iso); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; };
+const nowYm = () => ymOf(new Date().toISOString());
+
+interface Props { canManage?: boolean; onGive?: () => void }
+
+export default function SupplyFinancePage({ canManage = false, onGive }: Props = {}) {
   const [incomes, setIncomes] = useState<IncomeRow[]>([]);
   const [outs, setOuts] = useState<OutRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [q, setQ] = useState("");
+  const [month, setMonth] = useState<string | null>(null); // null = Barcha davr (default)
+  const [selIn, setSelIn] = useState(false);
+  const [selOut, setSelOut] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setMounted(true), 60); return () => clearTimeout(t); }, []);
 
   const load = async () => {
     setLoading(true);
@@ -130,158 +142,206 @@ export default function SupplyFinancePage() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
-  // Har bir to'lov turi × valyuta bo'yicha alohida balans (real DB yozuvlaridan).
-  const buckets = useMemo(() => {
-    const b: Record<string, Record<string, { in: number; out: number }>> = {};
-    for (const pt of PT_KEYS) { b[pt] = {}; for (const c of CUR_KEYS) b[pt][c] = { in: 0, out: 0 }; }
-    for (const r of incomes) b[normPT(r.payment_type)][normCur(r.currency)].in += Number(r.amount) || 0;
-    // Sklad kirimlari (Ta'minot chiqimi) — to'lov turi yozilmagan, naqd puldan ayriladi.
-    for (const r of outs) b.cash[normCur(r.currency)].out += Number(r.total) || 0;
-    return b;
-  }, [incomes, outs]);
+  // Formulalar o'zgarmagan: kirim = Kassadan berilgan, chiqim = Sklad kirimlari (narx × miqdor).
+  const pIn = useMemo(() => (month ? incomes.filter((r) => ymOf(r.created_at) === month) : incomes), [incomes, month]);
+  const pOut = useMemo(() => (month ? outs.filter((r) => ymOf(r.created_at) === month) : outs), [outs, month]);
+  const sumBy = (rows: { currency: string }[], val: (r: any) => number) => {
+    const m: Record<string, number> = { UZS: 0, USD: 0 };
+    for (const r of rows) m[normCur(r.currency)] += val(r);
+    return m;
+  };
+  const inSum = useMemo(() => sumBy(pIn, (r) => Number(r.amount) || 0), [pIn]);
+  const outSum = useMemo(() => sumBy(pOut, (r) => Number(r.total) || 0), [pOut]);
+  const allIn = useMemo(() => sumBy(incomes, (r) => Number(r.amount) || 0), [incomes]);
+  const allOut = useMemo(() => sumBy(outs, (r) => Number(r.total) || 0), [outs]);
+  const bal = { UZS: allIn.UZS - allOut.UZS, USD: allIn.USD - allOut.USD };
+  const negative = bal.UZS < 0 || bal.USD < 0;
 
-  const needle = q.trim().toLowerCase();
-  const fIncomes = needle
-    ? incomes.filter((r) => `${r.reason ?? ""} ${r.comment ?? ""} ${r.giver} ${r.amount} ${r.currency}`.toLowerCase().includes(needle))
-    : incomes;
-  const fOuts = needle
-    ? outs.filter((r) => `${r.product_name} ${r.order_number ?? ""} ${r.actor} ${r.total}`.toLowerCase().includes(needle))
-    : outs;
+  // Har bir to'lov turi × valyuta bo'yicha alohida balans (Sklad kirimlari naqd puldan ayriladi).
+  const accounts = useMemo(() => {
+    const all: { pt: string; c: string; v: number }[] = [];
+    for (const pt of PT_KEYS) for (const c of CUR_KEYS) {
+      const inn = incomes.filter((r) => normPT(r.payment_type) === pt && normCur(r.currency) === c).reduce((s, r) => s + (Number(r.amount) || 0), 0);
+      const out = pt === "cash" ? outs.filter((r) => normCur(r.currency) === c).reduce((s, r) => s + (Number(r.total) || 0), 0) : 0;
+      all.push({ pt, c, v: inn - out });
+    }
+    return { shown: all.filter((a) => Math.abs(a.v) > 0.0001), hidden: all.filter((a) => Math.abs(a.v) <= 0.0001).length };
+  }, [incomes, outs]);
+  const ptShort = (pt: string) => (pt === "cash" ? "💵 Naqd" : pt === "corporate_card" ? "💳 Karta" : "🏦 O'tkazma");
+
+  const cats = useMemo(() => {
+    const g: Record<string, number> = {};
+    const usd: Record<string, number> = {};
+    for (const r of pOut) {
+      const k = r.product_name.trim() || "—";
+      if (r.currency === "USD") usd[k] = (usd[k] || 0) + r.total; else g[k] = (g[k] || 0) + r.total;
+    }
+    const sorted = Object.entries(g).map(([name, v]) => ({ name, v })).sort((a, b) => b.v - a.v);
+    const rows = sorted.slice(0, 7);
+    const rest = sorted.slice(7).reduce((s, r) => s + r.v, 0);
+    if (rest > 0) rows.push({ name: "Boshqalar", v: rest });
+    const max = Math.max(1, ...rows.map((r) => r.v));
+    return { rows, max, usd: Object.entries(usd).map(([n, v]) => `${n} ${fmtSpace(v)} $`).join(", ") };
+  }, [pOut]);
+
+  const list = useMemo(() => {
+    const items: { kind: "in" | "out"; r: any; at: number }[] = [];
+    if (selIn) pIn.forEach((r) => items.push({ kind: "in", r, at: new Date(r.created_at).getTime() }));
+    if (selOut) pOut.forEach((r) => items.push({ kind: "out", r, at: new Date(r.created_at).getTime() }));
+    items.sort((a, b) => b.at - a.at);
+    const groups: { label: string; items: typeof items }[] = [];
+    for (const it of items) {
+      const d = new Date(it.at);
+      const label = `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}, ${DAYS[d.getDay()]}`;
+      const last = groups[groups.length - 1];
+      if (last && last.label === label) last.items.push(it); else groups.push({ label, items: [it] });
+    }
+    return { groups, count: items.length };
+  }, [selIn, selOut, pIn, pOut]);
+
+  const shift = (delta: number) => {
+    const [y, m] = (month ?? nowYm()).split("-").map(Number);
+    const d = new Date(y, m - 1 + delta, 1);
+    setMonth(`${d.getFullYear()}-${pad(d.getMonth() + 1)}`);
+  };
+  const periodLabel = month ? (() => { const [y, m] = month.split("-").map(Number); const n = MONTHS[m - 1]; return `${n.charAt(0).toUpperCase()}${n.slice(1)} ${y}`; })() : "Barcha davr";
+
+  const downloadReport = () => {
+    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const lines = [["Turi", "Sana va vaqt", "Nomi", "Miqdor", "Birlik", "Narx", "Summa", "Valyuta", "Kim", "To'lov turi"].map(esc).join(";")];
+    for (const r of pIn) lines.push(["Berilgan", fmtDateTime24(r.created_at), "Kassadan berildi", "", "", "", r.amount, normCur(r.currency), r.giver, PT_LABEL[normPT(r.payment_type)]].map(esc).join(";"));
+    for (const r of pOut) lines.push(["Sarflangan", fmtDateTime24(r.created_at), r.product_name, r.quantity, r.unit ?? "", r.unit_price, r.total, r.currency, r.actor, ""].map(esc).join(";"));
+    const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `taminot-kassa-${month ?? "barcha-davr"}.csv`;
+    a.click();
+  };
+
+  const listKey = `${selIn}-${selOut}-${month}`;
+  const title = selIn && selOut ? "Berilgan va sarflangan · sana bo'yicha" : selIn ? `Berilgan · ${list.count} ta` : `Sarflangan · ${list.count} ta`;
+  const usdLine = (m: Record<string, number>, sign: string) => (Math.abs(m.USD) > 0.0001 ? `${sign}${money(m.USD, "USD")}` : null);
+  let rowIdx = 0;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Truck className="h-6 w-6" /> Kassa / Ta'minot
-        </h1>
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Qidirish..." value={q} onChange={(e) => setQ(e.target.value)} />
+    <div className="kassa-v2 space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2 flex-wrap min-w-0">
+          <h2 className="text-xl font-bold tracking-tight">Ta'minot kassasi</h2>
+          <Tooltip>
+            <TooltipTrigger asChild><button type="button" aria-label="Izoh" className="kassa-muted"><Info className="h-4 w-4" /></button></TooltipTrigger>
+            <TooltipContent className="max-w-xs">Kirim — Kassadan Ta'minotga berilgan pul. Chiqim — Ta'minotga birinchi pul berilgandan keyin Sanjar olib kelgan Sklad kirimlari (narx × miqdor). Qoldiq = berilgan − sarflangan.</TooltipContent>
+          </Tooltip>
+          <div className="inline-flex items-center gap-1 rounded-lg border bg-background px-1 py-0.5">
+            <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Oldingi oy" onClick={() => shift(-1)}><ChevronLeft className="h-4 w-4" /></Button>
+            <span className="min-w-[120px] text-center text-sm font-semibold">{periodLabel}</span>
+            <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Keyingi oy" onClick={() => shift(1)}><ChevronRight className="h-4 w-4" /></Button>
+          </div>
+          {month && <Button variant="ghost" size="sm" onClick={() => setMonth(null)}>Barcha davr</Button>}
+        </div>
+        <div className="flex items-center gap-2 ml-auto">
+          <Button variant="outline" className="bg-background" onClick={downloadReport}><FileBarChart className="h-4 w-4 mr-1.5" />Hisobot</Button>
+          {canManage && onGive && <Button className="bg-status-green text-white hover:bg-status-green/90" onClick={onGive}><Plus className="h-4 w-4 mr-1" />Pul berish</Button>}
         </div>
       </div>
-      <p className="text-sm text-muted-foreground">
-        Kirim — Kassadan Ta'minotga berilgan pul. Chiqim — Ta'minotga birinchi pul berilgandan keyin Sanjar olib kelgan Sklad kirimlari (narx × miqdor). Qoldiq = berilgan − sarflangan.
-      </p>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {PT_KEYS.flatMap((pt) => CUR_KEYS.map((currency) => {
-          const totals = buckets[pt][currency];
-          const balance = totals.in - totals.out;
-          return (
-            <Card key={`${pt}-${currency}`} className="overflow-hidden border-l-4 border-l-primary bg-primary/5">
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-2 font-medium">
-                    <Wallet className="h-4 w-4 shrink-0 text-primary" />
-                    <span className="truncate">{PT_LABEL[pt]}</span>
-                  </div>
-                  <Badge variant="outline">{currency}</Badge>
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">Hozirgi balans</div>
-                  <div className={`mt-1 font-mono text-xl font-bold ${balance < 0 ? "text-status-red" : "text-foreground"}`}>
-                    {fmtMoney(balance, currency)}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2 border-t pt-3 text-sm">
-                  <div className="rounded-md border border-status-green/30 bg-status-green/10 p-2">
-                    <div className="flex items-center gap-1 text-xs text-status-green"><ArrowDownCircle className="h-3.5 w-3.5" /> Kirim</div>
-                    <div className="mt-1 font-mono font-semibold text-status-green">+{fmtMoney(totals.in, currency)}</div>
-                  </div>
-                  <div className="rounded-md border border-status-red/30 bg-status-red/10 p-2">
-                    <div className="flex items-center gap-1 text-xs text-status-red"><ArrowUpCircle className="h-3.5 w-3.5" /> Chiqim</div>
-                    <div className="mt-1 font-mono font-semibold text-status-red">−{fmtMoney(totals.out, currency)}</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        }))}
+      <div className="kassa-kpis">
+        <button type="button" aria-pressed={selIn} onClick={() => setSelIn(!selIn)} className="kassa-card kassa-kpi" data-tone="in">
+          <span className="kassa-check">{selIn && <Check className="h-3 w-3" />}</span>
+          <div className="kassa-muted text-sm">Berilgan (kirim)</div>
+          <div className="kassa-big kassa-green">+{money(inSum.UZS, "UZS")}</div>
+          {usdLine(inSum, "+") && <div className="kassa-green font-semibold tabular-nums">{usdLine(inSum, "+")}</div>}
+          <div className="kassa-muted text-xs">{pIn.length} ta operatsiya</div>
+        </button>
+        <button type="button" aria-pressed={selOut} onClick={() => setSelOut(!selOut)} className="kassa-card kassa-kpi" data-tone="out">
+          <span className="kassa-check">{selOut && <Check className="h-3 w-3" />}</span>
+          <div className="kassa-muted text-sm">Sarflangan (Sklad kirimlari)</div>
+          <div className="kassa-big kassa-red">−{money(outSum.UZS, "UZS")}</div>
+          {usdLine(outSum, "−") && <div className="kassa-red font-semibold tabular-nums">{usdLine(outSum, "−")}</div>}
+          <div className="kassa-muted text-xs">{pOut.length} ta operatsiya</div>
+        </button>
+        <div className="kassa-card kassa-kpi kassa-balance">
+          <div className="text-sm opacity-80">Qoldiq</div>
+          <div className="kassa-big" style={bal.UZS < 0 ? { color: "#e0434b" } : undefined}>{money(bal.UZS, "UZS")}</div>
+          <div className="font-semibold tabular-nums" style={bal.USD < 0 ? { color: "#e0434b" } : undefined}>{money(bal.USD, "USD")}</div>
+          {negative && <div className="text-xs font-medium" style={{ color: "#e0434b" }}>Berilgandan ko'p sarflangan</div>}
+        </div>
       </div>
 
-      <Tabs defaultValue="in">
-        <TabsList>
-          <TabsTrigger value="in">Kirimlar tarixi ({fIncomes.length})</TabsTrigger>
-          <TabsTrigger value="out">Chiqimlar tarixi ({fOuts.length})</TabsTrigger>
-        </TabsList>
+      <div className="kassa-grid">
+        <div className="kassa-card kassa-ops">
+          {!selIn && !selOut ? (
+            <div className="flex-1 grid place-items-center kassa-muted text-sm text-center p-4">{loading ? "Yuklanmoqda..." : "Berilgan yoki Sarflangan kartasini bosing"}</div>
+          ) : (
+            <>
+              <div className="kassa-ops-head"><div className="font-semibold">Operatsiyalar · {title}</div></div>
+              <div key={listKey} className="kassa-ops-list">
+                {list.count === 0 && <div className="kassa-muted text-sm text-center py-10">Bu davrda yozuv yo'q</div>}
+                {list.groups.map((g) => (
+                  <div key={g.label}>
+                    <div className="kassa-day">{g.label}</div>
+                    {g.items.map(({ kind, r, at }) => {
+                      const i = rowIdx++;
+                      const d = new Date(at);
+                      const c = normCur(r.currency);
+                      const time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                      const sub = kind === "in"
+                        ? [time, r.giver, PT_LABEL[normPT(r.payment_type)]]
+                        : [time, `${fmtSpace(r.quantity)}${r.unit ? " " + r.unit : ""} × ${money(r.unit_price, c)}`, r.actor, r.order_number ? `#${r.order_number}` : null];
+                      const amt = kind === "in" ? r.amount : r.total;
+                      return (
+                        <div key={`${kind}-${r.id}`} className="kassa-row" style={{ animationDelay: `${Math.min(i, 14) * 28}ms` }}>
+                          <div className="kassa-ico" data-tone={kind}>{kind === "in" ? <ArrowDown className="h-4 w-4" /> : <ArrowUp className="h-4 w-4" />}</div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-semibold truncate">{kind === "in" ? "Kassadan berildi" : r.product_name || "—"}</div>
+                            <div className="kassa-muted text-xs truncate">{sub.filter(Boolean).join(" · ")}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className={`font-semibold tabular-nums whitespace-nowrap ${kind === "in" ? "kassa-green" : "kassa-red"}`}>{kind === "in" ? "+" : "−"}{money(amt, c)}</div>
+                            {kind === "in" && c === "USD" && r.total_uzs > 0 && <div className="kassa-muted text-xs tabular-nums whitespace-nowrap">≈ {money(r.total_uzs, "UZS")}</div>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
 
-        <TabsContent value="in">
-          <Card><CardContent className="p-0">
-            <div className="max-h-[60vh] overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">№</TableHead>
-                    <TableHead>Sana va vaqt</TableHead>
-                    <TableHead>Kim bergan</TableHead>
-                    <TableHead>Sabab / izoh</TableHead>
-                    <TableHead>To'lov turi</TableHead>
-                    <TableHead className="text-right">Summa</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {!loading && fIncomes.length === 0 && (
-                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">Kirim yo'q</TableCell></TableRow>
-                  )}
-                  {fIncomes.map((r, i) => (
-                    <TableRow key={r.id}>
-                      <TableCell className="text-muted-foreground">{i + 1}</TableCell>
-                      <TableCell className="font-mono text-sm">{fmtDateTime24(r.created_at)}</TableCell>
-                      <TableCell>{r.giver}</TableCell>
-                      <TableCell className="text-sm">{r.reason}{r.comment ? ` · ${r.comment}` : ""}</TableCell>
-                      <TableCell className="text-sm">{PT_LABEL[r.payment_type ?? "cash"] ?? "—"}</TableCell>
-                      <TableCell className="text-right font-semibold">
-                        {fmtMoney(r.amount, r.currency)}
-                        {r.currency !== "UZS" ? <div className="text-xs text-muted-foreground">= {fmtNum(r.total_uzs)} so'm</div> : null}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+        <div className="space-y-4">
+          <div className="kassa-card p-4">
+            <div className="font-semibold mb-3">Pul qayerda turibdi</div>
+            <div className="grid grid-cols-2 gap-2">
+              {accounts.shown.map((a) => (
+                <div key={`${a.pt}${a.c}`} className="kassa-mini">
+                  <div className="kassa-muted text-xs">{ptShort(a.pt)} · {sym(a.c)}</div>
+                  <div className={`font-semibold tabular-nums ${a.v < 0 ? "kassa-red" : ""}`}>{money(a.v, a.c)}</div>
+                </div>
+              ))}
+              {accounts.hidden > 0 && <div className="kassa-mini kassa-mini-empty">Bo'sh hisoblar yashirilgan ({accounts.hidden})</div>}
             </div>
-          </CardContent></Card>
-        </TabsContent>
-
-        <TabsContent value="out">
-          <Card><CardContent className="p-0">
-            <div className="max-h-[60vh] overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">№</TableHead>
-                    <TableHead>Sana va vaqt</TableHead>
-                    <TableHead>Tovar nomi</TableHead>
-                    <TableHead className="text-right">Miqdori</TableHead>
-                    <TableHead className="text-right">Birlik narxi</TableHead>
-                    <TableHead className="text-right">Jami</TableHead>
-                    <TableHead>Valyuta</TableHead>
-                    <TableHead>Zakaz</TableHead>
-                    <TableHead>Kim olib kelgan</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {!loading && fOuts.length === 0 && (
-                    <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-6">Chiqim yo'q</TableCell></TableRow>
-                  )}
-                  {fOuts.map((r, i) => (
-                    <TableRow key={r.id}>
-                      <TableCell className="text-muted-foreground">{i + 1}</TableCell>
-                      <TableCell className="font-mono text-sm">{fmtDateTime24(r.created_at)}</TableCell>
-                      <TableCell className="font-medium">{r.product_name}</TableCell>
-                      <TableCell className="text-right font-mono">{fmtNum(r.quantity)} {r.unit ?? ""}</TableCell>
-                      <TableCell className="text-right font-mono">{fmtNum(r.unit_price)}</TableCell>
-                      <TableCell className="text-right font-semibold">{fmtNum(r.total)}</TableCell>
-                      <TableCell><Badge variant="outline">{r.currency}</Badge></TableCell>
-                      <TableCell>{r.order_number ? <Badge variant="outline">{r.order_number}</Badge> : <span className="text-muted-foreground">—</span>}</TableCell>
-                      <TableCell className="text-sm">{r.actor}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+          </div>
+          <div className="kassa-card p-4">
+            <div className="font-semibold">Pul nimaga sarflandi</div>
+            <div className="kassa-muted text-xs mb-3">{periodLabel} · {money(outSum.UZS, "UZS")}</div>
+            <div className="space-y-3">
+              {cats.rows.length === 0 && <div className="kassa-muted text-sm">Bu davrda sarf yo'q</div>}
+              {cats.rows.map((c) => (
+                <div key={c.name}>
+                  <div className="flex justify-between gap-2 text-sm">
+                    <span className="truncate">{c.name}</span>
+                    <span className="kassa-red tabular-nums font-medium whitespace-nowrap">{money(c.v, "UZS")}</span>
+                  </div>
+                  <div className="kassa-bar"><div style={{ width: mounted ? `${(c.v / cats.max) * 100}%` : 0 }} /></div>
+                </div>
+              ))}
+              {cats.usd && <div className="kassa-muted text-xs">+ Dollarda: {cats.usd}</div>}
             </div>
-          </CardContent></Card>
-        </TabsContent>
-      </Tabs>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

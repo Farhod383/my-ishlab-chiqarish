@@ -745,7 +745,7 @@ export default function KassaPage() {
     setFilterFrom(b.from); setFilterTo(b.to);
   };
   return (
-    <div className={`space-y-6 ${isOverview ? "kassa-page-bg -m-3 p-3 sm:-m-4 sm:p-4 min-h-full" : ""}`}>
+    <div className={`space-y-6 ${isOverview || tab === "supply" ? "kassa-page-bg -m-3 p-3 sm:-m-4 sm:p-4 min-h-full" : ""}`}>
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3 flex-wrap min-w-0">
           <h1 className="text-2xl font-bold tracking-tight">{k.title ?? "Kassa"}</h1>
@@ -767,7 +767,7 @@ export default function KassaPage() {
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2 flex-wrap ml-auto">
+        {tab !== "supply" && <div className="flex items-center gap-2 flex-wrap ml-auto">
           <Button variant="outline" className={tab === "report" ? "ring-2 ring-ring" : ""} onClick={() => setTab(tab === "report" ? "income" : "report")}>
             <FileBarChart className="h-4 w-4 mr-1.5" />Hisobot
           </Button>
@@ -782,7 +782,7 @@ export default function KassaPage() {
           )}
           {canManage && <Button variant="destructive" onClick={() => setOpenExp(true)}><Minus className="h-4 w-4 mr-1" />Chiqim</Button>}
           {canManage && <Button className="bg-status-green text-white hover:bg-status-green/90" onClick={() => setOpenInc(true)}><Plus className="h-4 w-4 mr-1" />Kirim</Button>}
-        </div>
+        </div>}
       </div>
 
       {isOverview && (
@@ -1112,7 +1112,11 @@ export default function KassaPage() {
         </TabsContent>
 
         <TabsContent value="supply" className="space-y-3">
-          <SupplyFinancePage />
+          <SupplyFinancePage canManage={canManage} onGive={() => {
+            setExpEditId(null); setExpOrig(null);
+            setExpForm({ amount: 0, reason: "Ta'minot", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash", salary_kind: "", is_supply: true, debt_id: "" });
+            setOpenExp(true);
+          }} />
         </TabsContent>
       </Tabs>
 
