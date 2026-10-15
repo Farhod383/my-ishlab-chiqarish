@@ -86,23 +86,10 @@ export default function Orders() {
   }).filter((o) => group === "ALL" || orderGroupOf(o.product_name) === group);
   const filtered = filter === "all" ? sortOrdersByStatusAndDate(filteredRaw) : filteredRaw;
 
-  const downloadPdf = () => {
-    const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
-    const sorted = rows.slice().sort((a, b) => String(a.order_number).localeCompare(String(b.order_number)));
-    const sections = ORDER_GROUPS.map((g) => {
-      const seen = new Set<string>();
-      const items = sorted.filter((o) => orderGroupOf(o.product_name) === g.key)
-        .map((o) => orderPdfLabel(o as any)).filter((l) => (seen.has(l) ? false : (seen.add(l), true)));
-      return `<h2>${esc(g.label)} <small>(${items.length})</small></h2><ol>${items.map((l) => `<li>${esc(l)}</li>`).join("") || "<li>—</li>"}</ol>`;
-    }).join("");
-    const w = window.open("", "_blank");
-    if (!w) return;
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Zakazlar ro'yxati</title><style>
-      @page{size:A4;margin:14mm} body{font-family:Arial,sans-serif;color:#111} h1{font-size:20px}
-      h2{font-size:16px;border-bottom:1px solid #ccc;padding-bottom:4px;margin-top:22px;break-after:avoid} small{color:#666;font-weight:normal}
-      li{font-size:13px;margin:2px 0;break-inside:avoid}</style></head><body><h1>Zakazlar ro'yxati</h1>${sections}
-      <script>window.onload=()=>{window.print();}</script></body></html>`);
-    w.document.close();
+  const downloadPdf = async () => {
+    const { buildOrderListPdf, todayFile } = await import("@/lib/pdfExport");
+    const { doc } = await buildOrderListPdf(rows as any);
+    doc.save(`Zakazlar_royxati_${todayFile()}.pdf`);
   };
 
   return (
