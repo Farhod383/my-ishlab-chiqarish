@@ -17,6 +17,8 @@ import { matchesAcrossScripts } from "@/lib/translit";
 import { ClientOrdersView } from "@/components/ClientOrdersView";
 import { recalcOrdersBatch, sortOrdersByStatusAndDate } from "@/lib/orderStatus";
 import { fmtDate } from "@/lib/format";
+import { FileDown } from "lucide-react";
+import { ORDER_GROUPS, orderGroupOf, orderPdfLabel, type OrderGroup } from "@/lib/orderGroups";
 
 type FilterKey = "all" | "active" | "exception" | "delayed" | "completed" | "today" | "clients";
 
@@ -32,6 +34,7 @@ export default function Orders() {
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
   const [selOpen, setSelOpen] = useState(false);
+  const [group, setGroup] = useState<OrderGroup | "ALL">("ALL");
 
   useEffect(() => {
     const f = (params.get("filter") as FilterKey) || "all";
@@ -78,9 +81,27 @@ export default function Orders() {
     if (filter === "today") return o.deadline === today && o.status !== "completed";
     if (filter === "completed") return o.status === "completed";
     return true;
-  });
+  }).filter((o) => group === "ALL" || orderGroupOf(o.product_name) === group);
   const filtered = filter === "all" ? sortOrdersByStatusAndDate(filteredRaw) : filteredRaw;
 
+  const downloadPdf = () => {
+    const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
+    const sorted = rows.slice().sort((a, b) => String(a.order_number).localeCompare(String(b.order_number)));
+    const sections = ORDER_GROUPS.map((g) => {
+      const seen = new Set<string>();
+      const items = sorted.filter((o) => orderGroupOf(o.product_name) === g.key)
+        .map((o) => orderPdfLabel(o as any)).filter((l) => (seen.has(l) ? false : (seen.add(l), true)));
+      return `<h2>${esc(g.label)} <small>(${items.length})</small></h2><ol>${items.map((l) => `<li>${esc(l)}</li>`).join("") || "<li>—</li>"}</ol>`;
+    }).join("");
+    const w = window.open("", "_blank");
+    if (!w) return;
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Zakazlar ro'yxati</title><style>
+      @page{size:A4;margin:14mm} body{font-family:Arial,sans-serif;color:#111} h1{font-size:20px}
+      h2{font-size:16px;border-bottom:1px solid #ccc;padding-bottom:4px;margin-top:22px;break-after:avoid} small{color:#666;font-weight:normal}
+      li{font-size:13px;margin:2px 0;break-inside:avoid}</style></head><body><h1>Zakazlar ro'yxati</h1>${sections}
+      <script>window.onload=()=>{window.print();}</script></body></html>`);
+    w.document.close();
+  };
 
   return (
     <div className="space-y-6">
@@ -89,10 +110,25 @@ export default function Orders() {
           <h1 className="text-2xl font-bold tracking-tight">{t.orders.title}</h1>
           <p className="text-sm text-muted-foreground">{t.orders.subtitle}</p>
         </div>
-        {hasRole(["marketing", "admin"]) && (
-          <Button asChild><Link to="/orders/new"><Plus className="h-4 w-4 mr-2" />{t.orders.new}</Link></Button>
-        )}
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={downloadPdf} disabled={loading}><FileDown className="h-4 w-4 mr-2" />PDF yuklab olish</Button>
+          {hasRole(["marketing", "admin"]) && (
+            <Button asChild><Link to="/orders/new"><Plus className="h-4 w-4 mr-2" />{t.orders.new}</Link></Button>
+          )}
+        </div>
       </div>
+
+      <div className="flex flex-wrap gap-2">
+        {([{ key: "ALL", label: "Barcha guruhlar" }, ...ORDER_GROUPS] as { key: OrderGroup | "ALL"; label: string }[]).map((g) => {
+          const n = g.key === "ALL" ? rows.length : rows.filter((o) => orderGroupOf(o.product_name) === g.key).length;
+          return (
+            <Button key={g.key} size="sm" variant={group === g.key ? "default" : "outline"} onClick={() => setGroup(g.key)}>
+              {g.label} <span className="ml-1.5 text-xs opacity-70">{n}</span>
+            </Button>
+          );
+        })}
+      </div>
+
 
       <Card>
         <CardHeader>
