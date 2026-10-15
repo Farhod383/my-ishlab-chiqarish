@@ -80,8 +80,9 @@ async function loadFull(ids: string[]): Promise<Map<string, Full>> {
 }
 
 export function CompletedOrdersReport({ open, onOpenChange, rows }: { open: boolean; onOpenChange: (v: boolean) => void; rows: any[] }) {
-  const done = useMemo(() => rows.filter((r) => r.status === "completed")
-    .sort((a, b) => String(a.order_number).localeCompare(String(b.order_number)) || String(a.product_name).localeCompare(String(b.product_name))), [rows]);
+  const [stf, setStf] = useState<string>("all");
+  const done = useMemo(() => rows.filter((r) => r.status !== "cancelled" && (stf === "all" || r.status === stf))
+    .sort((a, b) => String(a.order_number).localeCompare(String(b.order_number)) || String(a.product_name).localeCompare(String(b.product_name))), [rows, stf]);
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -99,7 +100,7 @@ export function CompletedOrdersReport({ open, onOpenChange, rows }: { open: bool
       const map = await loadFull(ids);
       const { buildCompletedPdf, todayFile } = await import("@/lib/pdfExport");
       const doc = await buildCompletedPdf(ids.map((id) => map.get(id)).filter(Boolean) as Full[]);
-      doc.save(`Tugallangan_zakazlar_hisoboti_${todayFile()}.pdf`);
+      doc.save(`${stf === "completed" ? "Tugallangan_zakazlar_hisoboti" : "Zakazlar_batafsil_hisoboti"}_${todayFile()}.pdf`);
     } finally { setBusy(false); }
   };
   const ids = done.filter((d) => sel.has(d.id)).map((d) => d.id);
@@ -107,7 +108,12 @@ export function CompletedOrdersReport({ open, onOpenChange, rows }: { open: bool
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90dvh] flex flex-col">
-        <DialogHeader><DialogTitle>Tugallangan zakazlar hisoboti ({done.length})</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Zakazlar batafsil hisoboti ({done.length})</DialogTitle></DialogHeader>
+        <div className="flex flex-wrap gap-2">
+          {[["all", "Hammasi"], ["pending", "Kutilmoqda"], ["in_progress", "Jarayonda"], ["delayed", "Kechikkan"], ["completed", "Tugallangan"]].map(([k, l]) => (
+            <Button key={k} size="sm" variant={stf === k ? "default" : "outline"} onClick={() => setStf(k)}>{l}</Button>
+          ))}
+        </div>
         <div className="flex flex-wrap gap-2 items-center">
           <Button variant="outline" size="sm" onClick={() => setSel(sel.size === done.length ? new Set() : new Set(done.map((d) => d.id)))}>
             {sel.size === done.length ? "Hammasini bekor qilish" : "Hammasini tanlash"}
@@ -133,7 +139,7 @@ export function CompletedOrdersReport({ open, onOpenChange, rows }: { open: bool
                   <Button variant="ghost" size="sm" disabled={busy} onClick={() => show([o.id])}><Eye className="h-4 w-4 mr-1" />Ko'rish</Button>
                 </div>
               ))}
-              {!done.length && <div className="p-6 text-center text-muted-foreground">Tugallangan zakazlar yo'q</div>}
+              {!done.length && <div className="p-6 text-center text-muted-foreground">Zakazlar yo'q</div>}
             </div>
           )}
         </div>
