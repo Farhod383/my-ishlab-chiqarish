@@ -24,6 +24,18 @@ async function newDoc() {
 export const todayFile = () => { const d = new Date(); const p = (n: number) => String(n).padStart(2, "0"); return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()}`; };
 const nowStr = () => fmtDateTime24(new Date().toISOString());
 const HEAD: [number, number, number] = [38, 50, 72];
+const ST: Record<string, string> = { pending: "Kutilmoqda", in_progress: "Jarayonda", completed: "Tugallangan", delayed: "Kechikkan", cancelled: "Bekor qilingan" };
+/** Stored status, shown as Kechikkan when an unfinished order is past its deadline. */
+export function orderStatusLabel(o: { status: string; deadline?: string | null }) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (o.status !== "completed" && o.status !== "cancelled" && o.deadline && o.deadline < today) return "Kechikkan";
+  return ST[o.status] ?? o.status;
+}
+export function stageSpan(stages: { started_at?: string | null; finished_at?: string | null }[]) {
+  const start = stages.map((s) => s.started_at).filter(Boolean).sort()[0] ?? null;
+  const end = stages.map((s) => s.finished_at).filter(Boolean).sort().slice(-1)[0] ?? null;
+  return { start, end };
+}
 
 function footer(doc: jsPDF, title: string) {
   const n = doc.getNumberOfPages(); const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
@@ -45,24 +57,25 @@ const tbl = (doc: jsPDF, startY: number, head: string[], body: (string | number)
 };
 
 /** Generates and returns the grouped order list PDF; returns count per group for verification. */
-export async function buildOrderListPdf(rows: { order_number: string; product_name: string }[]) {
-  const doc = await newDoc(); const W = doc.internal.pageSize.getWidth();
-  doc.setFillColor(...HEAD); doc.rect(0, 0, W, 24, "F");
-  doc.setTextColor(255); doc.setFont("DV", "bold"); doc.setFontSize(17); doc.text("Zakazlar ro'yxati", 14, 14);
-  doc.setFont("DV", "normal"); doc.setFontSize(9); doc.text(`Sana: ${nowStr()}`, W - 14, 14, { align: "right" });
-  let y = 32;
+export async function buildOrderListPdf(rows: any[], spans: Map<string, { start: string | null; end: string | null }>) {
+  const doc = await newDoc(); doc.deletePage(1); doc.addPage("a4", "landscape");
+  const W = doc.internal.pageSize.getWidth();
+  doc.setFillColor(...HEAD); doc.rect(0, 0, W, 22, "F");
+  doc.setTextColor(255); doc.setFont("DV", "bold"); doc.setFontSize(16); doc.text("Zakazlar ro'yxati", 14, 13.5);
+  doc.setFont("DV", "normal"); doc.setFontSize(9); doc.text(`Jami: ${rows.length} ta zakaz · Sana: ${nowStr()}`, W - 14, 13.5, { align: "right" });
+  let y = 30;
   const sorted = rows.slice().sort((a, b) => String(a.order_number).localeCompare(String(b.order_number)));
   const counts: Record<string, number> = {};
   for (const g of ORDER_GROUPS) {
     const seen = new Set<string>();
-    const items = sorted.filter((o) => orderGroupOf(o.product_name) === g.key).filter((o) => { const l = orderPdfLabel(o); return seen.has(l) ? false : (seen.add(l), true); });
+    const items = sorted.filter((o) => orderGroupOf(o.product_name) === g.key).filter((o) => (seen.has(o.id) ? false : (seen.add(o.id), true)));
     counts[g.key] = items.length;
-    if (y > 260) { doc.addPage(); y = 18; }
+    if (y > 175) { doc.addPage("a4", "landscape"); y = 18; }
     doc.setTextColor(...HEAD); doc.setFont("DV", "bold"); doc.setFontSize(13);
     doc.text(`${g.label}  (${items.length} ta)`, 14, y);
-    y = tbl(doc, y + 3, ["№", "Zakaz raqami", "Mahsulot nomi"],
-      items.length ? items.map((o, i) => [i + 1, o.order_number, String(o.product_name ?? "").trim()]) : [["—", "—", "Zakaz yo'q"]],
-      { columnStyles: { 0: { cellWidth: 12, halign: "right" }, 1: { cellWidth: 34 } }, alternateRowStyles: { fillColor: [244, 246, 250] }, styles: { font: "DV", fontSize: 9.5, cellPadding: 2 } }) + 10;
+    y = tbl(doc, y + 3, ["№", "Zakaz raqami", "Mahsulot nomi", "Klient", "Holati", "Olingan sana", "Boshlangan", "Muddat", "Haqiqiy tugash"],
+      items.length ? items.map((o, i) => { const sp = spans.get(o.id) ?? { start: null, end: null }; return [i + 1, o.order_number, String(o.product_name ?? "").trim(), displayUser(o.client?.name ?? "—"), orderStatusLabel(o), fmtDate(o.order_date), fmtDateTime24(sp.start), fmtDate(o.deadline), o.status === "completed" ? fmtDateTime24(sp.end) : "—"]; }) : [[{ content: "Zakaz yo'q", colSpan: 9, styles: { halign: "center" } } as any]],
+      { columnStyles: { 0: { cellWidth: 9, halign: "right" }, 1: { cellWidth: 24 }, 4: { cellWidth: 24 }, 5: { cellWidth: 22 }, 6: { cellWidth: 28 }, 7: { cellWidth: 22 }, 8: { cellWidth: 28 } }, alternateRowStyles: { fillColor: [244, 246, 250] } }) + 9;
   }
   footer(doc, "Zakazlar ro'yxati — KDM / KMU / Sel'nometalika");
   return { doc, counts };
@@ -83,14 +96,14 @@ export async function buildCompletedPdf(list: { order: any; stages: any[]; mater
   list.forEach((f, idx) => {
     if (idx) doc.addPage();
     const o = f.order;
-    const start = f.stages.map((s) => s.started_at).filter(Boolean).sort()[0] ?? null;
-    const end = f.stages.map((s) => s.finished_at).filter(Boolean).sort().slice(-1)[0] ?? null;
-    const total = mins(start, end);
+    const { start, end: lastEnd } = stageSpan(f.stages);
+    const done = o.status === "completed"; const end = done ? lastEnd : null;
+    const total = done ? mins(start, end) : null;
     doc.setFillColor(...HEAD); doc.rect(0, 0, W, 20, "F");
     doc.setTextColor(255); doc.setFont("DV", "bold"); doc.setFontSize(13);
     doc.text(doc.splitTextToSize(`${o.order_number} — ${o.product_name}`, W - 28)[0], 14, 12.5);
-    let y = tbl(doc, 25, ["Klient", "Miqdor", "Qabul / muddat"], [[displayUser(o.client?.name ?? "—"), `${o.quantity} dona`, `${fmtDate(o.order_date)} / ${fmtDate(o.deadline)}`]]);
-    y = tbl(doc, y + 1, ["Boshlangan", "Tugagan", "Umumiy davomiylik"], [[fmtDateTime24(start), fmtDateTime24(end), total == null ? "—" : fmtDuration(total)]]);
+    let y = tbl(doc, 25, ["Klient", "Miqdor", "Holati", "Olingan sana", "Muddat"], [[displayUser(o.client?.name ?? "—"), `${o.quantity} dona`, orderStatusLabel(o), fmtDate(o.order_date), fmtDate(o.deadline)]]);
+    y = tbl(doc, y + 1, ["Ishlab chiqarish boshlangan", "Haqiqiy tugash", "Umumiy davomiylik"], [[fmtDateTime24(start), done ? fmtDateTime24(end) : "—", total == null ? "—" : fmtDuration(total)]]);
     const sec = (t: string) => { if (y > 265) { doc.addPage(); y = 16; } doc.setTextColor(...HEAD); doc.setFont("DV", "bold"); doc.setFontSize(10.5); doc.text(t, 14, y + 6); return y + 8; };
     const otk = (s: any) => !s.qc_required ? "Talab qilinmaydi" : s.qc_passed === true ? "Tasdiqlandi" : s.qc_passed === false ? "Rad etildi" : "Tekshirilmagan";
     y = tbl(doc, sec("Bosqichlar va OTK"), ["№", "Bosqich", "Xodim(lar)", "Boshlandi", "Tugadi", "Vaqt", "OTK"],
@@ -103,6 +116,6 @@ export async function buildCompletedPdf(list: { order: any; stages: any[]; mater
     y = tbl(doc, sec("Brak va qayta ishlash"), ["Sana", "Detal", "Miqdor", "Sabab", "Qaror"],
       capped(f.defects, CAP.defects, 5, (d) => [fmtDate(d.created_at), d.product?.name ?? "—", fmtNum(d.quantity), d.reason ?? "—", RES[d.resolution] ?? d.resolution]));
   });
-  footer(doc, `Tugallangan zakazlar hisoboti — ${list.length} ta zakaz — ${nowStr()}`);
+  footer(doc, `Zakazlar batafsil hisoboti — ${list.length} ta zakaz — ${nowStr()}`);
   return doc;
 }

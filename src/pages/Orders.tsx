@@ -88,7 +88,13 @@ export default function Orders() {
 
   const downloadPdf = async () => {
     const { buildOrderListPdf, todayFile } = await import("@/lib/pdfExport");
-    const { doc } = await buildOrderListPdf(rows as any);
+    const ids = rows.map((r: any) => r.id); const spans = new Map<string, { start: string | null; end: string | null }>();
+    const st: any[] = [];
+    for (let i = 0; i < ids.length; i += 40) { const { data } = await supabase.from("order_stages").select("order_id, started_at, finished_at").in("order_id", ids.slice(i, i + 40)); st.push(...(data ?? [])); }
+    const { stageSpan } = await import("@/lib/pdfExport");
+    const by = new Map<string, any[]>(); st.forEach((x) => { const a = by.get(x.order_id) ?? []; a.push(x); by.set(x.order_id, a); });
+    ids.forEach((id) => spans.set(id, stageSpan(by.get(id) ?? [])));
+    const { doc } = await buildOrderListPdf(rows as any, spans);
     doc.save(`Zakazlar_royxati_${todayFile()}.pdf`);
   };
 
@@ -101,7 +107,7 @@ export default function Orders() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={downloadPdf} disabled={loading}><FileDown className="h-4 w-4 mr-2" />PDF yuklab olish</Button>
-          <Button variant="outline" onClick={() => setRepOpen(true)} disabled={loading}><FileDown className="h-4 w-4 mr-2" />Tugallangan zakazlar hisoboti</Button>
+          <Button variant="outline" onClick={() => setRepOpen(true)} disabled={loading}><FileDown className="h-4 w-4 mr-2" />Zakazlar batafsil hisoboti</Button>
           <CompletedOrdersReport open={repOpen} onOpenChange={setRepOpen} rows={rows} />
           {hasRole(["marketing", "admin"]) && (
             <Button asChild><Link to="/orders/new"><Plus className="h-4 w-4 mr-2" />{t.orders.new}</Link></Button>
