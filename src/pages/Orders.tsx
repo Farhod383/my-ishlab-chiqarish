@@ -176,7 +176,7 @@ export default function Orders() {
                   let groupInserted = false;
                   for (const o of filtered) {
                     if (isSel(o)) {
-                      if (!groupInserted) { out.push({ __group: true }); groupInserted = true; if (selOpen) out.push(...selRows); }
+                      if (!groupInserted) { out.push({ __group: true }); groupInserted = true; if (selOpen || group === "SEL") out.push(...selRows); }
                     } else out.push(o);
                   }
                   return out;
