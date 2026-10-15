@@ -93,12 +93,14 @@ export function CompletedOrdersReport({ open, onOpenChange, rows }: { open: bool
   };
   const show = async (ids: string[]) => { setBusy(true); try { setPreview(wrap(await build(ids))); } finally { setBusy(false); } };
   const download = async () => {
-    const w = window.open("", "_blank");
-    if (!w) return;
-    w.document.write("<p style='font-family:Arial'>Hisobot tayyorlanmoqda…</p>");
-    const ids = done.filter((d) => sel.has(d.id)).map((d) => d.id);
-    const html = wrap(await build(ids), true);
-    w.document.open(); w.document.write(html); w.document.close();
+    setBusy(true);
+    try {
+      const ids = done.filter((d) => sel.has(d.id)).map((d) => d.id);
+      const map = await loadFull(ids);
+      const { buildCompletedPdf, todayFile } = await import("@/lib/pdfExport");
+      const doc = await buildCompletedPdf(ids.map((id) => map.get(id)).filter(Boolean) as Full[]);
+      doc.save(`Tugallangan_zakazlar_hisoboti_${todayFile()}.pdf`);
+    } finally { setBusy(false); }
   };
   const ids = done.filter((d) => sel.has(d.id)).map((d) => d.id);
 
