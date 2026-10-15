@@ -36,7 +36,7 @@ function footer(doc: jsPDF, title: string) {
 
 const tbl = (doc: jsPDF, startY: number, head: string[], body: (string | number)[][], extra: any = {}) => {
   autoTable(doc, {
-    startY, head: [head], body: body.map((r) => r.map(String)), theme: "grid", margin: { left: 14, right: 14, bottom: 16 },
+    startY, head: [head], body: body.map((r) => r.map((c: any) => (typeof c === "object" ? c : String(c)))), theme: "grid", margin: { left: 14, right: 14, bottom: 16 },
     styles: { font: "DV", fontSize: 8.5, cellPadding: 1.6, overflow: "linebreak", valign: "top", textColor: 20 },
     headStyles: { font: "DV", fontStyle: "bold", fillColor: HEAD, textColor: 255 },
     rowPageBreak: "avoid", ...extra,
@@ -73,8 +73,8 @@ const CAP = { stages: 22, materials: 18, defects: 6, tasks: 10 };
 const mins = (a?: string | null, b?: string | null) => (a && b ? Math.max(0, (new Date(b).getTime() - new Date(a).getTime()) / 60000) : null);
 const capped = <T,>(a: T[], n: number, cols: number, map: (x: T) => (string | number)[]) => {
   const out = a.slice(0, n).map(map);
-  if (!a.length) out.push(["Ma'lumot yo'q", ...Array(cols - 1).fill("")]);
-  if (a.length > n) out.push([`… yana ${a.length - n} ta yozuv`, ...Array(cols - 1).fill("")]);
+  if (!a.length) out.push([{ content: "Ma'lumot yo'q", colSpan: cols, styles: { halign: "center", textColor: 110 } }] as any);
+  if (a.length > n) out.push([{ content: `… yana ${a.length - n} ta yozuv`, colSpan: cols, styles: { halign: "center", textColor: 110 } }] as any);
   return out;
 };
 
