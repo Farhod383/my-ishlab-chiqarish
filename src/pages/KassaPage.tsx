@@ -79,6 +79,7 @@ export default function KassaPage() {
   const ptLabel = (pt: unknown) => PAYMENT_LABELS[locale]?.[normalizePT(pt)] ?? PAYMENT_LABELS.uz[normalizePT(pt)];
   const [expenses, setExpenses] = useState<any[]>([]);
   const [incomes, setIncomes] = useState<any[]>([]);
+  const [mainReset, setMainReset] = useState(0);
   const { employees, allEmployees } = useEmployees({ activeOnly: true });
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"income" | "expense" | "report" | "debt" | "supply">("income");

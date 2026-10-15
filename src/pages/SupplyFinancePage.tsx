@@ -19,6 +19,7 @@ interface IncomeRow {
   comment: string | null;
   payment_type: string | null;
   giver: string;
+  rec_at: string;
 }
 
 interface OutRow {
@@ -64,6 +65,7 @@ export default function SupplyFinancePage({ canManage = false, onGive }: Props =
   const [incomes, setIncomes] = useState<IncomeRow[]>([]);
   const [outs, setOuts] = useState<OutRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [resetAt, setResetAt] = useState(0);
   const [month, setMonth] = useState<string | null>(null); // null = Barcha davr (default)
   const [selIn, setSelIn] = useState(false);
   const [selOut, setSelOut] = useState(false);
@@ -90,6 +92,8 @@ export default function SupplyFinancePage({ canManage = false, onGive }: Props =
       })(),
       supabase.from("profiles").select("id,full_name,email"),
     ]);
+    const { data: rs } = await (supabase as any).from("cash_resets").select("reset_at").eq("kassa", "supply").order("reset_at", { ascending: false }).limit(1);
+    setResetAt(rs?.[0]?.reset_at ? new Date(rs[0].reset_at).getTime() : 0);
 
     const nameOf = (uid: string | null | undefined) => {
       const p = (profs ?? []).find((x: any) => x.id === uid) as any;
@@ -100,6 +104,7 @@ export default function SupplyFinancePage({ canManage = false, onGive }: Props =
       ((exp ?? []) as any[]).map((e) => ({
         id: e.id,
         created_at: e.expense_date ?? e.created_at,
+        rec_at: e.created_at,
         expense_date: e.expense_date,
         amount: Number(e.amount) || 0,
         total_uzs: Number(e.total_uzs) || 0,
@@ -152,8 +157,11 @@ export default function SupplyFinancePage({ canManage = false, onGive }: Props =
   };
   const inSum = useMemo(() => sumBy(pIn, (r) => Number(r.amount) || 0), [pIn]);
   const outSum = useMemo(() => sumBy(pOut, (r) => Number(r.total) || 0), [pOut]);
-  const allIn = useMemo(() => sumBy(incomes, (r) => Number(r.amount) || 0), [incomes]);
-  const allOut = useMemo(() => sumBy(outs, (r) => Number(r.total) || 0), [outs]);
+  // Joriy balans faqat oxirgi nolga tushirishdan keyingi operatsiyalardan (eski tarix hisobotlarda qoladi).
+  const curIn = useMemo(() => incomes.filter((r) => new Date(r.rec_at).getTime() >= resetAt), [incomes, resetAt]);
+  const curOut = useMemo(() => outs.filter((r) => new Date(r.created_at).getTime() >= resetAt), [outs, resetAt]);
+  const allIn = useMemo(() => sumBy(curIn, (r) => Number(r.amount) || 0), [curIn]);
+  const allOut = useMemo(() => sumBy(curOut, (r) => Number(r.total) || 0), [curOut]);
   const bal = { UZS: allIn.UZS - allOut.UZS, USD: allIn.USD - allOut.USD };
   const negative = bal.UZS < 0 || bal.USD < 0;
 
@@ -161,12 +169,12 @@ export default function SupplyFinancePage({ canManage = false, onGive }: Props =
   const accounts = useMemo(() => {
     const all: { pt: string; c: string; v: number }[] = [];
     for (const pt of PT_KEYS) for (const c of CUR_KEYS) {
-      const inn = incomes.filter((r) => normPT(r.payment_type) === pt && normCur(r.currency) === c).reduce((s, r) => s + (Number(r.amount) || 0), 0);
-      const out = pt === "cash" ? outs.filter((r) => normCur(r.currency) === c).reduce((s, r) => s + (Number(r.total) || 0), 0) : 0;
+      const inn = curIn.filter((r) => normPT(r.payment_type) === pt && normCur(r.currency) === c).reduce((s, r) => s + (Number(r.amount) || 0), 0);
+      const out = pt === "cash" ? curOut.filter((r) => normCur(r.currency) === c).reduce((s, r) => s + (Number(r.total) || 0), 0) : 0;
       all.push({ pt, c, v: inn - out });
     }
     return { shown: all.filter((a) => Math.abs(a.v) > 0.0001), hidden: all.filter((a) => Math.abs(a.v) <= 0.0001).length };
-  }, [incomes, outs]);
+  }, [curIn, curOut]);
   const ptShort = (pt: string) => (pt === "cash" ? "💵 Naqd" : pt === "corporate_card" ? "💳 Karta" : "🏦 O'tkazma");
 
   const cats = useMemo(() => {
