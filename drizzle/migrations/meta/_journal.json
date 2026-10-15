@@ -288,6 +288,13 @@
       "when": 1791956284650,
       "tag": "0040_kassa_only_chief_accountant",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1792063060201,
+      "tag": "0041_cash_resets",
+      "breakpoints": true
     }
   ]
 }

@@ -79,6 +79,7 @@ export default function KassaPage() {
   const ptLabel = (pt: unknown) => PAYMENT_LABELS[locale]?.[normalizePT(pt)] ?? PAYMENT_LABELS.uz[normalizePT(pt)];
   const [expenses, setExpenses] = useState<any[]>([]);
   const [incomes, setIncomes] = useState<any[]>([]);
+  const [mainReset, setMainReset] = useState(0);
   const { employees, allEmployees } = useEmployees({ activeOnly: true });
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"income" | "expense" | "report" | "debt" | "supply">("income");
@@ -168,6 +169,8 @@ export default function KassaPage() {
       supabase.from("cash_expenses").select("*, recipient:employees(full_name)").order("expense_date", { ascending: false }),
       (supabase.from as any)("cash_incomes").select("*").order("income_date", { ascending: false }),
     ]);
+    const { data: rs } = await (supabase.from as any)("cash_resets").select("reset_at").eq("kassa", "main").order("reset_at", { ascending: false }).limit(1);
+    setMainReset(rs?.[0]?.reset_at ? new Date(rs[0].reset_at).getTime() : 0);
     setExpenses(exp ?? []);
     setIncomes(inc ?? []);
     loadDebts();
@@ -184,6 +187,9 @@ export default function KassaPage() {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
+  // Joriy davr: oxirgi nolga tushirishdan keyin yaratilgan operatsiyalar (eski tarix saqlanadi, balansga qo'shilmaydi).
+  const balIncomes = useMemo(() => incomes.filter((r: any) => new Date(r.created_at).getTime() >= mainReset), [incomes, mainReset]);
+  const balExpenses = useMemo(() => expenses.filter((r: any) => new Date(r.created_at).getTime() >= mainReset), [expenses, mainReset]);
   const canManage = hasRole(["chief_accountant", "admin"]);
   // Glavniy buxgalter (chief accountant) and admin can manage users / cashiers.
   const canManageUsers = roles.includes("admin") || roles.includes("chief_accountant");
@@ -300,13 +306,13 @@ export default function KassaPage() {
     if (!ym) return {};
     const start = new Date(`${monthBounds(ym).from}T00:00:00`).getTime();
     const m: Record<string, number> = {};
-    for (const i of incomes) {
+    for (const i of balIncomes) {
       if (pt && normalizePT(i.payment_type) !== pt) continue;
       if (new Date(i.income_date).getTime() < start) {
         const c = normalizeCurrency(i.currency); m[c] = (m[c] || 0) + (Number(i.amount) || 0);
       }
     }
-    for (const e of expenses) {
+    for (const e of balExpenses) {
       if (pt && normalizePT(e.payment_type) !== pt) continue;
       if (new Date(e.expense_date).getTime() < start) {
         const c = normalizeCurrency(e.currency); m[c] = (m[c] || 0) - (Number(e.amount) || 0);
@@ -535,8 +541,8 @@ export default function KassaPage() {
     // Client-side balance guard (server trigger is the source of truth).
     const pt = expForm.payment_type || "cash";
     const cur = expForm.currency;
-    const totalIn = incomes.filter((x: any) => x.currency === cur && (x.payment_type || "cash") === pt).reduce((s: number, x: any) => s + Number(x.amount || 0), 0);
-    const totalOut = expenses.filter((x: any) => x.currency === cur && (x.payment_type || "cash") === pt && x.id !== expEditId).reduce((s: number, x: any) => s + Number(x.amount || 0), 0);
+    const totalIn = balIncomes.filter((x: any) => x.currency === cur && (x.payment_type || "cash") === pt).reduce((s: number, x: any) => s + Number(x.amount || 0), 0);
+    const totalOut = balExpenses.filter((x: any) => x.currency === cur && (x.payment_type || "cash") === pt && x.id !== expEditId).reduce((s: number, x: any) => s + Number(x.amount || 0), 0);
     const avail = totalIn - totalOut;
     if (Number(expForm.amount) > avail) {
       await logAudit(supabase, { actor_id: user?.id, actor_name: actorName, action: "kassa.expense.BLOCKED", entity: "cash_expenses", details: `${expForm.amount} ${cur} (${pt}) — mavjud ${avail}` });
@@ -613,8 +619,8 @@ export default function KassaPage() {
   };
 
   const availOf = (cur: string, pt: string, excludeIncId?: string) =>
-    incomes.filter((x: any) => x.currency === cur && (x.payment_type || "cash") === pt && x.id !== excludeIncId).reduce((s: number, x: any) => s + Number(x.amount || 0), 0)
-    - expenses.filter((x: any) => x.currency === cur && (x.payment_type || "cash") === pt).reduce((s: number, x: any) => s + Number(x.amount || 0), 0);
+    balIncomes.filter((x: any) => x.currency === cur && (x.payment_type || "cash") === pt && x.id !== excludeIncId).reduce((s: number, x: any) => s + Number(x.amount || 0), 0)
+    - balExpenses.filter((x: any) => x.currency === cur && (x.payment_type || "cash") === pt).reduce((s: number, x: any) => s + Number(x.amount || 0), 0);
 
   const saveFx = async () => {
     const amount = Number(fx.amount), rate = Number(fx.rate);
@@ -789,7 +795,7 @@ export default function KassaPage() {
 
       {isOverview && (
         <KassaOverview
-          incomes={fInc} expenses={fExp} allIncomes={incomes} allExpenses={expenses}
+          incomes={fInc} expenses={fExp} allIncomes={balIncomes} allExpenses={balExpenses}
           month={viewMonth} opening={openingBal} canManage={canManage}
           ptLabel={ptLabel} normalizePT={normalizePT} localize={(s) => localize(s) || ""}
           onEditIncome={openEditInc} onDeleteIncome={setIncDelete} onEditExpense={openEditExp}
