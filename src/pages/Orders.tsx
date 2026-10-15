@@ -18,6 +18,7 @@ import { ClientOrdersView } from "@/components/ClientOrdersView";
 import { recalcOrdersBatch, sortOrdersByStatusAndDate } from "@/lib/orderStatus";
 import { fmtDate } from "@/lib/format";
 import { FileDown } from "lucide-react";
+import { CompletedOrdersReport } from "@/components/CompletedOrdersReport";
 import { ORDER_GROUPS, orderGroupOf, orderPdfLabel, type OrderGroup } from "@/lib/orderGroups";
 
 type FilterKey = "all" | "active" | "exception" | "delayed" | "completed" | "today" | "clients";
@@ -34,6 +35,7 @@ export default function Orders() {
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
   const [selOpen, setSelOpen] = useState(false);
+  const [repOpen, setRepOpen] = useState(false);
   const [group, setGroup] = useState<OrderGroup | "ALL">("ALL");
 
   useEffect(() => {
@@ -112,6 +114,8 @@ export default function Orders() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={downloadPdf} disabled={loading}><FileDown className="h-4 w-4 mr-2" />PDF yuklab olish</Button>
+          <Button variant="outline" onClick={() => setRepOpen(true)} disabled={loading}><FileDown className="h-4 w-4 mr-2" />Tugallangan zakazlar hisoboti</Button>
+          <CompletedOrdersReport open={repOpen} onOpenChange={setRepOpen} rows={rows} />
           {hasRole(["marketing", "admin"]) && (
             <Button asChild><Link to="/orders/new"><Plus className="h-4 w-4 mr-2" />{t.orders.new}</Link></Button>
           )}
