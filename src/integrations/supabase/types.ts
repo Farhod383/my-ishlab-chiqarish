@@ -377,6 +377,33 @@ export type Database = {
         }
         Relationships: []
       }
+      cash_resets: {
+        Row: {
+          comment: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          kassa: string
+          reset_at: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kassa: string
+          reset_at?: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kassa?: string
+          reset_at?: string
+        }
+        Relationships: []
+      }
       chat_conversations: {
         Row: {
           created_at: string
@@ -2665,6 +2692,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      cash_reset_at: { Args: { _kassa: string }; Returns: string }
       clear_intake_invoice_image: {
         Args: { _session_id: string }
         Returns: undefined
