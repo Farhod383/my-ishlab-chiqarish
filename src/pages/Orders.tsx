@@ -90,7 +90,7 @@ export default function Orders() {
     const { buildOrderListPdf, todayFile } = await import("@/lib/pdfExport");
     const ids = rows.map((r: any) => r.id); const spans = new Map<string, { start: string | null; end: string | null }>();
     const st: any[] = [];
-    for (let i = 0; i < ids.length; i += 150) { const { data } = await supabase.from("order_stages").select("order_id, started_at, finished_at").in("order_id", ids.slice(i, i + 150)); st.push(...(data ?? [])); }
+    for (let i = 0; i < ids.length; i += 40) { const { data } = await supabase.from("order_stages").select("order_id, started_at, finished_at").in("order_id", ids.slice(i, i + 40)); st.push(...(data ?? [])); }
     const { stageSpan } = await import("@/lib/pdfExport");
     const by = new Map<string, any[]>(); st.forEach((x) => { const a = by.get(x.order_id) ?? []; a.push(x); by.set(x.order_id, a); });
     ids.forEach((id) => spans.set(id, stageSpan(by.get(id) ?? [])));

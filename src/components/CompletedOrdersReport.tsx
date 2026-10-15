@@ -56,7 +56,13 @@ th{background:#f2f2f2;font-size:10.5px} tr{break-inside:avoid} .meta td{border:n
 .more{color:#666;font-style:italic;text-align:center}`;
 const wrap = (body: string, print = false) => `<!doctype html><html><head><meta charset="utf-8"><title>Tugallangan zakazlar hisoboti</title><style>${CSS}</style></head><body>${body}${print ? "<script>window.onload=()=>window.print()</script>" : ""}</body></html>`;
 
-async function loadFull(ids: string[]): Promise<Map<string, Full>> {
+// Batches stay below the 1000-row response cap so no stage/material row is dropped.
+async function loadFull(all: string[]): Promise<Map<string, Full>> {
+  const out = new Map<string, Full>();
+  for (let i = 0; i < all.length; i += 15) (await loadChunk(all.slice(i, i + 15))).forEach((v, k) => out.set(k, v));
+  return out;
+}
+async function loadChunk(ids: string[]): Promise<Map<string, Full>> {
   const [o, s, mv, d, t] = await Promise.all([
     supabase.from("orders").select("*, client:clients(name)").in("id", ids),
     supabase.from("order_stages").select("*").in("order_id", ids).order("stage_order"),
