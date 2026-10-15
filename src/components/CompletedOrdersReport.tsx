@@ -71,7 +71,7 @@ async function loadFull(ids: string[]): Promise<Map<string, Full>> {
   (t.data ?? []).forEach((x: any) => map.get(x.order_id)?.tasks.push(x));
   const agg = new Map<string, Map<string, { name: string; unit: string; qty: number }>>();
   (mv.data ?? []).forEach((x: any) => {
-    const name = x.product?.name ?? "Noma'lum"; const unit = x.product?.unit ?? "";
+    const name = x.product?.name ?? "Mahsulot ko'rsatilmagan"; const unit = x.product?.unit ?? "";
     const m = agg.get(x.order_id) ?? new Map(); agg.set(x.order_id, m);
     const k = `${name}|${unit}`; const cur = m.get(k) ?? { name, unit, qty: 0 }; cur.qty += Number(x.quantity) || 0; m.set(k, cur);
   });
