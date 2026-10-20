@@ -63,7 +63,7 @@ interface Props { canManage?: boolean; onGive?: () => void; kassa?: "supply" | "
 
 export default function SupplyFinancePage({ canManage = false, onGive, kassa = "supply" }: Props = {}) {
   const is2 = kassa === "supply2";
-  const title = is2 ? "Ta'minot 2" : "Ta'minot";
+  const kTitle = is2 ? "Ta'minot 2" : "Ta'minot";
   const bringer = is2 ? "Shovkat" : "Sanjar";
   const [incomes, setIncomes] = useState<IncomeRow[]>([]);
   const [outs, setOuts] = useState<OutRow[]>([]);
@@ -238,10 +238,10 @@ export default function SupplyFinancePage({ canManage = false, onGive, kassa = "
     <div className="kassa-v2 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2 flex-wrap min-w-0">
-          <h2 className="text-xl font-bold tracking-tight">{title} kassasi</h2>
+          <h2 className="text-xl font-bold tracking-tight">{kTitle} kassasi</h2>
           <Tooltip>
             <TooltipTrigger asChild><button type="button" aria-label="Izoh" className="kassa-muted"><Info className="h-4 w-4" /></button></TooltipTrigger>
-            <TooltipContent className="max-w-xs">Kirim — Kassadan {title}ga berilgan pul. Chiqim — {is2 ? "" : "Ta'minotga birinchi pul berilgandan keyin "}{bringer} olib kelgan Sklad kirimlari (narx × miqdor). Qoldiq = berilgan − sarflangan.</TooltipContent>
+            <TooltipContent className="max-w-xs">Kirim — Kassadan {kTitle}ga berilgan pul. Chiqim — {is2 ? "" : "Ta'minotga birinchi pul berilgandan keyin "}{bringer} olib kelgan Sklad kirimlari (narx × miqdor). Qoldiq = berilgan − sarflangan.</TooltipContent>
           </Tooltip>
           <div className="inline-flex items-center gap-1 rounded-lg border bg-background px-1 py-0.5">
             <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Oldingi oy" onClick={() => shift(-1)}><ChevronLeft className="h-4 w-4" /></Button>
