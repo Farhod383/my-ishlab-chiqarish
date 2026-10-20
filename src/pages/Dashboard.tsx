@@ -15,6 +15,7 @@ import { useI18n, useLocalize } from "@/i18n/context";
 import { fmtNum, fmtDateTime24, fmtDate } from "@/lib/format";
 import { sortOrdersByStatusAndDate, recalcOrdersBatch } from "@/lib/orderStatus";
 import { matchesAcrossScripts } from "@/lib/translit";
+import { ORDER_GROUPS, orderGroupOf } from "@/lib/orderGroups";
 import { useInfiniteList } from "@/hooks/useInfiniteList";
 
 type FilterKey = "all" | "active" | "delayed" | "today" | "exception" | "completed";
@@ -101,6 +102,23 @@ export default function Dashboard() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{t.dashboard.title}</h1>
         <p className="text-sm text-muted-foreground">{t.dashboard.subtitle}</p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {ORDER_GROUPS.map((g) => {
+          const n = orders.filter((o) => orderGroupOf(o.product_name) === g.key).length;
+          return (
+            <button key={g.key} type="button" onClick={() => nav(`/orders?group=${g.key}`)}
+              className="text-left rounded-lg border bg-card p-4 shadow-sm hover:border-primary hover:shadow-md transition">
+              <div className="text-sm text-muted-foreground">Guruh</div>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-lg font-semibold">{g.label}</span>
+                <span className="text-2xl font-bold tabular-nums">{loading ? "…" : n}</span>
+              </div>
+              <div className="text-xs text-muted-foreground">ta zakaz · ochish uchun bosing</div>
+            </button>
+          );
+        })}
       </div>
 
       <div className="w-full">

@@ -39,7 +39,10 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [selOpen, setSelOpen] = useState(false);
   const [repOpen, setRepOpen] = useState(false);
-  const [flt, setFlt] = useState<OrderFilters>(EMPTY_FILTERS);
+  const [flt, setFlt] = useState<OrderFilters>(() => {
+    const g = params.get("group");
+    return g && ["KDM", "KMU", "SEL"].includes(g) ? { ...EMPTY_FILTERS, group: g as OrderGroup } : EMPTY_FILTERS;
+  });
   const group = flt.group;
   const setGroup = (g: OrderGroup | "ALL") => setFlt((f) => ({ ...f, group: g }));
   const [lowStockIds, setLowStockIds] = useState<Set<string>>(new Set());
@@ -47,6 +50,8 @@ export default function Orders() {
   useEffect(() => {
     const f = (params.get("filter") as FilterKey) || "all";
     setFilter(f);
+    const g = params.get("group");
+    if (g && ["KDM", "KMU", "SEL"].includes(g)) setFlt((x) => ({ ...x, group: g as OrderGroup }));
   }, [params]);
 
   const onFilterChange = (v: string) => {
