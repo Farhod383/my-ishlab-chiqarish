@@ -41,3 +41,7 @@
 - [x] Kassa menyuda birinchi; Kassa | Ta'minot | Ta'minot 2 tablari
 - [x] taminot2@gmail.com (Ta'minot + Sklad rollari)
 - [x] Shovkat kirimlari Ta'minot 2 balansidan (narx x miqdor), alohida hisob
+
+## Zakazlar: Tugallangan yashil, Istisno qizil
+- [x] Statistik kartochkalar, status/prioritet belgilari, tablar va zakazlar ro‘yxati bitta rangda: Tugallangan — to‘q yashil, Istisno — to‘q qizil; rangli fon ustida oq yozuv.
+- [x] Ro‘yxat qatorlari o‘sha rangning yumshoq tusi + chapda to‘q chiziq bilan (matn qora va o‘qiladigan); real ma‘lumotlar bilan brauzerda tekshirildi, 46 test o‘tdi.

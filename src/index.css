@@ -177,6 +177,22 @@ input, textarea, [contenteditable="true"] {
 .supply-tabs [data-state="active"][data-tone="pending"] { background: hsl(var(--status-red-solid)); border-color: hsl(var(--status-red-solid)); color: hsl(var(--status-solid-foreground)); }
 .supply-tabs [data-state="active"][data-tone="fulfilled"] { background: hsl(var(--status-green-solid)); border-color: hsl(var(--status-green-solid)); color: hsl(var(--status-solid-foreground)); }
 
+/* Order status colours: "Tugallangan" = solid green, "Istisno" = solid red, white label.
+   Unlayered so they outrank the light badge/card utilities used on the same element.
+   Rows keep a soft tint of the same hue so dark text stays readable. */
+.status-solid-green { background: hsl(var(--status-green-solid)); border-color: hsl(var(--status-green-solid)); color: hsl(var(--status-solid-foreground)); }
+.status-solid-red { background: hsl(var(--status-red-solid)); border-color: hsl(var(--status-red-solid)); color: hsl(var(--status-solid-foreground)); }
+.order-row-done { background: hsl(var(--status-green) / 0.2); }
+.order-row-done:hover { background: hsl(var(--status-green) / 0.26); }
+.order-row-exception { background: hsl(var(--status-red) / 0.14); }
+.order-row-exception:hover { background: hsl(var(--status-red) / 0.2); }
+.order-row-done > :first-child { box-shadow: inset 6px 0 0 hsl(var(--status-green-solid)); }
+.order-row-exception > :first-child { box-shadow: inset 6px 0 0 hsl(var(--status-red-solid)); }
+/* Zakazlar tabs: meaning, not position, decides the colour — "Tugallangan" green, "Istisno" red.
+   Unlayered so it outranks the positional palette defined in the components layer. */
+.erp-tab[data-value="completed"] { --tab-h: var(--status-green-solid); }
+.erp-tab[data-value="exception"] { --tab-h: var(--status-red-solid); }
+
 
 /* ===== Printable reports ===== */
 @layer components {

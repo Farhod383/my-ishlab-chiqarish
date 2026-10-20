@@ -15,22 +15,23 @@ const meta: Record<Status, { cls: string; Icon: any }> = {
   risk:        { cls: "bg-status-yellow/15 text-status-yellow border-status-yellow/30",    Icon: AlertTriangle },
 };
 
-export function StatusBadge({ status, className, label }: { status: Status; className?: string; label?: string }) {
+export function StatusBadge({ status, className, label, solid }: { status: Status; className?: string; label?: string; solid?: boolean }) {
   const { t } = useI18n();
   const m = meta[status] ?? meta.pending;
   const Icon = m.Icon;
+  const cls = solid && (status === "completed" || status === "on_time") ? "status-solid-green" : m.cls;
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium", m.cls, className)}>
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium", cls, className)}>
       <Icon className={cn("h-3 w-3", status === "in_progress" && "animate-spin")} />
       {label ?? (t.status as any)[status] ?? uzLabel(status)}
     </span>
   );
 }
 
-export function PriorityBadge({ priority }: { priority: "normal" | "exception" }) {
+export function PriorityBadge({ priority, solid }: { priority: "normal" | "exception"; solid?: boolean }) {
   const { t } = useI18n();
   if (priority === "exception") {
-    return <span className="inline-flex items-center gap-1 rounded-full border border-status-red/40 bg-status-red/10 text-status-red px-2 py-0.5 text-xs font-semibold uppercase tracking-wide">{t.priority.exception}</span>;
+    return <span className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold uppercase tracking-wide", solid ? "status-solid-red" : "border-status-red/40 bg-status-red/10 text-status-red")}>{t.priority.exception}</span>;
   }
   return <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted text-muted-foreground px-2 py-0.5 text-xs font-medium">{t.priority.normal}</span>;
 }

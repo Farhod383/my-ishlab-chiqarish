@@ -137,25 +137,29 @@ export default function Orders() {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7 gap-3">
         {([
-          { key: "all", label: t.dashboard.totalOrders, value: stats.all, icon: ClipboardList, accent: "text-primary bg-primary/10" },
-          { key: "active", label: t.dashboard.activeOrders, value: stats.active, icon: Activity, accent: "text-status-blue bg-status-blue/10" },
-          { key: "delayed", label: t.dashboard.delayed, value: stats.delayed, icon: AlertTriangle, accent: "text-status-red bg-status-red/10" },
-          { key: "today", label: t.dashboard.todayDeadline, value: stats.today, icon: Clock, accent: "text-status-yellow bg-status-yellow/15" },
-          { key: "exception", label: t.dashboard.exception, value: stats.exception, icon: AlertOctagon, accent: "text-status-red bg-status-red/10" },
-          { key: "completed", label: t.dashboard.completedOrders, value: stats.completed, icon: CheckCircle2, accent: "text-status-green bg-status-green/10" },
-          { key: "lowstock", label: t.dashboard.lowStock, value: lowStockIds.size, icon: AlertTriangle, accent: "text-status-red bg-status-red/10" },
-        ] as const).map((c) => (
+          { key: "all", label: t.dashboard.totalOrders, value: stats.all, icon: ClipboardList, accent: "text-primary bg-primary/10", solid: "" },
+          { key: "active", label: t.dashboard.activeOrders, value: stats.active, icon: Activity, accent: "text-status-blue bg-status-blue/10", solid: "" },
+          { key: "delayed", label: t.dashboard.delayed, value: stats.delayed, icon: AlertTriangle, accent: "text-status-red bg-status-red/10", solid: "" },
+          { key: "today", label: t.dashboard.todayDeadline, value: stats.today, icon: Clock, accent: "text-status-yellow bg-status-yellow/15", solid: "" },
+          { key: "exception", label: t.dashboard.exception, value: stats.exception, icon: AlertOctagon, accent: "", solid: "red" },
+          { key: "completed", label: t.dashboard.completedOrders, value: stats.completed, icon: CheckCircle2, accent: "", solid: "green" },
+          { key: "lowstock", label: t.dashboard.lowStock, value: lowStockIds.size, icon: AlertTriangle, accent: "text-status-red bg-status-red/10", solid: "" },
+        ] as const).map((c) => {
+          const on = filter === c.key;
+          const solid = c.solid === "red" ? "status-solid-red" : c.solid === "green" ? "status-solid-green" : "";
+          return (
           <button key={c.key} type="button" onClick={() => c.key === "lowstock" ? nav("/low-stock") : onFilterChange(c.key)}
-            className={`text-left rounded-lg border bg-card p-3 transition hover:-translate-y-0.5 hover:shadow-md hover:border-primary/40 ${filter === c.key ? "ring-2 ring-primary/50 border-primary/40" : ""}`}>
+            className={`text-left rounded-lg border p-3 transition hover:-translate-y-0.5 hover:shadow-md ${solid ? solid : "bg-card hover:border-primary/40"} ${on ? (solid ? "ring-2 ring-offset-2 ring-status-solid-fg/60" : "ring-2 ring-primary/50 border-primary/40") : ""}`}>
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <div className="text-[11px] text-muted-foreground uppercase tracking-wide leading-tight">{c.label}</div>
-                <div className="text-2xl font-bold mt-1">{loading ? "…" : c.value}</div>
+                <div className={`text-[11px] uppercase tracking-wide leading-tight ${solid ? "text-status-solid-fg/85" : "text-muted-foreground"}`}>{c.label}</div>
+                <div className={`text-2xl font-bold mt-1 ${solid ? "text-status-solid-fg" : ""}`}>{loading ? "…" : c.value}</div>
               </div>
-              <div className={`p-2 rounded-md shrink-0 ${c.accent}`}><c.icon className="h-4 w-4" /></div>
+              <div className={`p-2 rounded-md shrink-0 ${solid ? "bg-status-solid-fg/15 text-status-solid-fg" : c.accent}`}><c.icon className="h-4 w-4" /></div>
             </div>
           </button>
-        ))}
+          );
+        })}
       </div>
 
       <OrderFiltersPanel rows={rows} value={flt} onChange={setFlt} resultCount={filter === "clients" ? base.length : filtered.length} />
@@ -242,11 +246,12 @@ export default function Orders() {
                   const dl = new Date(o.deadline); dl.setHours(0,0,0,0);
                   const diffDays = Math.ceil((dl.getTime() - today0.getTime()) / 86400000);
                   const isDone = o.status === "completed";
+                  const isExc = o.priority === "exception" && !isDone;
                   const stages = ((o as any).order_stages ?? []).slice().sort((a:any,b:any)=>a.stage_order-b.stage_order);
                   const startedAt = stages[0]?.started_at;
                   const startStr = startedAt ? fmtDate(startedAt) : "—";
                   return (
-                    <TableRow key={o.id} className="cursor-pointer hover:bg-muted/50" onClick={() => nav(`/orders/${o.id}`)}>
+                    <TableRow key={o.id} className={`cursor-pointer hover:bg-muted/50 ${isDone ? "order-row-done" : isExc ? "order-row-exception" : ""}`} onClick={() => nav(`/orders/${o.id}`)}>
                       <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
                       <TableCell><HealthDot color={orderHealth(o)} /></TableCell>
                       <TableCell className="font-mono text-sm">
@@ -266,8 +271,8 @@ export default function Orders() {
                         {(o as any).comment && <div className="text-xs text-muted-foreground italic truncate max-w-[180px]">"{localize((o as any).comment)}"</div>}
                       </TableCell>
                       <TableCell className="text-right text-sm">{o.quantity}</TableCell>
-                      <TableCell><PriorityBadge priority={o.priority} /></TableCell>
-                      <TableCell><StatusBadge status={o.status as any} /></TableCell>
+                      <TableCell><PriorityBadge priority={o.priority} solid /></TableCell>
+                      <TableCell><StatusBadge status={o.status as any} solid /></TableCell>
                       <TableCell className="text-sm whitespace-nowrap text-status-green font-medium">{fmtDate(o.order_date)}</TableCell>
                       <TableCell className="text-sm whitespace-nowrap text-status-green font-medium">{startStr}</TableCell>
                       <TableCell className="text-sm whitespace-nowrap text-status-green font-medium">{fmtDate(o.deadline)}</TableCell>
