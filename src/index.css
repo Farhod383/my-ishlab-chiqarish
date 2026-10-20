@@ -182,8 +182,8 @@ input, textarea, [contenteditable="true"] {
    Rows keep a soft tint of the same hue so dark text stays readable. */
 .status-solid-green { background: hsl(var(--status-green-solid)); border-color: hsl(var(--status-green-solid)); color: hsl(var(--status-solid-foreground)); }
 .status-solid-red { background: hsl(var(--status-red-solid)); border-color: hsl(var(--status-red-solid)); color: hsl(var(--status-solid-foreground)); }
-.order-row-done { background: hsl(var(--status-green) / 0.14); }
-.order-row-done:hover { background: hsl(var(--status-green) / 0.2); }
+.order-row-done { background: hsl(var(--status-green) / 0.2); }
+.order-row-done:hover { background: hsl(var(--status-green) / 0.26); }
 .order-row-exception { background: hsl(var(--status-red) / 0.14); }
 .order-row-exception:hover { background: hsl(var(--status-red) / 0.2); }
 .order-row-done > :first-child { box-shadow: inset 6px 0 0 hsl(var(--status-green-solid)); }
