@@ -177,6 +177,16 @@ input, textarea, [contenteditable="true"] {
 .supply-tabs [data-state="active"][data-tone="pending"] { background: hsl(var(--status-red-solid)); border-color: hsl(var(--status-red-solid)); color: hsl(var(--status-solid-foreground)); }
 .supply-tabs [data-state="active"][data-tone="fulfilled"] { background: hsl(var(--status-green-solid)); border-color: hsl(var(--status-green-solid)); color: hsl(var(--status-solid-foreground)); }
 
+/* Order status colours: "Tugallangan" = solid green, "Istisno" = solid red, white label.
+   Unlayered so they outrank the light badge/card utilities used on the same element.
+   Rows keep a soft tint of the same hue so dark text stays readable. */
+.status-solid-green { background: hsl(var(--status-green-solid)); border-color: hsl(var(--status-green-solid)); color: hsl(var(--status-solid-foreground)); }
+.status-solid-red { background: hsl(var(--status-red-solid)); border-color: hsl(var(--status-red-solid)); color: hsl(var(--status-solid-foreground)); }
+.order-row-done { background: hsl(var(--status-green) / 0.07); }
+.order-row-done:hover { background: hsl(var(--status-green) / 0.13); }
+.order-row-exception { background: hsl(var(--status-red) / 0.07); }
+.order-row-exception:hover { background: hsl(var(--status-red) / 0.13); }
+
 
 /* ===== Printable reports ===== */
 @layer components {
