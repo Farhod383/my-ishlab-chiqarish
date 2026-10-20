@@ -9,7 +9,7 @@ describe("order filters", () => {
     const f = { ...EMPTY_FILTERS, client: "Ali", status: "delayed" as const };
     expect(matchOrderFilters(o({ deadline: "2026-10-01" }), f, today, new Set())).toBe(true);
     expect(matchOrderFilters(o({}), f, today, new Set())).toBe(false);
-    expect(matchOrderFilters(o({ deadline: "2026-10-01", client: { name: "Vali" } }), f, today, new Set())).toBe(false);
+    expect(matchOrderFilters(o({ deadline: "2026-10-01", client: { name: "Bobur" } }), f, today, new Set())).toBe(false);
   });
   it("order with no stages is excluded by progress filter", () => {
     expect(matchOrderFilters(o({}), { ...EMPTY_FILTERS, progressMin: "0" }, today, new Set())).toBe(false);
