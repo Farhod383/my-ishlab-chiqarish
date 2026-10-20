@@ -394,6 +394,7 @@ export default function MetalPage() {
                       <SelectContent>
                         <SelectItem value="Davronxo'ja">Davronxo'ja</SelectItem>
                         <SelectItem value="Sanjar">Sanjar</SelectItem>
+                        <SelectItem value="Shovkat">Shovkat</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
