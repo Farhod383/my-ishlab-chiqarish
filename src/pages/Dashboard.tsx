@@ -103,28 +103,6 @@ export default function Dashboard() {
         <p className="text-sm text-muted-foreground">{t.dashboard.subtitle}</p>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
-        {cards.map((c) => (
-          <Link
-            key={c.key}
-            to={c.to ?? `/orders?filter=${c.key}`}
-            className="block transition-transform hover:-translate-y-0.5"
-          >
-            <Card className="hover:border-primary/40 hover:shadow-md transition cursor-pointer h-full">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="text-xs text-muted-foreground uppercase tracking-wide">{c.label}</div>
-                    <div className="text-2xl font-bold mt-1">{loading ? <Skeleton className="h-7 w-10" /> : c.value}</div>
-                  </div>
-                  <div className={`p-2 rounded-md ${c.accent}`}><c.icon className="h-4 w-4" /></div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
-
       <div className="w-full">
         <Card className="w-full">
           <CardHeader>

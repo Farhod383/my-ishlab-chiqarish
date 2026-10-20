@@ -190,7 +190,7 @@ export default function Orders() {
           </div>
         </CardHeader>
 
-        {filter === "clients" ? <CardContent><ClientOrdersView rows={rows} /></CardContent> : <CardContent>
+        {filter === "clients" ? <CardContent><ClientOrdersView rows={base} /></CardContent> : <CardContent>
           <div className="border rounded-md overflow-x-auto">
             <Table>
               <TableHeader>
