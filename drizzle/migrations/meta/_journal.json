@@ -309,6 +309,13 @@
       "when": 1792488706597,
       "tag": "0043_debt_items",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1792489069964,
+      "tag": "0044_cash_reset_opening",
+      "breakpoints": true
     }
   ]
 }
