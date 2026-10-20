@@ -36,3 +36,8 @@
 - [x] Kutilmoqda kartochkasi to‘q qizil, Ta’minlandi kartochkasi to‘q yashil fon, barcha yozuvlar oq; asosiy ro‘yxat, guruh ichi va zakaz tafsilotidagi “Sklad” bo‘limida bir xil.
 - [x] Ichki padding 10–12 px, matnlar kichraytirildi, hech bir ma’lumot, sana, izoh yoki tugma olib tashlanmadi.
 - [x] 1280 px va 390 pxda tekshirildi; tanlangan kartochkada ham matn oq qoladi; 23 test va typecheck toza.
+
+## Ta'minot 2 va Shovkat
+- [x] Kassa menyuda birinchi; Kassa | Ta'minot | Ta'minot 2 tablari
+- [x] taminot2@gmail.com (Ta'minot + Sklad rollari)
+- [x] Shovkat kirimlari Ta'minot 2 balansidan (narx x miqdor), alohida hisob
