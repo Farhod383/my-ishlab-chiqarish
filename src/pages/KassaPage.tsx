@@ -82,7 +82,7 @@ export default function KassaPage() {
   const [mainReset, setMainReset] = useState(0);
   const { employees, allEmployees } = useEmployees({ activeOnly: true });
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"income" | "expense" | "report" | "debt" | "supply">("income");
+  const [tab, setTab] = useState<"income" | "expense" | "report" | "debt" | "supply" | "supply2">("income");
   const focusEntity = useFocusEntity();
   useEffect(() => {
     if (focusEntity === "cash_expense") setTab("expense");
@@ -611,7 +611,7 @@ export default function KassaPage() {
       exchange_rate: Number(e.exchange_rate) || 1,
       payment_type: normalizePT(e.payment_type),
       salary_kind: (e.salary_kind ?? "") as any,
-      is_supply: e.purpose === "supply",
+      is_supply: e.purpose === "supply" || e.purpose === "supply2",
       debt_id: e.debt_id ?? "",
     });
     setRecipientMode(e.recipient_id ? "employee" : "manual");
@@ -753,18 +753,22 @@ export default function KassaPage() {
     setFilterFrom(b.from); setFilterTo(b.to);
   };
   return (
-    <div className={`space-y-6 ${isOverview || tab === "supply" ? "kassa-page-bg -m-3 p-3 sm:-m-4 sm:p-4 min-h-full" : ""}`}>
+    <div className={`space-y-6 ${isOverview || tab === "supply" || tab === "supply2" ? "kassa-page-bg -m-3 p-3 sm:-m-4 sm:p-4 min-h-full" : ""}`}>
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3 flex-wrap min-w-0">
           <h1 className="text-2xl font-bold tracking-tight">{k.title ?? "Kassa"}</h1>
           <div className="inline-flex shrink-0 items-center rounded-lg border bg-muted p-1" role="tablist" aria-label="Kassa navigatsiya">
-            <button type="button" role="tab" aria-selected={tab !== "supply"} onClick={() => setTab("income")}
-              className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-sm font-medium ${tab !== "supply" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+            <button type="button" role="tab" aria-selected={tab !== "supply" && tab !== "supply2"} onClick={() => setTab("income")}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-sm font-medium ${tab !== "supply" && tab !== "supply2" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
               <Wallet className="h-4 w-4" />{k.title ?? "Kassa"}
             </button>
             <button type="button" role="tab" aria-selected={tab === "supply"} onClick={() => setTab("supply")}
               className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-sm font-medium ${tab === "supply" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
               <Truck className="h-4 w-4" />Ta'minot
+            </button>
+            <button type="button" role="tab" aria-selected={tab === "supply2"} onClick={() => setTab("supply2")}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-sm font-medium ${tab === "supply2" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+              <Truck className="h-4 w-4" />Ta'minot 2
             </button>
           </div>
           {isOverview && (
@@ -775,7 +779,7 @@ export default function KassaPage() {
             </div>
           )}
         </div>
-        {tab !== "supply" && <div className="flex items-center gap-2 flex-wrap ml-auto">
+        {tab !== "supply" && tab !== "supply2" && <div className="flex items-center gap-2 flex-wrap ml-auto">
           <Button variant="outline" className={tab === "report" ? "ring-2 ring-ring" : ""} onClick={() => setTab(tab === "report" ? "income" : "report")}>
             <FileBarChart className="h-4 w-4 mr-1.5" />Hisobot
           </Button>
@@ -1127,6 +1131,14 @@ export default function KassaPage() {
           <SupplyFinancePage canManage={canManage} onGive={() => {
             setExpEditId(null); setExpOrig(null);
             setExpForm({ amount: 0, reason: "Ta'minot", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash", salary_kind: "", is_supply: true, debt_id: "" });
+            setOpenExp(true);
+          }} />
+        </TabsContent>
+
+        <TabsContent value="supply2" className="space-y-3">
+          <SupplyFinancePage kassa="supply2" canManage={canManage} onGive={() => {
+            setExpEditId(null); setExpOrig(null);
+            setExpForm({ amount: 0, reason: "Ta'minot 2", recipient_id: "", recipient_manual: "", comment: "", currency: "UZS", exchange_rate: 1, payment_type: "cash", salary_kind: "", is_supply: true, debt_id: "" });
             setOpenExp(true);
           }} />
         </TabsContent>
