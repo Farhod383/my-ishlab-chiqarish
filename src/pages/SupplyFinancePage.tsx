@@ -143,7 +143,7 @@ export default function SupplyFinancePage({ canManage = false, onGive, kassa = "
   useEffect(() => {
     load();
     const ch = supabase
-      .channel("supply-finance")
+      .channel(`supply-finance-${kassa}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "cash_expenses" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "stock_movements" }, () => load())
       .subscribe();
