@@ -20,6 +20,9 @@ import { fmtDate } from "@/lib/format";
 import { FileDown } from "lucide-react";
 import { CompletedOrdersReport } from "@/components/CompletedOrdersReport";
 import { ORDER_GROUPS, orderGroupOf, orderPdfLabel, type OrderGroup } from "@/lib/orderGroups";
+import { EMPTY_FILTERS, matchOrderFilters, activeFilterCount, type OrderFilters } from "@/lib/orderFilters";
+import { OrderFiltersPanel } from "@/components/OrderFiltersPanel";
+import { ClipboardList, Activity, AlertTriangle, Clock, AlertOctagon, CheckCircle2 } from "lucide-react";
 
 type FilterKey = "all" | "active" | "exception" | "delayed" | "completed" | "today" | "clients";
 
@@ -36,7 +39,10 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [selOpen, setSelOpen] = useState(false);
   const [repOpen, setRepOpen] = useState(false);
-  const [group, setGroup] = useState<OrderGroup | "ALL">("ALL");
+  const [flt, setFlt] = useState<OrderFilters>(EMPTY_FILTERS);
+  const group = flt.group;
+  const setGroup = (g: OrderGroup | "ALL") => setFlt((f) => ({ ...f, group: g }));
+  const [lowStockIds, setLowStockIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const f = (params.get("filter") as FilterKey) || "all";
@@ -55,7 +61,7 @@ export default function Orders() {
     (async () => {
       const { data } = await supabase
         .from("orders")
-        .select("*, client:clients(name, client_type), order_stages(name, stage_order, started_at, status, qc_required, qc_passed), order_parts(part_name)")
+        .select("*, client:clients(name, client_type), order_stages(name, stage_order, started_at, finished_at, status, qc_required, qc_passed, worker_name), order_parts(part_name, product_id)")
         .order("priority", { ascending: false })
         .order("queue_position");
       const list = (data as any[]) ?? [];
@@ -65,17 +71,31 @@ export default function Orders() {
         for (const r of list) if (fixed.has(r.id)) r.status = "completed";
       }
       setRows(list as any);
+      const { data: prods } = await supabase.from("products").select("id, stock_qty, min_limit").is("instrument_id", null);
+      setLowStockIds(new Set((prods ?? []).filter((p: any) => Number(p.stock_qty) <= Number(p.min_limit)).map((p: any) => p.id)));
       setLoading(false);
     })();
   }, []);
 
   const today = new Date().toISOString().slice(0, 10);
-  const filteredRaw = rows.filter((o) => {
+  const base = rows.filter((o) => {
+    if (!matchOrderFilters(o, flt, today, lowStockIds)) return false;
     if (q) {
       const parts = ((o as any).order_parts ?? []).map((p: any) => p.part_name).join(" ");
       const hay = [o.order_number, o.product_name, (o as any).client?.name, parts].filter(Boolean).join(" ");
       if (!matchesAcrossScripts(hay, q)) return false;
     }
+    return true;
+  });
+  const stats = {
+    all: base.length,
+    active: base.filter((o) => o.status === "in_progress" || o.status === "pending").length,
+    delayed: base.filter((o) => o.status === "delayed" || (o.status !== "completed" && o.deadline < today)).length,
+    today: base.filter((o) => o.deadline === today && o.status !== "completed").length,
+    exception: base.filter((o) => o.priority === "exception" && o.status !== "completed").length,
+    completed: base.filter((o) => o.status === "completed").length,
+  };
+  const filteredRaw = base.filter((o) => {
 
     if (filter === "active") return o.status === "in_progress" || o.status === "pending";
     if (filter === "exception") return o.priority === "exception" && o.status !== "completed";
@@ -83,7 +103,7 @@ export default function Orders() {
     if (filter === "today") return o.deadline === today && o.status !== "completed";
     if (filter === "completed") return o.status === "completed";
     return true;
-  }).filter((o) => group === "ALL" || orderGroupOf(o.product_name) === group);
+  });
   const filtered = filter === "all" ? sortOrdersByStatusAndDate(filteredRaw) : filteredRaw;
 
   const downloadPdf = async () => {
@@ -114,6 +134,31 @@ export default function Orders() {
           )}
         </div>
       </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7 gap-3">
+        {([
+          { key: "all", label: t.dashboard.totalOrders, value: stats.all, icon: ClipboardList, accent: "text-primary bg-primary/10" },
+          { key: "active", label: t.dashboard.activeOrders, value: stats.active, icon: Activity, accent: "text-status-blue bg-status-blue/10" },
+          { key: "delayed", label: t.dashboard.delayed, value: stats.delayed, icon: AlertTriangle, accent: "text-status-red bg-status-red/10" },
+          { key: "today", label: t.dashboard.todayDeadline, value: stats.today, icon: Clock, accent: "text-status-yellow bg-status-yellow/15" },
+          { key: "exception", label: t.dashboard.exception, value: stats.exception, icon: AlertOctagon, accent: "text-status-red bg-status-red/10" },
+          { key: "completed", label: t.dashboard.completedOrders, value: stats.completed, icon: CheckCircle2, accent: "text-status-green bg-status-green/10" },
+          { key: "lowstock", label: t.dashboard.lowStock, value: lowStockIds.size, icon: AlertTriangle, accent: "text-status-red bg-status-red/10" },
+        ] as const).map((c) => (
+          <button key={c.key} type="button" onClick={() => c.key === "lowstock" ? nav("/low-stock") : onFilterChange(c.key)}
+            className={`text-left rounded-lg border bg-card p-3 transition hover:-translate-y-0.5 hover:shadow-md hover:border-primary/40 ${filter === c.key ? "ring-2 ring-primary/50 border-primary/40" : ""}`}>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="text-[11px] text-muted-foreground uppercase tracking-wide leading-tight">{c.label}</div>
+                <div className="text-2xl font-bold mt-1">{loading ? "…" : c.value}</div>
+              </div>
+              <div className={`p-2 rounded-md shrink-0 ${c.accent}`}><c.icon className="h-4 w-4" /></div>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      <OrderFiltersPanel rows={rows} value={flt} onChange={setFlt} resultCount={filter === "clients" ? base.length : filtered.length} />
 
       <div className="flex flex-wrap gap-2">
         {([{ key: "ALL", label: "Barcha guruhlar" }, ...ORDER_GROUPS] as { key: OrderGroup | "ALL"; label: string }[]).map((g) => {
