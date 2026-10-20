@@ -810,9 +810,51 @@ export type Database = {
           },
         ]
       }
+      debt_items: {
+        Row: {
+          created_at: string
+          currency: string
+          debt_id: string
+          id: string
+          item_name: string
+          quantity: number
+          sort_order: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          debt_id: string
+          id?: string
+          item_name: string
+          quantity?: number
+          sort_order?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          debt_id?: string
+          id?: string
+          item_name?: string
+          quantity?: number
+          sort_order?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debt_items_debt_id_fkey"
+            columns: ["debt_id"]
+            isOneToOne: false
+            referencedRelation: "debts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       debts: {
         Row: {
           amount: number
+          amount_usd: number
           comment: string | null
           counterparty: string
           created_at: string
@@ -827,6 +869,7 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          amount_usd?: number
           comment?: string | null
           counterparty: string
           created_at?: string
@@ -841,6 +884,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_usd?: number
           comment?: string | null
           counterparty?: string
           created_at?: string
