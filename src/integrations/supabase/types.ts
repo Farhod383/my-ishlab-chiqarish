@@ -384,6 +384,7 @@ export type Database = {
           created_by: string | null
           id: string
           kassa: string
+          opening: Json
           reset_at: string
         }
         Insert: {
@@ -392,6 +393,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           kassa: string
+          opening?: Json
           reset_at?: string
         }
         Update: {
@@ -400,6 +402,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           kassa?: string
+          opening?: Json
           reset_at?: string
         }
         Relationships: []

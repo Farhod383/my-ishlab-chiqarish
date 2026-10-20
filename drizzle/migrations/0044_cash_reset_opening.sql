@@ -1,0 +1,2 @@
+ALTER TABLE public.cash_resets ADD COLUMN IF NOT EXISTS opening jsonb NOT NULL DEFAULT '{}'::jsonb;
+COMMENT ON COLUMN public.cash_resets.opening IS 'Opening balance per account at reset_at, keys like cash_UZS / cash_USD';
