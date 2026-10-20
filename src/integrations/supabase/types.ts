@@ -2673,6 +2673,32 @@ export type Database = {
           },
         ]
       }
+      supply2_spendings: {
+        Row: {
+          brought_by: string | null
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          order_id: string | null
+          order_number: string | null
+          product_name: string | null
+          quantity: number | null
+          source: string | null
+          stock_movement_id: string | null
+          total: number | null
+          unit: string | null
+          unit_price: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       can_edit_intake: { Args: { _user_id: string }; Returns: boolean }
