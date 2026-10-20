@@ -69,6 +69,7 @@ export default function SupplyFinancePage({ canManage = false, onGive, kassa = "
   const [outs, setOuts] = useState<OutRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [resetAt, setResetAt] = useState(0);
+  const [opening, setOpening] = useState<Record<string, number>>({});
   const [month, setMonth] = useState<string | null>(null); // null = Barcha davr (default)
   const [selIn, setSelIn] = useState(false);
   const [selOut, setSelOut] = useState(false);
@@ -95,8 +96,9 @@ export default function SupplyFinancePage({ canManage = false, onGive, kassa = "
       })(),
       supabase.from("profiles").select("id,full_name,email"),
     ]);
-    const { data: rs } = await (supabase as any).from("cash_resets").select("reset_at").eq("kassa", kassa).order("reset_at", { ascending: false }).limit(1);
+    const { data: rs } = await (supabase as any).from("cash_resets").select("reset_at,opening").eq("kassa", kassa).order("reset_at", { ascending: false }).limit(1);
     setResetAt(rs?.[0]?.reset_at ? new Date(rs[0].reset_at).getTime() : 0);
+    setOpening((rs?.[0]?.opening ?? {}) as Record<string, number>);
 
     const nameOf = (uid: string | null | undefined) => {
       const p = (profs ?? []).find((x: any) => x.id === uid) as any;
@@ -151,8 +153,8 @@ export default function SupplyFinancePage({ canManage = false, onGive, kassa = "
   }, []);
 
   // Formulalar o'zgarmagan: kirim = Kassadan berilgan, chiqim = Sklad kirimlari (narx × miqdor).
-  const pIn = useMemo(() => (month ? incomes.filter((r) => ymOf(r.created_at) === month) : incomes), [incomes, month]);
-  const pOut = useMemo(() => (month ? outs.filter((r) => ymOf(r.created_at) === month) : outs), [outs, month]);
+  const pIn = useMemo(() => (month ? incomes.filter((r) => ymOf(r.created_at) === month) : incomes.filter((r) => new Date(r.rec_at).getTime() >= resetAt)), [incomes, month, resetAt]);
+  const pOut = useMemo(() => (month ? outs.filter((r) => ymOf(r.created_at) === month) : outs.filter((r) => new Date(r.created_at).getTime() >= resetAt)), [outs, month, resetAt]);
   const sumBy = (rows: { currency: string }[], val: (r: any) => number) => {
     const m: Record<string, number> = { UZS: 0, USD: 0 };
     for (const r of rows) m[normCur(r.currency)] += val(r);
@@ -165,7 +167,8 @@ export default function SupplyFinancePage({ canManage = false, onGive, kassa = "
   const curOut = useMemo(() => outs.filter((r) => new Date(r.created_at).getTime() >= resetAt), [outs, resetAt]);
   const allIn = useMemo(() => sumBy(curIn, (r) => Number(r.amount) || 0), [curIn]);
   const allOut = useMemo(() => sumBy(curOut, (r) => Number(r.total) || 0), [curOut]);
-  const bal = { UZS: allIn.UZS - allOut.UZS, USD: allIn.USD - allOut.USD };
+  const op = (c: string) => PT_KEYS.reduce((s, pt) => s + (Number(opening[`${pt}_${c}`]) || 0), 0);
+  const bal = { UZS: op("UZS") + allIn.UZS - allOut.UZS, USD: op("USD") + allIn.USD - allOut.USD };
   const negative = bal.UZS < 0 || bal.USD < 0;
 
   // Har bir to'lov turi × valyuta bo'yicha alohida balans (Sklad kirimlari naqd puldan ayriladi).
@@ -174,10 +177,10 @@ export default function SupplyFinancePage({ canManage = false, onGive, kassa = "
     for (const pt of PT_KEYS) for (const c of CUR_KEYS) {
       const inn = curIn.filter((r) => normPT(r.payment_type) === pt && normCur(r.currency) === c).reduce((s, r) => s + (Number(r.amount) || 0), 0);
       const out = pt === "cash" ? curOut.filter((r) => normCur(r.currency) === c).reduce((s, r) => s + (Number(r.total) || 0), 0) : 0;
-      all.push({ pt, c, v: inn - out });
+      all.push({ pt, c, v: (Number(opening[`${pt}_${c}`]) || 0) + inn - out });
     }
     return { shown: all.filter((a) => Math.abs(a.v) > 0.0001), hidden: all.filter((a) => Math.abs(a.v) <= 0.0001).length };
-  }, [curIn, curOut]);
+  }, [curIn, curOut, opening]);
   const ptShort = (pt: string) => (pt === "cash" ? "💵 Naqd" : pt === "corporate_card" ? "💳 Karta" : "🏦 O'tkazma");
 
   const cats = useMemo(() => {
@@ -215,7 +218,7 @@ export default function SupplyFinancePage({ canManage = false, onGive, kassa = "
     const d = new Date(y, m - 1 + delta, 1);
     setMonth(`${d.getFullYear()}-${pad(d.getMonth() + 1)}`);
   };
-  const periodLabel = month ? (() => { const [y, m] = month.split("-").map(Number); const n = MONTHS[m - 1]; return `${n.charAt(0).toUpperCase()}${n.slice(1)} ${y}`; })() : "Barcha davr";
+  const periodLabel = month ? (() => { const [y, m] = month.split("-").map(Number); const n = MONTHS[m - 1]; return `${n.charAt(0).toUpperCase()}${n.slice(1)} ${y}`; })() : resetAt ? `Joriy davr (${new Date(resetAt).toLocaleDateString("ru-RU")} dan)` : "Barcha davr";
 
   const downloadReport = () => {
     const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
@@ -248,7 +251,7 @@ export default function SupplyFinancePage({ canManage = false, onGive, kassa = "
             <span className="min-w-[120px] text-center text-sm font-semibold">{periodLabel}</span>
             <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Keyingi oy" onClick={() => shift(1)}><ChevronRight className="h-4 w-4" /></Button>
           </div>
-          {month && <Button variant="ghost" size="sm" onClick={() => setMonth(null)}>Barcha davr</Button>}
+          {month && <Button variant="ghost" size="sm" onClick={() => setMonth(null)}>Joriy davr</Button>}
         </div>
         <div className="flex items-center gap-2 ml-auto">
           <Button variant="outline" className="bg-background" onClick={downloadReport}><FileBarChart className="h-4 w-4 mr-1.5" />Hisobot</Button>
