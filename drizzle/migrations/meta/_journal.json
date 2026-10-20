@@ -302,6 +302,13 @@
       "when": 1792485154520,
       "tag": "0042_supply2_kassa",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1792488706597,
+      "tag": "0043_debt_items",
+      "breakpoints": true
     }
   ]
 }

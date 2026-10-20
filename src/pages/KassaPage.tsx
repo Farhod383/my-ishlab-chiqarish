@@ -26,6 +26,7 @@ import SupplyFinancePage from "@/pages/SupplyFinancePage";
 import { useEmployees, refreshEmployees } from "@/hooks/useEmployees";
 import { currentUserName, displayUser } from "@/lib/userNames";
 import { useFocusEntity } from "@/notifications/FocusHighlighter";
+import DebtItemsDialog from "@/components/kassa/DebtItemsDialog";
 
 const PAYMENT_TYPES = ["cash", "transfer", "corporate_card"] as const;
 type PaymentType = typeof PAYMENT_TYPES[number] | "other";
@@ -94,6 +95,7 @@ export default function KassaPage() {
   const [debtEditId, setDebtEditId] = useState<string | null>(null);
   const [debtForm, setDebtForm] = useState({ counterparty: "", purpose: "", amount: 0, currency: "UZS", due_date: "", comment: "" });
   const [debtDelete, setDebtDelete] = useState<any>(null);
+  const [debtItems, setDebtItems] = useState<any>(null);
   const [reasons, setReasons] = useState<string[]>(DEFAULT_REASONS);
   const [newReasonOpen, setNewReasonOpen] = useState(false);
   const [newReason, setNewReason] = useState("");
@@ -1079,10 +1081,10 @@ export default function KassaPage() {
                     const left = Math.max(0, (Number(d.amount) || 0) - paid);
                     const overdue = d.status !== "paid" && d.due_date && new Date(d.due_date) < new Date();
                     return (
-                      <TableRow key={d.id}>
-                        <TableCell className="font-medium">{d.counterparty}</TableCell>
-                        <TableCell className="text-sm">{d.purpose}</TableCell>
-                        <TableCell className="text-right font-mono">{fmtCash(Number(d.amount), d.currency)} {d.currency}</TableCell>
+                      <TableRow key={d.id} className="cursor-pointer hover:bg-muted/50" onClick={(e) => { if (!(e.target as HTMLElement).closest("button")) setDebtItems(d); }}>
+                        <TableCell className="font-medium">{d.counterparty || "—"}</TableCell>
+                        <TableCell className="text-sm">{d.purpose} <span className="text-xs text-primary underline">tarkibi</span></TableCell>
+                        <TableCell className="text-right font-mono">{fmtCash(Number(d.amount), d.currency)} {d.currency}{Number(d.amount_usd) > 0 && <div>{fmtCash(Number(d.amount_usd), "USD")} USD</div>}</TableCell>
                         <TableCell className="text-right font-mono text-status-green">{fmtCash(paid, d.currency)}</TableCell>
                         <TableCell className="text-right font-mono font-semibold text-status-red">{fmtCash(left, d.currency)}</TableCell>
                         <TableCell className="text-sm whitespace-nowrap">{fmtDate(d.due_date)}</TableCell>
@@ -1107,6 +1109,7 @@ export default function KassaPage() {
             </div>
           </CardContent></Card>
 
+          <DebtItemsDialog debt={debtItems} canManage={canManage} onClose={() => setDebtItems(null)} onSaved={loadDebts} />
           <AlertDialog open={!!debtDelete} onOpenChange={(o) => { if (!o) setDebtDelete(null); }}>
             <AlertDialogContent>
               <AlertDialogHeader>
