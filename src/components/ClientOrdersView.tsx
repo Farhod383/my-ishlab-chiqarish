@@ -91,8 +91,10 @@ export function ClientOrdersView({ rows }: { rows: any[] }) {
                   const done = st.filter((s: any) => s.status === "completed").length;
                   const pct = st.length ? Math.round((done / st.length) * 100) : o.status === "completed" ? 100 : 0;
                   const cur = st.find((s: any) => s.status === "in_progress" || s.status === "delayed") ?? st.find((s: any) => s.status !== "completed");
+                  const isDone = o.status === "completed";
+                  const isExc = o.priority === "exception" && !isDone;
                   return (
-                    <TableRow key={o.id} className="cursor-pointer hover:bg-muted/50" onClick={() => nav(`/orders/${o.id}`)}>
+                    <TableRow key={o.id} className={`cursor-pointer hover:bg-muted/50 ${isDone ? "order-row-done" : isExc ? "order-row-exception" : ""}`} onClick={() => nav(`/orders/${o.id}`)}>
                       <TableCell className="font-mono text-sm">{o.order_number}</TableCell>
                       <TableCell className="text-sm">{localize(o.product_name)}</TableCell>
                       <TableCell className="text-sm whitespace-nowrap">{fmtDate(o.deadline)}</TableCell>
@@ -100,7 +102,7 @@ export function ClientOrdersView({ rows }: { rows: any[] }) {
                       <TableCell>
                         <div className="flex items-center gap-2"><Progress value={pct} className="h-2" /><span className="text-xs w-9">{pct}%</span></div>
                       </TableCell>
-                      <TableCell><StatusBadge status={o.status} /></TableCell>
+                      <TableCell><StatusBadge status={o.status} solid /></TableCell>
                     </TableRow>
                   );
                 })}
