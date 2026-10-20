@@ -26,6 +26,7 @@ import SupplyFinancePage from "@/pages/SupplyFinancePage";
 import { useEmployees, refreshEmployees } from "@/hooks/useEmployees";
 import { currentUserName, displayUser } from "@/lib/userNames";
 import { useFocusEntity } from "@/notifications/FocusHighlighter";
+import DebtItemsDialog from "@/components/kassa/DebtItemsDialog";
 
 const PAYMENT_TYPES = ["cash", "transfer", "corporate_card"] as const;
 type PaymentType = typeof PAYMENT_TYPES[number] | "other";
@@ -1108,6 +1109,7 @@ export default function KassaPage() {
             </div>
           </CardContent></Card>
 
+          <DebtItemsDialog debt={debtItems} canManage={canManage} onClose={() => setDebtItems(null)} onSaved={loadDebts} />
           <AlertDialog open={!!debtDelete} onOpenChange={(o) => { if (!o) setDebtDelete(null); }}>
             <AlertDialogContent>
               <AlertDialogHeader>
