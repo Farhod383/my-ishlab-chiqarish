@@ -59,9 +59,12 @@ const pad = (n: number) => String(n).padStart(2, "0");
 const ymOf = (iso: string) => { const d = new Date(iso); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; };
 const nowYm = () => ymOf(new Date().toISOString());
 
-interface Props { canManage?: boolean; onGive?: () => void }
+interface Props { canManage?: boolean; onGive?: () => void; kassa?: "supply" | "supply2" }
 
-export default function SupplyFinancePage({ canManage = false, onGive }: Props = {}) {
+export default function SupplyFinancePage({ canManage = false, onGive, kassa = "supply" }: Props = {}) {
+  const is2 = kassa === "supply2";
+  const kTitle = is2 ? "Ta'minot 2" : "Ta'minot";
+  const bringer = is2 ? "Shovkat" : "Sanjar";
   const [incomes, setIncomes] = useState<IncomeRow[]>([]);
   const [outs, setOuts] = useState<OutRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,12 +81,12 @@ export default function SupplyFinancePage({ canManage = false, onGive }: Props =
       supabase
         .from("cash_expenses")
         .select("id,amount,total_uzs,currency,reason,comment,payment_type,expense_date,created_at,created_by,recipient_name")
-        .eq("purpose", "supply")
+        .eq("purpose", kassa)
         .order("created_at", { ascending: false }),
       (async () => {
         const all: any[] = [];
         for (let f = 0; ; f += 1000) {
-          const { data, error } = await (supabase as any).from("supply_spendings").select("*").order("created_at", { ascending: false }).range(f, f + 999);
+          const { data, error } = await (supabase as any).from(is2 ? "supply2_spendings" : "supply_spendings").select("*").order("created_at", { ascending: false }).range(f, f + 999);
           if (error) return { data: all };
           all.push(...(data ?? []));
           if (!data || data.length < 1000) break;
@@ -92,7 +95,7 @@ export default function SupplyFinancePage({ canManage = false, onGive }: Props =
       })(),
       supabase.from("profiles").select("id,full_name,email"),
     ]);
-    const { data: rs } = await (supabase as any).from("cash_resets").select("reset_at").eq("kassa", "supply").order("reset_at", { ascending: false }).limit(1);
+    const { data: rs } = await (supabase as any).from("cash_resets").select("reset_at").eq("kassa", kassa).order("reset_at", { ascending: false }).limit(1);
     setResetAt(rs?.[0]?.reset_at ? new Date(rs[0].reset_at).getTime() : 0);
 
     const nameOf = (uid: string | null | undefined) => {
@@ -140,7 +143,7 @@ export default function SupplyFinancePage({ canManage = false, onGive }: Props =
   useEffect(() => {
     load();
     const ch = supabase
-      .channel("supply-finance")
+      .channel(`supply-finance-${kassa}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "cash_expenses" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "stock_movements" }, () => load())
       .subscribe();
@@ -222,7 +225,7 @@ export default function SupplyFinancePage({ canManage = false, onGive }: Props =
     const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `taminot-kassa-${month ?? "barcha-davr"}.csv`;
+    a.download = `${is2 ? "taminot2" : "taminot"}-kassa-${month ?? "barcha-davr"}.csv`;
     a.click();
   };
 
@@ -235,10 +238,10 @@ export default function SupplyFinancePage({ canManage = false, onGive }: Props =
     <div className="kassa-v2 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2 flex-wrap min-w-0">
-          <h2 className="text-xl font-bold tracking-tight">Ta'minot kassasi</h2>
+          <h2 className="text-xl font-bold tracking-tight">{kTitle} kassasi</h2>
           <Tooltip>
             <TooltipTrigger asChild><button type="button" aria-label="Izoh" className="kassa-muted"><Info className="h-4 w-4" /></button></TooltipTrigger>
-            <TooltipContent className="max-w-xs">Kirim — Kassadan Ta'minotga berilgan pul. Chiqim — Ta'minotga birinchi pul berilgandan keyin Sanjar olib kelgan Sklad kirimlari (narx × miqdor). Qoldiq = berilgan − sarflangan.</TooltipContent>
+            <TooltipContent className="max-w-xs">Kirim — Kassadan {kTitle}ga berilgan pul. Chiqim — {is2 ? "" : "Ta'minotga birinchi pul berilgandan keyin "}{bringer} olib kelgan Sklad kirimlari (narx × miqdor). Qoldiq = berilgan − sarflangan.</TooltipContent>
           </Tooltip>
           <div className="inline-flex items-center gap-1 rounded-lg border bg-background px-1 py-0.5">
             <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Oldingi oy" onClick={() => shift(-1)}><ChevronLeft className="h-4 w-4" /></Button>

@@ -1039,6 +1039,7 @@ export default function WarehousePage() {
                         <SelectContent>
                           <SelectItem value="Davronxo'ja">Davronxo'ja</SelectItem>
                           <SelectItem value="Sanjar">Sanjar</SelectItem>
+                          <SelectItem value="Shovkat">Shovkat</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1256,6 +1257,7 @@ export default function WarehousePage() {
                       <SelectContent>
                         <SelectItem value="Davronxo'ja">Davronxo'ja</SelectItem>
                         <SelectItem value="Sanjar">Sanjar</SelectItem>
+                          <SelectItem value="Shovkat">Shovkat</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
