@@ -182,10 +182,12 @@ input, textarea, [contenteditable="true"] {
    Rows keep a soft tint of the same hue so dark text stays readable. */
 .status-solid-green { background: hsl(var(--status-green-solid)); border-color: hsl(var(--status-green-solid)); color: hsl(var(--status-solid-foreground)); }
 .status-solid-red { background: hsl(var(--status-red-solid)); border-color: hsl(var(--status-red-solid)); color: hsl(var(--status-solid-foreground)); }
-.order-row-done { background: hsl(var(--status-green) / 0.07); }
-.order-row-done:hover { background: hsl(var(--status-green) / 0.13); }
-.order-row-exception { background: hsl(var(--status-red) / 0.07); }
-.order-row-exception:hover { background: hsl(var(--status-red) / 0.13); }
+.order-row-done { background: hsl(var(--status-green) / 0.1); }
+.order-row-done:hover { background: hsl(var(--status-green) / 0.16); }
+.order-row-exception { background: hsl(var(--status-red) / 0.1); }
+.order-row-exception:hover { background: hsl(var(--status-red) / 0.16); }
+.order-row-done > :first-child { box-shadow: inset 4px 0 0 hsl(var(--status-green-solid)); }
+.order-row-exception > :first-child { box-shadow: inset 4px 0 0 hsl(var(--status-red-solid)); }
 /* Zakazlar tabs: meaning, not position, decides the colour — "Tugallangan" green, "Istisno" red.
    Unlayered so it outranks the positional palette defined in the components layer. */
 .erp-tab[data-value="completed"] { --tab-h: var(--status-green-solid); }
