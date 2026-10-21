@@ -1,6 +1,6 @@
 
 ## Sklad yonida Ta’minot
-- [ ] Mavjud Ta’minot havolasini Sklad yoniga joylashtirish, sahifa va API ko‘rish ruxsatlarini moslash va tekshirish.
+- [x] Mavjud Ta’minot havolasi Sklad yoniga joylashtirildi; sahifa va API ko‘rish ruxsatlari moslandi, 4 test o‘tdi va haqiqiy 37 so‘rov bilan menyudan o‘tish tekshirildi.
 
 ## Ta’minot asosiy ro‘yxati
 - [x] Asosiy sahifada 35 haqiqiy buyurtmaning mahsuloti, miqdori, zakaz havolasi, uchta sana va holati tekshirildi; umumiy kategoriya bloklari neytral.
