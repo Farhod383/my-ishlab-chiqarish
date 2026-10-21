@@ -104,10 +104,16 @@ export default function DailyTasksPage() {
   };
 
   const blockedFor = form.employee_id ? openByEmp[form.employee_id] : undefined;
+  const staleBlocker = blockedFor && blockedFor.task_date < todayTashkent() ? blockedFor : undefined;
 
   const create = async () => {
     if (!form.employee_id || !form.order_id || !form.task_title.trim()) { toast.error("Ishchi, zakaz va topshiriqni to'ldiring"); return; }
-    if (blockedFor) { toast.error("Bu xodimning joriy topshirig'i hali yopilmagan. Avval mavjud topshiriqni yakunlang."); return; }
+    if (blockedFor && !staleBlocker) { toast.error("Bu xodimning joriy topshirig'i hali yopilmagan. Avval mavjud topshiriqni yakunlang."); return; }
+    if (staleBlocker) {
+      const { error: cErr } = await supabase.from("daily_tasks").update({ status: "cancelled" } as any).eq("id", staleBlocker.id);
+      if (cErr) { toast.error(cErr.message); return; }
+      toast.info(`Eski kundagi yopilmagan topshiriq bekor qilindi (${fmtDateG(staleBlocker.task_date)}: ${staleBlocker.task_title})`);
+    }
     setSaving(true);
     const { data, error } = await supabase.from("daily_tasks").insert({
       task_date: date, employee_id: form.employee_id, order_id: form.order_id,
