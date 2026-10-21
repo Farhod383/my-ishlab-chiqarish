@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNotifications } from "@/notifications/NotificationsContext";
 import logo from "@/assets/logo.png"
 import { currentUserName, displayUser } from "@/lib/userNames";
+import { SUPPLY_VIEW_ROLES } from "@/lib/supplyAccess";
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -36,9 +37,9 @@ export function AppSidebar() {
     { title: t.nav.otk, url: "/otk", icon: ShieldCheck },
     { title: "Kunlik topshiriqlar", url: "/daily-tasks", icon: ListChecks, roles: ["admin", "otk", "manager"] },
     { title: t.nav.warehouse, url: "/warehouse", icon: Warehouse },
+    { title: t.nav.supply, url: "/supply", icon: Truck, roles: SUPPLY_VIEW_ROLES },
     { title: "Nakladnoy", url: "/invoices", icon: FileText, roles: ["admin", "warehouse", "supply"] },
     { title: t.metal.title, url: "/metal", icon: Ruler, roles: ["admin", "engineer", "warehouse"] },
-    { title: t.nav.supply, url: "/supply", icon: Truck },
     { title: t.nav.returns, url: "/returns", icon: RotateCcw, roles: ["warehouse", "admin"] },
     { title: t.nav.defects, url: "/defects", icon: AlertOctagon },
     { title: t.nav.hr, url: "/hr", icon: Users, roles: ["hr", "admin", "cashier"] },

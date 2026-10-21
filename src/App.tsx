@@ -45,6 +45,7 @@ import SupplyFinancePage from "./pages/SupplyFinancePage";
 import InvoicesPage from "./pages/InvoicesPage";
 import MetalPage from "./pages/MetalPage";
 import NotFound from "./pages/NotFound";
+import { SUPPLY_VIEW_ROLES } from "@/lib/supplyAccess";
 
 
 const queryClient = new QueryClient();
@@ -97,7 +98,7 @@ const App = () => (
                       <Route path="/defects" element={<DefectsPage />} />
                       <Route path="/audit" element={<ProtectedRoute roles={["admin"]}><AuditLog /></ProtectedRoute>} />
                       <Route path="/reports" element={<ProtectedRoute roles={["admin"]}><ReportsPage /></ProtectedRoute>} />
-                      <Route path="/supply" element={<ProtectedRoute><SupplyRequestsPage /></ProtectedRoute>} />
+                      <Route path="/supply" element={<ProtectedRoute roles={SUPPLY_VIEW_ROLES}><SupplyRequestsPage /></ProtectedRoute>} />
                       <Route path="/low-stock" element={<LowStockPage />} />
                       <Route path="/trips" element={<BusinessTripsPage />} />
                       

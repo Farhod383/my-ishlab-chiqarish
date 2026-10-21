@@ -1,4 +1,7 @@
 
+## Sklad yonida Ta’minot
+- [x] Mavjud Ta’minot havolasi Sklad yoniga joylashtirildi; sahifa va API ko‘rish ruxsatlari moslandi, 4 test o‘tdi va haqiqiy 37 so‘rov bilan menyudan o‘tish tekshirildi.
+
 ## Ta’minot asosiy ro‘yxati
 - [x] Asosiy sahifada 35 haqiqiy buyurtmaning mahsuloti, miqdori, zakaz havolasi, uchta sana va holati tekshirildi; umumiy kategoriya bloklari neytral.
 - [x] Kelmagan mahsulotning kelish sanasi yashirildi; vaqt saqlanmagan muddatda “Vaqt belgilanmagan” ko‘rsatiladi. 9 test o‘tdi; 1280 px va 390 px ekranlar hamda mavjud tafsilotga o‘tish tekshirildi, ma’lumotlar o‘zgarmadi.
