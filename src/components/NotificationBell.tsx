@@ -99,7 +99,7 @@ export function NotificationBell() {
               variant="destructive"
               className="absolute -top-1 -right-1 h-7 min-w-[1.75rem] px-2 text-sm font-bold flex items-center justify-center rounded-full ring-2 ring-background shadow-lg"
             >
-              {unreadTotal > 99 ? "99+" : unreadTotal}
+              {unreadTotal > 99 ? "999+" : unreadTotal}
             </Badge>
           )}
         </Button>
@@ -155,7 +155,7 @@ export function NotificationBell() {
                       <div className="text-xs text-muted-foreground truncate flex-1">{last.title}</div>
                       {unread > 0 && (
                         <Badge variant="destructive" className="h-5 min-w-[1.25rem] px-1.5 text-[11px] rounded-full shrink-0">
-                          {unread > 99 ? "99+" : unread}
+                          {unread > 99 ? "999+" : unread}
                         </Badge>
                       )}
                     </div>
