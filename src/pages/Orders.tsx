@@ -87,7 +87,7 @@ export default function Orders() {
     if (!matchOrderFilters(o, flt, today, lowStockIds)) return false;
     if (q) {
       const parts = ((o as any).order_parts ?? []).map((p: any) => p.part_name).join(" ");
-      const hay = [o.order_number, o.product_name, (o as any).client?.name, parts].filter(Boolean).join(" ");
+      const hay = [o.order_number, (o as any).legacy_order_number, o.product_name, (o as any).client?.name, parts].filter(Boolean).join(" ");
       if (!matchesAcrossScripts(hay, q)) return false;
     }
     return true;
@@ -134,6 +134,16 @@ export default function Orders() {
           <Button variant="outline" onClick={downloadPdf} disabled={loading}><FileDown className="h-4 w-4 mr-2" />PDF yuklab olish</Button>
           <Button variant="outline" onClick={() => setRepOpen(true)} disabled={loading}><FileDown className="h-4 w-4 mr-2" />Zakazlar batafsil hisoboti</Button>
           <CompletedOrdersReport open={repOpen} onOpenChange={setRepOpen} rows={rows} />
+          {hasRole(["marketing", "admin"]) && (
+            <Button variant="outline" disabled={loading} onClick={async () => {
+              const n = rows.filter((r) => r.status === "completed" || r.status === "cancelled").length;
+              if (!window.confirm(`Tugallangan ${n} ta zakaz yangi tizim bo'yicha qayta raqamlansinmi?\n(KDM/KMU/MIK/PARM — umumiy, SEL — alohida; eski raqamlar tarixda saqlanadi)`)) return;
+              const { data, error } = await supabase.rpc("renumber_orders" as any, { _include_completed: true });
+              if (error) { alert("Xatolik: " + error.message); return; }
+              alert(`${data ?? 0} ta zakaz raqami yangilandi`);
+              window.location.reload();
+            }}>Zakaz raqamlarini yangilash</Button>
+          )}
           {hasRole(["marketing", "admin"]) && (
             <Button asChild><Link to="/orders/new"><Plus className="h-4 w-4 mr-2" />{t.orders.new}</Link></Button>
           )}
@@ -262,6 +272,7 @@ export default function Orders() {
                       <TableCell className="font-mono text-sm">
                         <span className="inline-flex items-center gap-1.5">
                           {o.order_number}
+                          {o.legacy_order_number && <span className="text-[10px] text-muted-foreground" title="Eski raqam">({o.legacy_order_number})</span>}
                           <OrderUnreadBadge orderId={o.id} />
                         </span>
                       </TableCell>

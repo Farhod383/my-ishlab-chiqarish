@@ -1745,6 +1745,41 @@ export type Database = {
         }
         Relationships: []
       }
+      order_number_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_number: string
+          old_number: string
+          order_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_number: string
+          old_number: string
+          order_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_number?: string
+          old_number?: string
+          order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_number_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_parts: {
         Row: {
           actual_qty: number
@@ -2080,6 +2115,7 @@ export type Database = {
           deadline: string
           exception_approved_by: string | null
           id: string
+          legacy_order_number: string | null
           order_date: string
           order_number: string
           priority: Database["public"]["Enums"]["order_priority"]
@@ -2099,6 +2135,7 @@ export type Database = {
           deadline: string
           exception_approved_by?: string | null
           id?: string
+          legacy_order_number?: string | null
           order_date?: string
           order_number: string
           priority?: Database["public"]["Enums"]["order_priority"]
@@ -2118,6 +2155,7 @@ export type Database = {
           deadline?: string
           exception_approved_by?: string | null
           id?: string
+          legacy_order_number?: string | null
           order_date?: string
           order_number?: string
           priority?: Database["public"]["Enums"]["order_priority"]
@@ -2849,6 +2887,12 @@ export type Database = {
           _width: number
         }
         Returns: string
+      }
+      order_prefix: { Args: { _name: string }; Returns: string }
+      order_series: { Args: { _prefix: string }; Returns: string }
+      renumber_orders: {
+        Args: { _include_completed: boolean }
+        Returns: number
       }
       update_intake_invoice: {
         Args: { _image_url?: string; _session_id: string; _supplier?: string }
