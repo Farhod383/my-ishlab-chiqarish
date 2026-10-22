@@ -36,6 +36,7 @@ export default function KassaOverview(p: Props) {
   const [selIn, setSelIn] = useState(false);
   const [selOut, setSelOut] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [openNote, setOpenNote] = useState<string | null>(null);
   useEffect(() => { const t = setTimeout(() => setMounted(true), 60); return () => clearTimeout(t); }, []);
 
   const [, mm] = p.month.split("-").map(Number);
@@ -153,7 +154,7 @@ export default function KassaOverview(p: Props) {
                     {g.items.map(({ kind, r, at }) => {
                       const i = rowIdx++;
                       const d = new Date(at);
-                      const who = kind === "in" ? r.comment : (p.localize(r.recipient?.full_name ?? r.recipient_name ?? "") || r.comment);
+                      const who = kind === "in" ? "" : p.localize(r.recipient?.full_name ?? r.recipient_name ?? "");
                       const c = cur(r.currency);
                       return (
                         <div key={r.id} className="kassa-row" style={{ animationDelay: `${Math.min(i, 14) * 28}ms` }}
@@ -164,6 +165,13 @@ export default function KassaOverview(p: Props) {
                             <div className="kassa-muted text-xs truncate">
                               {pad(d.getHours())}:{pad(d.getMinutes())}{who ? ` · ${who}` : ""} · {p.ptLabel(r.payment_type)}
                             </div>
+                            {r.comment ? (
+                              <button type="button" onClick={() => setOpenNote(openNote === r.id ? null : r.id)}
+                                className="kassa-muted text-xs text-left hover:text-foreground"
+                                title={openNote === r.id ? "Yopish" : "To'liq ko'rish"}>
+                                Izoh: <span className={openNote === r.id ? "whitespace-pre-wrap break-words" : "line-clamp-1"}>{r.comment}</span>
+                              </button>
+                            ) : null}
                           </div>
                           {p.canManage && (
                             <div className="kassa-row-actions">
