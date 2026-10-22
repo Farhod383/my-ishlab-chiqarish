@@ -1,4 +1,4 @@
-import { orderGroupOf, type OrderGroup } from "@/lib/orderGroups";
+import { orderGroupOf, orderNumberSearchText, type OrderGroup } from "@/lib/orderGroups";
 import { matchesAcrossScripts } from "@/lib/translit";
 
 export interface OrderFilters {
@@ -66,7 +66,7 @@ const inRange = (d: string | null, from: string, to: string) => {
 };
 
 export function matchOrderFilters(o: any, f: OrderFilters, today: string, lowStockIds: Set<string>) {
-  if (f.number && !String(o.order_number ?? "").toLowerCase().includes(f.number.trim().toLowerCase())) return false;
+  if (f.number && !orderNumberSearchText(o).toLowerCase().includes(f.number.trim().toLowerCase())) return false;
   if (f.product && !matchesAcrossScripts(String(o.product_name ?? ""), f.product)) return false;
   if (f.client && !matchesAcrossScripts(String(o.client?.name ?? ""), f.client)) return false;
   if (f.group !== "ALL" && orderGroupOf(o.product_name) !== f.group) return false;

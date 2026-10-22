@@ -5,6 +5,11 @@ const order = { status: "in_progress", deadline: "2026-10-11", order_date: "2026
 const today = "2026-10-12";
 
 describe("order report card filters", () => {
+  it("keeps renamed order numbers searchable in reports", () => {
+    const row = { ...order, order_number: "MUS0029", legacy_order_number: "17I2684", order_number_history: [{ old_number: "KDM0029", new_number: "MUS0029" }] };
+    for (const number of ["MUS0029", "KDM0029", "17I2684"]) expect(matchesReportSearch(row, number, "", "")).toBe(true);
+    expect(matchesReportSearch(row, "ASM0029", "", "")).toBe(false);
+  });
   it("all clears the status filter", () => {
     expect(["pending", "completed", "in_progress", "delayed", "cancelled"].every(status => matchesReportStatus({ ...order, status }, "all", today))).toBe(true);
   });

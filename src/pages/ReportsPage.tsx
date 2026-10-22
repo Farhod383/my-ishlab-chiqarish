@@ -31,7 +31,7 @@ export default function ReportsPage() {
       for (let offset = 0; ; offset += 1000) {
         const { data, error } = await supabase
           .from("orders")
-          .select("*, client:clients(name), order_stages(stage_order, status, worker_name, started_at, finished_at, qc_required, qc_passed)")
+          .select("*, client:clients(name), order_stages(stage_order, status, worker_name, started_at, finished_at, qc_required, qc_passed), order_number_history(old_number, new_number)")
           .order("created_at", { ascending: false }).order("id")
           .range(offset, offset + 999);
         if (error) return;
