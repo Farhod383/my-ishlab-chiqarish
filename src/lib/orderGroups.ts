@@ -21,13 +21,29 @@ export function orderPdfLabel(o: { order_number: string; product_name: string })
   return `${o.order_number} — ${String(o.product_name ?? "").trim()}`;
 }
 
-export type OrderPrefix = "KDM" | "KMU" | "MIK" | "PARM" | "SEL";
+export type OrderPrefix = "KIS" | "ASM" | "ATZ" | "PRO" | "IZO" | "MUS" | "KDM" | "KMU" | "MIK" | "PARM" | "SEL";
 /** Mirrors DB public.order_prefix(): used for new-number preview only; DB assigns the real number. */
 export function orderPrefixOf(productName: string | null | undefined): OrderPrefix {
   const n = clean(productName ?? "");
   if (/selnometal|сельнометал/.test(n)) return "SEL";
-  if (/mikser|miksir|миксер/.test(n)) return "MIK";
   if (/parm|парм/.test(n)) return "PARM";
+  if (/(^|[^\p{L}\p{N}])(kis|кис)([^\p{L}\p{N}]|$)|kislotovoz|кислотовоз/u.test(n)) return "KIS";
+  if (/(^|[^\p{L}\p{N}])(asm|асм)([^\p{L}\p{N}]|$)|assenizator|asseniz|ассениз/u.test(n)) return "ASM";
+  if (/(^|[^\p{L}\p{N}])(atz|атз)([^\p{L}\p{N}]|$)|avtotopliv|автотоплив/u.test(n)) return "ATZ";
+  if (/(^|[^\p{L}\p{N}])(pro|про)([^\p{L}\p{N}]|$)|promtovar|промтовар/u.test(n)) return "PRO";
+  if (/(^|[^\p{L}\p{N}])(izo|изо)([^\p{L}\p{N}]|$)|izoterm|изотерм/u.test(n)) return "IZO";
+  if (/(^|[^\p{L}\p{N}])(mus|мус)([^\p{L}\p{N}]|$)|musravoz|musorovoz|мусоровоз/u.test(n)) return "MUS";
+  if (/mikser|miksir|миксер/.test(n)) return "MIK";
   if (/kmu|кму|kran[\s-]*manipul|кран[\s-]*манипул/.test(n)) return "KMU";
   return "KDM";
+}
+
+export function orderNumberSearchText(order: {
+  order_number: string;
+  legacy_order_number?: string | null;
+  order_number_history?: { old_number: string; new_number: string }[];
+}): string {
+  return [order.order_number, order.legacy_order_number,
+    ...(order.order_number_history ?? []).flatMap(h => [h.old_number, h.new_number])]
+    .filter(Boolean).join(" ");
 }

@@ -1,3 +1,5 @@
+import { orderNumberSearchText } from "./orderGroups";
+
 export type OrderReportFilter = "all" | "completed" | "in_progress" | "delayed";
 
 type ReportOrder = {
@@ -5,6 +7,8 @@ type ReportOrder = {
   deadline?: string | null;
   order_date: string;
   order_number: string;
+  legacy_order_number?: string | null;
+  order_number_history?: { old_number: string; new_number: string }[];
   product_name: string;
   client?: { name: string } | null;
 };
@@ -22,6 +26,6 @@ export function matchesReportStatus(order: ReportOrder, filter: OrderReportFilte
 }
 
 export function matchesReportSearch(order: ReportOrder, query: string, from: string, to: string): boolean {
-  const text = `${order.order_number} ${order.product_name} ${order.client?.name ?? ""}`.toLowerCase();
+  const text = `${orderNumberSearchText(order)} ${order.product_name} ${order.client?.name ?? ""}`.toLowerCase();
   return text.includes(query.trim().toLowerCase()) && (!from || order.order_date >= from) && (!to || order.order_date <= to);
 }

@@ -1,7 +1,8 @@
 
 ## Zakaz prefikslarini kengaytirish
-- [ ] Ko‘rsatilgan raqamlar va mahsulot turlarini tekshirish; backend prefiks va umumiy ketma-ketlikni yangilash.
-- [ ] Faol zakazlarni tarix bilan qayta raqamlash; qidiruv, hisobot va tugallanganlar tugmasini tekshirish.
+- [x] Backend va frontendga olti yangi prefiks qo‘shildi; SEL alohida va boshqa prefikslar umumiy ketma-ketlikda. Mahsulot turi aniq 5 faol zakaz raqami tarix bilan yangilandi.
+- [x] 29 test o‘tdi; admin2 hisobida joriy/ikki eski raqam orqali qidiruv, tugallanganlar tasdiqlash tugmasi va PDF yuklanishi tekshirildi; 129 zakaz, bosqichlar, detallar va topshiriqlar saqlandi, takroriy raqam yo‘q.
+- [ ] Foydalanuvchi ko‘rsatgan 33/31/30/29/28/27/26/25/21/2/11/6 zakazlarni aynan aniqlash: to‘liq zakaz raqami yoki ro‘yxat rasmi kerak. Joriy raqamlar va navbat pozitsiyalari aytilgan mahsulot turlariga mos emas; taxminiy almashtirish bajarilmadi.
 
 ## Sklad yonida Ta’minot
 - [x] Mavjud Ta’minot havolasi Sklad yoniga joylashtirildi; sahifa va API ko‘rish ruxsatlari moslandi, 4 test o‘tdi va haqiqiy 37 so‘rov bilan menyudan o‘tish tekshirildi.

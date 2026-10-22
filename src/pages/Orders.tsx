@@ -19,7 +19,7 @@ import { recalcOrdersBatch, sortOrdersByStatusAndDate } from "@/lib/orderStatus"
 import { fmtDate } from "@/lib/format";
 import { FileDown } from "lucide-react";
 import { CompletedOrdersReport } from "@/components/CompletedOrdersReport";
-import { ORDER_GROUPS, orderGroupOf, orderPdfLabel, type OrderGroup } from "@/lib/orderGroups";
+import { ORDER_GROUPS, orderGroupOf, orderPdfLabel, orderNumberSearchText, type OrderGroup } from "@/lib/orderGroups";
 import { EMPTY_FILTERS, matchOrderFilters, activeFilterCount, type OrderFilters } from "@/lib/orderFilters";
 import { OrderFiltersPanel } from "@/components/OrderFiltersPanel";
 import { ClipboardList, Activity, AlertTriangle, Clock, AlertOctagon, CheckCircle2 } from "lucide-react";
@@ -66,7 +66,7 @@ export default function Orders() {
     (async () => {
       const { data } = await supabase
         .from("orders")
-        .select("*, client:clients(name, client_type), order_stages(name, stage_order, started_at, finished_at, status, qc_required, qc_passed, worker_name), order_parts(part_name, product_id)")
+        .select("*, client:clients(name, client_type), order_stages(name, stage_order, started_at, finished_at, status, qc_required, qc_passed, worker_name), order_parts(part_name, product_id), order_number_history(old_number, new_number)")
         .order("priority", { ascending: false })
         .order("queue_position");
       const list = (data as any[]) ?? [];
@@ -87,7 +87,7 @@ export default function Orders() {
     if (!matchOrderFilters(o, flt, today, lowStockIds)) return false;
     if (q) {
       const parts = ((o as any).order_parts ?? []).map((p: any) => p.part_name).join(" ");
-      const hay = [o.order_number, (o as any).legacy_order_number, o.product_name, (o as any).client?.name, parts].filter(Boolean).join(" ");
+      const hay = [orderNumberSearchText(o), o.product_name, (o as any).client?.name, parts].filter(Boolean).join(" ");
       if (!matchesAcrossScripts(hay, q)) return false;
     }
     return true;
@@ -137,7 +137,7 @@ export default function Orders() {
           {hasRole(["marketing", "admin"]) && (
             <Button variant="outline" disabled={loading} onClick={async () => {
               const n = rows.filter((r) => r.status === "completed" || r.status === "cancelled").length;
-              if (!window.confirm(`Tugallangan ${n} ta zakaz yangi tizim bo'yicha qayta raqamlansinmi?\n(KDM/KMU/MIK/PARM — umumiy, SEL — alohida; eski raqamlar tarixda saqlanadi)`)) return;
+              if (!window.confirm(`Tugallangan ${n} ta zakaz yangi tizim bo'yicha qayta raqamlansinmi?\n(KIS/ASM/ATZ/PRO/IZO/MUS/KDM/KMU/MIK/PARM — umumiy, SEL — alohida; eski raqamlar tarixda saqlanadi)`)) return;
               const { data, error } = await supabase.rpc("renumber_orders" as any, { _include_completed: true });
               if (error) { alert("Xatolik: " + error.message); return; }
               alert(`${data ?? 0} ta zakaz raqami yangilandi`);
