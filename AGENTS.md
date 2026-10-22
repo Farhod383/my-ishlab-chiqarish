@@ -8,3 +8,4 @@ Display employee names through the shared locale-aware name helper while retaini
 - Use supplyRequestDates for main-list procurement date presentation, keeping creation, date-only deadlines, and actual arrival independent; missing times must not be fabricated.
 - Kassa balances (main and supply) count only operations created after the latest cash_resets row per kassa (DB cash_reset_at); older history stays for period reports, so a reset never deletes data.
 - Procurement navigation and route use shared supplyAccess roles, mirrored by request-table RLS; this keeps the existing page next to Warehouse without granting ordinary workers access or changing write permissions.
+- Order numbers are assigned by DB trigger assign_order_number (prefix via order_prefix: SEL separate series, KDM/KMU/MIK/PARM shared series); renumbering only via renumber_orders RPC, old numbers kept in legacy_order_number + order_number_history so links never break.
