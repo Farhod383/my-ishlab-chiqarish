@@ -20,3 +20,14 @@ export function orderGroupOf(productName: string | null | undefined): OrderGroup
 export function orderPdfLabel(o: { order_number: string; product_name: string }): string {
   return `${o.order_number} — ${String(o.product_name ?? "").trim()}`;
 }
+
+export type OrderPrefix = "KDM" | "KMU" | "MIK" | "PARM" | "SEL";
+/** Mirrors DB public.order_prefix(): used for new-number preview only; DB assigns the real number. */
+export function orderPrefixOf(productName: string | null | undefined): OrderPrefix {
+  const n = clean(productName ?? "");
+  if (/selnometal|сельнометал/.test(n)) return "SEL";
+  if (/mikser|miksir|миксер/.test(n)) return "MIK";
+  if (/parm|парм/.test(n)) return "PARM";
+  if (/kmu|кму|kran[\s-]*manipul|кран[\s-]*манипул/.test(n)) return "KMU";
+  return "KDM";
+}

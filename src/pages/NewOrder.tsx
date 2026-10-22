@@ -1,3 +1,4 @@
+import { orderPrefixOf } from "@/lib/orderGroups";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -87,7 +88,7 @@ export default function NewOrder() {
       setProducts(p ?? []);
       try { setGroups(await fetchGroupsWithItems()); } catch { /* noop */ }
       const num = (count ?? 0) + 1;
-      setOrderNumber(`Z-${new Date().getFullYear()}-${String(num).padStart(3, "0")}`);
+      setOrderNumber("AUTO"); void num;
       let sum = 0;
       for (const o of activeOrders ?? []) {
         for (const s of (o as any).order_stages ?? []) {
@@ -155,12 +156,6 @@ export default function NewOrder() {
     }
     setBusy(true);
     try {
-      const { data: dup } = await supabase.from("orders").select("id").eq("order_number", orderNumber).maybeSingle();
-      if (dup) {
-        toast.error(t.newOrder.duplicateOrderNumber);
-        setBusy(false);
-        return;
-      }
       let imgUrl: string | null = null;
       const uploadedFileUrls: { file_url: string; file_name: string }[] = [];
       for (const f of tzFiles) {
@@ -238,11 +233,11 @@ export default function NewOrder() {
         actor_id: user?.id, actor_name: currentUserName(user),
         action: priority === "exception" ? "Istisno zakaz yaratildi" : "Zakaz yaratildi",
         entity: "order", order_id: order.id,
-        details: `${orderNumber}, ${clientName || "—"}`,
+        details: `${order.order_number}, ${clientName || "—"}`,
       });
       await notify({
         type: "order_created",
-        title: `Yangi zakaz — ${orderNumber}`,
+        title: `Yangi zakaz — ${order.order_number}`,
         body: `${productName}${clientName ? ` · ${clientName}` : ""}`,
         link: `/orders/${order.id}`,
         entity: "order", entity_id: order.id,
@@ -310,7 +305,7 @@ export default function NewOrder() {
         <CardHeader><CardTitle className="text-base">{t.newOrder.main}</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
-            <div><Label>{t.newOrder.orderNumber}</Label><Input value={orderNumber} onChange={(e) => setOrderNumber(e.target.value)} /></div>
+            <div><Label>{t.newOrder.orderNumber}</Label><Input readOnly value={`${orderPrefixOf(productName)}#### — avtomatik beriladi`} /></div>
             <div>
               <Label>{t.newOrder.clientName}</Label>
               <Input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder={t.newOrder.clientPlaceholder} disabled={!!lockedClientId} />
