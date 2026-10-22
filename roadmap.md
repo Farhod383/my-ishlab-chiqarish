@@ -1,4 +1,8 @@
 
+## Zakaz prefikslarini kengaytirish
+- [ ] Ko‘rsatilgan raqamlar va mahsulot turlarini tekshirish; backend prefiks va umumiy ketma-ketlikni yangilash.
+- [ ] Faol zakazlarni tarix bilan qayta raqamlash; qidiruv, hisobot va tugallanganlar tugmasini tekshirish.
+
 ## Sklad yonida Ta’minot
 - [x] Mavjud Ta’minot havolasi Sklad yoniga joylashtirildi; sahifa va API ko‘rish ruxsatlari moslandi, 4 test o‘tdi va haqiqiy 37 so‘rov bilan menyudan o‘tish tekshirildi.
 
