@@ -438,14 +438,14 @@ export default function KassaPage() {
     lines.push([esc("Yakuniy qoldiq"), esc(curLine(report.closing))].join(";"));
     lines.push("");
     lines.push([esc("KIRIMLAR")].join(";"));
-    lines.push(["Sana va vaqt", "Manba", "Summa", "Valyuta"].map(esc).join(";"));
-    for (const i of report.inRows) lines.push([fmtDateTime24(i.income_date), i.source ?? "", fmtCash(Number(i.amount), i.currency), normalizeCurrency(i.currency)].map(esc).join(";"));
+    lines.push(["Sana va vaqt", "Manba", "Summa", "Valyuta", "Izoh"].map(esc).join(";"));
+    for (const i of report.inRows) lines.push([fmtDateTime24(i.income_date), i.source ?? "", fmtCash(Number(i.amount), i.currency), normalizeCurrency(i.currency), i.comment ?? ""].map(esc).join(";"));
     lines.push("");
     lines.push([esc("CHIQIMLAR")].join(";"));
-    lines.push(["Sana va vaqt", "Sabab", "Summa", "Valyuta", "Kurs", "UZS jami"].map(esc).join(";"));
+    lines.push(["Sana va vaqt", "Sabab", "Summa", "Valyuta", "Kurs", "UZS jami", "Izoh"].map(esc).join(";"));
     for (const e of report.exRows) {
       const c = normalizeCurrency(e.currency);
-      lines.push([fmtDateTime24(e.expense_date), e.reason ?? "", fmtCash(Number(e.amount), e.currency), c, c === "UZS" ? "—" : fmt(Number(e.exchange_rate ?? 1)), fmt(Number(e.total_uzs || e.amount))].map(esc).join(";"));
+      lines.push([fmtDateTime24(e.expense_date), e.reason ?? "", fmtCash(Number(e.amount), e.currency), c, c === "UZS" ? "—" : fmt(Number(e.exchange_rate ?? 1)), fmt(Number(e.total_uzs || e.amount)), e.comment ?? ""].map(esc).join(";"));
     }
     lines.push("");
     lines.push([esc("SABAB BO'YICHA GURUHLAR")].join(";"));
@@ -534,6 +534,7 @@ export default function KassaPage() {
 
   const saveExpense = async () => {
     if (!expForm.amount || !expForm.reason.trim()) { toast.error(k.fillFields ?? "Maydonlarni to'ldiring"); return; }
+    if (!expEditId && !expForm.comment.trim()) { toast.error("Izoh kiriting"); return; }
     const isDebtPay = expForm.reason.trim().toLowerCase() === "qarz uchun";
     if (isDebtPay && !expForm.debt_id) { toast.error("Qarzni tanlang"); return; }
     if (!ensureOnline((m) => toast.error(m))) return;
@@ -627,6 +628,7 @@ export default function KassaPage() {
   const saveFx = async () => {
     const amount = Number(fx.amount), rate = Number(fx.rate);
     if (!(amount > 0) || !(rate > 0)) { toast.error("Summa va kursni kiriting"); return; }
+    if (!fx.comment.trim()) { toast.error("Izoh kiriting"); return; }
     const avail = availOf(fx.from_cur, fx.from_pt);
     if (amount > avail) { toast.error(`Mablag' yetarli emas: ${ptLabel(fx.from_pt)} ${fx.from_cur} balansida ${fmtCash(avail, fx.from_cur)} ${fx.from_cur} bor`); return; }
     const to_cur = fx.from_cur === "USD" ? "UZS" : "USD";
@@ -644,6 +646,7 @@ export default function KassaPage() {
 
   const saveIncome = async () => {
     if (!incForm.amount || !incForm.source.trim()) { toast.error(k.fillFields ?? "Maydonlarni to'ldiring"); return; }
+    if (!incEditId && !incForm.comment.trim()) { toast.error("Izoh kiriting"); return; }
     if (incForm.currency !== "UZS" && (!incForm.exchange_rate || incForm.exchange_rate <= 0)) {
       toast.error(k.enterRate ?? "Valyuta kursini kiriting"); return;
     }
@@ -874,7 +877,7 @@ export default function KassaPage() {
                     <Label>{k.reason ?? "Sabab"}</Label>
                     <Select value={expForm.reason || undefined} onValueChange={(v) => {
                       if (v === "__add__") { setNewReasonOpen(true); return; }
-                      setExpForm({ ...expForm, reason: v, comment: v.trim().toLowerCase() === "prochi" ? expForm.comment : "" });
+                      setExpForm({ ...expForm, reason: v });
                     }}>
                       <SelectTrigger><SelectValue placeholder="Sababni tanlang" /></SelectTrigger>
                       <SelectContent>
@@ -886,17 +889,15 @@ export default function KassaPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  {expForm.reason.trim().toLowerCase() === "prochi" && (
-                    <div>
-                      <Label htmlFor="expense-comment">Izoh (ixtiyoriy)</Label>
-                      <Textarea
-                        id="expense-comment"
-                        value={expForm.comment}
-                        onChange={(e) => setExpForm({ ...expForm, comment: e.target.value })}
-                        placeholder="Prochi chiqimi izohi (ixtiyoriy)"
-                      />
-                    </div>
-                  )}
+                  <div>
+                    <Label htmlFor="expense-comment">Izoh</Label>
+                    <Textarea
+                      id="expense-comment"
+                      value={expForm.comment}
+                      onChange={(e) => setExpForm({ ...expForm, comment: e.target.value })}
+                      placeholder="Chiqim izohi"
+                    />
+                  </div>
                   {expForm.reason.trim().toLowerCase() === "qarz uchun" && (
                     <div>
                       <Label>Qarz *</Label>
