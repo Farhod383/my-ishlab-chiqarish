@@ -1,4 +1,8 @@
 
+## SEL raqamlarini aniq tuzatish
+- [ ] 07N26149–07N26159 ni SEL0081–SEL0091 ga tarixni saqlab o‘tkazish.
+- [ ] SEL ro‘yxatini sonli kamayish tartibida ko‘rsatish, eski raqamni ro‘yxatdan yashirish va 11 zakazni tekshirish.
+
 ## Zakaz prefikslarini kengaytirish
 - [x] Backend va frontendga olti yangi prefiks qo‘shildi; SEL alohida va boshqa prefikslar umumiy ketma-ketlikda. Mahsulot turi aniq 5 faol zakaz raqami tarix bilan yangilandi.
 - [x] 29 test o‘tdi; admin2 hisobida joriy/ikki eski raqam orqali qidiruv, tugallanganlar tasdiqlash tugmasi va PDF yuklanishi tekshirildi; 129 zakaz, bosqichlar, detallar va topshiriqlar saqlandi, takroriy raqam yo‘q.
