@@ -1,11 +1,28 @@
 import { describe, it, expect } from "vitest";
-import { orderGroupOf } from "./orderGroups";
+import { orderGroupOf, sortSelOrdersDescending, orderNumberSearchText } from "./orderGroups";
 
 describe("orderGroupOf", () => {
   it("Sel'nometalika", () => expect(orderGroupOf("FAW Tiger V Selnometalicheskiy Furgon ")).toBe("SEL"));
   it("KMU by code", () => expect(orderGroupOf("ISUZU NQR 90 KMU-3.2 TONNA")).toBe("KMU"));
   it("KMU by kran manipulyator", () => expect(orderGroupOf("Кран манипулятор -2 тонн")).toBe("KMU"));
   it("others are KDM", () => expect(orderGroupOf("KDM-8 + PESOK-6 FOTON AUMAN D")).toBe("KDM"));
+});
+
+describe("SEL list ordering", () => {
+  it("places SEL0091 through SEL0081 above SEL0001 in numeric descending order", () => {
+    const numbers = ["SEL0001", "SEL0081", "SEL0084", "SEL0082", "SEL0090", "SEL0083", "SEL0089", "SEL0085", "SEL0091", "SEL0088", "SEL0086", "SEL0087"];
+    const rows = numbers.map(order_number => ({ order_number }));
+    expect(sortSelOrdersDescending(rows).map(o => o.order_number)).toEqual([
+      "SEL0091", "SEL0090", "SEL0089", "SEL0088", "SEL0087", "SEL0086", "SEL0085", "SEL0084", "SEL0083", "SEL0082", "SEL0081", "SEL0001",
+    ]);
+    expect(rows.map(o => o.order_number)).toEqual(numbers);
+  });
+  it("uses numeric values rather than alphabetical order", () => {
+    expect(sortSelOrdersDescending([{ order_number: "SEL9999" }, { order_number: "SEL10000" }]).map(o => o.order_number)).toEqual(["SEL10000", "SEL9999"]);
+  });
+  it("retains the original number in searchable history", () => {
+    expect(orderNumberSearchText({ order_number: "SEL0082", legacy_order_number: "07N26150", order_number_history: [{ old_number: "SEL0032", new_number: "SEL0082" }] })).toContain("07N26150");
+  });
 });
 
 import { orderPrefixOf } from "./orderGroups";

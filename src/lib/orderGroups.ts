@@ -6,6 +6,15 @@ export const ORDER_GROUPS: { key: OrderGroup; label: string }[] = [
   { key: "SEL", label: "Sel'nometalika" },
 ];
 
+/** Sort a SEL list by its numeric suffix without changing the source rows. */
+export function sortSelOrdersDescending<T extends { order_number: string }>(orders: readonly T[]): T[] {
+  const numberOf = (order: T) => {
+    const match = /^SEL(\d+)$/i.exec(order.order_number);
+    return match ? Number(match[1]) : -1;
+  };
+  return [...orders].sort((a, b) => numberOf(b) - numberOf(a));
+}
+
 const clean = (s: string) => String(s ?? "").replace(/[’'ʼ`]/g, "").toLowerCase();
 
 /** Display-only grouping by product name; every order falls into exactly one group. */

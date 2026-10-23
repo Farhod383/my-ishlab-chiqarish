@@ -19,7 +19,7 @@ import { recalcOrdersBatch, sortOrdersByStatusAndDate } from "@/lib/orderStatus"
 import { fmtDate } from "@/lib/format";
 import { FileDown } from "lucide-react";
 import { CompletedOrdersReport } from "@/components/CompletedOrdersReport";
-import { ORDER_GROUPS, orderGroupOf, orderPdfLabel, orderNumberSearchText, type OrderGroup } from "@/lib/orderGroups";
+import { ORDER_GROUPS, orderGroupOf, orderPdfLabel, orderNumberSearchText, sortSelOrdersDescending, type OrderGroup } from "@/lib/orderGroups";
 import { EMPTY_FILTERS, matchOrderFilters, activeFilterCount, type OrderFilters } from "@/lib/orderFilters";
 import { OrderFiltersPanel } from "@/components/OrderFiltersPanel";
 import { ClipboardList, Activity, AlertTriangle, Clock, AlertOctagon, CheckCircle2 } from "lucide-react";
@@ -231,8 +231,8 @@ export default function Orders() {
               <TableBody>
                 {loading && <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                 {!loading && (() => {
-                  const isSel = (o: any) => /selnometal|сельнометал/i.test(String(o.product_name ?? "").replace(/[’'ʼ`]/g, ""));
-                  const selRows = filtered.filter(isSel);
+                  const isSel = (o: any) => orderGroupOf(o.product_name) === "SEL";
+                  const selRows = sortSelOrdersDescending(filtered.filter(isSel));
                   const out: any[] = [];
                   let groupInserted = false;
                   for (const o of filtered) {
@@ -272,7 +272,6 @@ export default function Orders() {
                       <TableCell className="font-mono text-sm">
                         <span className="inline-flex items-center gap-1.5">
                           {o.order_number}
-                          {o.legacy_order_number && <span className="text-[10px] text-muted-foreground" title="Eski raqam">({o.legacy_order_number})</span>}
                           <OrderUnreadBadge orderId={o.id} />
                         </span>
                       </TableCell>
