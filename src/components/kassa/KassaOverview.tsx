@@ -30,6 +30,8 @@ interface Props {
   onEditIncome: (r: Row) => void;
   onDeleteIncome: (r: Row) => void;
   onEditExpense: (r: Row) => void;
+  onDeleteExpense: (r: Row) => void;
+  canDelete: boolean;
 }
 
 export default function KassaOverview(p: Props) {
@@ -176,7 +178,7 @@ export default function KassaOverview(p: Props) {
                           {p.canManage && (
                             <div className="kassa-row-actions">
                               <button type="button" aria-label="Tahrirlash" onClick={() => (kind === "in" ? p.onEditIncome(r) : p.onEditExpense(r))}><Edit2 className="h-3.5 w-3.5" /></button>
-                              {kind === "in" && <button type="button" aria-label="O'chirish" onClick={() => p.onDeleteIncome(r)}><Trash2 className="h-3.5 w-3.5 kassa-red" /></button>}
+                              {p.canDelete && <button type="button" aria-label="O'chirish" onClick={() => (kind === "in" ? p.onDeleteIncome(r) : p.onDeleteExpense(r))}><Trash2 className="h-3.5 w-3.5 kassa-red" /></button>}
                             </div>
                           )}
                           <div className={`font-semibold tabular-nums whitespace-nowrap ${kind === "in" ? "kassa-green" : "kassa-red"}`}>

@@ -194,6 +194,7 @@ export default function KassaPage() {
   const balExpenses = useMemo(() => expenses.filter((r: any) => new Date(r.created_at).getTime() >= mainReset), [expenses, mainReset]);
   const canManage = hasRole(["chief_accountant", "admin"]);
   // Glavniy buxgalter (chief accountant) and admin can manage users / cashiers.
+  const isAdmin = roles.includes("admin");
   const canManageUsers = roles.includes("admin") || roles.includes("chief_accountant");
   const fmt = (n: number) => fmtNum(n);
   const fmtCash = (n: number, currency?: string | null) => fmtKassaAmount(n, currency);
@@ -713,14 +714,17 @@ export default function KassaPage() {
   const deleteIncome = async () => {
     const row = incDelete;
     if (!row) return;
-    const { error } = await (supabase.from as any)("cash_incomes").delete().eq("id", row.id);
+    const isOut = row.__kind === "out";
+    const table = isOut ? "cash_expenses" : "cash_incomes";
+    const { data: del, error } = await (supabase.from as any)(table).delete().eq("id", row.id).select("id");
     if (error) { toast.error(error.message); setIncDelete(null); return; }
+    if (!del?.length) { toast.error("Ruxsat yo'q: faqat Admin o'chira oladi"); setIncDelete(null); return; }
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: actorName,
-      action: "kassa.income.delete", entity: "cash_incomes",
-      details: `${row.amount} ${row.currency ?? "UZS"} · ${row.source ?? ""} · ${fmtDateTime24(row.income_date)}`,
+      action: isOut ? "kassa.expense.delete" : "kassa.income.delete", entity: table,
+      details: `${row.amount} ${row.currency ?? "UZS"} · ${(isOut ? row.reason : row.source) ?? ""} · ${fmtDateTime24(isOut ? row.expense_date : row.income_date)} · Izoh: ${row.comment ?? "—"}`,
     });
-    toast.success("Kirim o'chirildi");
+    toast.success(isOut ? "Chiqim o'chirildi" : "Kirim o'chirildi");
     setIncDelete(null);
     load();
   };
@@ -807,7 +811,7 @@ export default function KassaPage() {
           incomes={fInc} expenses={fExp} allIncomes={balIncomes} allExpenses={balExpenses}
           month={viewMonth} opening={openingBal} canManage={canManage}
           ptLabel={ptLabel} normalizePT={normalizePT} localize={(s) => localize(s) || ""}
-          onEditIncome={openEditInc} onDeleteIncome={setIncDelete} onEditExpense={openEditExp}
+          onEditIncome={openEditInc} canDelete={isAdmin} onDeleteIncome={(r) => setIncDelete({ ...r, __kind: "in" })} onDeleteExpense={(r) => setIncDelete({ ...r, __kind: "out" })} onEditExpense={openEditExp}
         />
       )}
 
@@ -1161,12 +1165,16 @@ export default function KassaPage() {
       <AlertDialog open={!!incDelete} onOpenChange={(o) => { if (!o) setIncDelete(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Kirimni o'chirish</AlertDialogTitle>
-            <AlertDialogDescription>
-              {incDelete && <>
-                {fmtDateTime24(incDelete.income_date)} · {fmtKassaAmount(incDelete.amount, incDelete.currency)} {incDelete.currency ?? "UZS"} · {incDelete.source}
-                <br />Bu kirim o'chiriladi va Kassa balansi, oylik qoldiq va hisobotlar qayta hisoblanadi. Amalni orqaga qaytarib bo'lmaydi.
-              </>}
+            <AlertDialogTitle>{incDelete?.__kind === "out" ? "Chiqimni" : "Kirimni"} o'chirish</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              {incDelete ? <div className="space-y-1 text-sm">
+                <div><b>Turi:</b> {incDelete.__kind === "out" ? "Chiqim" : "Kirim"} · {(incDelete.__kind === "out" ? incDelete.reason : incDelete.source) || "—"}</div>
+                <div><b>Sana:</b> {fmtDateTime24(incDelete.__kind === "out" ? incDelete.expense_date : incDelete.income_date)}</div>
+                <div><b>Summa:</b> {fmtKassaAmount(incDelete.amount, incDelete.currency)}</div>
+                <div><b>Valyuta:</b> {incDelete.currency ?? "UZS"}</div>
+                <div className="break-words"><b>Izoh:</b> {incDelete.comment || "—"}</div>
+                <div className="pt-2">Bu operatsiya o'chiriladi va Kassa balansi, oylik qoldiq va hisobotlar qayta hisoblanadi. Amalni orqaga qaytarib bo'lmaydi.</div>
+              </div> : <div />}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
