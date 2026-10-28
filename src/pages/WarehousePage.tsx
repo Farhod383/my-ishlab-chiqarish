@@ -1122,7 +1122,10 @@ export default function WarehousePage() {
 
               <DialogTrigger asChild><Button variant="secondary"><ArrowUpCircle className="h-4 w-4 mr-2" />{t.supply.receive}</Button></DialogTrigger>
               <DialogContent className="max-w-lg max-h-[90vh] flex flex-col p-0 gap-0">
-                <DialogHeader className="px-6 pt-6 pb-3 border-b shrink-0"><DialogTitle>{t.supply.receiveTitle}</DialogTitle></DialogHeader>
+                <DialogHeader className="px-6 pt-6 pb-3 border-b shrink-0">
+                  <DialogTitle>{impVariant === "351" ? "3-51 ga kirim qilish" : t.supply.receiveTitle}</DialogTitle>
+                  <DialogDescription>Joylashuv: <b>{impVariant === "351" ? "3-51 (Zavod51)" : "Sklad"}</b> — kirim shu joyga yoziladi</DialogDescription>
+                </DialogHeader>
                 <div className="space-y-3 overflow-y-auto px-6 py-4 flex-1">
                   <div>
                     <Label>Qaysi zakaz uchun olib kelindi <span className="text-muted-foreground text-xs">(ixtiyoriy)</span></Label>
