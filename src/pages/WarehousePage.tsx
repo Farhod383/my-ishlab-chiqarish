@@ -126,8 +126,8 @@ export default function WarehousePage() {
   const [impTons, setImpTons] = useState<string>("");
   const [impTonsManual, setImpTonsManual] = useState(false);
   const [locations, setLocations] = useState<{ id: string; name: string }[]>([]);
-  // Kirim joylashuvi: avval joy tanlanadi, keyin kirim varianti.
-  const [inStep, setInStep] = useState<"loc" | "variant">("loc");
+  // Kirim joylashuvi: Sklad sahifasidan kirim doim "Sklad"ga; 3-51 varianti "Zavod51"ga.
+  const [impVariant, setImpVariant] = useState<"sklad" | "351">("sklad");
   const [locFilter, setLocFilter] = useState<string>("all");
   // Mahsulot -> u kirim qilingan joylashuvlar (filter uchun).
   const [prodLocations, setProdLocations] = useState<Record<string, string[]>>({});
