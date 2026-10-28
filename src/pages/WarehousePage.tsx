@@ -137,6 +137,11 @@ export default function WarehousePage() {
   const [sessionItems, setSessionItems] = useState<IntakeItem[]>([]);
   const [naklFile, setNaklFile] = useState<File | null>(null);
   const [naklBusy, setNaklBusy] = useState(false);
+  // Nakladnoydagi mahsulotni tahrirlash (yakunlashdan oldin)
+  const [editItem, setEditItem] = useState<IntakeItem | null>(null);
+  const [eiQty, setEiQty] = useState("");
+  const [eiPrice, setEiPrice] = useState("");
+  const [eiBusy, setEiBusy] = useState(false);
 
   // Mahsulotni o'chirish tasdig'i
   const [delTarget, setDelTarget] = useState<{ ids: string[]; name: string; qty: number; unit: string } | null>(null);
