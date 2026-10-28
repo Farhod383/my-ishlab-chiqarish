@@ -57,3 +57,6 @@
 ## Zakazlar: Tugallangan yashil, Istisno qizil
 - [x] Statistik kartochkalar, status/prioritet belgilari, tablar va zakazlar ro‘yxati bitta rangda: Tugallangan — to‘q yashil, Istisno — to‘q qizil; rangli fon ustida oq yozuv.
 - [x] Ro‘yxat qatorlari o‘sha rangning yumshoq tusi + chapda to‘q chiziq bilan (matn qora va o‘qiladigan); real ma‘lumotlar bilan brauzerda tekshirildi, 46 test o‘tdi.
+
+## Sklad kirimi — "Qarz" to'lov turi
+- [x] Naqd/O'tkazma/Korporativ karta/Qarz tanlovi; Qarz yakunlanganda Kassa → Qarz'ga bir marta yoziladi (manba "Sklad tovar kirimi"), tahrir/bekor sinxron, to'lov bo'lsa o'chirish bloklanadi; Ta'minot kassasidan ayrilmaydi. 4 tur DB'da sinaldi.

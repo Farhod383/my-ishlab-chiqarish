@@ -161,8 +161,17 @@ export default function KassaPage() {
   };
 
   const loadDebts = async () => {
-    const { data } = await (supabase.from as any)("debts").select("*").order("created_at", { ascending: false });
-    setDebts((data ?? []) as any[]);
+    const [{ data }, { data: pays }] = await Promise.all([
+      (supabase.from as any)("debts").select("*").order("created_at", { ascending: false }),
+      (supabase.from as any)("cash_expenses").select("debt_id,amount,currency").not("debt_id", "is", null),
+    ]);
+    // To'lovlar valyuta bo'yicha alohida (UZS/USD aralashtirilmaydi)
+    const paidMap: Record<string, { UZS: number; USD: number }> = {};
+    ((pays ?? []) as any[]).forEach((p) => {
+      const m = (paidMap[p.debt_id] ??= { UZS: 0, USD: 0 });
+      m[(p.currency === "USD" ? "USD" : "UZS")] += Number(p.amount) || 0;
+    });
+    setDebts(((data ?? []) as any[]).map((d) => ({ ...d, paid_uzs: paidMap[d.id]?.UZS ?? 0, paid_usd: paidMap[d.id]?.USD ?? 0 })));
   };
 
   const load = async () => {
@@ -475,12 +484,17 @@ export default function KassaPage() {
   // Qarz bo'yicha to'langan summani real chiqimlardan qayta hisoblash.
   const recalcDebt = async (debtId: string) => {
     if (!debtId) return;
-    const { data: rows } = await (supabase.from as any)("cash_expenses").select("amount").eq("debt_id", debtId);
-    const paid = ((rows ?? []) as any[]).reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
-    const d = debts.find((x) => x.id === debtId);
-    const total = Number(d?.amount) || 0;
+    const { data: rows } = await (supabase.from as any)("cash_expenses").select("amount,currency").eq("debt_id", debtId);
+    const list = (rows ?? []) as any[];
+    const paid = list.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+    const paidBy = (c: string) => list.filter((r) => (r.currency ?? "UZS") === c).reduce((s, r) => s + (Number(r.amount) || 0), 0);
+    const { data: d } = await (supabase.from as any)("debts").select("amount,amount_usd").eq("id", debtId).maybeSingle();
+    const tUzs = Number(d?.amount) || 0;
+    const tUsd = Number(d?.amount_usd) || 0;
+    // UZS va USD alohida: har bir valyuta bo'yicha qoldiq yopilgandagina "to'langan"
+    const isPaid = (tUzs > 0 || tUsd > 0) && paidBy("UZS") >= tUzs && paidBy("USD") >= tUsd;
     await (supabase.from as any)("debts")
-      .update({ paid_amount: paid, status: total > 0 && paid >= total ? "paid" : "open" })
+      .update({ paid_amount: paid, status: isPaid ? "paid" : "open" })
       .eq("id", debtId);
     loadDebts();
   };
@@ -1088,10 +1102,18 @@ export default function KassaPage() {
                     return (
                       <TableRow key={d.id} className="cursor-pointer hover:bg-muted/50" onClick={(e) => { if (!(e.target as HTMLElement).closest("button")) setDebtItems(d); }}>
                         <TableCell className="font-medium">{d.counterparty || "—"}</TableCell>
-                        <TableCell className="text-sm">{d.purpose} <span className="text-xs text-primary underline">tarkibi</span></TableCell>
+                        <TableCell className="text-sm">{d.source && <Badge variant="outline" className="mr-1 text-[10px]">{d.source}</Badge>}{d.purpose} <span className="text-xs text-primary underline">tarkibi</span>{d.invoice_number && <div className="text-xs text-muted-foreground">Nakladnoy: {d.invoice_number}{d.supplier ? ` · olib keldi: ${d.supplier}` : ""}</div>}{d.comment && <div className="text-xs text-muted-foreground truncate max-w-[260px]" title={d.comment}>{d.comment}</div>}</TableCell>
                         <TableCell className="text-right font-mono">{fmtCash(Number(d.amount), d.currency)} {d.currency}{Number(d.amount_usd) > 0 && <div>{fmtCash(Number(d.amount_usd), "USD")} USD</div>}</TableCell>
-                        <TableCell className="text-right font-mono text-status-green">{fmtCash(paid, d.currency)}</TableCell>
-                        <TableCell className="text-right font-mono font-semibold text-status-red">{fmtCash(left, d.currency)}</TableCell>
+                        <TableCell className="text-right font-mono text-status-green">
+                          {Number(d.amount_usd) > 0 || Number(d.paid_usd) > 0
+                            ? <>{fmtCash(Number(d.paid_uzs), "UZS")} UZS<div>{fmtCash(Number(d.paid_usd), "USD")} USD</div></>
+                            : fmtCash(paid, d.currency)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-semibold text-status-red">
+                          {Number(d.amount_usd) > 0 || Number(d.paid_usd) > 0
+                            ? <>{fmtCash(Math.max(0, Number(d.amount) - Number(d.paid_uzs)), "UZS")} UZS<div>{fmtCash(Math.max(0, Number(d.amount_usd) - Number(d.paid_usd)), "USD")} USD</div></>
+                            : fmtCash(left, d.currency)}
+                        </TableCell>
                         <TableCell className="text-sm whitespace-nowrap">{fmtDate(d.due_date)}</TableCell>
                         <TableCell>
                           <Badge variant={d.status === "paid" ? "secondary" : overdue ? "destructive" : "outline"}>
