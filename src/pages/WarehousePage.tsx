@@ -382,7 +382,7 @@ export default function WarehousePage() {
           quantity: qtyN,
           unit_price: priceN,
           currency: newCurrency || "UZS",
-          location: "Asosiy zavod",
+          location: "Sklad",
           source: newSource.trim() || null,
           phone: newPhone || null,
           image_url,
