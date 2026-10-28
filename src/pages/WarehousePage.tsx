@@ -897,57 +897,44 @@ export default function WarehousePage() {
           )}
         </div>
 
-        {/* KIRIM chooser modal */}
-        <Dialog open={chooseIn} onOpenChange={(o) => { setChooseIn(o); if (o) setInStep("loc"); }}>
+        {/* KIRIM chooser modal — to'g'ridan-to'g'ri "Kirim varianti — Sklad" */}
+        <Dialog open={chooseIn} onOpenChange={(o) => { setChooseIn(o); if (o) { setImpLocation("Sklad"); setImpVariant("sklad"); } }}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
-              <DialogTitle className="text-2xl">{inStep === "loc" ? "Qaysi bo'limga kirim?" : `Kirim varianti — ${impLocation}`}</DialogTitle>
+              <DialogTitle className="text-2xl">Kirim varianti — Sklad</DialogTitle>
             </DialogHeader>
-            {inStep === "loc" ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
-                {["Oshxona", "Sklad", "Office", "Zavod"].map((loc) => (
-                  <button
-                    key={loc}
-                    onClick={() => { setImpLocation(loc); setInStep("variant"); }}
-                    className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-5 text-center font-semibold hover:border-primary hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[110px] flex items-center justify-center"
-                  >
-                    {loc}
-                  </button>
-                ))}
-              </div>
-            ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
               <button
                 onClick={() => { setChooseIn(false); setAddOpen(true); }}
-                className="group text-left rounded-2xl border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 p-6 hover:border-emerald-500 hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[200px] flex flex-col gap-3"
+                className="group text-left rounded-2xl border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 p-5 hover:border-emerald-500 hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[180px] flex flex-col gap-3"
               >
-                <div className="h-14 w-14 rounded-xl bg-emerald-500/20 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Plus className="h-8 w-8" />
+                <div className="h-12 w-12 rounded-xl bg-emerald-500/20 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Plus className="h-7 w-7" />
                 </div>
-                <div className="text-xl font-bold">Mahsulot qo'shish</div>
-                <div className="text-sm text-muted-foreground">Yangi mahsulot yaratish va katalogga kiritish</div>
+                <div className="text-lg font-bold">Yangi mahsulot kirim qilish</div>
+                <div className="text-sm text-muted-foreground">Katalogda yo'q yangi mahsulot yaratish va kirimga qo'shish</div>
               </button>
               <button
-                onClick={() => { setChooseIn(false); setImportOpen(true); }}
-                className="group text-left rounded-2xl border-2 border-sky-500/30 bg-gradient-to-br from-sky-500/10 to-sky-500/5 p-6 hover:border-sky-500 hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[200px] flex flex-col gap-3"
+                onClick={() => { setImpLocation("Sklad"); setImpVariant("sklad"); setChooseIn(false); setImportOpen(true); }}
+                className="group text-left rounded-2xl border-2 border-sky-500/30 bg-gradient-to-br from-sky-500/10 to-sky-500/5 p-5 hover:border-sky-500 hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[180px] flex flex-col gap-3"
               >
-                <div className="h-14 w-14 rounded-xl bg-sky-500/20 text-sky-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <ArrowDownToLine className="h-8 w-8" />
+                <div className="h-12 w-12 rounded-xl bg-sky-500/20 text-sky-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <ArrowDownToLine className="h-7 w-7" />
                 </div>
-                <div className="text-xl font-bold">Kirim qilish</div>
-                <div className="text-sm text-muted-foreground">Mavjud mahsulotga yangi partiya qo'shish</div>
+                <div className="text-lg font-bold">Kirim qilish</div>
+                <div className="text-sm text-muted-foreground">Mavjud mahsulotlarga yangi partiya qo'shish — bitta nakladnoyga bir nechta mahsulot</div>
+              </button>
+              <button
+                onClick={() => { setImpLocation("Zavod51"); setImpVariant("351"); setChooseIn(false); setImportOpen(true); }}
+                className="group text-left rounded-2xl border-2 border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-violet-500/5 p-5 hover:border-violet-500 hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[180px] flex flex-col gap-3"
+              >
+                <div className="h-12 w-12 rounded-xl bg-violet-500/20 text-violet-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Factory className="h-7 w-7" />
+                </div>
+                <div className="text-lg font-bold">3-51 ga kirim qilish</div>
+                <div className="text-sm text-muted-foreground">3-51 uchun alohida kirim — hisob va tarix alohida yuritiladi</div>
               </button>
             </div>
-            )}
-            {inStep === "variant" && (
-              <Button
-                className="mt-3 self-start justify-self-start w-fit rounded-xl bg-primary px-5 font-semibold text-primary-foreground shadow-sm hover:bg-primary/85"
-                onClick={() => setInStep("loc")}
-              >
-                <span aria-hidden className="mr-1 text-base leading-none">←</span>
-                Bo'limni o'zgartirish
-              </Button>
-            )}
           </DialogContent>
         </Dialog>
 
