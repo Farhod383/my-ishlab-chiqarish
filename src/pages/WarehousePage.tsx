@@ -886,7 +886,7 @@ export default function WarehousePage() {
             <Link to="/warehouse/report"><ClipboardList className="h-4 w-4 mr-2" />Hisobot (atshot)</Link>
           </Button>
           {canManage && (
-            <Button className="min-h-11 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm" onClick={() => setChooseIn(true)}>
+            <Button className="min-h-11 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm" onClick={() => { setImpLocation("Sklad"); setImpVariant("sklad"); setChooseIn(true); }}>
               <ArrowDownToLine className="h-4 w-4 mr-2" />Kirim qilish
             </Button>
           )}
