@@ -1236,11 +1236,11 @@ export default function WarehousePage() {
                     </Select>
                     <p className="text-[11px] text-muted-foreground mt-1">Butun Nakladnoyga qo'llanadi{impPayment === "debt" ? " · yakunlangach Kassa → Qarz bo'limiga yoziladi, kassadan pul yechilmaydi" : ""}</p>
                   </div>
-                  <div><Label>Zavod / joylashuv</Label>
-                    <Select value={impLocation} onValueChange={setImpLocation}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>{locations.map(l => <SelectItem key={l.id} value={l.name}>{l.name}</SelectItem>)}</SelectContent>
-                    </Select>
+                  <div>
+                    <Label>Zavod / joylashuv</Label>
+                    <div className="mt-1 rounded-md border bg-muted/40 px-3 py-2 text-sm font-medium">
+                      {impVariant === "351" ? "3-51 (Zavod51)" : "Sklad"}
+                    </div>
                   </div>
                   {Number(impQty) > 0 && Number(impPrice) > 0 && (
                     <div className="text-sm bg-primary/5 border border-primary/20 rounded p-2 space-y-1">
