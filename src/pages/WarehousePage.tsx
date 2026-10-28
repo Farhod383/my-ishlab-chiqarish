@@ -1337,8 +1337,11 @@ export default function WarehousePage() {
                     </div>
                   )}
                 </div>
-                <div className="px-6 py-4 border-t bg-background shrink-0">
-                  <Button className="w-full" onClick={doImport}>Kirimni saqlash</Button>
+                <div className="px-6 py-4 border-t bg-background shrink-0 flex flex-col sm:flex-row gap-2">
+                  <Button className="flex-1" onClick={doImport}>Kirimni saqlash</Button>
+                  <Button variant="outline" className="flex-1" onClick={resetImportForm}>
+                    <Plus className="h-4 w-4 mr-2" />Yana mahsulot qo'shish
+                  </Button>
                 </div>
               </DialogContent>
             </Dialog>
