@@ -1391,7 +1391,7 @@ export default function WarehousePage() {
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" asChild><Link to="/invoices">Nakladnoy bo'limi</Link></Button>
-                <Button size="sm" onClick={() => setImportOpen(true)}>Nakladnoyni tugatish</Button>
+                <Button size="sm" onClick={() => { setImpLocation("Sklad"); setImpVariant("sklad"); setImportOpen(true); }}>Nakladnoyni tugatish</Button>
               </div>
             </div>
           </CardHeader>
