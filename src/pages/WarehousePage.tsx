@@ -1326,6 +1326,7 @@ export default function WarehousePage() {
                             <span className="text-muted-foreground text-xs w-4">{idx + 1}</span>
                             <span className="flex-1 truncate">{i.product_name}</span>
                             <span className="font-mono text-xs whitespace-nowrap">{fmt(Number(i.quantity))} {i.unit} × {fmt(Number(i.unit_price))} = {fmt(Number(i.quantity) * Number(i.unit_price))} {i.currency}</span>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditItem(i)}><Pencil className="h-4 w-4" /></Button>
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeSessionItem(i.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                           </div>
                         ))}
