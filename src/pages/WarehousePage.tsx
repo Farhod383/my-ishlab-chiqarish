@@ -599,6 +599,41 @@ export default function WarehousePage() {
     loadSession();
   };
 
+  /** Nakladnoydagi mahsulot miqdori/narxini tahrirlash (yakunlashdan oldin) */
+  const openEditItem = (i: IntakeItem) => {
+    setEditItem(i);
+    setEiQty(String(i.quantity ?? ""));
+    setEiPrice(String(i.unit_price ?? ""));
+  };
+  const saveEditItem = async () => {
+    if (!editItem) return;
+    const qtyN = Number(eiQty);
+    const priceN = Number(eiPrice);
+    if (!qtyN || qtyN <= 0 || priceN < 0) { toast.error(t.warehouse.fillFields); return; }
+    setEiBusy(true);
+    try {
+      const { error } = await supabase.rpc("update_intake_invoice_item" as any, {
+        _item_id: editItem.id, _quantity: qtyN, _unit_price: priceN, _currency: editItem.currency ?? "UZS",
+      });
+      if (error) throw error;
+      await logAudit(supabase, {
+        actor_id: user?.id, actor_name: currentUserName(user),
+        action: "Nakladnoy mahsuloti tahrirlandi", entity: "intake_item",
+        details: `${editItem.product_name}: ${editItem.quantity} → ${qtyN} ${editItem.unit}, narx ${editItem.unit_price} → ${priceN} ${editItem.currency}`,
+      });
+      toast.success("Mahsulot yangilandi");
+      setEditItem(null);
+      await loadSession();
+    } catch (e: any) { toast.error(e.message ?? "Xatolik"); }
+    finally { setEiBusy(false); }
+  };
+
+  /** "Yana mahsulot qo'shish" — formani tozalab, shu nakladnoyga davom etish */
+  const resetImportForm = () => {
+    setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice("");
+    setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId(""); setImpTons(""); setImpTonsManual(false);
+  };
+
   /** Nakladnoy rasmini shu oynaning o'zida yuklash */
   const uploadNaklImage = async () => {
     if (!openSession || !naklFile) return;
