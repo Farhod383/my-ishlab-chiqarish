@@ -344,6 +344,13 @@
       "when": 1793007950532,
       "tag": "0048_kassa_admin_only_delete",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1793169242401,
+      "tag": "0049_intake_debt_payment",
+      "breakpoints": true
     }
   ]
 }

@@ -819,9 +819,11 @@ export type Database = {
           currency: string
           debt_id: string
           id: string
+          intake_item_id: string | null
           item_name: string
           quantity: number
           sort_order: number
+          unit: string | null
           unit_price: number
         }
         Insert: {
@@ -829,9 +831,11 @@ export type Database = {
           currency?: string
           debt_id: string
           id?: string
+          intake_item_id?: string | null
           item_name: string
           quantity?: number
           sort_order?: number
+          unit?: string | null
           unit_price?: number
         }
         Update: {
@@ -839,9 +843,11 @@ export type Database = {
           currency?: string
           debt_id?: string
           id?: string
+          intake_item_id?: string | null
           item_name?: string
           quantity?: number
           sort_order?: number
+          unit?: string | null
           unit_price?: number
         }
         Relationships: [
@@ -865,9 +871,14 @@ export type Database = {
           currency: string
           due_date: string | null
           id: string
+          intake_date: string | null
+          intake_session_id: string | null
+          invoice_number: string | null
           paid_amount: number
           purpose: string
+          source: string | null
           status: string
+          supplier: string | null
           updated_at: string
         }
         Insert: {
@@ -880,9 +891,14 @@ export type Database = {
           currency?: string
           due_date?: string | null
           id?: string
+          intake_date?: string | null
+          intake_session_id?: string | null
+          invoice_number?: string | null
           paid_amount?: number
           purpose: string
+          source?: string | null
           status?: string
+          supplier?: string | null
           updated_at?: string
         }
         Update: {
@@ -895,9 +911,14 @@ export type Database = {
           currency?: string
           due_date?: string | null
           id?: string
+          intake_date?: string | null
+          intake_session_id?: string | null
+          invoice_number?: string | null
           paid_amount?: number
           purpose?: string
+          source?: string | null
           status?: string
+          supplier?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1448,39 +1469,51 @@ export type Database = {
       }
       intake_sessions: {
         Row: {
+          comment: string | null
           created_at: string
           created_by: string | null
           created_by_name: string | null
+          debt_id: string | null
           finalized_at: string | null
           finished_at: string | null
           id: string
           image_url: string | null
+          invoice_number: string | null
+          payment_type: string
           started_at: string
           status: string
           supplier: string | null
           updated_at: string
         }
         Insert: {
+          comment?: string | null
           created_at?: string
           created_by?: string | null
           created_by_name?: string | null
+          debt_id?: string | null
           finalized_at?: string | null
           finished_at?: string | null
           id?: string
           image_url?: string | null
+          invoice_number?: string | null
+          payment_type?: string
           started_at?: string
           status?: string
           supplier?: string | null
           updated_at?: string
         }
         Update: {
+          comment?: string | null
           created_at?: string
           created_by?: string | null
           created_by_name?: string | null
+          debt_id?: string | null
           finalized_at?: string | null
           finished_at?: string | null
           id?: string
           image_url?: string | null
+          invoice_number?: string | null
+          payment_type?: string
           started_at?: string
           status?: string
           supplier?: string | null
@@ -2812,6 +2845,7 @@ export type Database = {
         Args: { _session_id: string }
         Returns: undefined
       }
+      debt_has_payments: { Args: { _debt: string }; Returns: boolean }
       delete_intake_invoice: {
         Args: { _session_id: string }
         Returns: undefined
@@ -2894,6 +2928,7 @@ export type Database = {
         Args: { _include_completed: boolean }
         Returns: number
       }
+      sync_intake_debt: { Args: { _session_id: string }; Returns: undefined }
       update_intake_invoice: {
         Args: { _image_url?: string; _session_id: string; _supplier?: string }
         Returns: undefined
