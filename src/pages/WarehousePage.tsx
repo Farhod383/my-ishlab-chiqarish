@@ -32,7 +32,7 @@ import { PriorityDot, PRIORITY_OPTIONS } from "@/components/PriorityDot";
 import { getStockStatus, stockStatusMeta, StockDot, type StockStatus } from "@/lib/stockStatus";
 import { useEmployees } from "@/hooks/useEmployees";
 import { Link, useNavigate } from "react-router-dom";
-import { getOpenSession, getOrStartSession, closeInvoice, discardDraftSessions, addOrMergeItem, intakeCode, itemsTotal, type IntakeSession, type IntakeItem } from "@/lib/intake";
+import { getOpenSession, getOrStartSession, closeInvoice, discardDraftSessions, addOrMergeItem, intakeCode, itemsTotal, INTAKE_PAYMENT_TYPES, updateSessionPayment, type IntakePaymentType, type IntakeSession, type IntakeItem } from "@/lib/intake";
 import { currentUserName, displayUser } from "@/lib/userNames";
 import { useFocusEntity } from "@/notifications/FocusHighlighter";
 
@@ -121,6 +121,7 @@ export default function WarehousePage() {
   const [impImage, setImpImage] = useState<File | null>(null);
   const [impLocation, setImpLocation] = useState<string>("Asosiy zavod");
   const [impCurrency, setImpCurrency] = useState<string>("UZS");
+  const [impPayment, setImpPayment] = useState<IntakePaymentType>("cash");
   const [impOrderId, setImpOrderId] = useState<string>("");
   const [impTons, setImpTons] = useState<string>("");
   const [impTonsManual, setImpTonsManual] = useState(false);
@@ -528,6 +529,10 @@ export default function WarehousePage() {
     try {
       session = await getOrStartSession(user?.id, currentUserName(user), impSupplier || null);
     } catch (e: any) { toast.error(e.message ?? "Kirim sessiyasini ochib bo'lmadi"); return; }
+    if ((session.payment_type ?? "cash") !== impPayment) {
+      try { await updateSessionPayment(session.id, { payment_type: impPayment }); }
+      catch (e: any) { toast.error(e.message ?? "To'lov turini saqlab bo'lmadi"); return; }
+    }
 
     let merged = false;
     try {
@@ -568,6 +573,7 @@ export default function WarehousePage() {
     if (!user?.id) return;
     const s = await getOpenSession(user.id);
     setOpenSession(s);
+    if (s?.payment_type) setImpPayment(s.payment_type as IntakePaymentType);
     if (s) {
       const { data } = await supabase.from("intake_items").select("*").eq("session_id", s.id).order("created_at");
       setSessionItems((data as any) ?? []);
@@ -624,7 +630,7 @@ export default function WarehousePage() {
       // vaqtinchalik ma'lumotlarni tozalash
       setOpenSession(null); setSessionItems([]); setNaklFile(null);
       setImpProductId(""); setImpProductName(""); setImpQty(""); setImpPrice("");
-      setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId(""); setImpSupplier("");
+      setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId(""); setImpSupplier(""); setImpPayment("cash");
       setImportOpen(false);
       await loadSession();
       await load();
@@ -1229,6 +1235,16 @@ export default function WarehousePage() {
                         <SelectContent>{CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
+                  </div>
+                  <div><Label>To'lov turi</Label>
+                    <Select value={impPayment} onValueChange={(v) => {
+                      setImpPayment(v as IntakePaymentType);
+                      if (openSession) updateSessionPayment(openSession.id, { payment_type: v as IntakePaymentType }).then(loadSession).catch((e) => toast.error(e.message));
+                    }}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{INTAKE_PAYMENT_TYPES.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <p className="text-[11px] text-muted-foreground mt-1">Butun Nakladnoyga qo'llanadi{impPayment === "debt" ? " · yakunlangach Kassa → Qarz bo'limiga yoziladi, kassadan pul yechilmaydi" : ""}</p>
                   </div>
                   <div><Label>Zavod / joylashuv</Label>
                     <Select value={impLocation} onValueChange={setImpLocation}>

@@ -15,10 +15,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { FileText, Image as ImageIcon, CheckCircle2, Clock, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { IntakePaymentFields } from "@/components/warehouse/IntakePaymentFields";
 import { fmtNum, fmtDateTime24 } from "@/lib/format";
 import {
   INTAKE_STATUS_META, intakeCode, intakeDuration, itemsTotal,
-  closeInvoice,
+  closeInvoice, intakePaymentLabel,
   type IntakeItem, type IntakeSession,
 } from "@/lib/intake";
 
@@ -201,6 +202,7 @@ export default function InvoicesPage() {
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
+            {canEdit && active.status !== "finalized" && <IntakePaymentFields session={active} onSaved={load} />}
             <div className="rounded border bg-background overflow-hidden">
               <div className="overflow-x-auto max-h-[40vh] overflow-y-auto">
                 <Table>
@@ -289,13 +291,14 @@ export default function InvoicesPage() {
                     <TableHead>Davomiyligi</TableHead>
                     <TableHead>Kim kiritgan</TableHead>
                     <TableHead>Yetkazib beruvchi</TableHead>
+                    <TableHead>To'lov turi</TableHead>
                     <TableHead>Rasm</TableHead>
                     {canEdit && <TableHead className="text-right">Amallar</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {loading && <TableRow><TableCell colSpan={canEdit ? 11 : 10} className="text-center py-8 text-muted-foreground">Yuklanmoqda...</TableCell></TableRow>}
-                  {!loading && rows.length === 0 && <TableRow><TableCell colSpan={canEdit ? 11 : 10} className="text-center py-8 text-muted-foreground">Nakladnoy yo'q</TableCell></TableRow>}
+                  {loading && <TableRow><TableCell colSpan={canEdit ? 12 : 11} className="text-center py-8 text-muted-foreground">Yuklanmoqda...</TableCell></TableRow>}
+                  {!loading && rows.length === 0 && <TableRow><TableCell colSpan={canEdit ? 12 : 11} className="text-center py-8 text-muted-foreground">Nakladnoy yo'q</TableCell></TableRow>}
                   {rows.map((s) => {
                     const list = itemsBySession[s.id] ?? [];
                     const meta = INTAKE_STATUS_META[s.status];
@@ -310,6 +313,7 @@ export default function InvoicesPage() {
                         <TableCell className="whitespace-nowrap text-sm">{intakeDuration(s)}</TableCell>
                         <TableCell className="text-sm">{displayUser(s.created_by_name) || "—"}</TableCell>
                         <TableCell className="text-sm">{s.supplier ?? "—"}</TableCell>
+                        <TableCell className="text-sm whitespace-nowrap">{s.payment_type === "debt" ? <Badge variant="outline" className="border-status-red/40 text-status-red">Qarz</Badge> : intakePaymentLabel(s.payment_type)}</TableCell>
                         <TableCell>{s.image_url ? <ImageIcon className="h-4 w-4 text-status-green" /> : <Clock className="h-4 w-4 text-muted-foreground" />}</TableCell>
                         {canEdit && (
                           <TableCell className="text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>

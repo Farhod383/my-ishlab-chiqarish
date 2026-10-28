@@ -475,12 +475,17 @@ export default function KassaPage() {
   // Qarz bo'yicha to'langan summani real chiqimlardan qayta hisoblash.
   const recalcDebt = async (debtId: string) => {
     if (!debtId) return;
-    const { data: rows } = await (supabase.from as any)("cash_expenses").select("amount").eq("debt_id", debtId);
-    const paid = ((rows ?? []) as any[]).reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
-    const d = debts.find((x) => x.id === debtId);
-    const total = Number(d?.amount) || 0;
+    const { data: rows } = await (supabase.from as any)("cash_expenses").select("amount,currency").eq("debt_id", debtId);
+    const list = (rows ?? []) as any[];
+    const paid = list.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+    const paidBy = (c: string) => list.filter((r) => (r.currency ?? "UZS") === c).reduce((s, r) => s + (Number(r.amount) || 0), 0);
+    const { data: d } = await (supabase.from as any)("debts").select("amount,amount_usd").eq("id", debtId).maybeSingle();
+    const tUzs = Number(d?.amount) || 0;
+    const tUsd = Number(d?.amount_usd) || 0;
+    // UZS va USD alohida: har bir valyuta bo'yicha qoldiq yopilgandagina "to'langan"
+    const isPaid = (tUzs > 0 || tUsd > 0) && paidBy("UZS") >= tUzs && paidBy("USD") >= tUsd;
     await (supabase.from as any)("debts")
-      .update({ paid_amount: paid, status: total > 0 && paid >= total ? "paid" : "open" })
+      .update({ paid_amount: paid, status: isPaid ? "paid" : "open" })
       .eq("id", debtId);
     loadDebts();
   };
