@@ -126,8 +126,8 @@ export default function WarehousePage() {
   const [impTons, setImpTons] = useState<string>("");
   const [impTonsManual, setImpTonsManual] = useState(false);
   const [locations, setLocations] = useState<{ id: string; name: string }[]>([]);
-  // Kirim joylashuvi: avval joy tanlanadi, keyin kirim varianti.
-  const [inStep, setInStep] = useState<"loc" | "variant">("loc");
+  // Kirim joylashuvi: Sklad sahifasidan kirim doim "Sklad"ga; 3-51 varianti "Zavod51"ga.
+  const [impVariant, setImpVariant] = useState<"sklad" | "351">("sklad");
   const [locFilter, setLocFilter] = useState<string>("all");
   // Mahsulot -> u kirim qilingan joylashuvlar (filter uchun).
   const [prodLocations, setProdLocations] = useState<Record<string, string[]>>({});
@@ -137,6 +137,11 @@ export default function WarehousePage() {
   const [sessionItems, setSessionItems] = useState<IntakeItem[]>([]);
   const [naklFile, setNaklFile] = useState<File | null>(null);
   const [naklBusy, setNaklBusy] = useState(false);
+  // Nakladnoydagi mahsulotni tahrirlash (yakunlashdan oldin)
+  const [editItem, setEditItem] = useState<IntakeItem | null>(null);
+  const [eiQty, setEiQty] = useState("");
+  const [eiPrice, setEiPrice] = useState("");
+  const [eiBusy, setEiBusy] = useState(false);
 
   // Mahsulotni o'chirish tasdig'i
   const [delTarget, setDelTarget] = useState<{ ids: string[]; name: string; qty: number; unit: string } | null>(null);
@@ -382,7 +387,7 @@ export default function WarehousePage() {
           quantity: qtyN,
           unit_price: priceN,
           currency: newCurrency || "UZS",
-          location: "Asosiy zavod",
+          location: "Sklad",
           source: newSource.trim() || null,
           phone: newPhone || null,
           image_url,
@@ -592,6 +597,41 @@ export default function WarehousePage() {
     const { error } = await supabase.from("intake_items").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
     loadSession();
+  };
+
+  /** Nakladnoydagi mahsulot miqdori/narxini tahrirlash (yakunlashdan oldin) */
+  const openEditItem = (i: IntakeItem) => {
+    setEditItem(i);
+    setEiQty(String(i.quantity ?? ""));
+    setEiPrice(String(i.unit_price ?? ""));
+  };
+  const saveEditItem = async () => {
+    if (!editItem) return;
+    const qtyN = Number(eiQty);
+    const priceN = Number(eiPrice);
+    if (!qtyN || qtyN <= 0 || priceN < 0) { toast.error(t.warehouse.fillFields); return; }
+    setEiBusy(true);
+    try {
+      const { error } = await supabase.rpc("update_intake_invoice_item" as any, {
+        _item_id: editItem.id, _quantity: qtyN, _unit_price: priceN, _currency: editItem.currency ?? "UZS",
+      });
+      if (error) throw error;
+      await logAudit(supabase, {
+        actor_id: user?.id, actor_name: currentUserName(user),
+        action: "Nakladnoy mahsuloti tahrirlandi", entity: "intake_item",
+        details: `${editItem.product_name}: ${editItem.quantity} → ${qtyN} ${editItem.unit}, narx ${editItem.unit_price} → ${priceN} ${editItem.currency}`,
+      });
+      toast.success("Mahsulot yangilandi");
+      setEditItem(null);
+      await loadSession();
+    } catch (e: any) { toast.error(e.message ?? "Xatolik"); }
+    finally { setEiBusy(false); }
+  };
+
+  /** "Yana mahsulot qo'shish" — formani tozalab, shu nakladnoyga davom etish */
+  const resetImportForm = () => {
+    setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice("");
+    setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId(""); setImpTons(""); setImpTonsManual(false);
   };
 
   /** Nakladnoy rasmini shu oynaning o'zida yuklash */
@@ -886,7 +926,7 @@ export default function WarehousePage() {
             <Link to="/warehouse/report"><ClipboardList className="h-4 w-4 mr-2" />Hisobot (atshot)</Link>
           </Button>
           {canManage && (
-            <Button className="min-h-11 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm" onClick={() => setChooseIn(true)}>
+            <Button className="min-h-11 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm" onClick={() => { setImpLocation("Sklad"); setImpVariant("sklad"); setChooseIn(true); }}>
               <ArrowDownToLine className="h-4 w-4 mr-2" />Kirim qilish
             </Button>
           )}
@@ -897,57 +937,44 @@ export default function WarehousePage() {
           )}
         </div>
 
-        {/* KIRIM chooser modal */}
-        <Dialog open={chooseIn} onOpenChange={(o) => { setChooseIn(o); if (o) setInStep("loc"); }}>
+        {/* KIRIM chooser modal — to'g'ridan-to'g'ri "Kirim varianti — Sklad" */}
+        <Dialog open={chooseIn} onOpenChange={(o) => { setChooseIn(o); if (o) { setImpLocation("Sklad"); setImpVariant("sklad"); } }}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
-              <DialogTitle className="text-2xl">{inStep === "loc" ? "Qaysi bo'limga kirim?" : `Kirim varianti — ${impLocation}`}</DialogTitle>
+              <DialogTitle className="text-2xl">Kirim varianti — Sklad</DialogTitle>
             </DialogHeader>
-            {inStep === "loc" ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
-                {["Oshxona", "Sklad", "Office", "Zavod"].map((loc) => (
-                  <button
-                    key={loc}
-                    onClick={() => { setImpLocation(loc); setInStep("variant"); }}
-                    className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-5 text-center font-semibold hover:border-primary hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[110px] flex items-center justify-center"
-                  >
-                    {loc}
-                  </button>
-                ))}
-              </div>
-            ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
               <button
                 onClick={() => { setChooseIn(false); setAddOpen(true); }}
-                className="group text-left rounded-2xl border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 p-6 hover:border-emerald-500 hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[200px] flex flex-col gap-3"
+                className="group text-left rounded-2xl border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 p-5 hover:border-emerald-500 hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[180px] flex flex-col gap-3"
               >
-                <div className="h-14 w-14 rounded-xl bg-emerald-500/20 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Plus className="h-8 w-8" />
+                <div className="h-12 w-12 rounded-xl bg-emerald-500/20 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Plus className="h-7 w-7" />
                 </div>
-                <div className="text-xl font-bold">Mahsulot qo'shish</div>
-                <div className="text-sm text-muted-foreground">Yangi mahsulot yaratish va katalogga kiritish</div>
+                <div className="text-lg font-bold">Yangi mahsulot kirim qilish</div>
+                <div className="text-sm text-muted-foreground">Katalogda yo'q yangi mahsulot yaratish va kirimga qo'shish</div>
               </button>
               <button
-                onClick={() => { setChooseIn(false); setImportOpen(true); }}
-                className="group text-left rounded-2xl border-2 border-sky-500/30 bg-gradient-to-br from-sky-500/10 to-sky-500/5 p-6 hover:border-sky-500 hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[200px] flex flex-col gap-3"
+                onClick={() => { setImpLocation("Sklad"); setImpVariant("sklad"); setChooseIn(false); setImportOpen(true); }}
+                className="group text-left rounded-2xl border-2 border-sky-500/30 bg-gradient-to-br from-sky-500/10 to-sky-500/5 p-5 hover:border-sky-500 hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[180px] flex flex-col gap-3"
               >
-                <div className="h-14 w-14 rounded-xl bg-sky-500/20 text-sky-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <ArrowDownToLine className="h-8 w-8" />
+                <div className="h-12 w-12 rounded-xl bg-sky-500/20 text-sky-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <ArrowDownToLine className="h-7 w-7" />
                 </div>
-                <div className="text-xl font-bold">Kirim qilish</div>
-                <div className="text-sm text-muted-foreground">Mavjud mahsulotga yangi partiya qo'shish</div>
+                <div className="text-lg font-bold">Kirim qilish</div>
+                <div className="text-sm text-muted-foreground">Mavjud mahsulotlarga yangi partiya qo'shish — bitta nakladnoyga bir nechta mahsulot</div>
+              </button>
+              <button
+                onClick={() => { setImpLocation("Zavod51"); setImpVariant("351"); setChooseIn(false); setImportOpen(true); }}
+                className="group text-left rounded-2xl border-2 border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-violet-500/5 p-5 hover:border-violet-500 hover:shadow-lg hover:-translate-y-0.5 transition-all min-h-[180px] flex flex-col gap-3"
+              >
+                <div className="h-12 w-12 rounded-xl bg-violet-500/20 text-violet-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Factory className="h-7 w-7" />
+                </div>
+                <div className="text-lg font-bold">3-51 ga kirim qilish</div>
+                <div className="text-sm text-muted-foreground">3-51 uchun alohida kirim — hisob va tarix alohida yuritiladi</div>
               </button>
             </div>
-            )}
-            {inStep === "variant" && (
-              <Button
-                className="mt-3 self-start justify-self-start w-fit rounded-xl bg-primary px-5 font-semibold text-primary-foreground shadow-sm hover:bg-primary/85"
-                onClick={() => setInStep("loc")}
-              >
-                <span aria-hidden className="mr-1 text-base leading-none">←</span>
-                Bo'limni o'zgartirish
-              </Button>
-            )}
           </DialogContent>
         </Dialog>
 
@@ -1135,7 +1162,10 @@ export default function WarehousePage() {
 
               <DialogTrigger asChild><Button variant="secondary"><ArrowUpCircle className="h-4 w-4 mr-2" />{t.supply.receive}</Button></DialogTrigger>
               <DialogContent className="max-w-lg max-h-[90vh] flex flex-col p-0 gap-0">
-                <DialogHeader className="px-6 pt-6 pb-3 border-b shrink-0"><DialogTitle>{t.supply.receiveTitle}</DialogTitle></DialogHeader>
+                <DialogHeader className="px-6 pt-6 pb-3 border-b shrink-0">
+                  <DialogTitle>{impVariant === "351" ? "3-51 ga kirim qilish" : t.supply.receiveTitle}</DialogTitle>
+                  <DialogDescription>Joylashuv: <b>{impVariant === "351" ? "3-51 (Zavod51)" : "Sklad"}</b> — kirim shu joyga yoziladi</DialogDescription>
+                </DialogHeader>
                 <div className="space-y-3 overflow-y-auto px-6 py-4 flex-1">
                   <div>
                     <Label>Qaysi zakaz uchun olib kelindi <span className="text-muted-foreground text-xs">(ixtiyoriy)</span></Label>
@@ -1246,11 +1276,11 @@ export default function WarehousePage() {
                     </Select>
                     <p className="text-[11px] text-muted-foreground mt-1">Butun Nakladnoyga qo'llanadi{impPayment === "debt" ? " · yakunlangach Kassa → Qarz bo'limiga yoziladi, kassadan pul yechilmaydi" : ""}</p>
                   </div>
-                  <div><Label>Zavod / joylashuv</Label>
-                    <Select value={impLocation} onValueChange={setImpLocation}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>{locations.map(l => <SelectItem key={l.id} value={l.name}>{l.name}</SelectItem>)}</SelectContent>
-                    </Select>
+                  <div>
+                    <Label>Zavod / joylashuv</Label>
+                    <div className="mt-1 rounded-md border bg-muted/40 px-3 py-2 text-sm font-medium">
+                      {impVariant === "351" ? "3-51 (Zavod51)" : "Sklad"}
+                    </div>
                   </div>
                   {Number(impQty) > 0 && Number(impPrice) > 0 && (
                     <div className="text-sm bg-primary/5 border border-primary/20 rounded p-2 space-y-1">
@@ -1296,6 +1326,7 @@ export default function WarehousePage() {
                             <span className="text-muted-foreground text-xs w-4">{idx + 1}</span>
                             <span className="flex-1 truncate">{i.product_name}</span>
                             <span className="font-mono text-xs whitespace-nowrap">{fmt(Number(i.quantity))} {i.unit} × {fmt(Number(i.unit_price))} = {fmt(Number(i.quantity) * Number(i.unit_price))} {i.currency}</span>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditItem(i)}><Pencil className="h-4 w-4" /></Button>
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeSessionItem(i.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                           </div>
                         ))}
@@ -1306,8 +1337,11 @@ export default function WarehousePage() {
                     </div>
                   )}
                 </div>
-                <div className="px-6 py-4 border-t bg-background shrink-0">
-                  <Button className="w-full" onClick={doImport}>Kirimni saqlash</Button>
+                <div className="px-6 py-4 border-t bg-background shrink-0 flex flex-col sm:flex-row gap-2">
+                  <Button className="flex-1" onClick={doImport}>Kirimni saqlash</Button>
+                  <Button variant="outline" className="flex-1" onClick={resetImportForm}>
+                    <Plus className="h-4 w-4 mr-2" />Yana mahsulot qo'shish
+                  </Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -1357,7 +1391,7 @@ export default function WarehousePage() {
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" asChild><Link to="/invoices">Nakladnoy bo'limi</Link></Button>
-                <Button size="sm" onClick={() => setImportOpen(true)}>Nakladnoyni tugatish</Button>
+                <Button size="sm" onClick={() => { setImpLocation("Sklad"); setImpVariant("sklad"); setImportOpen(true); }}>Nakladnoyni tugatish</Button>
               </div>
             </div>
           </CardHeader>
@@ -1390,7 +1424,10 @@ export default function WarehousePage() {
                       <TableCell className="text-right font-mono font-semibold">{fmt(Number(i.quantity) * Number(i.unit_price))}</TableCell>
                       <TableCell className="text-sm whitespace-nowrap">{fmtDateTime24(i.created_at)}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => removeSessionItem(i.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => openEditItem(i)}><Pencil className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => removeSessionItem(i.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -1400,6 +1437,27 @@ export default function WarehousePage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Nakladnoy mahsulotini tahrirlash (yakunlashdan oldin) */}
+      <Dialog open={!!editItem} onOpenChange={(o) => { if (!o) setEditItem(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Mahsulotni tahrirlash</DialogTitle>
+            <DialogDescription>{editItem?.product_name} — Nakladnoy yakunlanmaguncha miqdor va narxni o'zgartirish mumkin</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Miqdor ({editItem?.unit}) *</Label><NumberInput min={0.001} step="any" value={eiQty} onChange={e => setEiQty(e.target.value)} /></div>
+            <div><Label>1 {editItem?.unit} narxi ({editItem?.currency}) *</Label><NumberInput min={0} step="any" value={eiPrice} onChange={e => setEiPrice(e.target.value)} /></div>
+            {Number(eiQty) > 0 && (
+              <div className="text-sm bg-muted/40 border rounded p-2 flex justify-between">
+                <span className="text-muted-foreground">Jami:</span>
+                <span className="font-mono font-semibold">{fmt(Number(eiQty) * (Number(eiPrice) || 0))} {editItem?.currency}</span>
+              </div>
+            )}
+            <Button className="w-full" disabled={eiBusy} onClick={saveEditItem}>{eiBusy ? "Saqlanmoqda..." : t.common.save}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Tabs key={focusEntity === "stock_movement" ? "f" : "n"} defaultValue={focusEntity === "stock_movement" ? "history" : "stock"}>
         <TabsList>
