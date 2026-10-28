@@ -1438,6 +1438,27 @@ export default function WarehousePage() {
         </Card>
       )}
 
+      {/* Nakladnoy mahsulotini tahrirlash (yakunlashdan oldin) */}
+      <Dialog open={!!editItem} onOpenChange={(o) => { if (!o) setEditItem(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Mahsulotni tahrirlash</DialogTitle>
+            <DialogDescription>{editItem?.product_name} — Nakladnoy yakunlanmaguncha miqdor va narxni o'zgartirish mumkin</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Miqdor ({editItem?.unit}) *</Label><NumberInput min={0.001} step="any" value={eiQty} onChange={e => setEiQty(e.target.value)} /></div>
+            <div><Label>1 {editItem?.unit} narxi ({editItem?.currency}) *</Label><NumberInput min={0} step="any" value={eiPrice} onChange={e => setEiPrice(e.target.value)} /></div>
+            {Number(eiQty) > 0 && (
+              <div className="text-sm bg-muted/40 border rounded p-2 flex justify-between">
+                <span className="text-muted-foreground">Jami:</span>
+                <span className="font-mono font-semibold">{fmt(Number(eiQty) * (Number(eiPrice) || 0))} {editItem?.currency}</span>
+              </div>
+            )}
+            <Button className="w-full" disabled={eiBusy} onClick={saveEditItem}>{eiBusy ? "Saqlanmoqda..." : t.common.save}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Tabs key={focusEntity === "stock_movement" ? "f" : "n"} defaultValue={focusEntity === "stock_movement" ? "history" : "stock"}>
         <TabsList>
           <TabsTrigger value="stock">{t.warehouse.tabs.stock}</TabsTrigger>
