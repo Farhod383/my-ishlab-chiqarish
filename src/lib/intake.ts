@@ -3,6 +3,26 @@ import { fmtDateTime24, fmtDuration } from "@/lib/format";
 
 export type IntakeStatus = "open" | "pending_photo" | "finalized";
 
+/** Sklad kirimining to'lov turi. "debt" — Kassa → Qarz bo'limiga avtomatik yoziladi, kassadan pul yechilmaydi. */
+export type IntakePaymentType = "cash" | "transfer" | "card" | "debt";
+export const INTAKE_PAYMENT_TYPES: { value: IntakePaymentType; label: string }[] = [
+  { value: "cash", label: "Naqd pul" },
+  { value: "transfer", label: "O'tkazma" },
+  { value: "card", label: "Korporativ karta" },
+  { value: "debt", label: "Qarz" },
+];
+export const intakePaymentLabel = (v?: string | null) =>
+  INTAKE_PAYMENT_TYPES.find((p) => p.value === v)?.label ?? "Naqd pul";
+
+/** Ochiq nakladnoyning to'lov turi / raqami / izohini saqlash (yakunlashdan oldin). */
+export async function updateSessionPayment(
+  sessionId: string,
+  patch: { payment_type?: IntakePaymentType; invoice_number?: string | null; comment?: string | null },
+) {
+  const { error } = await supabase.from("intake_sessions").update(patch as any).eq("id", sessionId);
+  if (error) throw error;
+}
+
 export interface IntakeSession {
   id: string;
   status: IntakeStatus;
@@ -13,6 +33,10 @@ export interface IntakeSession {
   supplier: string | null;
   created_by: string | null;
   created_by_name: string | null;
+  payment_type?: IntakePaymentType | null;
+  invoice_number?: string | null;
+  comment?: string | null;
+  debt_id?: string | null;
 }
 
 export interface IntakeItem {
