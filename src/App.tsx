@@ -75,7 +75,7 @@ const App = () => (
                       <Route path="/orders/new" element={<ProtectedRoute roles={["marketing","admin"]}><NewOrder /></ProtectedRoute>} />
                       <Route path="/clients" element={<ClientsPage />} />
                       <Route path="/clients/:id" element={<ClientDetail />} />
-                      <Route path="/orders/:id/edit" element={<ProtectedRoute roles={["marketing","admin"]}><EditOrder /></ProtectedRoute>} />
+                      <Route path="/orders/:id/edit" element={<ProtectedRoute roles={["marketing","admin","accountant"]}><EditOrder /></ProtectedRoute>} />
 
                       <Route path="/orders/:id" element={<OrderDetail />} />
                       <Route path="/orders/:id/report" element={<OrderReport />} />
@@ -85,16 +85,16 @@ const App = () => (
                       <Route path="/warehouse" element={<WarehousePage />} />
                       <Route path="/warehouse/report" element={<WarehouseReportPage />} />
                       <Route path="/daily-tasks" element={<ProtectedRoute roles={["admin","otk","manager"]}><DailyTasksPage /></ProtectedRoute>} />
-                      <Route path="/invoices" element={<ProtectedRoute roles={["admin","warehouse","supply"]}><InvoicesPage /></ProtectedRoute>} />
+                      <Route path="/invoices" element={<ProtectedRoute roles={["admin","warehouse","supply","accountant"]}><InvoicesPage /></ProtectedRoute>} />
                       <Route path="/metal" element={<ProtectedRoute roles={["admin","engineer","warehouse"]}><MetalPage /></ProtectedRoute>} />
                       <Route path="/chat" element={<ChatPage />} />
                       <Route path="/nachalnik" element={<ProtectedRoute roles={["manager","admin"]}><NachalnikPage /></ProtectedRoute>} />
-                      <Route path="/service" element={<ProtectedRoute roles={["manager","admin"]}><ServicePage /></ProtectedRoute>} />
+                      <Route path="/service" element={<ProtectedRoute roles={["manager","admin","accountant"]}><ServicePage /></ProtectedRoute>} />
                       <Route path="/face-id" element={<ProtectedRoute roles={["hr","admin"]}><FaceIdPage /></ProtectedRoute>} />
                       <Route path="/hr" element={<ProtectedRoute roles={["hr","admin","cashier"]}><HRPage /></ProtectedRoute>} />
-                      <Route path="/kassa" element={<ProtectedRoute roles={["chief_accountant","admin"]}><KassaPage /></ProtectedRoute>} />
+                      <Route path="/kassa" element={<ProtectedRoute roles={["chief_accountant","admin","accountant"]}><KassaPage /></ProtectedRoute>} />
                       <Route path="/kassa-supply" element={<ProtectedRoute roles={["chief_accountant","admin","supply"]}><SupplyFinancePage /></ProtectedRoute>} />
-                      <Route path="/returns" element={<ProtectedRoute roles={["warehouse","admin"]}><ReturnsPage /></ProtectedRoute>} />
+                      <Route path="/returns" element={<ProtectedRoute roles={["warehouse","admin","accountant"]}><ReturnsPage /></ProtectedRoute>} />
                       <Route path="/defects" element={<DefectsPage />} />
                       <Route path="/audit" element={<ProtectedRoute roles={["admin"]}><AuditLog /></ProtectedRoute>} />
                       <Route path="/reports" element={<ProtectedRoute roles={["admin"]}><ReportsPage /></ProtectedRoute>} />

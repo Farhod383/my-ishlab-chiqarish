@@ -360,7 +360,7 @@ export default function DefectsPage() {
                     <TableCell className="text-xs text-muted-foreground">{def.reason ?? "—"}</TableCell>
                     <TableCell className="text-sm">{localize(profileNames.get(def.created_by) ?? "") || "—"}</TableCell>
                     <TableCell>
-                      {hasRole(["admin", "warehouse"]) ? (
+                      {hasRole(["admin", "warehouse", "accountant"]) ? (
                         <Select value={def.resolution} onValueChange={v => updateResolution(def.id, v)}>
                           <SelectTrigger className="h-7 text-xs w-36"><SelectValue /></SelectTrigger>
                           <SelectContent>

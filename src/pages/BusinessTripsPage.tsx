@@ -304,7 +304,7 @@ export default function BusinessTripsPage() {
   const detail = trips.find((t) => t.id === detailId) ?? null;
   const detailExpenses = detailId ? expenses[detailId] ?? [] : [];
   const detailSpent = detailId ? spentOf(detailId) : 0;
-  const canEditDetail = !!detail && (canManage || detail.assignee_user_id === user?.id);
+  const canEditDetail = !!detail && (canManage || hasRole(["accountant"]) || detail.assignee_user_id === user?.id);
 
   const addExpense = async () => {
     if (!detail) return;

@@ -25,7 +25,7 @@ export function AppSidebar() {
   interface Item { title: string; url: string; icon: any; roles?: AppRole[] }
   const isEngineerOnly = roles.length > 0 && roles.every((r) => r === "engineer");
   const allItems: Item[] = [
-    { title: "Kassa", url: "/kassa", icon: Wallet, roles: ["chief_accountant", "admin"] },
+    { title: "Kassa", url: "/kassa", icon: Wallet, roles: ["chief_accountant", "admin", "accountant"] },
     { title: t.nav.dashboard, url: "/", icon: LayoutDashboard },
     { title: t.nav.orders, url: "/orders", icon: ClipboardList },
     { title: (t.nav as any).clients ?? "Klientlar (CRM)", url: "/clients", icon: Contact },
@@ -33,14 +33,14 @@ export function AppSidebar() {
     { title: t.nav.production, url: "/production", icon: Factory },
     { title: "Bosqich guruhlari", url: "/stage-groups", icon: Layers, roles: ["manager", "admin"] },
     { title: t.nav.nachalnik, url: "/nachalnik", icon: UserCog, roles: ["manager", "admin"] },
-    { title: (t.nav as any).service ?? "Remont (Servis)", url: "/service", icon: Wrench, roles: ["manager", "admin"] },
+    { title: (t.nav as any).service ?? "Remont (Servis)", url: "/service", icon: Wrench, roles: ["manager", "admin", "accountant"] },
     { title: t.nav.otk, url: "/otk", icon: ShieldCheck },
     { title: "Kunlik topshiriqlar", url: "/daily-tasks", icon: ListChecks, roles: ["admin", "otk", "manager"] },
     { title: t.nav.warehouse, url: "/warehouse", icon: Warehouse },
     { title: t.nav.supply, url: "/supply", icon: Truck, roles: SUPPLY_VIEW_ROLES },
-    { title: "Nakladnoy", url: "/invoices", icon: FileText, roles: ["admin", "warehouse", "supply"] },
+    { title: "Nakladnoy", url: "/invoices", icon: FileText, roles: ["admin", "warehouse", "supply", "accountant"] },
     { title: t.metal.title, url: "/metal", icon: Ruler, roles: ["admin", "engineer", "warehouse"] },
-    { title: t.nav.returns, url: "/returns", icon: RotateCcw, roles: ["warehouse", "admin"] },
+    { title: t.nav.returns, url: "/returns", icon: RotateCcw, roles: ["warehouse", "admin", "accountant"] },
     { title: t.nav.defects, url: "/defects", icon: AlertOctagon },
     { title: t.nav.hr, url: "/hr", icon: Users, roles: ["hr", "admin", "cashier"] },
     { title: (t.nav as any).faceId ?? "Face_id (Davomat)", url: "/face-id", icon: ScanFace, roles: ["hr", "admin"] },
@@ -54,7 +54,11 @@ export function AppSidebar() {
   // Oddiy xodim faqat o'ziga tegishli bo'limlarni ko'radi.
   const isWorkerOnly = roles.length > 0 && roles.every((r) => r === "worker");
   const workerAllowed = new Set(["/trips", "/chat"]);
-  const items = isEngineerOnly
+  const isAccountantOnly = roles.length > 0 && roles.every((r) => r === "accountant");
+  const accountantAllowed = new Set(["/kassa", "/orders", "/warehouse", "/supply", "/invoices", "/returns", "/defects", "/service", "/trips", "/chat"]);
+  const items = isAccountantOnly
+    ? allItems.filter((i) => accountantAllowed.has(i.url))
+    : isEngineerOnly
     ? allItems.filter((i) => engineerAllowed.has(i.url))
     : isWorkerOnly
       ? allItems.filter((i) => workerAllowed.has(i.url))

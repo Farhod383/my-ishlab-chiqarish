@@ -40,7 +40,7 @@ const normalizeStatus = normalizeSupplyStatus;
 
 export default function SupplyRequestsPage() {
   const { hasRole, user } = useAuth();
-  const canEdit = hasRole(["supply", "admin", "warehouse"]);
+  const canEdit = hasRole(["supply", "admin", "warehouse", "accountant"]);
   const isAdmin = hasRole(["admin"]);
   // Supply staff can't order to themselves (also enforced in the database).
   const canCreate = !!user && (isAdmin || !hasRole(["supply"]));
