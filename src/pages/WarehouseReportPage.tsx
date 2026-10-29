@@ -11,6 +11,8 @@ import DateInput from "@/components/DateInput";
 import { fmtNum, fmtDate, fmtDateTime24 } from "@/lib/format";
 import { displayUser } from "@/lib/userNames";
 import { ArrowLeft, Printer, FileDown, RotateCcw } from "lucide-react";
+import { toast } from "sonner";
+import { buildWarehouseStockPdf, todayFile } from "@/lib/pdfExport";
 
 type Section = "all" | "products" | "instruments" | "movements";
 const ALL = "__all";
