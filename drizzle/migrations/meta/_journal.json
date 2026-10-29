@@ -351,6 +351,13 @@
       "when": 1793169242401,
       "tag": "0049_intake_debt_payment",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1793267257590,
+      "tag": "0050_add_accountant_role",
+      "breakpoints": true
     }
   ]
 }
