@@ -1,0 +1,13 @@
+CREATE POLICY accountant_trips_select ON public.business_trips FOR SELECT TO authenticated USING (public.has_role(auth.uid(),'accountant'));
+CREATE POLICY accountant_trips_update ON public.business_trips FOR UPDATE TO authenticated USING (public.has_role(auth.uid(),'accountant')) WITH CHECK (public.has_role(auth.uid(),'accountant'));
+CREATE POLICY accountant_trip_exp_select ON public.business_trip_expenses FOR SELECT TO authenticated USING (public.has_role(auth.uid(),'accountant'));
+CREATE POLICY accountant_trip_exp_update ON public.business_trip_expenses FOR UPDATE TO authenticated USING (public.has_role(auth.uid(),'accountant')) WITH CHECK (public.has_role(auth.uid(),'accountant'));
+CREATE POLICY accountant_defects_update ON public.defects FOR UPDATE TO authenticated USING (public.has_role(auth.uid(),'accountant')) WITH CHECK (public.has_role(auth.uid(),'accountant'));
+CREATE POLICY accountant_returns_update ON public.returns FOR UPDATE TO authenticated USING (public.has_role(auth.uid(),'accountant')) WITH CHECK (public.has_role(auth.uid(),'accountant'));
+CREATE POLICY accountant_supply_select ON public.order_supply_requests FOR SELECT TO authenticated USING (public.has_role(auth.uid(),'accountant'));
+CREATE POLICY accountant_supply_update ON public.order_supply_requests FOR UPDATE TO authenticated USING (public.has_role(auth.uid(),'accountant')) WITH CHECK (public.has_role(auth.uid(),'accountant'));
+CREATE POLICY accountant_service_update ON public.service_requests FOR UPDATE TO authenticated USING (public.has_role(auth.uid(),'accountant')) WITH CHECK (public.has_role(auth.uid(),'accountant'));
+CREATE POLICY accountant_service_items_update ON public.service_request_items FOR UPDATE TO authenticated USING (public.has_role(auth.uid(),'accountant')) WITH CHECK (public.has_role(auth.uid(),'accountant'));
+CREATE POLICY accountant_orders_update ON public.orders FOR UPDATE TO authenticated USING (public.has_role(auth.uid(),'accountant')) WITH CHECK (public.has_role(auth.uid(),'accountant'));
+CREATE POLICY accountant_stages_update ON public.order_stages FOR UPDATE TO authenticated USING (public.has_role(auth.uid(),'accountant')) WITH CHECK (public.has_role(auth.uid(),'accountant'));
+CREATE POLICY accountant_parts_update ON public.order_parts FOR UPDATE TO authenticated USING (public.has_role(auth.uid(),'accountant')) WITH CHECK (public.has_role(auth.uid(),'accountant'));
