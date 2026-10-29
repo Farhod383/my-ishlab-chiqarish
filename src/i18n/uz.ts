@@ -32,6 +32,7 @@ export const uz = {
     hr: "HR",
     cashier: "Kassir",
     chief_accountant: "Glavniy buxgalter",
+    accountant: "Bugalter",
   },
   nachalnik: {
     title: "Nachalnik paneli",
