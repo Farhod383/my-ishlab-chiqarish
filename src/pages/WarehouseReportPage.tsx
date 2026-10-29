@@ -173,6 +173,22 @@ export default function WarehouseReportPage() {
     setTimeout(() => { window.print(); document.title = old; }, 50);
   };
 
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const downloadStockPdf = async () => {
+    if (!fProducts.length && !fInstruments.length) {
+      toast.error("Tanlangan filtrlar bo'yicha mahsulot topilmadi — bo'sh hisobot yuklab olinmaydi.");
+      return;
+    }
+    setPdfBusy(true);
+    try {
+      const doc = await buildWarehouseStockPdf(fProducts, fInstruments, filterText);
+      doc.save(`Sklad_Qoldiqlari_${todayFile()}.pdf`);
+    } catch (e) {
+      console.error(e);
+      toast.error("PDF yaratishda xatolik yuz berdi. Qayta urinib ko'ring.");
+    } finally { setPdfBusy(false); }
+  };
+
   const sel = (label: string, v: string, set: (s: string) => void, list: { v: string; l: string }[]) => (
     <div className="space-y-1 basis-40 min-w-0 flex-1">
       <Label className="text-xs whitespace-normal break-words">{label} (ixtiyoriy)</Label>
