@@ -210,7 +210,7 @@ export default function WarehouseReportPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => doPrint(false)} disabled={loading}><Printer className="h-4 w-4 mr-2" />Hisobotni chop etish</Button>
-          <Button variant="secondary" onClick={() => doPrint(true)} disabled={loading}><FileDown className="h-4 w-4 mr-2" />PDF saqlash</Button>
+          <Button variant="secondary" onClick={downloadStockPdf} disabled={loading || pdfBusy}><FileDown className="h-4 w-4 mr-2" />{pdfBusy ? "PDF tayyorlanmoqda…" : "PDF yuklab olish"}</Button>
         </div>
       </div>
 
