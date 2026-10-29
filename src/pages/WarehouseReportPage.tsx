@@ -11,6 +11,8 @@ import DateInput from "@/components/DateInput";
 import { fmtNum, fmtDate, fmtDateTime24 } from "@/lib/format";
 import { displayUser } from "@/lib/userNames";
 import { ArrowLeft, Printer, FileDown, RotateCcw } from "lucide-react";
+import { toast } from "sonner";
+import { buildWarehouseStockPdf, todayFile } from "@/lib/pdfExport";
 
 type Section = "all" | "products" | "instruments" | "movements";
 const ALL = "__all";
@@ -171,6 +173,22 @@ export default function WarehouseReportPage() {
     setTimeout(() => { window.print(); document.title = old; }, 50);
   };
 
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const downloadStockPdf = async () => {
+    if (!fProducts.length && !fInstruments.length) {
+      toast.error("Tanlangan filtrlar bo'yicha mahsulot topilmadi — bo'sh hisobot yuklab olinmaydi.");
+      return;
+    }
+    setPdfBusy(true);
+    try {
+      const doc = await buildWarehouseStockPdf(fProducts, fInstruments, filterText);
+      doc.save(`Sklad_Qoldiqlari_${todayFile()}.pdf`);
+    } catch (e) {
+      console.error(e);
+      toast.error("PDF yaratishda xatolik yuz berdi. Qayta urinib ko'ring.");
+    } finally { setPdfBusy(false); }
+  };
+
   const sel = (label: string, v: string, set: (s: string) => void, list: { v: string; l: string }[]) => (
     <div className="space-y-1 basis-40 min-w-0 flex-1">
       <Label className="text-xs whitespace-normal break-words">{label} (ixtiyoriy)</Label>
@@ -192,7 +210,7 @@ export default function WarehouseReportPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => doPrint(false)} disabled={loading}><Printer className="h-4 w-4 mr-2" />Hisobotni chop etish</Button>
-          <Button variant="secondary" onClick={() => doPrint(true)} disabled={loading}><FileDown className="h-4 w-4 mr-2" />PDF saqlash</Button>
+          <Button variant="secondary" onClick={downloadStockPdf} disabled={loading || pdfBusy}><FileDown className="h-4 w-4 mr-2" />{pdfBusy ? "PDF tayyorlanmoqda…" : "PDF yuklab olish"}</Button>
         </div>
       </div>
 
