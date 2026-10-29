@@ -297,7 +297,7 @@ export default function OrderDetail() {
 
         </div>
         <div className="flex gap-2 flex-wrap">
-          {hasRole(["admin", "marketing"]) && (
+          {hasRole(["admin", "marketing", "accountant"]) && (
             <Button variant="outline" asChild>
               <Link to={`/orders/${order.id}/edit`}>
                 <Pencil className="h-4 w-4 mr-2" /> {t.common.edit}

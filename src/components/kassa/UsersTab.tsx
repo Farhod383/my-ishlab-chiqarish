@@ -28,6 +28,7 @@ const ROLE_LABELS: Record<string, string> = {
   admin: "Administrator",
   cashier: "Kassir",
   chief_accountant: "Glavniy buxgalter",
+  accountant: "Bugalter",
   marketing: "Marketing",
   manager: "Nachalnik",
   warehouse: "Skladchi",

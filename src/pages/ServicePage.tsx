@@ -45,6 +45,7 @@ interface Item { id: string; service_request_id: string; product_id: string | nu
 export default function ServicePage() {
   const { user, hasRole } = useAuth();
   const canManage = hasRole(["manager", "admin"]);
+  const canEditStatus = hasRole(["manager", "admin", "accountant"]);
   const [rows, setRows] = useState<ServiceRow[]>([]);
   const [items, setItems] = useState<Record<string, Item[]>>({});
   const [products, setProducts] = useState<{ id: string; name: string; unit: string; last_price: number | null }[]>([]);
@@ -236,7 +237,7 @@ export default function ServicePage() {
                   <TableCell>{fmtDate(r.received_at)}</TableCell>
                   <TableCell>{r.deadline ?? "—"}</TableCell>
                   <TableCell>
-                    {canManage ? (
+                    {canEditStatus ? (
                       <Select value={r.status} onValueChange={(v) => changeStatus(r, v as Status)}>
                         <SelectTrigger className={`h-8 w-36 ${STATUS_COLOR[r.status]}`} onClick={(e) => e.stopPropagation()}><SelectValue /></SelectTrigger>
                         <SelectContent>

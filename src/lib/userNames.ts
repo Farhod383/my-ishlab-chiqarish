@@ -11,6 +11,7 @@ export const ROLE_DISPLAY: Record<string, string> = {
   hr: "HR",
   cashier: "Kassir",
   chief_accountant: "Glavniy buxgalter",
+  accountant: "Bugalter",
   engineer: "Konstruktor",
   marketing: "Marketing",
   worker: "Ishchi",

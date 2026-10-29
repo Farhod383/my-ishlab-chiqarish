@@ -3,7 +3,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { loadUserNames, currentUserName } from "@/lib/userNames";
 
-export type AppRole = "admin" | "marketing" | "manager" | "warehouse" | "supply" | "otk" | "hr" | "cashier" | "chief_accountant" | "engineer" | "worker";
+export type AppRole = "admin" | "marketing" | "manager" | "warehouse" | "supply" | "otk" | "hr" | "cashier" | "chief_accountant" | "engineer" | "worker" | "accountant";
 
 // Role inheritance (mirrors the backend has_role() function):
 // chief_accountant (Glavniy buxgalter) automatically has every cashier permission.
