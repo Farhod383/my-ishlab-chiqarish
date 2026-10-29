@@ -105,7 +105,7 @@ export async function buildWarehouseStockPdf(
   y = tbl(doc, y + 2, ["№", "Nomi", "Qoldiq", "Birlik", "Narxi", "Jami qiymati"],
     products.map((p, i) => [i + 1, p.name, fmtNum(p.stock_qty), p.unit, money(p.price, p.currency), p.price == null ? "—" : money(Number(p.stock_qty) * p.price, p.currency)]),
     { columnStyles: { 0: { cellWidth: 9, halign: "right" }, 2: { halign: "right" }, 3: { cellWidth: 18 }, 4: { halign: "right" }, 5: { halign: "right" } }, alternateRowStyles: { fillColor: [244, 246, 250] },
-      foot: [["Jami", `${products.length} ta mahsulot`, "", "", "", sumByCur(products.filter((p) => p.price != null).map((p) => ({ v: Number(p.stock_qty) * (p.price as number), c: p.currency })))]],
+      foot: [[{ content: `Jami — ${products.length} ta mahsulot`, colSpan: 4 } as any, "", sumByCur(products.filter((p) => p.price != null).map((p) => ({ v: Number(p.stock_qty) * (p.price as number), c: p.currency })))]],
       showFoot: "lastPage", footStyles: { font: "DV", fontStyle: "bold", fillColor: [226, 232, 240], textColor: 20 } }) + 8;
   if (y > 255) { doc.addPage(); y = 16; }
   doc.setTextColor(...HEAD); doc.setFont("DV", "bold"); doc.setFontSize(11);
@@ -113,7 +113,7 @@ export async function buildWarehouseStockPdf(
   tbl(doc, y + 2, ["№", "Nomi", "Umumiy soni", "Skladda", "Xodimlarda", "Narxi", "Jami qiymati"],
     instruments.map((x, i) => [i + 1, x.name, fmtNum(x.total), fmtNum(x.quantity), fmtNum(x.issued), money(x.price, x.currency), x.price == null ? "—" : money(x.total * x.price, x.currency)]),
     { columnStyles: { 0: { cellWidth: 9, halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" }, 6: { halign: "right" } }, alternateRowStyles: { fillColor: [244, 246, 250] },
-      foot: [["Jami", `${instruments.length} ta instrument`, fmtNum(instruments.reduce((s, x) => s + x.total, 0)), fmtNum(instruments.reduce((s, x) => s + Number(x.quantity), 0)), fmtNum(instruments.reduce((s, x) => s + x.issued, 0)), "", sumByCur(instruments.filter((x) => x.price != null).map((x) => ({ v: x.total * (x.price as number), c: x.currency })))]],
+      foot: [[{ content: `Jami — ${instruments.length} ta instrument`, colSpan: 2 } as any, fmtNum(instruments.reduce((s, x) => s + x.total, 0)), fmtNum(instruments.reduce((s, x) => s + Number(x.quantity), 0)), fmtNum(instruments.reduce((s, x) => s + x.issued, 0)), "", sumByCur(instruments.filter((x) => x.price != null).map((x) => ({ v: x.total * (x.price as number), c: x.currency })))]],
       showFoot: "lastPage", footStyles: { font: "DV", fontStyle: "bold", fillColor: [226, 232, 240], textColor: 20 } });
   footer(doc, `Sklad qoldiqlari — ${nowStr()}`);
   return doc;
