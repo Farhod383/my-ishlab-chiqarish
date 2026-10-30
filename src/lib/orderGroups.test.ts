@@ -20,6 +20,19 @@ describe("SEL list ordering", () => {
   it("uses numeric values rather than alphabetical order", () => {
     expect(sortSelOrdersDescending([{ order_number: "SEL9999" }, { order_number: "SEL10000" }]).map(o => o.order_number)).toEqual(["SEL10000", "SEL9999"]);
   });
+  it("groups by status Jarayonda → Kutilmoqda → Tugallangan, each descending by number", () => {
+    const rows = [
+      { order_number: "SEL0005", status: "completed" },
+      { order_number: "SEL0003", status: "in_progress" },
+      { order_number: "SEL0004", status: "pending" },
+      { order_number: "SEL0009", status: "completed" },
+      { order_number: "SEL0007", status: "in_progress" },
+      { order_number: "SEL0008", status: "pending" },
+    ];
+    expect(sortSelOrdersDescending(rows).map(o => o.order_number)).toEqual([
+      "SEL0007", "SEL0003", "SEL0008", "SEL0004", "SEL0009", "SEL0005",
+    ]);
+  });
   it("retains the original number in searchable history", () => {
     expect(orderNumberSearchText({ order_number: "SEL0082", legacy_order_number: "07N26150", order_number_history: [{ old_number: "SEL0032", new_number: "SEL0082" }] })).toContain("07N26150");
   });
