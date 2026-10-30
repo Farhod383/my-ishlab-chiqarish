@@ -6,13 +6,21 @@ export const ORDER_GROUPS: { key: OrderGroup; label: string }[] = [
   { key: "SEL", label: "Sel'nometalika" },
 ];
 
-/** Sort a SEL list by its numeric suffix without changing the source rows. */
-export function sortSelOrdersDescending<T extends { order_number: string }>(orders: readonly T[]): T[] {
+/** Sort a SEL list: Jarayonda first, then Kutilmoqda, then Tugallangan; numeric suffix descending inside each status group. Source rows are not changed. */
+export function sortSelOrdersDescending<T extends { order_number: string; status?: string }>(orders: readonly T[]): T[] {
   const numberOf = (order: T) => {
     const match = /^SEL(\d+)$/i.exec(order.order_number);
     return match ? Number(match[1]) : -1;
   };
-  return [...orders].sort((a, b) => numberOf(b) - numberOf(a));
+  const statusRank = (order: T) => {
+    switch (order.status) {
+      case "in_progress": return 0;
+      case "pending": return 1;
+      case "completed": return 3;
+      default: return 2;
+    }
+  };
+  return [...orders].sort((a, b) => statusRank(a) - statusRank(b) || numberOf(b) - numberOf(a));
 }
 
 const clean = (s: string) => String(s ?? "").replace(/[’'ʼ`]/g, "").toLowerCase();
