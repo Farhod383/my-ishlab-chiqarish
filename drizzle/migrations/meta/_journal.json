@@ -379,6 +379,13 @@
       "when": 1793429640128,
       "tag": "0053_fix_catalog_mapping_result_reference",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1793430810758,
+      "tag": "0054_catalog_product_type_registry",
+      "breakpoints": true
     }
   ]
 }
