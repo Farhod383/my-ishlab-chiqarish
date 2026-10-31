@@ -1413,6 +1413,7 @@ export type Database = {
           name: string
           old_names: string[]
           price: number
+          product_type_id: string | null
           quantity: number
           status: string
           updated_at: string
@@ -1430,6 +1431,7 @@ export type Database = {
           name: string
           old_names?: string[]
           price?: number
+          product_type_id?: string | null
           quantity?: number
           status?: string
           updated_at?: string
@@ -1447,11 +1449,20 @@ export type Database = {
           name?: string
           old_names?: string[]
           price?: number
+          product_type_id?: string | null
           quantity?: number
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "instruments_product_type_id_fkey"
+            columns: ["product_type_id"]
+            isOneToOne: false
+            referencedRelation: "product_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       intake_items: {
         Row: {
@@ -2278,6 +2289,62 @@ export type Database = {
           },
         ]
       }
+      product_type_barcode_aliases: {
+        Row: {
+          barcode: string
+          created_at: string
+          product_type_id: string
+          reason: string
+        }
+        Insert: {
+          barcode: string
+          created_at?: string
+          product_type_id: string
+          reason: string
+        }
+        Update: {
+          barcode?: string
+          created_at?: string
+          product_type_id?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_type_barcode_aliases_product_type_id_fkey"
+            columns: ["product_type_id"]
+            isOneToOne: false
+            referencedRelation: "product_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_types: {
+        Row: {
+          barcode: string
+          created_at: string
+          id: string
+          name: string
+          technical: Json
+          unit: string | null
+        }
+        Insert: {
+          barcode: string
+          created_at?: string
+          id?: string
+          name: string
+          technical?: Json
+          unit?: string | null
+        }
+        Update: {
+          barcode?: string
+          created_at?: string
+          id?: string
+          name?: string
+          technical?: Json
+          unit?: string | null
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           barcode: string | null
@@ -2295,6 +2362,7 @@ export type Database = {
           old_names: string[]
           phone: string | null
           priority: string
+          product_type_id: string | null
           source: string | null
           stock_qty: number
           thickness_mm: number | null
@@ -2318,6 +2386,7 @@ export type Database = {
           old_names?: string[]
           phone?: string | null
           priority?: string
+          product_type_id?: string | null
           source?: string | null
           stock_qty?: number
           thickness_mm?: number | null
@@ -2341,6 +2410,7 @@ export type Database = {
           old_names?: string[]
           phone?: string | null
           priority?: string
+          product_type_id?: string | null
           source?: string | null
           stock_qty?: number
           thickness_mm?: number | null
@@ -2354,6 +2424,13 @@ export type Database = {
             columns: ["instrument_id"]
             isOneToOne: false
             referencedRelation: "instruments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_product_type_id_fkey"
+            columns: ["product_type_id"]
+            isOneToOne: false
+            referencedRelation: "product_types"
             referencedColumns: ["id"]
           },
         ]
@@ -3028,6 +3105,7 @@ export type Database = {
           old_names: string[]
           phone: string | null
           priority: string
+          product_type_id: string | null
           source: string | null
           stock_qty: number
           thickness_mm: number | null

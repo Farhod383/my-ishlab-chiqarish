@@ -1,6 +1,10 @@
 import { searchNorm } from "@/lib/translit";
 
-export interface SearchProduct { id?: string; name: string; old_names?: string[] | null; mxik_code?: string | null; barcode?: string | null; unit?: string | null }
+export interface SearchProduct { id?: string; product_type_id?: string | null; name: string; old_names?: string[] | null; mxik_code?: string | null; barcode?: string | null; unit?: string | null }
+export function productTypeKey(p: SearchProduct): string { return p.product_type_id ?? p.id ?? p.barcode ?? `${p.name}|${p.unit}`; }
+export function uniqueProductTypes<T extends SearchProduct>(products: T[]): T[] {
+  return Array.from(new Map(products.map(p => [productTypeKey(p), p])).values());
+}
 export function catalogNorm(value: string): string {
   return searchNorm(value.normalize("NFKC")).replace(/yo/g, "e").replace(/[^a-z0-9]+/g, " ").trim();
 }
@@ -18,6 +22,5 @@ export function scannedQuantity(unit: string | null | undefined, same: boolean, 
 }
 export function resolveScan<T extends SearchProduct>(products: T[], code: string): T[] {
   const value = code.trim();
-  const exact = products.filter(p => p.barcode === value);
-  return exact.length ? exact : products.filter(p => p.mxik_code === value);
+  return uniqueProductTypes(products.filter(p => p.barcode === value));
 }

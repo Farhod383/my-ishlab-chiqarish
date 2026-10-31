@@ -35,10 +35,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { getOpenSession, getOrStartSession, closeInvoice, discardDraftSessions, addOrMergeItem, intakeCode, itemsTotal, INTAKE_PAYMENT_TYPES, updateSessionPayment, type IntakePaymentType, type IntakeSession, type IntakeItem } from "@/lib/intake";
 import { currentUserName, displayUser } from "@/lib/userNames";
 import { useFocusEntity } from "@/notifications/FocusHighlighter";
-import { matchesProduct, matchesProductText, productSearchText, scannedQuantity } from "@/lib/productSearch";
+import { matchesProduct, matchesProductText, productSearchText, scannedQuantity, productTypeKey } from "@/lib/productSearch";
 import CatalogScanner from "@/components/warehouse/CatalogScanner";
 import BarcodeLabel from "@/components/warehouse/BarcodeLabel";
 import CatalogReview from "@/components/warehouse/CatalogReview";
+import BulkBarcodeLabels from "@/components/warehouse/BulkBarcodeLabels";
+import ProductTypeReview from "@/components/warehouse/ProductTypeReview";
 
 const UNITS = ["dona", "kg", "tonna", "metr", "litr", "rulon", "komplekt"] as const;
 
@@ -230,7 +232,7 @@ export default function WarehousePage() {
   const outProductOptions = useMemo(() => {
     const groups = new Map<string, { id: string; name: string; unit: string; total: number; bestQty: number }>();
     for (const p of products as any[]) {
-      const key = `${(p.name ?? "").trim().toLowerCase()}|${(p.unit ?? "").trim().toLowerCase()}`;
+      const key = productTypeKey(p);
       const qty = Number(p.stock_qty) || 0;
       const g = groups.get(key);
       if (!g) {
@@ -240,7 +242,7 @@ export default function WarehousePage() {
         if (qty > g.bestQty) { g.id = p.id; g.bestQty = qty; g.name = p.name; }
       }
     }
-    return Array.from(groups.values()).map(g => ({ value: g.id, label: g.name, hint: `${g.total} ${g.unit}`, searchText: products.filter(p => p.name === g.name && p.unit === g.unit).map(productSearchText).join(" ") }));
+    return Array.from(groups.values()).map(g => ({ value: g.id, label: g.name, hint: `${g.total} ${g.unit}`, searchText: products.filter(p => p.id === g.id).map(productSearchText).join(" ") }));
   }, [products]);
   // Anyone authenticated can create a purchase request — except supply staff (they can't order to themselves).
   const userRoles = (roles as string[] | undefined) ?? [];
@@ -880,7 +882,7 @@ export default function WarehousePage() {
   const productGroups = useMemo(() => {
     const map = new Map<string, any[]>();
     products.forEach(p => {
-      const k = String(p.name ?? "").trim().toLowerCase();
+      const k = productTypeKey(p);
       const arr = map.get(k) ?? [];
       arr.push(p);
       map.set(k, arr);
@@ -1548,6 +1550,8 @@ export default function WarehousePage() {
             <Input aria-label="Mahsulot ID filtri" value={idFilter} onChange={e => setIdFilter(e.target.value)} placeholder="ID filtri (ixtiyoriy)" className="max-w-xs" />
             <Button variant={mxikReviewOnly ? "secondary" : "outline"} onClick={() => setMxikReviewOnly(v => !v)}>MXIK tekshiruvi kerak ({products.filter(p => !p.mxik_code).length})</Button>
             <CatalogReview canEdit={hasRole(["admin"])} onUpdated={load} />
+            <BulkBarcodeLabels products={products} />
+            <ProductTypeReview />
             <Select value={locFilter} onValueChange={setLocFilter}>
               <SelectTrigger className="w-[200px]"><SelectValue placeholder="Joylashuv" /></SelectTrigger>
               <SelectContent>
