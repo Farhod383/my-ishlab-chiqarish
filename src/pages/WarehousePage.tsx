@@ -40,6 +40,7 @@ import CatalogScanner from "@/components/warehouse/CatalogScanner";
 import BarcodeLabel from "@/components/warehouse/BarcodeLabel";
 import CatalogReview from "@/components/warehouse/CatalogReview";
 import BulkBarcodeLabels from "@/components/warehouse/BulkBarcodeLabels";
+import ProductTypeReview from "@/components/warehouse/ProductTypeReview";
 
 const UNITS = ["dona", "kg", "tonna", "metr", "litr", "rulon", "komplekt"] as const;
 
@@ -1550,6 +1551,7 @@ export default function WarehousePage() {
             <Button variant={mxikReviewOnly ? "secondary" : "outline"} onClick={() => setMxikReviewOnly(v => !v)}>MXIK tekshiruvi kerak ({products.filter(p => !p.mxik_code).length})</Button>
             <CatalogReview canEdit={hasRole(["admin"])} onUpdated={load} />
             <BulkBarcodeLabels products={products} />
+            <ProductTypeReview />
             <Select value={locFilter} onValueChange={setLocFilter}>
               <SelectTrigger className="w-[200px]"><SelectValue placeholder="Joylashuv" /></SelectTrigger>
               <SelectContent>

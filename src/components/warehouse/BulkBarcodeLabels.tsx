@@ -21,7 +21,7 @@ export default function BulkBarcodeLabels({ products }: { products: SearchProduc
   };
   return <>
     <Button variant="outline" onClick={() => setOpen(true)}><ScanBarcode className="mr-2 h-4 w-4" />Yorliqlar PDF</Button>
-    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-w-3xl"><DialogHeader><DialogTitle>Mahsulot turi yorliqlari · 40×30 mm</DialogTitle></DialogHeader>
+    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-w-3xl"><DialogHeader className="z-0"><DialogTitle>Mahsulot turi yorliqlari · 40×30 mm</DialogTitle></DialogHeader>
       <Input aria-label="Yorliq mahsulotlarini qidirish" placeholder="Qidirish..." value={query} onChange={e => setQuery(e.target.value)} />
       <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => setSelected(prev => new Set([...prev, ...visible.map(productTypeKey)]))}>Barchasini tanlash ({visible.length})</Button><Button variant="ghost" onClick={() => setSelected(new Set())}>Tanlovni tozalash</Button></div>
       <div className="max-h-[50dvh] overflow-auto divide-y">{visible.map(p => <label key={productTypeKey(p)} className="flex items-center gap-3 py-3 cursor-pointer"><Checkbox checked={selected.has(productTypeKey(p))} onCheckedChange={checked => setSelected(prev => { const next = new Set(prev); if (checked) next.add(productTypeKey(p)); else next.delete(productTypeKey(p)); return next; })} /><span className="min-w-0 flex-1 break-words">{p.name} · {p.unit}</span><span className="text-xs text-muted-foreground">{p.barcode}</span></label>)}</div>

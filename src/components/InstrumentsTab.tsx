@@ -23,6 +23,7 @@ import { fmtDate as fmtDateG } from "@/lib/format";
 import { currentUserName } from "@/lib/userNames";
 import { matchesProduct, productSearchText } from "@/lib/productSearch";
 import BarcodeLabel from "@/components/warehouse/BarcodeLabel";
+import BulkBarcodeLabels from "@/components/warehouse/BulkBarcodeLabels";
 
 type Instrument = {
   id: string;
@@ -496,6 +497,7 @@ export default function InstrumentsTab() {
                 </DialogTitle>
               </DialogHeader>
 
+              <BulkBarcodeLabels products={detailGroup.batches} />
               <div className="grid sm:grid-cols-2 gap-3">{detailGroup.batches.map(b => <BarcodeLabel key={b.id} product={b} />)}</div>
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="rounded-md border p-2">
