@@ -1,8 +1,9 @@
 
 ## Mahsulot turi bo‘yicha shtrix-kod
-- [ ] Katalog nusxasini saqlash va barcha mavjud kodlarni texnik xususiyatlar bilan tekshirish.
-- [ ] Doimiy tur identifikatori, faqat shtrix-kod skaneri, takrorsiz qidiruv va ommaviy 40×30 mm yorliqlar.
-- [ ] Haqiqiy katalog, kirim/joylashuv va PDF sinovlari; aniq sonli yakuniy hisobot.
+- [x] 790 katalog yozuvi zaxirasi; 544 mahsulotda kod dublikati yo‘q, mavjud instrumentga bog‘langan tarixiy kod alias sifatida saqlandi. Mahsulot qiymatlari va instrument biznes qiymatlari o‘zgarmadi.
+- [x] 789 doimiy tur ID/kod, faqat shtrix-kod skaneri (MXIK oddiy qidiruvda), tur IDli qidiruv/guruhlash, dublikat yaratishni bloklash va ommaviy 40×30 mm yorliqlar.
+- [x] 12 test, haqiqiy Bolt ikki kirimi/Office/Sklad/rename/price rollback sinovi, dublikat rad etilishi, haqiqiy hisob bilan 4 sahifali 40×30 PDF va 427/417/34 hamda 49/129 ro‘yxatlari tekshirildi. Yakuniy sonli hisobot tayyor.
+- [ ] 49 instrument guruhidagi 129 yozuvning turini tasdiqlash: model/o‘lcham/xususiyatlar yetishmaydi, birlashtirilmadi. Avvalgi 34 noaniq manba yozuvi saqlandi; fizik printer va xatolar.xlsx vazifalari pastda.
 
 ## Sklad: nomlar, MXIK va skaner
 - [x] 451 moslik tekshirildi: 427 nom/alias, 417 skript MXIK; 34 yozuv tekshiruvga (4 takroriy eski nom, 11 yangi nom to‘qnashuvi, 9 topilmagan, 10 NULL MXIK). 544 mahsulot snapshots/audit saqlandi; qoldiq, narx va birlik o‘zgarmadi, moslikdan tashqari mahsulot nomlariga tegilmadi.
