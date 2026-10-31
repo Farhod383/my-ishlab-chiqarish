@@ -22,6 +22,7 @@ import { fetchGroupsWithItems, guessGroupId, type StageGroup, type StageGroupIte
 import { ChevronDown, ChevronRight, Layers } from "lucide-react";
 import { ClipboardList as TplIcon } from "lucide-react";
 import { currentUserName } from "@/lib/userNames";
+import ProductPicker from "@/components/ProductPicker";
 
 interface StageDraft { name: string; norm_days: number; qc_required: boolean; group_id: string | null }
 
@@ -81,7 +82,7 @@ export default function NewOrder() {
   useEffect(() => {
     (async () => {
       const [{ data: p }, { count }, { data: activeOrders }] = await Promise.all([
-        supabase.from("products").select("id, name, unit").is("instrument_id", null),
+        supabase.from("products").select("id, name, unit, old_names, mxik_code, barcode").is("instrument_id", null),
         supabase.from("orders").select("*", { count: "exact", head: true }),
         supabase.from("orders").select("id, order_stages(norm_days, status)").neq("status", "completed"),
       ]);
@@ -468,10 +469,7 @@ export default function NewOrder() {
         <CardContent className="space-y-2">
           {parts.map((p, i) => (
             <div key={i} className="order-form-row grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
-              <Select value={p.product_id} onValueChange={(v) => updatePart(i, { product_id: v })}>
-                <SelectTrigger className="col-span-7"><SelectValue placeholder={t.newOrder.selectProduct} /></SelectTrigger>
-                <SelectContent>{products.map((pr) => <SelectItem key={pr.id} value={pr.id}>{pr.name} ({pr.unit})</SelectItem>)}</SelectContent>
-              </Select>
+              <ProductPicker className="col-span-7" products={products} value={p.product_id} onChange={v => updatePart(i,{ product_id:v })} placeholder={t.newOrder.selectProduct} />
               <Input className="col-span-4" type="number" min={0} step={0.1} value={p.norm_qty} onChange={(e) => updatePart(i, { norm_qty: Number(e.target.value) })} placeholder={t.newOrder.normaQty} />
               <Button size="icon" variant="ghost" onClick={() => removePart(i)} className="col-span-1"><Trash2 className="h-4 w-4 text-status-red" /></Button>
             </div>
