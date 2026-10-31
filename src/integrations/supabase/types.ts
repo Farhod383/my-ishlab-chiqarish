@@ -407,6 +407,65 @@ export type Database = {
         }
         Relationships: []
       }
+      catalog_import_runs: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          id: string
+          results: Json
+          source_key: string
+          summary: Json
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          results?: Json
+          source_key: string
+          summary?: Json
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          results?: Json
+          source_key?: string
+          summary?: Json
+        }
+        Relationships: []
+      }
+      catalog_product_backups: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          run_id: string
+          snapshot: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          run_id: string
+          snapshot: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          run_id?: string
+          snapshot?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalog_product_backups_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_import_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_conversations: {
         Row: {
           created_at: string
@@ -1342,6 +1401,7 @@ export type Database = {
       }
       instruments: {
         Row: {
+          barcode: string | null
           category: string
           comment: string | null
           created_at: string
@@ -1349,13 +1409,16 @@ export type Database = {
           currency: string
           id: string
           inventory_number: string | null
+          mxik_code: string | null
           name: string
+          old_names: string[]
           price: number
           quantity: number
           status: string
           updated_at: string
         }
         Insert: {
+          barcode?: string | null
           category?: string
           comment?: string | null
           created_at?: string
@@ -1363,13 +1426,16 @@ export type Database = {
           currency?: string
           id?: string
           inventory_number?: string | null
+          mxik_code?: string | null
           name: string
+          old_names?: string[]
           price?: number
           quantity?: number
           status?: string
           updated_at?: string
         }
         Update: {
+          barcode?: string | null
           category?: string
           comment?: string | null
           created_at?: string
@@ -1377,7 +1443,9 @@ export type Database = {
           currency?: string
           id?: string
           inventory_number?: string | null
+          mxik_code?: string | null
           name?: string
+          old_names?: string[]
           price?: number
           quantity?: number
           status?: string
@@ -2212,6 +2280,7 @@ export type Database = {
       }
       products: {
         Row: {
+          barcode: string | null
           created_at: string
           currency: string
           id: string
@@ -2221,7 +2290,9 @@ export type Database = {
           length_mm: number | null
           metal_type: string | null
           min_limit: number
+          mxik_code: string | null
           name: string
+          old_names: string[]
           phone: string | null
           priority: string
           source: string | null
@@ -2232,6 +2303,7 @@ export type Database = {
           width_mm: number | null
         }
         Insert: {
+          barcode?: string | null
           created_at?: string
           currency?: string
           id?: string
@@ -2241,7 +2313,9 @@ export type Database = {
           length_mm?: number | null
           metal_type?: string | null
           min_limit?: number
+          mxik_code?: string | null
           name: string
+          old_names?: string[]
           phone?: string | null
           priority?: string
           source?: string | null
@@ -2252,6 +2326,7 @@ export type Database = {
           width_mm?: number | null
         }
         Update: {
+          barcode?: string | null
           created_at?: string
           currency?: string
           id?: string
@@ -2261,7 +2336,9 @@ export type Database = {
           length_mm?: number | null
           metal_type?: string | null
           min_limit?: number
+          mxik_code?: string | null
           name?: string
+          old_names?: string[]
           phone?: string | null
           priority?: string
           source?: string | null
@@ -2819,6 +2896,10 @@ export type Database = {
       }
     }
     Functions: {
+      apply_catalog_mapping: {
+        Args: { _rows: Json; _source_key: string }
+        Returns: Json
+      }
       can_edit_intake: { Args: { _user_id: string }; Returns: boolean }
       can_manage_daily_tasks: { Args: { _u: string }; Returns: boolean }
       can_manage_trips: { Args: { _user_id: string }; Returns: boolean }
@@ -2837,6 +2918,7 @@ export type Database = {
         Returns: undefined
       }
       cash_reset_at: { Args: { _kassa: string }; Returns: string }
+      catalog_name_key: { Args: { _name: string }; Returns: string }
       clear_intake_invoice_image: {
         Args: { _session_id: string }
         Returns: undefined
@@ -2927,6 +3009,38 @@ export type Database = {
       renumber_orders: {
         Args: { _include_completed: boolean }
         Returns: number
+      }
+      resolve_catalog_scan: {
+        Args: { _code: string }
+        Returns: {
+          barcode: string | null
+          created_at: string
+          currency: string
+          id: string
+          image_url: string | null
+          instrument_id: string | null
+          last_price: number
+          length_mm: number | null
+          metal_type: string | null
+          min_limit: number
+          mxik_code: string | null
+          name: string
+          old_names: string[]
+          phone: string | null
+          priority: string
+          source: string | null
+          stock_qty: number
+          thickness_mm: number | null
+          unit: string
+          weight_kg: number | null
+          width_mm: number | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "products"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       sync_intake_debt: { Args: { _session_id: string }; Returns: undefined }
       update_intake_invoice: {
