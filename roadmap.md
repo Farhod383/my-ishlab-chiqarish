@@ -1,4 +1,9 @@
 
+## Mahsulot turi bo‘yicha shtrix-kod
+- [ ] Katalog nusxasini saqlash va barcha mavjud kodlarni texnik xususiyatlar bilan tekshirish.
+- [ ] Doimiy tur identifikatori, faqat shtrix-kod skaneri, takrorsiz qidiruv va ommaviy 40×30 mm yorliqlar.
+- [ ] Haqiqiy katalog, kirim/joylashuv va PDF sinovlari; aniq sonli yakuniy hisobot.
+
 ## Sklad: nomlar, MXIK va skaner
 - [x] 451 moslik tekshirildi: 427 nom/alias, 417 skript MXIK; 34 yozuv tekshiruvga (4 takroriy eski nom, 11 yangi nom to‘qnashuvi, 9 topilmagan, 10 NULL MXIK). 544 mahsulot snapshots/audit saqlandi; qoldiq, narx va birlik o‘zgarmadi, moslikdan tashqari mahsulot nomlariga tegilmadi.
 - [x] Eski/yangi nom qidiruvi, alohida ID filtri, 544 mahsulot va 246 instrument uchun unikal Code 128 shtrix-kod; tegishli pickerlar, nakladnoy/tarix va hisobot tanlovi yangilandi.
