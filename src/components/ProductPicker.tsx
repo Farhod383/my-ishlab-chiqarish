@@ -4,6 +4,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Button } from "@/components/ui/button";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { matchesProductText, productSearchText } from "@/lib/productSearch";
 
 
 export interface PickerProduct {
@@ -11,6 +12,9 @@ export interface PickerProduct {
   name: string;
   unit?: string | null;
   stock_qty?: number | null;
+  old_names?: string[] | null;
+  mxik_code?: string | null;
+  barcode?: string | null;
 }
 
 interface Props {
@@ -59,7 +63,7 @@ export default function ProductPicker({ products, value, onChange, placeholder =
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-        <Command disablePointerSelection>
+        <Command disablePointerSelection filter={(value, query) => matchesProductText(value, query) ? 1 : 0}>
           <CommandInput placeholder="Qidirish..." />
           <CommandList className="max-h-[60vh] select-none">
             <CommandEmpty>{emptyText}</CommandEmpty>
@@ -67,7 +71,7 @@ export default function ProductPicker({ products, value, onChange, placeholder =
               {products.map(p => (
                 <CommandItem
                   key={p.id}
-                  value={`${p.name} ${p.unit ?? ""}`}
+                  value={productSearchText(p)}
                   onSelect={() => { onChange(p.id); setOpen(false); }}
                   className="min-h-11 cursor-pointer"
                 >

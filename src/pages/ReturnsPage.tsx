@@ -39,7 +39,7 @@ export default function ReturnsPage() {
   const load = async () => {
     const [{ data: ret }, { data: prod }, { data: ord }] = await Promise.all([
       supabase.from("returns").select("*, product:products(name, unit), returned_by:employees(full_name), order:orders(order_number)").order("created_at", { ascending: false }),
-      supabase.from("products").select("id, name, unit, stock_qty").is("instrument_id", null).order("name"),
+      supabase.from("products").select("id, name, unit, stock_qty, old_names, mxik_code, barcode").is("instrument_id", null).order("name"),
       supabase.from("orders").select("id, order_number, product_name").order("created_at", { ascending: false }).limit(200),
     ]);
     setReturns(ret ?? []);

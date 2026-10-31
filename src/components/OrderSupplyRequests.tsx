@@ -68,7 +68,7 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
   const load = async () => {
     const [{ data: reqs }, { data: prods }] = await Promise.all([
       supabase.from("order_supply_requests").select("*").eq("order_id", orderId).order("created_at"),
-      supabase.from("products").select("id,name,unit").is("instrument_id", null).order("name"),
+      supabase.from("products").select("id,name,unit,old_names,mxik_code,barcode").is("instrument_id", null).order("name"),
     ]);
     const sorted = (reqs ?? []).slice().sort((a: any, b: any) => {
       const sa = a.status === "fulfilled" ? 1 : 0;

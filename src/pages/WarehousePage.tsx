@@ -35,6 +35,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { getOpenSession, getOrStartSession, closeInvoice, discardDraftSessions, addOrMergeItem, intakeCode, itemsTotal, INTAKE_PAYMENT_TYPES, updateSessionPayment, type IntakePaymentType, type IntakeSession, type IntakeItem } from "@/lib/intake";
 import { currentUserName, displayUser } from "@/lib/userNames";
 import { useFocusEntity } from "@/notifications/FocusHighlighter";
+import { matchesProduct, matchesProductText, productSearchText, scannedQuantity } from "@/lib/productSearch";
+import CatalogScanner from "@/components/warehouse/CatalogScanner";
+import BarcodeLabel from "@/components/warehouse/BarcodeLabel";
+import CatalogReview from "@/components/warehouse/CatalogReview";
 
 const UNITS = ["dona", "kg", "tonna", "metr", "litr", "rulon", "komplekt"] as const;
 
@@ -69,6 +73,8 @@ export default function WarehousePage() {
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [groupModal, setGroupModal] = useState<{ name: string; batches: any[] } | null>(null);
   const [search, setSearch] = useState("");
+  const [idFilter, setIdFilter] = useState("");
+  const [mxikReviewOnly, setMxikReviewOnly] = useState(false);
   const [stockFilter, setStockFilter] = useState<"all" | StockStatus>("all");
   const [historySearch, setHistorySearch] = useState("");
 
@@ -234,7 +240,7 @@ export default function WarehousePage() {
         if (qty > g.bestQty) { g.id = p.id; g.bestQty = qty; g.name = p.name; }
       }
     }
-    return Array.from(groups.values()).map(g => ({ value: g.id, label: g.name, hint: `${g.total} ${g.unit}` }));
+    return Array.from(groups.values()).map(g => ({ value: g.id, label: g.name, hint: `${g.total} ${g.unit}`, searchText: products.filter(p => p.name === g.name && p.unit === g.unit).map(productSearchText).join(" ") }));
   }, [products]);
   // Anyone authenticated can create a purchase request — except supply staff (they can't order to themselves).
   const userRoles = (roles as string[] | undefined) ?? [];
@@ -1090,6 +1096,7 @@ export default function WarehousePage() {
                 <DialogContent>
                   <DialogHeader><DialogTitle>{t.warehouse.otherOutTitle}</DialogTitle></DialogHeader>
                   <div className="space-y-3">
+                    <CatalogScanner products={products} onSelect={p => { setOtherProduct(p.id); const qty=scannedQuantity(p.unit,p.id===otherProduct,otherQty); setOtherQty(qty ?? (p.id===otherProduct ? otherQty : 0)); }} onCreate={() => { setOtherOpen(false); setAddOpen(true); }} />
                     <div><Label>{t.warehouse.cols.product}</Label>
                       <SearchableSelect
                         value={otherProduct}
@@ -1118,6 +1125,7 @@ export default function WarehousePage() {
                 <DialogContent>
                   <DialogHeader><DialogTitle>{t.warehouse.releaseTitle}</DialogTitle></DialogHeader>
                   <div className="space-y-3">
+                    <CatalogScanner products={products} onSelect={p => { setOutProduct(p.id); const qty=scannedQuantity(p.unit,p.id===outProduct,outQty); setOutQty(qty ?? (p.id===outProduct ? outQty : 0)); }} onCreate={() => { setReleaseOpen(false); setAddOpen(true); }} />
                     <div><Label>{t.warehouse.forOrder}</Label>
                       <SearchableSelect
                         value={outOrder}
@@ -1167,6 +1175,7 @@ export default function WarehousePage() {
                   <DialogDescription>Joylashuv: <b>{impVariant === "351" ? "3-51 (Zavod51)" : "Sklad"}</b> — kirim shu joyga yoziladi</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-3 overflow-y-auto px-6 py-4 flex-1">
+                  <CatalogScanner products={products} onSelect={p => { if (!products.some(x => x.id===p.id)) setProducts(prev => [...prev,p]); const qty=scannedQuantity(p.unit,p.id===impProductId,Number(impQty)); setImpProductId(p.id); setImpProductName(p.name); setImpUnit(p.unit || "dona"); setImpPrice(String(p.last_price ?? 0)); if(qty!==null) setImpQty(String(qty)); else if(p.id!==impProductId) setImpQty(""); }} onCreate={() => { setImportOpen(false); setAddOpen(true); }} />
                   <div>
                     <Label>Qaysi zakaz uchun olib kelindi <span className="text-muted-foreground text-xs">(ixtiyoriy)</span></Label>
                     <SearchableSelect
@@ -1190,7 +1199,7 @@ export default function WarehousePage() {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                        <Command>
+                        <Command filter={(value, query) => matchesProductText(value,query) ? 1 : 0}>
                           <CommandInput
                             placeholder={(t.warehouse as any).search || "Qidirish..."}
                             value={impProductName}
@@ -1204,7 +1213,7 @@ export default function WarehousePage() {
                             </CommandEmpty>
                             <CommandGroup>
                               {products.map((p) => (
-                                <CommandItem key={p.id} value={`${p.name} ${p.unit}`} onSelect={() => {
+                                <CommandItem key={p.id} value={productSearchText(p)} onSelect={() => {
                                   setImpProductId(p.id); setImpProductName(p.name);
                                   if (p.unit) setImpUnit(p.unit);
                                   if (p.last_price && !impPrice) setImpPrice(String(p.last_price));
@@ -1536,6 +1545,9 @@ export default function WarehousePage() {
 
           <div className="flex flex-wrap items-center gap-2">
             <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={(t.warehouse as any).search} className="max-w-md" />
+            <Input aria-label="Mahsulot ID filtri" value={idFilter} onChange={e => setIdFilter(e.target.value)} placeholder="ID filtri (ixtiyoriy)" className="max-w-xs" />
+            <Button variant={mxikReviewOnly ? "secondary" : "outline"} onClick={() => setMxikReviewOnly(v => !v)}>MXIK tekshiruvi kerak ({products.filter(p => !p.mxik_code).length})</Button>
+            <CatalogReview canEdit={hasRole(["admin"])} onUpdated={load} />
             <Select value={locFilter} onValueChange={setLocFilter}>
               <SelectTrigger className="w-[200px]"><SelectValue placeholder="Joylashuv" /></SelectTrigger>
               <SelectContent>
@@ -1564,8 +1576,10 @@ export default function WarehousePage() {
                     let rows = productGroups
                       .filter(g => stockFilter === "all" ? true : g.status === stockFilter)
                       .filter(g => locFilter === "all" || g.batches.some((p: any) => (prodLocations[p.id] ?? []).includes(locFilter)))
+                      .filter(g => !idFilter.trim() || g.batches.some((p: any) => p.id.toLowerCase().includes(idFilter.trim().toLowerCase())))
+                      .filter(g => !mxikReviewOnly || g.batches.some((p: any) => !p.mxik_code))
                       .filter(g => !q || g.batches.some((p: any) =>
-                        [p.name, p.unit, p.source, p.phone].some((v: any) => (v ?? "").toString().toLowerCase().includes(q))
+                        matchesProduct(p,q) || matchesProductText([p.source,p.phone].filter(Boolean).join(" "),q)
                       ))
                       .map(g => {
                         const prices = g.batches.map((b: any) => Number(b.last_price || 0)).filter((n: number) => n > 0);
@@ -1688,6 +1702,7 @@ export default function WarehousePage() {
 
               <div className="grid sm:grid-cols-3 gap-4">
                 <div className="sm:col-span-1">
+                  <BarcodeLabel product={selectedProduct} />
                   {selectedProduct.image_url ? (
                     <img src={selectedProduct.image_url} alt={selectedProduct.name} className="w-full aspect-square object-cover rounded-md border" />
                   ) : (

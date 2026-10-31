@@ -12,6 +12,7 @@ import { fmtDateTime24, fmtNum } from "@/lib/format";
 import { matchesAcrossScripts } from "@/lib/translit";
 import { useLocalize } from "@/i18n/context";
 import { intakeCode } from "@/lib/intake";
+import { matchesProductText, productSearchText } from "@/lib/productSearch";
 
 const ALL = "__all__";
 
@@ -81,7 +82,7 @@ export default function WarehouseHistory({
     // 1000 satrdan ko'p bo'lishi mumkin — sahifalab olamiz
     const pageSize = 1000;
     const FULL =
-      "*, product:products(name, unit, weight_kg), order:orders!stock_movements_order_id_fkey(order_number, product_name), intake_session:intake_sessions(id, started_at, finished_at, supplier, created_by_name)";
+      "*, product:products(name, unit, weight_kg, old_names, mxik_code, barcode), order:orders!stock_movements_order_id_fkey(order_number, product_name), intake_session:intake_sessions(id, started_at, finished_at, supplier, created_by_name)";
     let all: any[] = [];
     let cols = FULL;
     for (let page = 0; page < 6; page++) {
@@ -130,7 +131,7 @@ export default function WarehouseHistory({
       const oIds = Array.from(new Set(all.map((m: any) => m.order_id).filter(Boolean)));
       const sIds = Array.from(new Set(all.map((m: any) => m.intake_session_id).filter(Boolean)));
       const [pr, or_, se] = await Promise.all([
-        pIds.length ? supabase.from("products").select("id, name, unit, weight_kg").in("id", pIds) : Promise.resolve({ data: [] as any[] }),
+        pIds.length ? supabase.from("products").select("id, name, unit, weight_kg, old_names, mxik_code, barcode").in("id", pIds) : Promise.resolve({ data: [] as any[] }),
         oIds.length ? supabase.from("orders").select("id, order_number, product_name").in("id", oIds) : Promise.resolve({ data: [] as any[] }),
         sIds.length ? supabase.from("intake_sessions").select("id, started_at, finished_at, supplier, created_by_name").in("id", sIds) : Promise.resolve({ data: [] as any[] }),
       ]);
@@ -261,7 +262,7 @@ export default function WarehouseHistory({
       if (term) {
         const hay = [r.productName, r.metalType, r.comment, r.person, r.source, r.orderNumber, r.invoiceLabel, r.location]
           .filter(Boolean).join(" ");
-        if (!matchesAcrossScripts(hay, term)) return false;
+        if (!matchesProductText(hay + " " + (r.raw.product ? productSearchText(r.raw.product) : ""), term)) return false;
       }
       return true;
     });

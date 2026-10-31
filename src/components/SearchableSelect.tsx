@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { matchesAcrossScripts } from "@/lib/translit";
+import { matchesProductText } from "@/lib/productSearch";
 
 
 export interface SearchOption {
   value: string;
   label: string;
   hint?: string;
+  searchText?: string;
 }
 
 interface Props {
@@ -68,7 +70,7 @@ export default function SearchableSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-        <Command loop filter={(itemValue, search) => (matchesAcrossScripts(itemValue, search) ? 1 : 0)}>
+        <Command loop filter={(itemValue, search) => (matchesProductText(itemValue, search) ? 1 : 0)}>
           <CommandInput placeholder={searchPlaceholder} />
           <CommandList className="max-h-[min(60vh,320px)] overflow-y-auto">
             <CommandEmpty>{emptyText}</CommandEmpty>
@@ -86,7 +88,7 @@ export default function SearchableSelect({
               {options.map(o => (
                 <CommandItem
                   key={o.value}
-                  value={`${o.label} ${o.hint ?? ""} ${o.value}`}
+                  value={`${o.label} ${o.hint ?? ""} ${o.searchText ?? ""}`}
                   onSelect={() => { onChange(o.value); setOpen(false); }}
                   className="min-h-11 cursor-pointer"
                 >
