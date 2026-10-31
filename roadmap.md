@@ -1,4 +1,10 @@
 
+## Sklad: nomlar, MXIK va skaner
+- [ ] 451 moslikni xavfsiz tekshirish, zaxira/audit bilan nomlar va aliaslarni yangilash; noaniq va NULL MXIKlarni alohida ko‘rsatish.
+- [ ] Yagona eski/yangi nom qidiruvi, alohida ID filtri va unikal Code 128 shtrix-kodlar.
+- [ ] Kirim/chiqim skaneri va 40×30 mm yorliqlarni ilovada tekshirish.
+- [ ] Rasmiy MXIK va fizik XP-365B/skaner tekshiruvi: tasdiqlanmagan kodlar yoki qurilmaga kira olmaslik bo‘lsa, aniq qayd etish.
+
 ## SEL raqamlarini aniq tuzatish
 - [x] 07N26149–07N26159 aynan SEL0081–SEL0091 ga o‘tkazildi; eski raqamlar, tarix va audit saqlandi, takroriy raqam yo‘q.
 - [x] SEL ro‘yxati sonli kamayish tartibida; 11 zakaz bazada va haqiqiy foydalanuvchi sahifasida tekshirildi, eski raqamlar qavsda ko‘rinmaydi, qidiruvda ishlaydi. 32 test o‘tdi; 129 zakaz, 2473 bosqich, 462 topshiriq va detallar saqlandi.
