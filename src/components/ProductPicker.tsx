@@ -4,7 +4,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Button } from "@/components/ui/button";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { matchesProductText, productSearchText } from "@/lib/productSearch";
+import { matchesProductText, productSearchText, uniqueProductTypes } from "@/lib/productSearch";
 
 
 export interface PickerProduct {
@@ -15,6 +15,7 @@ export interface PickerProduct {
   old_names?: string[] | null;
   mxik_code?: string | null;
   barcode?: string | null;
+  product_type_id?: string | null;
 }
 
 interface Props {
@@ -68,7 +69,7 @@ export default function ProductPicker({ products, value, onChange, placeholder =
           <CommandList className="max-h-[60vh] select-none">
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
-              {products.map(p => (
+              {uniqueProductTypes(products).map(p => (
                 <CommandItem
                   key={p.id}
                   value={productSearchText(p)}

@@ -47,10 +47,10 @@ export default function CatalogScanner({ products, onSelect, onCreate }: Props) 
   return <div className="space-y-2" data-catalog-scan>
     <div className="flex gap-2 items-center">
       <ScanBarcode className="h-5 w-5 text-muted-foreground shrink-0" />
-      <Input ref={inputRef} aria-label="Shtrix-kod yoki MXIK" placeholder="Shtrix-kod / MXIK (ixtiyoriy)" value={code} onChange={e => setCode(e.target.value)} onKeyDown={e => { if(e.key === "Enter") { e.preventDefault(); callback.current(code); } }} />
+      <Input ref={inputRef} aria-label="Shtrix-kod" placeholder="Shtrix-kod (ixtiyoriy)" value={code} onChange={e => setCode(e.target.value)} onKeyDown={e => { if(e.key === "Enter") { e.preventDefault(); callback.current(code); } }} />
       <Button type="button" variant="outline" disabled={busy || !code.trim()} onClick={() => callback.current(code)} aria-label="Skanerni qidirish"><ScanBarcode className="h-4 w-4" /></Button>
     </div>
-    {matches.length > 1 && <div className="border rounded-md divide-y max-h-48 overflow-auto"><p className="p-2 text-sm font-medium">MXIK bo‘yicha mahsulotni tanlang</p>{matches.map(p => <Button key={p.id} type="button" variant="ghost" className="w-full justify-start h-auto whitespace-normal text-left" onClick={() => { onSelect(p); setMatches([]); }}>{p.name} · {p.unit}</Button>)}</div>}
+    {matches.length > 1 && <div className="border rounded-md divide-y max-h-48 overflow-auto"><p className="p-2 text-sm font-medium">Mahsulot turini tanlang</p>{matches.map(p => <Button key={p.id} type="button" variant="ghost" className="w-full justify-start h-auto whitespace-normal text-left" onClick={() => { onSelect(p); setMatches([]); }}>{p.name} · {p.unit}</Button>)}</div>}
     {missing && onCreate && <Button type="button" variant="outline" onClick={() => onCreate(missing)}>Yangi mahsulot yaratish</Button>}
   </div>;
 }
