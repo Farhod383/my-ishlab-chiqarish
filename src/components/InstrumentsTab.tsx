@@ -496,6 +496,7 @@ export default function InstrumentsTab() {
                 </DialogTitle>
               </DialogHeader>
 
+              <div className="grid sm:grid-cols-2 gap-3">{detailGroup.batches.map(b => <BarcodeLabel key={b.id} product={b} />)}</div>
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="rounded-md border p-2">
                   <div className="text-xs text-muted-foreground">Jami sklad</div>
