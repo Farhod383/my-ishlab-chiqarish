@@ -194,7 +194,7 @@ export default function WarehouseReportPage() {
   const sel = (label: string, v: string, set: (s: string) => void, list: { v: string; l: string }[]) => (
     <div className="space-y-1 basis-40 min-w-0 flex-1">
       <Label className="text-xs whitespace-normal break-words">{label} (ixtiyoriy)</Label>
-      {label === "Mahsulot" ? <SearchableSelect value={v} onChange={set} options={[{value:ALL,label:"Barchasi"},...list.map(o=>({value:o.v,label:o.l,searchText:[...products,...instruments].filter(p=>p.name===o.v).map(productSearchText).join(" ")}))]} /> : <Select value={v} onValueChange={set}>
+      {label.startsWith("Mahsulot") ? <SearchableSelect value={v} onChange={set} options={[{value:ALL,label:"Barchasi"},...list.map(o=>({value:o.v,label:o.l,searchText:[...products,...instruments].filter(p=>p.name===o.v).map(productSearchText).join(" ")}))]} /> : <Select value={v} onValueChange={set}>
         <SelectTrigger><SelectValue /></SelectTrigger>
         <SelectContent><SelectItem value={ALL}>Barchasi</SelectItem>{list.map((o) => <SelectItem key={o.v} value={o.v}>{o.l}</SelectItem>)}</SelectContent>
       </Select>}
