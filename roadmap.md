@@ -1,9 +1,11 @@
 
 ## Sklad: nomlar, MXIK va skaner
-- [ ] 451 moslikni xavfsiz tekshirish, zaxira/audit bilan nomlar va aliaslarni yangilash; noaniq va NULL MXIKlarni alohida ko‘rsatish.
-- [ ] Yagona eski/yangi nom qidiruvi, alohida ID filtri va unikal Code 128 shtrix-kodlar.
-- [ ] Kirim/chiqim skaneri va 40×30 mm yorliqlarni ilovada tekshirish.
-- [ ] Rasmiy MXIK va fizik XP-365B/skaner tekshiruvi: tasdiqlanmagan kodlar yoki qurilmaga kira olmaslik bo‘lsa, aniq qayd etish.
+- [x] 451 moslik tekshirildi: 427 nom/alias, 417 skript MXIK; 34 yozuv tekshiruvga (4 takroriy eski nom, 11 yangi nom to‘qnashuvi, 9 topilmagan, 10 NULL MXIK). 544 mahsulot snapshots/audit saqlandi; qoldiq, narx va birlik o‘zgarmadi, moslikdan tashqari mahsulot nomlariga tegilmadi.
+- [x] Eski/yangi nom qidiruvi, alohida ID filtri, 544 mahsulot va 246 instrument uchun unikal Code 128 shtrix-kod; tegishli pickerlar, nakladnoy/tarix va hisobot tanlovi yangilandi.
+- [x] Admin 2 hisobida kirim/chiqim skaneri, dona 1→2, kg o‘zgarmasligi, umumiy MXIKdan aniq tanlash, noma’lum koddan yaratish tugmasi va 40×30 mm PDF tekshirildi; 10 test o‘tdi. Tekshiruvda yangi kirim/chiqim yozuvi saqlanmadi.
+- [ ] Rasmiy NULL MXIK tasdiqlash: 11 manba yozuviga aniqlashtiruvchi texnik ma’lumot yetishmaydi; 10 tasi bazada topilib alohida tekshiruvga qo‘yildi, bittasi topilmadi. Jami katalogda 126 kodsiz mahsulot bor. Kodlar taxmin qilinmadi.
+- [ ] Fizik XP-365B va skaner: qurilmalarga kirish yo‘q, haqiqiy yorliq bosish/o‘qish tasdiqlanmagan; brauzer klaviatura skaneri emulyatsiyasi va PDF tekshirildi.
+- [ ] 75 xatoli manba mahsuloti uchun alohida nomli hisobot: xatolar.xlsx biriktirilmagan; 451 moslikdan tashqaridagi barcha nomlar o‘zgartirilmagan.
 
 ## SEL raqamlarini aniq tuzatish
 - [x] 07N26149–07N26159 aynan SEL0081–SEL0091 ga o‘tkazildi; eski raqamlar, tarix va audit saqlandi, takroriy raqam yo‘q.
