@@ -386,6 +386,13 @@
       "when": 1793430810758,
       "tag": "0054_catalog_product_type_registry",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1793431086726,
+      "tag": "0055_prevent_duplicate_product_type_creation",
+      "breakpoints": true
     }
   ]
 }
