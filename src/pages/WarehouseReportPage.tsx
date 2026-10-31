@@ -13,6 +13,8 @@ import { displayUser } from "@/lib/userNames";
 import { ArrowLeft, Printer, FileDown, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { buildWarehouseStockPdf, todayFile } from "@/lib/pdfExport";
+import SearchableSelect from "@/components/SearchableSelect";
+import { productSearchText } from "@/lib/productSearch";
 
 type Section = "all" | "products" | "instruments" | "movements";
 const ALL = "__all";
@@ -54,8 +56,8 @@ export default function WarehouseReportPage() {
     (async () => {
       try {
         const [prods, insts, asg, sm, emps, ords, profs, intake] = await Promise.all([
-          fetchAll<any>((a, b) => supabase.from("products").select("id,name,unit,stock_qty,last_price,currency,instrument_id").order("name").range(a, b)),
-          fetchAll<any>((a, b) => supabase.from("instruments").select("id,name,quantity,status,price,currency").order("name").range(a, b)),
+          fetchAll<any>((a, b) => supabase.from("products").select("id,name,unit,stock_qty,last_price,currency,instrument_id,old_names,mxik_code,barcode").order("name").range(a, b)),
+          fetchAll<any>((a, b) => supabase.from("instruments").select("id,name,quantity,status,price,currency,old_names,mxik_code,barcode").order("name").range(a, b)),
           fetchAll<any>((a, b) => supabase.from("instrument_assignments").select("*").order("issued_at", { ascending: false }).range(a, b)),
           fetchAll<any>((a, b) => supabase.from("stock_movements").select("id,product_id,order_id,direction,quantity,recipient_name,recipient_employee_id,comment,created_by,created_at,unit_price,currency,location,intake_item_id").order("created_at", { ascending: false }).range(a, b)),
           fetchAll<any>((a, b) => supabase.from("employees").select("id,full_name").range(a, b)),
@@ -192,10 +194,10 @@ export default function WarehouseReportPage() {
   const sel = (label: string, v: string, set: (s: string) => void, list: { v: string; l: string }[]) => (
     <div className="space-y-1 basis-40 min-w-0 flex-1">
       <Label className="text-xs whitespace-normal break-words">{label} (ixtiyoriy)</Label>
-      <Select value={v} onValueChange={set}>
+      {label.startsWith("Mahsulot") ? <SearchableSelect value={v} onChange={set} options={[{value:ALL,label:"Barchasi"},...list.map(o=>({value:o.v,label:o.l,searchText:[...products,...instruments].filter(p=>p.name===o.v).map(productSearchText).join(" ")}))]} /> : <Select value={v} onValueChange={set}>
         <SelectTrigger><SelectValue /></SelectTrigger>
         <SelectContent><SelectItem value={ALL}>Barchasi</SelectItem>{list.map((o) => <SelectItem key={o.v} value={o.v}>{o.l}</SelectItem>)}</SelectContent>
-      </Select>
+      </Select>}
     </div>
   );
   const asList = (a: string[]) => a.map((x) => ({ v: x, l: x }));

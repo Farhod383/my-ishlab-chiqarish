@@ -21,6 +21,8 @@ import { ensureOnline } from "@/components/OnlineGuard";
 import { useEmployees } from "@/hooks/useEmployees";
 import { fmtDate as fmtDateG } from "@/lib/format";
 import { currentUserName } from "@/lib/userNames";
+import { matchesProduct, productSearchText } from "@/lib/productSearch";
+import BarcodeLabel from "@/components/warehouse/BarcodeLabel";
 
 type Instrument = {
   id: string;
@@ -33,6 +35,9 @@ type Instrument = {
   price: number;
   currency: string;
   created_at?: string;
+  old_names?: string[] | null;
+  mxik_code?: string | null;
+  barcode?: string | null;
 };
 
 type Assignment = {
@@ -163,7 +168,8 @@ export default function InstrumentsTab() {
         key, name: it.name, category: it.category ?? "",
         batches: [], totalQty: 0, totalIssued: 0, statusMix: [],
       });
-      const g = map.get(key)!;
+      const g = map.get(key);
+      if (!g) return;
       g.batches.push(it);
       g.totalQty += Number(it.quantity) || 0;
       if (it.category && !g.category) g.category = it.category;
@@ -182,7 +188,7 @@ export default function InstrumentsTab() {
 
   const q = search.trim().toLowerCase();
   const filteredGroups = q
-    ? groups.filter(g => [g.name, g.category, ...g.batches.map(b => b.inventory_number ?? "")].some(v => (v ?? "").toLowerCase().includes(q)))
+    ? groups.filter(g => g.batches.some(b => matchesProduct(b,q)) || [g.category, ...g.batches.map(b => b.inventory_number ?? "")].some(v => (v ?? "").toLowerCase().includes(q)))
     : groups;
 
   const detailGroup = detailKey ? groups.find(g => g.key === detailKey) ?? null : null;
@@ -330,7 +336,7 @@ export default function InstrumentsTab() {
                       value={issueForm.group_key}
                       onChange={v => setIssueForm({ ...issueForm, group_key: v })}
                       placeholder="Instrument tanlang"
-                      options={groups.filter(g => g.totalQty > 0).map(g => ({ value: g.key, label: g.name, hint: `jami: ${g.totalQty}` }))}
+                      options={groups.filter(g => g.totalQty > 0).map(g => ({ value: g.key, label: g.name, searchText:g.batches.map(productSearchText).join(" "), hint: `jami: ${g.totalQty}` }))}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -490,6 +496,7 @@ export default function InstrumentsTab() {
                 </DialogTitle>
               </DialogHeader>
 
+              <div className="grid sm:grid-cols-2 gap-3">{detailGroup.batches.map(b => <BarcodeLabel key={b.id} product={b} />)}</div>
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="rounded-md border p-2">
                   <div className="text-xs text-muted-foreground">Jami sklad</div>

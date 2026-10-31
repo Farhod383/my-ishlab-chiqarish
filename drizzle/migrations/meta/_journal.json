@@ -365,6 +365,20 @@
       "when": 1793267286440,
       "tag": "0051_accountant_edit_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1793429440482,
+      "tag": "0052_product_catalog_identity_aliases_barcodes",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1793429640128,
+      "tag": "0053_fix_catalog_mapping_result_reference",
+      "breakpoints": true
     }
   ]
 }

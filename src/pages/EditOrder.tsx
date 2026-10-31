@@ -16,6 +16,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { useI18n } from "@/i18n/context";
 import { logAudit } from "@/types/erp";
 import { currentUserName } from "@/lib/userNames";
+import ProductPicker from "@/components/ProductPicker";
 
 interface StageDraft { id?: string; name: string; norm_days: number; qc_required: boolean; group_id: string | null }
 
@@ -51,7 +52,7 @@ export default function EditOrder() {
         supabase.from("orders").select("*, client:clients(*)").eq("id", id).single(),
         supabase.from("order_stages").select("*").eq("order_id", id).order("stage_order"),
         supabase.from("order_parts").select("*").eq("order_id", id),
-        supabase.from("products").select("id, name, unit").is("instrument_id", null),
+        supabase.from("products").select("id, name, unit, old_names, mxik_code, barcode").is("instrument_id", null),
         supabase.from("order_files").select("*").eq("order_id", id).order("created_at"),
       ]);
       const o = orderRes.data as any;
@@ -352,10 +353,7 @@ export default function EditOrder() {
         <CardContent className="space-y-2">
           {parts.map((p, i) => (
             <div key={i} className="order-form-row grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
-              <Select value={p.product_id} onValueChange={(v) => updatePart(i, { product_id: v })}>
-                <SelectTrigger className="col-span-7"><SelectValue placeholder={t.newOrder.selectProduct} /></SelectTrigger>
-                <SelectContent>{products.map((pr) => <SelectItem key={pr.id} value={pr.id}>{pr.name} ({pr.unit})</SelectItem>)}</SelectContent>
-              </Select>
+              <ProductPicker className="col-span-7" products={products} value={p.product_id} onChange={v => updatePart(i,{ product_id:v })} placeholder={t.newOrder.selectProduct} />
               <Input className="col-span-4" type="number" min={0} step={0.1} value={p.norm_qty} onChange={(e) => updatePart(i, { norm_qty: Number(e.target.value) })} placeholder={t.newOrder.normaQty} />
               <Button size="icon" variant="ghost" onClick={() => removePart(i)} className="col-span-1"><Trash2 className="h-4 w-4 text-status-red" /></Button>
             </div>

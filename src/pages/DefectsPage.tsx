@@ -21,6 +21,7 @@ import { notify } from "@/lib/notify";
 import { useEmployees } from "@/hooks/useEmployees";
 import { fmtDateTime24 } from "@/lib/format";
 import { currentUserName } from "@/lib/userNames";
+import { productSearchText } from "@/lib/productSearch";
 
 type ItemType = "product" | "instrument";
 
@@ -62,7 +63,7 @@ export default function DefectsPage() {
       // defects.order_id has no FK to orders, so embedding orders breaks the whole query — join orders client-side.
       supabase.from("defects").select("*, product:products(name, unit), detected_by:employees(full_name)").order("created_at", { ascending: false }),
       supabase.from("orders").select("id, order_number, product_name").order("order_number", { ascending: false }),
-      supabase.from("products").select("id, name, unit, stock_qty").is("instrument_id", null).order("name"),
+      supabase.from("products").select("id, name, unit, stock_qty, old_names, mxik_code, barcode").is("instrument_id", null).order("name"),
       supabase.from("instruments").select("id, name, quantity, status, inventory_number").order("name"),
     ]);
     const { data: asg } = await supabase.from("instrument_assignments").select("id, instrument_id, quantity, returned_at, box_number, employee:employees(full_name), instrument:instruments(name)").order("issued_at", { ascending: false });
@@ -236,7 +237,7 @@ export default function DefectsPage() {
                       value={form.product_id}
                       onChange={v => setForm({ ...form, product_id: v })}
                       placeholder={d.selectProduct ?? "Tanlang"}
-                      options={products.filter(p => Number(p.stock_qty) > 0).map(p => ({ value: p.id, label: p.name, hint: `mavjud: ${p.stock_qty} ${p.unit ?? ""}` }))}
+                      options={products.filter(p => Number(p.stock_qty) > 0).map(p => ({ value: p.id, label: p.name, searchText: productSearchText(p), hint: `mavjud: ${p.stock_qty} ${p.unit ?? ""}` }))}
                     />
                   </div>
                 </>

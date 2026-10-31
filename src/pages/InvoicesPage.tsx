@@ -17,6 +17,7 @@ import { FileText, Image as ImageIcon, CheckCircle2, Clock, Search, Trash2 } fro
 import { toast } from "sonner";
 import { IntakePaymentFields } from "@/components/warehouse/IntakePaymentFields";
 import { fmtNum, fmtDateTime24 } from "@/lib/format";
+import { matchesProduct, type SearchProduct } from "@/lib/productSearch";
 import {
   INTAKE_STATUS_META, intakeCode, intakeDuration, itemsTotal,
   closeInvoice, intakePaymentLabel,
@@ -31,6 +32,7 @@ export default function InvoicesPage() {
 
   const [sessions, setSessions] = useState<IntakeSession[]>([]);
   const [items, setItems] = useState<IntakeItem[]>([]);
+  const [catalog, setCatalog] = useState<Record<string, SearchProduct>>({});
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
@@ -46,6 +48,8 @@ export default function InvoicesPage() {
 
   const load = async () => {
     setLoading(true);
+    const { data: products } = await supabase.from("products").select("id,name,old_names,mxik_code,barcode,unit");
+    const names = Object.fromEntries((products ?? []).map(p => [p.id,p])); setCatalog(names);
     const { data: s } = await supabase
       .from("intake_sessions").select("*")
       .order("started_at", { ascending: false })
@@ -55,7 +59,7 @@ export default function InvoicesPage() {
     let it: any[] = [];
     if (ids.length) {
       const { data } = await supabase.from("intake_items").select("*").in("session_id", ids).order("created_at", { ascending: true });
-      it = (data as any[]) ?? [];
+      it = ((data as any[]) ?? []).map(i => ({ ...i, product_name: names[i.product_id]?.name ?? i.product_name }));
     }
     setSessions(list);
     setItems(it as any);
@@ -98,10 +102,10 @@ export default function InvoicesPage() {
         intakeCode(s).toLowerCase().includes(term) ||
         (s.created_by_name ?? "").toLowerCase().includes(term) ||
         (s.supplier ?? "").toLowerCase().includes(term) ||
-        list.some((i) => i.product_name.toLowerCase().includes(term))
+        list.some((i) => matchesProduct(catalog[i.product_id ?? ""] ?? { name: i.product_name },term))
       );
     });
-  }, [sessions, q, itemsBySession]);
+  }, [sessions, q, itemsBySession, catalog]);
 
   const current = sessions.find((s) => s.id === openId) ?? null;
   const currentItems = openId ? (itemsBySession[openId] ?? []) : [];
