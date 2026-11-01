@@ -2703,8 +2703,12 @@ export type Database = {
           reason: string | null
           recipient_employee_id: string | null
           recipient_name: string | null
+          reconciliation_key: string | null
+          reconciliation_payload: Json | null
           source: string | null
           source_order_id: string | null
+          stock_after: number | null
+          stock_before: number | null
           supply_request_id: string | null
           taken_by: string | null
           unit_price: number
@@ -2729,8 +2733,12 @@ export type Database = {
           reason?: string | null
           recipient_employee_id?: string | null
           recipient_name?: string | null
+          reconciliation_key?: string | null
+          reconciliation_payload?: Json | null
           source?: string | null
           source_order_id?: string | null
+          stock_after?: number | null
+          stock_before?: number | null
           supply_request_id?: string | null
           taken_by?: string | null
           unit_price?: number
@@ -2755,8 +2763,12 @@ export type Database = {
           reason?: string | null
           recipient_employee_id?: string | null
           recipient_name?: string | null
+          reconciliation_key?: string | null
+          reconciliation_payload?: Json | null
           source?: string | null
           source_order_id?: string | null
+          stock_after?: number | null
+          stock_before?: number | null
           supply_request_id?: string | null
           taken_by?: string | null
           unit_price?: number
@@ -3120,6 +3132,10 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      set_product_mxik: {
+        Args: { _code: string; _expected_code: string; _product_id: string }
+        Returns: undefined
+      }
       sync_intake_debt: { Args: { _session_id: string }; Returns: undefined }
       update_intake_invoice: {
         Args: { _image_url?: string; _session_id: string; _supplier?: string }
@@ -3133,6 +3149,20 @@ export type Database = {
           _unit_price: number
         }
         Returns: undefined
+      }
+      warehouse_reconcile: {
+        Args: {
+          _comment?: string
+          _currency?: string
+          _key: string
+          _name: string
+          _price?: number
+          _product_id: string
+          _quantity: number
+          _technical?: Json
+          _unit: string
+        }
+        Returns: Json
       }
     }
     Enums: {

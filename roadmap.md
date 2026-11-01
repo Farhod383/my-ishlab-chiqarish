@@ -1,4 +1,9 @@
 
+## Sklad sverka va qo‘lda MXIK
+- [x] Nakladnoysiz atomik, takrorlanmaydigan sverka kirimi; o‘zgarmas tarix, eski/yangi qoldiq va Kassa/Ta’minotdan mustaqillik.
+- [x] Sklad/bosh buxgalter/admin uchun tasdiqlanadigan MXIK tahriri va server auditi; matn va boshlang‘ich nollar saqlanadi.
+- [x] 29 frontend test; bazada rollback bilan mavjud/yangi mahsulot, dublikat/retry, rollar, audit, narxlar va Kassa/Nakladnoy/Qarz mustaqilligi sinaldi. Brauzerda Sklad useri kirim tasdiqlash oynasi va mavjud MXIKni o‘zgartirmay saqlash sinaldi; brauzer orqali yangi sverka kirimi real qoldiqqa saqlanmadi.
+
 ## Mahsulot turi bo‘yicha shtrix-kod
 - [x] 790 katalog yozuvi zaxirasi; 544 mahsulotda kod dublikati yo‘q, mavjud instrumentga bog‘langan tarixiy kod alias sifatida saqlandi. Mahsulot qiymatlari va instrument biznes qiymatlari o‘zgarmadi.
 - [x] 789 doimiy tur ID/kod, faqat shtrix-kod skaneri (MXIK oddiy qidiruvda), tur IDli qidiruv/guruhlash, dublikat yaratishni bloklash va ommaviy 40×30 mm yorliqlar.
