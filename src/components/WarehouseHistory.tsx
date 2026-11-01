@@ -380,14 +380,14 @@ export default function WarehouseHistory({
                 <TableRow
                   key={`${r.kind}-${r.id}`}
                   className={canManage && r.kind === "product" ? "cursor-pointer hover:bg-muted/40" : undefined}
-                  onClick={canManage && r.kind === "product" && onEdit ? () => onEdit(r.raw) : undefined}
+                  onClick={canManage && r.kind === "product" && !r.raw.reconciliation_key && onEdit ? () => onEdit(r.raw) : undefined}
                 >
                   <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
                   <TableCell className="text-xs whitespace-nowrap">{fmtDateTime24(r.created_at)}</TableCell>
                   <TableCell>
                     {r.direction === "out"
                       ? <span className="inline-flex items-center gap-1 text-status-red text-xs font-semibold"><ArrowDownCircle className="h-3.5 w-3.5" />Chiqim</span>
-                      : <span className="inline-flex items-center gap-1 text-status-green text-xs font-semibold"><ArrowUpCircle className="h-3.5 w-3.5" />Kirim</span>}
+                      : <span className="inline-flex items-center gap-1 text-status-green text-xs font-semibold"><ArrowUpCircle className="h-3.5 w-3.5" />{r.raw.reconciliation_key ? 'Sverka — nakladnoysiz kirim' : 'Kirim'}</span>}
                   </TableCell>
                   <TableCell className="text-sm font-medium">{r.productName}</TableCell>
                   <TableCell className="text-xs">{r.metalType || "—"}</TableCell>
@@ -396,6 +396,7 @@ export default function WarehouseHistory({
                   <TableCell className="text-right text-xs font-mono">{dim(r.width)}</TableCell>
                   <TableCell className={`text-right font-mono font-semibold ${r.direction === "out" ? "text-status-red" : "text-status-green"}`}>
                     {r.direction === "out" ? "-" : "+"}{fmtNum(r.qty)} {r.unit}
+                    {r.raw.reconciliation_key && <div className="text-xs text-muted-foreground">{fmtNum(r.raw.stock_before)} → {fmtNum(r.raw.stock_after)}</div>}
                   </TableCell>
                   <TableCell className="text-right text-xs font-mono">{r.kg !== null ? fmtNum(r.kg) : "—"}</TableCell>
                   <TableCell className="text-right text-xs font-mono">{r.kg !== null ? (r.kg / 1000).toFixed(4) : "—"}</TableCell>
@@ -414,7 +415,7 @@ export default function WarehouseHistory({
                   <TableCell className="text-xs italic text-muted-foreground max-w-[200px] truncate">{r.comment || "—"}</TableCell>
                   {canManage && (
                     <TableCell onClick={e => e.stopPropagation()}>
-                      {r.kind === "product" && (
+                      {r.kind === "product" && !r.raw.reconciliation_key && (
                         <div className="flex gap-1">
                           {onEdit && <Button size="sm" variant="ghost" onClick={() => onEdit(r.raw)}><Pencil className="h-3.5 w-3.5" /></Button>}
                           {onDelete && <Button size="sm" variant="ghost" onClick={() => onDelete(r.raw)}><Trash2 className="h-3.5 w-3.5 text-status-red" /></Button>}

@@ -41,6 +41,7 @@ import BarcodeLabel from "@/components/warehouse/BarcodeLabel";
 import CatalogReview from "@/components/warehouse/CatalogReview";
 import BulkBarcodeLabels from "@/components/warehouse/BulkBarcodeLabels";
 import ProductTypeReview from "@/components/warehouse/ProductTypeReview";
+import WarehouseQuickActions from "@/components/warehouse/WarehouseQuickActions";
 
 const UNITS = ["dona", "kg", "tonna", "metr", "litr", "rulon", "komplekt"] as const;
 
@@ -69,6 +70,7 @@ export default function WarehousePage() {
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [movements, setMovements] = useState<any[]>([]);
+  const [historyReload, setHistoryReload] = useState(0);
   const { employees, allEmployees } = useEmployees({ activeOnly: true });
   const empName = (id: string) => allEmployees.find(e => e.id === id)?.full_name ?? id;
   const [profiles, setProfiles] = useState<Record<string, string>>({});
@@ -184,6 +186,7 @@ export default function WarehousePage() {
       supabase.from("stock_movements").select("*, product:products(name, unit), order:orders(order_number, product_name), intake_session:intake_sessions(id, started_at, finished_at, supplier, created_by_name)").order("created_at", { ascending: false }).limit(200),
     ]);
     setProducts(p.data ?? []); setOrders(o.data ?? []); setMovements(m.data ?? []);
+    setHistoryReload(v => v + 1);
     const ids = Array.from(new Set((m.data ?? []).map((x: any) => x.created_by).filter(Boolean)));
     if (ids.length) {
       const { data: profs } = await supabase.from("profiles").select("id, full_name, email").in("id", ids);
@@ -930,6 +933,7 @@ export default function WarehousePage() {
           <p className="text-sm text-muted-foreground">{t.warehouse.subtitle}</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <WarehouseQuickActions products={products} onUpdated={load} />
           <Button variant="outline" className="min-h-11" asChild>
             <Link to="/warehouse/report"><ClipboardList className="h-4 w-4 mr-2" />Hisobot (atshot)</Link>
           </Button>
@@ -1653,7 +1657,7 @@ export default function WarehousePage() {
         </TabsContent>
 
         <TabsContent value="history" className="mt-4">
-          <WarehouseHistory canManage={canManage} onEdit={openEditMovement} onDelete={deleteMovement} reloadKey={movements.length} />
+          <WarehouseHistory canManage={canManage} onEdit={openEditMovement} onDelete={deleteMovement} reloadKey={historyReload} />
         </TabsContent>
       </Tabs>
 
