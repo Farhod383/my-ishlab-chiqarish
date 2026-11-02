@@ -364,9 +364,10 @@ export default function WarehousePage() {
       source: newSource.trim() || null,
       priority: newPriority, currency: newCurrency,
       ...metalFields,
-    } as any).select("id").single();
+    } as any).select("id,barcode").single();
     if ((error as any)?.code === "23505") { toast.error("Bu mahsulot (nomi, birligi, o'lchami, valyutasi) allaqachon mavjud"); return; }
     if (error || !created) { toast.error(error?.message || "Error"); return; }
+    const createdBarcode = (created as any).barcode as string | null;
     // Metall normativi: Konstruktor sarfida ishlatilishi uchun saqlanadi
     if (isMetalProduct && newMetalType.trim() && num(newThick) && num(newWidth) && num(newLength) && num(newWeightKg)) {
       const mt = newMetalType.trim();
@@ -415,7 +416,12 @@ export default function WarehousePage() {
       action: "Mahsulot qo'shildi", entity: "product",
       details: `${newName.trim()}${qtyN > 0 ? `: +${qtyN} ${newUnit}` : ""}`,
     });
-    toast.success(qtyN > 0 ? "Mahsulot qo'shildi — miqdor Nakladnoyga yozildi" : t.warehouse.productAdded);
+    toast.success(`${qtyN > 0 ? "Mahsulot qo'shildi — miqdor Nakladnoyga yozildi" : t.warehouse.productAdded}${createdBarcode ? ` · Shtrix-kod: ${createdBarcode}` : ""}`);
+    if (createdBarcode) {
+      const newProd: any = { id: created.id, name: newName.trim(), unit: newUnit || "dona", stock_qty: 0, last_price: priceN, currency: newCurrency || "UZS", barcode: createdBarcode, mxik_code: null, product_type_id: created.id };
+      setProducts(prev => prev.some(x => x.id === created.id) ? prev : [...prev, newProd]);
+      if (importOpen) { setImpProductId(created.id); setImpProductName(newProd.name); setImpUnit(newProd.unit); }
+    }
     setNewName(""); setNewQty(""); setNewUnit("dona"); setNewPrice(""); setNewMin(""); setNewPhone(""); setNewSource(""); setNewSupplier(""); setNewImage(null);
     setNewMetalType(""); setNewThick(""); setNewWidth(""); setNewLength(""); setNewWeightKg("");
     setAddOpen(false);
@@ -1236,6 +1242,7 @@ export default function WarehousePage() {
                       </PopoverContent>
                     </Popover>
                     {impProductId && <p className="text-xs text-status-green mt-1">✓ Mavjud mahsulot — miqdor qo'shiladi</p>}
+                    {impProductId && <div className="mt-1"><BarcodeChip product={products.find((x: any) => x.id === impProductId)} /></div>}
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="col-span-2"><Label>{t.supply.qty} *</Label><NumberInput min={0.001} step={0.001} value={impQty} onChange={e => setImpQty(e.target.value)} placeholder={(impUnit || "").toLowerCase() === "tonna" ? "0.5 / 1.25 / 6.940" : (t.warehouse as any).qtyPh} /></div>
