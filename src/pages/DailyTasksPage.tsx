@@ -181,6 +181,29 @@ export default function DailyTasksPage() {
         ))}
       </div>
 
+      {openTasks.length > 0 && (
+        <Card className="border-status-yellow/50">
+          <CardContent className="p-3 space-y-2">
+            <div className="font-semibold">Ochiq qolgan topshiriqlar ({openTasks.length})</div>
+            <div className="space-y-1">
+              {openTasks.map((t) => {
+                const e = empMap[t.employee_id]; const o = orderMap[t.order_id];
+                return (
+                  <div key={t.id} className="flex flex-wrap items-center gap-2 text-sm cursor-pointer hover:bg-muted/40 rounded px-2 py-1" onClick={() => { setDetail(t); setProg(t.progress); }}>
+                    <span className="text-muted-foreground">{fmtDateG(t.task_date)}</span>
+                    <span className="font-medium">{localize(e?.full_name) || "—"}</span>
+                    <span className="text-muted-foreground">{o ? `#${o.order_number}` : "—"}</span>
+                    <span className="flex-1 min-w-[120px]">{t.task_title}</span>
+                    <span className="text-muted-foreground">{t.progress}%</span>
+                    <Badge variant="outline" className={STATUS_CLS.in_progress}>{STATUS_LABEL.in_progress}</Badge>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="space-y-2">
         {filtered.length === 0 && <Card><CardContent className="p-6 text-center text-muted-foreground">Bu kun uchun topshiriq yo'q</CardContent></Card>}
         {filtered.map((t, i) => {
