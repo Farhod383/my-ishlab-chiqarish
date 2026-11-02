@@ -43,6 +43,9 @@ import CatalogReview from "@/components/warehouse/CatalogReview";
 import BulkBarcodeLabels from "@/components/warehouse/BulkBarcodeLabels";
 import ProductTypeReview from "@/components/warehouse/ProductTypeReview";
 import WarehouseQuickActions from "@/components/warehouse/WarehouseQuickActions";
+import ScanHistoryTab from "@/components/warehouse/ScanHistoryTab";
+import StockBalanceCheck from "@/components/warehouse/StockBalanceCheck";
+import { finalizeScan } from "@/lib/scanHistory";
 
 const UNITS = ["dona", "kg", "tonna", "metr", "litr", "rulon", "komplekt"] as const;
 
@@ -270,6 +273,9 @@ export default function WarehousePage() {
   const [prOrderId, setPrOrderId] = useState<string>("");
 
   const fmt = (n: number) => fmtNum(n);
+
+  const [outScanId, setOutScanId] = useState<string | null>(null);
+  const [otherScanId, setOtherScanId] = useState<string | null>(null);
 
   const release = async () => {
     if (!outProduct || !outQty || !outRecipient) { toast.error(t.warehouse.fillFields); return; }
@@ -1109,7 +1115,7 @@ export default function WarehousePage() {
                 <DialogContent>
                   <DialogHeader><DialogTitle>{t.warehouse.otherOutTitle}</DialogTitle></DialogHeader>
                   <div className="space-y-3">
-                    <CatalogScanner products={products} onSelect={p => { setOtherProduct(p.id); const qty=scannedQuantity(p.unit,p.id===otherProduct,otherQty); setOtherQty(qty ?? (p.id===otherProduct ? otherQty : 0)); }} onCreate={() => { setOtherOpen(false); setAddOpen(true); }} />
+                    <CatalogScanner products={products} module="Chiqim" action="out" onSelect={(p, scanId) => { setOtherScanId(scanId ?? null); setOtherProduct(p.id); const qty=scannedQuantity(p.unit,p.id===otherProduct,otherQty); setOtherQty(qty ?? (p.id===otherProduct ? otherQty : 0)); }} onCreate={() => { setOtherOpen(false); setAddOpen(true); }} />
                     <div><Label>{t.warehouse.cols.product}</Label>
                       <SearchableSelect
                         value={otherProduct}
@@ -1138,7 +1144,7 @@ export default function WarehousePage() {
                 <DialogContent>
                   <DialogHeader><DialogTitle>{t.warehouse.releaseTitle}</DialogTitle></DialogHeader>
                   <div className="space-y-3">
-                    <CatalogScanner products={products} onSelect={p => { setOutProduct(p.id); const qty=scannedQuantity(p.unit,p.id===outProduct,outQty); setOutQty(qty ?? (p.id===outProduct ? outQty : 0)); }} onCreate={() => { setReleaseOpen(false); setAddOpen(true); }} />
+                    <CatalogScanner products={products} module="Chiqim" action="out" onSelect={(p, scanId) => { setOutScanId(scanId ?? null); setOutProduct(p.id); const qty=scannedQuantity(p.unit,p.id===outProduct,outQty); setOutQty(qty ?? (p.id===outProduct ? outQty : 0)); }} onCreate={() => { setReleaseOpen(false); setAddOpen(true); }} />
                     <div><Label>{t.warehouse.forOrder}</Label>
                       <SearchableSelect
                         value={outOrder}
@@ -1188,7 +1194,7 @@ export default function WarehousePage() {
                   <DialogDescription>Joylashuv: <b>{impVariant === "351" ? "3-51 (Zavod51)" : "Sklad"}</b> — kirim shu joyga yoziladi</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-3 overflow-y-auto px-6 py-4 flex-1">
-                  <CatalogScanner products={products} onSelect={p => { if (!products.some(x => x.id===p.id)) setProducts(prev => [...prev,p]); const qty=scannedQuantity(p.unit,p.id===impProductId,Number(impQty)); setImpProductId(p.id); setImpProductName(p.name); setImpUnit(p.unit || "dona"); setImpPrice(String(p.last_price ?? 0)); if(qty!==null) setImpQty(String(qty)); else if(p.id!==impProductId) setImpQty(""); }} onCreate={() => { setImportOpen(false); setAddOpen(true); }} />
+                  <CatalogScanner products={products} module="Kirim" action="in" onSelect={p => { if (!products.some(x => x.id===p.id)) setProducts(prev => [...prev,p]); const qty=scannedQuantity(p.unit,p.id===impProductId,Number(impQty)); setImpProductId(p.id); setImpProductName(p.name); setImpUnit(p.unit || "dona"); setImpPrice(String(p.last_price ?? 0)); if(qty!==null) setImpQty(String(qty)); else if(p.id!==impProductId) setImpQty(""); }} onCreate={() => { setImportOpen(false); setAddOpen(true); }} />
                   <div>
                     <Label>Qaysi zakaz uchun olib kelindi <span className="text-muted-foreground text-xs">(ixtiyoriy)</span></Label>
                     <SearchableSelect
@@ -1574,7 +1580,7 @@ export default function WarehousePage() {
               </SelectContent>
             </Select>
           </div>
-          <CatalogScanner products={products} onSelect={(p) => { const full: any = products.find((x: any) => x.id === p.id) ?? p; setSelectedProduct(full); }} onCreate={() => setAddOpen(true)} />
+          <CatalogScanner products={products} module="Sklad" action="search" onSelect={(p) => { const full: any = products.find((x: any) => x.id === p.id) ?? p; setSelectedProduct(full); }} onCreate={() => setAddOpen(true)} />
           <Card><CardContent className="p-0">
             <div className="border rounded-md overflow-x-auto">
               <Table>
