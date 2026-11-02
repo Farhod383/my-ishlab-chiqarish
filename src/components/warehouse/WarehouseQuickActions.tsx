@@ -60,8 +60,8 @@ export default function WarehouseQuickActions({ products, onUpdated }: { product
         if (!request.current || request.current.payload !== payload) request.current = { key: crypto.randomUUID(), payload };
         const { data, error } = await supabase.rpc('warehouse_reconcile', { ...args, _key: request.current.key });
         if (error) throw error;
-        const result = data as { before: number; after: number };
-        toast.success(`Sverka saqlandi: ${fmtNum(result.before)} → ${fmtNum(result.after)}`);
+        const result = data as { before: number; after: number; barcode?: string | null };
+        toast.success(`Sverka saqlandi: ${fmtNum(result.before)} → ${fmtNum(result.after)}${result.barcode ? ` · Shtrix-kod: ${result.barcode}` : ''}`);
       } else return;
       setConfirm(false); setMode(null); await onUpdated();
     } catch (error) { toast.error((error as { message?: string }).message || 'Saqlashda xatolik'); }
@@ -73,7 +73,7 @@ export default function WarehouseQuickActions({ products, onUpdated }: { product
     <Dialog open={mode !== null} onOpenChange={v => { if (!v && !busy) setMode(null); }}><DialogContent className="max-w-xl max-h-[90dvh] overflow-y-auto"><DialogHeader><DialogTitle>{mode === 'mxik' ? 'MXIK kiritish' : 'Nakladnoysiz kirim (Sverka)'}</DialogTitle></DialogHeader>
       <form className="space-y-4" onSubmit={e => { e.preventDefault(); prepare(); }}>
         {mode === 'sverka' && <div className="flex gap-2"><Button type="button" variant={!isNew ? 'secondary' : 'outline'} onClick={() => setIsNew(false)}>Mavjud mahsulot</Button><Button type="button" variant={isNew ? 'secondary' : 'outline'} onClick={() => setIsNew(true)}>Yangi mahsulot</Button></div>}
-        {!isNew ? <div className="space-y-2"><Label>Mahsulot</Label><SearchableSelect options={options} value={id} onChange={v => { setId(v); setCode(products.find(p => p.id === v)?.mxik_code ?? ''); }} searchPlaceholder="Mahsulot qidirish..." />{selected && <p className="text-sm text-muted-foreground">{selected.name} · {selected.unit} · Qoldiq: {fmtNum(selected.stock_qty)}</p>}</div> : <>
+        {!isNew ? <div className="space-y-2"><Label>Mahsulot</Label><SearchableSelect options={options} value={id} onChange={v => { setId(v); setCode(products.find(p => p.id === v)?.mxik_code ?? ''); }} searchPlaceholder="Mahsulot qidirish..." />{selected && <p className="text-sm text-muted-foreground">{selected.name} · {selected.unit} · Qoldiq: {fmtNum(selected.stock_qty)}</p>}{selected && <BarcodeChip product={selected} />}</div> : <>
           <div className="space-y-2"><Label htmlFor="sverka-name">Mahsulot nomi va texnik xususiyatlari</Label><Input id="sverka-name" required value={name} onChange={e => setName(e.target.value)} /></div>
           <div className="space-y-2"><Label htmlFor="sverka-unit">O‘lchov birligi</Label><Input id="sverka-unit" required value={unit} onChange={e => setUnit(e.target.value)} /></div>
           <div className="grid grid-cols-2 gap-3">{[['metal_type','Metall turi'],['thickness_mm','Qalinlik (mm)'],['width_mm','Eni (mm)'],['length_mm','Uzunlik (mm)'],['weight_kg','Bir dona og‘irligi (kg)']].map(([k,label]) => <div key={k} className="space-y-2"><Label htmlFor={`sverka-${k}`}>{label} (ixtiyoriy)</Label><Input id={`sverka-${k}`} type={k === 'metal_type' ? 'text' : 'number'} min="0" step="any" value={tech[k] ?? ''} onChange={e => setTech(prev => ({ ...prev, [k]: e.target.value }))} /></div>)}</div>
