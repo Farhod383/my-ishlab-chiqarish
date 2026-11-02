@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import SearchableSelect from '@/components/SearchableSelect';
 import { productSearchText, productTypeKey } from '@/lib/productSearch';
 import { canEnterMxik, canReconcile, validateReconciliation } from '@/lib/warehouseReconciliation';
+import BarcodeChip from '@/components/warehouse/BarcodeChip';
 import { fmtNum } from '@/lib/format';
 import { ClipboardCheck, FilePenLine } from 'lucide-react';
 import { toast } from 'sonner';

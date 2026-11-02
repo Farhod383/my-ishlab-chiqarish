@@ -38,6 +38,7 @@ import { useFocusEntity } from "@/notifications/FocusHighlighter";
 import { matchesProduct, matchesProductText, productSearchText, scannedQuantity, productTypeKey } from "@/lib/productSearch";
 import CatalogScanner from "@/components/warehouse/CatalogScanner";
 import BarcodeLabel from "@/components/warehouse/BarcodeLabel";
+import BarcodeChip from "@/components/warehouse/BarcodeChip";
 import CatalogReview from "@/components/warehouse/CatalogReview";
 import BulkBarcodeLabels from "@/components/warehouse/BulkBarcodeLabels";
 import ProductTypeReview from "@/components/warehouse/ProductTypeReview";
