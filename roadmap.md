@@ -79,3 +79,8 @@
 
 ## Sklad kirimi — "Qarz" to'lov turi
 - [x] Naqd/O'tkazma/Korporativ karta/Qarz tanlovi; Qarz yakunlanganda Kassa → Qarz'ga bir marta yoziladi (manba "Sklad tovar kirimi"), tahrir/bekor sinxron, to'lov bo'lsa o'chirish bloklanadi; Ta'minot kassasidan ayrilmaydi. 4 tur DB'da sinaldi.
+
+## Sklad: tarix asosida qoldiq + Skaner tarixi
+- [x] scan_history jadvali (RLS: yozish o'z nomidan, o'qish admin/warehouse/chief_accountant), log_scan/finalize_scan RPC, stock_balance_check() — 18 mahsulotda tarixiy farq (boshlang'ich qoldiq tarixsiz), avtomatik o'zgartirish yo'q.
+- [x] Skaner tarixi tabi (Harakatlar tarixi yonida): sana/nom/kod/foydalanuvchi/modul/amal/natija filtrlari; CatalogScanner barcha 5 nuqtada (Sklad, Kirim, Chiqim×2, Sverka) tarix yozadi; chiqim/sverka tasdiqlanganda miqdor va yakuniy qoldiq bog'lanadi.
+- [x] 122 test o'tdi, build toza; Admin 2 brauzerida Topildi/Topilmadi yozuvlari, tab va tekshiruv oynasi tekshirildi. Nakladnoy kirimida miqdor skaner yozuviga bog'lanmaydi (sessiya serverda yakunlanadi).
