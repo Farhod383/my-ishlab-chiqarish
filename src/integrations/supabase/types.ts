@@ -3132,6 +3132,8 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      scan_catalog: { Args: { _code: string }; Returns: Json }
+      scan_code_variants: { Args: { _code: string }; Returns: string[] }
       set_product_mxik: {
         Args: { _code: string; _expected_code: string; _product_id: string }
         Returns: undefined

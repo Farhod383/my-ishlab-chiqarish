@@ -421,6 +421,13 @@
       "when": 1793613682177,
       "tag": "0059_sverka_direction_cast_fix",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1793614010249,
+      "tag": "0060_barcode_scanner_normalization",
+      "breakpoints": true
     }
   ]
 }

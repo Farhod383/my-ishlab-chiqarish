@@ -1,4 +1,5 @@
 import { searchNorm } from "@/lib/translit";
+import { scanCodeVariants } from "@/lib/scanCode";
 
 export interface SearchProduct { id?: string; product_type_id?: string | null; name: string; old_names?: string[] | null; mxik_code?: string | null; barcode?: string | null; unit?: string | null }
 export function productTypeKey(p: SearchProduct): string { return p.product_type_id ?? p.id ?? p.barcode ?? `${p.name}|${p.unit}`; }
@@ -21,6 +22,7 @@ export function scannedQuantity(unit: string | null | undefined, same: boolean, 
   return same ? Math.max(0, current || 0) + 1 : 1;
 }
 export function resolveScan<T extends SearchProduct>(products: T[], code: string): T[] {
-  const value = code.trim();
-  return uniqueProductTypes(products.filter(p => p.barcode === value));
+  const variants = scanCodeVariants(code);
+  if (!variants.length) return [];
+  return uniqueProductTypes(products.filter(p => p.barcode && variants.includes(p.barcode.toUpperCase())));
 }
