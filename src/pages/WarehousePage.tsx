@@ -332,7 +332,11 @@ export default function WarehousePage() {
       });
     }
     toast.success(t.warehouse.outRecorded);
-    setOutProduct(""); setOutOrder(""); setOutQty(1); setOutRecipient(""); setOutComment("");
+    if (outScanId) {
+      const { data: np } = await supabase.from("products").select("stock_qty").eq("id", outProduct).maybeSingle();
+      await finalizeScan(outScanId, "out", Number(outQty), np ? Number((np as any).stock_qty) : null);
+    }
+    setOutProduct(""); setOutOrder(""); setOutQty(1); setOutRecipient(""); setOutComment(""); setOutScanId(null);
     setCrossOpen(false); setCrossInfo(null); setCrossReason("");
     load();
   };
@@ -458,7 +462,11 @@ export default function WarehousePage() {
       details: `${products.find(p=>p.id===otherProduct)?.name} — ${otherQty}, sabab: ${otherReason}`,
     });
     toast.success(t.warehouse.outRecorded);
-    setOtherProduct(""); setOtherQty(1); setOtherRecipient(""); setOtherReason("");
+    if (otherScanId) {
+      const { data: np } = await supabase.from("products").select("stock_qty").eq("id", otherProduct).maybeSingle();
+      await finalizeScan(otherScanId, "out", Number(otherQty), np ? Number((np as any).stock_qty) : null);
+    }
+    setOtherProduct(""); setOtherQty(1); setOtherRecipient(""); setOtherReason(""); setOtherScanId(null);
     setOtherOpen(false);
     load();
   };
@@ -1492,10 +1500,15 @@ export default function WarehousePage() {
         <TabsList>
           <TabsTrigger value="stock">{t.warehouse.tabs.stock}</TabsTrigger>
           <TabsTrigger value="history">{t.warehouse.tabs.history}</TabsTrigger>
+          <TabsTrigger value="scans">Skaner tarixi</TabsTrigger>
           <TabsTrigger value="instruments">Instrumentlar</TabsTrigger>
           <TabsTrigger value="employees">Xodimlar</TabsTrigger>
           <TabsTrigger value="reorder">Qayta zakaz berish kerak ({lowStock.length})</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="scans" className="mt-4">
+          <ScanHistoryTab />
+        </TabsContent>
 
         <TabsContent value="instruments" className="mt-4">
           <InstrumentsTab />
@@ -1569,6 +1582,7 @@ export default function WarehousePage() {
             <Button variant={mxikReviewOnly ? "secondary" : "outline"} onClick={() => setMxikReviewOnly(v => !v)}>MXIK tekshiruvi kerak ({products.filter(p => !p.mxik_code).length})</Button>
             <CatalogReview canEdit={hasRole(["admin"])} onUpdated={load} />
             <BulkBarcodeLabels products={products} />
+            <StockBalanceCheck />
             <ProductTypeReview />
             <Select value={locFilter} onValueChange={setLocFilter}>
               <SelectTrigger className="w-[200px]"><SelectValue placeholder="Joylashuv" /></SelectTrigger>
