@@ -108,11 +108,12 @@ export default function DailyTasksPage() {
 
   const create = async () => {
     if (!form.employee_id || !form.order_id || !form.task_title.trim()) { toast.error("Ishchi, zakaz va topshiriqni to'ldiring"); return; }
+    if (date > todayTashkent()) { toast.error("Kelajak sanaga topshiriq berib bo'lmaydi."); return; }
     if (blockedFor && !staleBlocker) { toast.error("Bu xodimning joriy topshirig'i hali yopilmagan. Avval mavjud topshiriqni yakunlang."); return; }
     if (staleBlocker) {
-      const { error: cErr } = await supabase.from("daily_tasks").update({ status: "cancelled" } as any).eq("id", staleBlocker.id);
+      const { error: cErr } = await supabase.from("daily_tasks").update({ status: "closed" } as any).eq("id", staleBlocker.id);
       if (cErr) { toast.error(cErr.message); return; }
-      toast.info(`Eski kundagi yopilmagan topshiriq bekor qilindi (${fmtDateG(staleBlocker.task_date)}: ${staleBlocker.task_title})`);
+      toast.info(`Eski kundagi yopilmagan topshiriq joriy foizi (${staleBlocker.progress}%) bilan yopildi (${fmtDateG(staleBlocker.task_date)}: ${staleBlocker.task_title})`);
     }
     setSaving(true);
     const { data, error } = await supabase.from("daily_tasks").insert({
@@ -180,6 +181,29 @@ export default function DailyTasksPage() {
         ))}
       </div>
 
+      {openTasks.length > 0 && (
+        <Card className="border-status-yellow/50">
+          <CardContent className="p-3 space-y-2">
+            <div className="font-semibold">Ochiq qolgan topshiriqlar ({openTasks.length})</div>
+            <div className="space-y-1">
+              {openTasks.map((t) => {
+                const e = empMap[t.employee_id]; const o = orderMap[t.order_id];
+                return (
+                  <div key={t.id} className="flex flex-wrap items-center gap-2 text-sm cursor-pointer hover:bg-muted/40 rounded px-2 py-1" onClick={() => { setDetail(t); setProg(t.progress); }}>
+                    <span className="text-muted-foreground">{fmtDateG(t.task_date)}</span>
+                    <span className="font-medium">{localize(e?.full_name) || "—"}</span>
+                    <span className="text-muted-foreground">{o ? `#${o.order_number}` : "—"}</span>
+                    <span className="flex-1 min-w-[120px]">{t.task_title}</span>
+                    <span className="text-muted-foreground">{t.progress}%</span>
+                    <Badge variant="outline" className={STATUS_CLS.in_progress}>{STATUS_LABEL.in_progress}</Badge>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="space-y-2">
         {filtered.length === 0 && <Card><CardContent className="p-6 text-center text-muted-foreground">Bu kun uchun topshiriq yo'q</CardContent></Card>}
         {filtered.map((t, i) => {
@@ -213,13 +237,14 @@ export default function DailyTasksPage() {
             <div><Label>Ishchi *</Label>
               <SearchableSelect value={form.employee_id} onChange={(v) => setForm({ ...form, employee_id: v })} placeholder="Xodimni tanlang" options={empOptions} />
               {blockedFor && !staleBlocker && <p className="text-sm text-destructive mt-1">Bu xodimning joriy topshirig'i hali yopilmagan ({fmtDateG(blockedFor.task_date)}: {blockedFor.task_title}, {blockedFor.progress}%). Avval mavjud topshiriqni yakunlang.</p>}
-              {staleBlocker && <p className="text-sm text-muted-foreground mt-1">Eski kundagi yopilmagan topshiriq ({fmtDateG(staleBlocker.task_date)}: {staleBlocker.task_title}, {staleBlocker.progress}%) avtomatik bekor qilinadi.</p>}
+              {staleBlocker && <p className="text-sm text-muted-foreground mt-1">Eski kundagi yopilmagan topshiriq ({fmtDateG(staleBlocker.task_date)}: {staleBlocker.task_title}, {staleBlocker.progress}%) joriy foizi bilan avtomatik yopiladi.</p>}
             </div>
             <div><Label>Zakaz *</Label><SearchableSelect value={form.order_id} onChange={(v) => setForm({ ...form, order_id: v })} placeholder="Zakazni tanlang" options={orderOptions} /></div>
             <div><Label>Ish / topshiriq *</Label><Input value={form.task_title} onChange={(e) => setForm({ ...form, task_title: e.target.value })} placeholder="Masalan: Chizma chizish" /></div>
             <div><Label>Izoh</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
             <div><Label>Boshlang'ich foiz</Label><Input type="number" min={0} max={100} value={form.progress} onChange={(e) => setForm({ ...form, progress: Number(e.target.value) })} /></div>
-            <Button className="w-full" disabled={saving || (!!blockedFor && !staleBlocker)} onClick={create}>Topshiriq berish</Button>
+            {date > todayTashkent() && <p className="text-sm text-destructive">Kelajak sanaga topshiriq berib bo'lmaydi.</p>}
+            <Button className="w-full" disabled={saving || date > todayTashkent() || (!!blockedFor && !staleBlocker)} onClick={create}>Topshiriq berish</Button>
           </div>
         </DialogContent>
       </Dialog>
