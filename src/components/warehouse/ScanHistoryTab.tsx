@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RefreshCw } from "lucide-react";
-import { fmtDateTime } from "@/lib/dates";
-import { fmtNum } from "@/lib/format";
+import { fmtDateTime24, fmtNum } from "@/lib/format";
 import { EMPTY_SCAN_FILTERS, matchesScanFilters, scanActionLabel, scanResultLabel, SCAN_MODULES, type ScanFilters, type ScanHistoryRow } from "@/lib/scanHistory";
 
 const PAGE = 200;
@@ -95,7 +94,7 @@ export default function ScanHistoryTab() {
               {shown.length === 0 && <TableRow><TableCell colSpan={9} className="text-center py-8 text-sm text-muted-foreground">Skanerlashlar topilmadi</TableCell></TableRow>}
               {shown.map(r => (
                 <TableRow key={r.id}>
-                  <TableCell className="whitespace-nowrap">{fmtDateTime(r.scanned_at)}</TableCell>
+                  <TableCell className="whitespace-nowrap">{fmtDateTime24(r.scanned_at)}</TableCell>
                   <TableCell className="max-w-[220px] truncate" title={r.product_name ?? ""}>{r.product_name ?? "—"}</TableCell>
                   <TableCell className="font-mono text-xs">{r.code}</TableCell>
                   <TableCell>{r.module}</TableCell>
