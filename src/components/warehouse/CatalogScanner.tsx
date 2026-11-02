@@ -15,19 +15,22 @@ interface Props { products: SearchProduct[]; onSelect: (p: any, scanId?: string 
 const RAPID_GAP_MS = 35;
 const RESET_GAP_MS = 120;
 
-export default function CatalogScanner({ products, onSelect, onCreate }: Props) {
+export default function CatalogScanner({ products, onSelect, onCreate, module, action = "search" }: Props) {
   const [code, setCode] = useState("");
   const [matches, setMatches] = useState<any[]>([]);
   const [missing, setMissing] = useState("");
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const scanIdRef = useRef<string | null>(null);
   const callback = useRef<(value: string) => void>(() => {});
   callback.current = async (raw) => {
     const value = normalizeScanCode(raw);
     if (!value || busy) return;
     setBusy(true); setMissing(""); setMatches([]);
+    scanIdRef.current = null;
     try {
       let found: any[] = resolveScan(products, value);
+      let instrumentHit: ScanRow | null = null;
       if (!found.length) {
         const { data, error } = await supabase.rpc("scan_catalog", { _code: value });
         if (error) throw error;
@@ -35,10 +38,22 @@ export default function CatalogScanner({ products, onSelect, onCreate }: Props) 
         const instruments = rows.filter(r => r.kind === "instrument");
         found = rows.filter(r => r.kind === "product");
         if (!found.length && instruments.length) {
+          instrumentHit = instruments[0];
           toast.info(`Bu instrument: ${instruments[0].name}. Instrumentlar alohida bo'limda boshqariladi.`);
         }
       }
-      if (found.length === 1) { onSelect(found[0]); toast.success(found[0].name); }
+      // Har bir skanerlash tarixga yoziladi (topildi/topilmadi) — qoldiqga ta'sir qilmaydi.
+      const single = found.length === 1 ? found[0] : null;
+      const hit = single ?? instrumentHit;
+      scanIdRef.current = await logScan({
+        code: value, module, action,
+        productId: hit?.id ?? null,
+        productName: hit?.name ?? null,
+        productTypeId: hit?.product_type_id ?? null,
+        kind: hit ? (single ? "product" : "instrument") : null,
+        result: hit || found.length > 1 ? "found" : "not_found",
+      });
+      if (found.length === 1) { onSelect(found[0], scanIdRef.current); toast.success(found[0].name); }
       else if (found.length > 1) setMatches(found);
       else if (!missing) { setMissing(value); toast.error("Mahsulot topilmadi"); }
     } catch (e: any) { toast.error(e.message ?? "Skanerlashda xatolik"); }
