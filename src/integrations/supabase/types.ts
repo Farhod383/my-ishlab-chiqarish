@@ -2522,6 +2522,60 @@ export type Database = {
           },
         ]
       }
+      scan_history: {
+        Row: {
+          action: string
+          code: string
+          created_at: string
+          id: string
+          kind: string | null
+          module: string
+          product_id: string | null
+          product_name: string | null
+          product_type_id: string | null
+          quantity: number | null
+          result: string
+          scanned_at: string
+          scanned_by: string | null
+          scanned_by_name: string | null
+          stock_after: number | null
+        }
+        Insert: {
+          action?: string
+          code: string
+          created_at?: string
+          id?: string
+          kind?: string | null
+          module: string
+          product_id?: string | null
+          product_name?: string | null
+          product_type_id?: string | null
+          quantity?: number | null
+          result: string
+          scanned_at?: string
+          scanned_by?: string | null
+          scanned_by_name?: string | null
+          stock_after?: number | null
+        }
+        Update: {
+          action?: string
+          code?: string
+          created_at?: string
+          id?: string
+          kind?: string | null
+          module?: string
+          product_id?: string | null
+          product_name?: string | null
+          product_type_id?: string | null
+          quantity?: number | null
+          result?: string
+          scanned_at?: string
+          scanned_by?: string | null
+          scanned_by_name?: string | null
+          stock_after?: number | null
+        }
+        Relationships: []
+      }
       service_request_items: {
         Row: {
           created_at: string
@@ -3030,6 +3084,15 @@ export type Database = {
         Args: { _session_id: string }
         Returns: undefined
       }
+      finalize_scan: {
+        Args: {
+          _action: string
+          _id: string
+          _quantity: number
+          _stock_after: number
+        }
+        Returns: undefined
+      }
       has_any_role: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
@@ -3043,6 +3106,19 @@ export type Database = {
         Returns: boolean
       }
       is_my_trip: { Args: { _trip: string; _user: string }; Returns: boolean }
+      log_scan: {
+        Args: {
+          _action: string
+          _code: string
+          _kind: string
+          _module: string
+          _product_id: string
+          _product_name: string
+          _product_type_id: string
+          _result: string
+        }
+        Returns: string
+      }
       metal_consume: {
         Args: {
           _actor_name?: string
@@ -3137,6 +3213,17 @@ export type Database = {
       set_product_mxik: {
         Args: { _code: string; _expected_code: string; _product_id: string }
         Returns: undefined
+      }
+      stock_balance_check: {
+        Args: never
+        Returns: {
+          diff: number
+          history_qty: number
+          name: string
+          product_id: string
+          stock_qty: number
+          unit: string
+        }[]
       }
       sync_intake_debt: { Args: { _session_id: string }; Returns: undefined }
       update_intake_invoice: {
