@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import SearchableSelect from '@/components/SearchableSelect';
+import CatalogScanner from '@/components/warehouse/CatalogScanner';
 import { productSearchText, productTypeKey } from '@/lib/productSearch';
 import { canEnterMxik, canReconcile, validateReconciliation } from '@/lib/warehouseReconciliation';
 import BarcodeChip from '@/components/warehouse/BarcodeChip';

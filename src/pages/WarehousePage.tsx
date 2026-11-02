@@ -1574,6 +1574,7 @@ export default function WarehousePage() {
               </SelectContent>
             </Select>
           </div>
+          <CatalogScanner products={products} onSelect={(p) => { const full: any = products.find((x: any) => x.id === p.id) ?? p; setSelectedProduct(full); }} onCreate={() => setAddOpen(true)} />
           <Card><CardContent className="p-0">
             <div className="border rounded-md overflow-x-auto">
               <Table>
