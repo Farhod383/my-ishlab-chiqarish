@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.stock_balance_check() TO supabase_read_only_user;

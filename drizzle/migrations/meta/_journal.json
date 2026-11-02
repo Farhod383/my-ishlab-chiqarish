@@ -442,6 +442,13 @@
       "when": 1793614834492,
       "tag": "0062_grant_balance_check_service_role",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1793614865142,
+      "tag": "0063_grant_balance_check_readonly",
+      "breakpoints": true
     }
   ]
 }
