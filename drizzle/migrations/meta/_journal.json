@@ -428,6 +428,13 @@
       "when": 1793614010249,
       "tag": "0060_barcode_scanner_normalization",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1793614633108,
+      "tag": "0061_scan_history_and_balance_check",
+      "breakpoints": true
     }
   ]
 }
