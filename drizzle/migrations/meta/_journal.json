@@ -414,6 +414,13 @@
       "when": 1793613566682,
       "tag": "0058_sverka_final_stock_daily_task_lock",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1793613682177,
+      "tag": "0059_sverka_direction_cast_fix",
+      "breakpoints": true
     }
   ]
 }
