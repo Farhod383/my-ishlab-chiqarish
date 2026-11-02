@@ -38,7 +38,7 @@ export default function WarehouseQuickActions({ products, onUpdated }: { product
   const selected = products.find(p => p.id === id);
   const options = [...new Map(products.map(p => [productTypeKey(p), p])).values()].map(p => ({ value: p.id, label: `${p.name} · ${p.unit}`, hint: `Qoldiq: ${fmtNum(p.stock_qty)}`, searchText: productSearchText(p) }));
   const open = (next: 'sverka' | 'mxik') => {
-    setId(''); setIsNew(false); setName(''); setUnit('dona'); setQty(''); setPrice(''); setCurrency('UZS'); setComment(''); setTech({}); setCode(''); setConfirm(false); request.current = null; setMode(next);
+    setId(''); setIsNew(false); setName(''); setUnit('dona'); setQty(''); setPrice(''); setCurrency('UZS'); setComment(''); setTech({}); setCode(''); setConfirm(false); request.current = null; setScanId(null); setMode(next);
   };
   const prepare = () => {
     if (mode === 'mxik') {
