@@ -6,9 +6,10 @@ import { ScanBarcode } from "lucide-react";
 import { toast } from "sonner";
 import { resolveScan, type SearchProduct } from "@/lib/productSearch";
 import { normalizeScanCode } from "@/lib/scanCode";
+import { logScan, type ScanAction } from "@/lib/scanHistory";
 
 interface ScanRow { kind: "product" | "instrument"; id: string; product_type_id: string | null; name: string; unit: string | null; stock_qty: number | null; last_price: number | null; currency: string | null; mxik_code: string | null; barcode: string | null }
-interface Props { products: SearchProduct[]; onSelect: (p: any) => void; onCreate?: (code: string) => void }
+interface Props { products: SearchProduct[]; onSelect: (p: any, scanId?: string | null) => void; onCreate?: (code: string) => void; module: string; action?: ScanAction }
 
 // Skaner klaviaturadan farqli ravishda belgilarni bir-biriga juda tez (odatda <35 ms) yozadi.
 const RAPID_GAP_MS = 35;
