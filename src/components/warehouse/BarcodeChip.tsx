@@ -12,7 +12,8 @@ export default function BarcodeChip({ product }: { product: SearchProduct | null
   if (!product?.barcode) return null;
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(product.barcode!);
+      if (!product.barcode) return;
+      await navigator.clipboard.writeText(product.barcode);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch { toast.error("Nusxalash imkoni bo'lmadi"); }

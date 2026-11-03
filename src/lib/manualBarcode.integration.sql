@@ -1,0 +1,44 @@
+-- All changes are rolled back, including temporary products and audits.
+BEGIN;
+DO $$
+DECLARE actor uuid; p public.products%ROWTYPE; r jsonb; k uuid:=gen_random_uuid(); n text:='AUDIT-'||gen_random_uuid(); newcode text; denied boolean; before_catalog jsonb; before_finance jsonb;
+BEGIN
+ SELECT user_id INTO actor FROM public.user_roles WHERE role='admin' LIMIT 1;
+ IF actor IS NULL THEN RAISE EXCEPTION 'Admin test account missing'; END IF;
+ PERFORM set_config('request.jwt.claim.sub',actor::text,true);
+ SELECT jsonb_agg(to_jsonb(x) ORDER BY id) INTO before_catalog FROM public.products x;
+ SELECT jsonb_build_object('cash',(SELECT count(*) FROM public.cash_incomes),'expense',(SELECT count(*) FROM public.cash_expenses),'invoices',(SELECT count(*) FROM public.intake_sessions),'debt',(SELECT count(*) FROM public.debts),'movements',(SELECT count(*) FROM public.stock_movements)) INTO before_finance;
+ r:=public.warehouse_reconcile_with_barcode(k,NULL,n,'dona',2,'001234567890TEST',17,'USD','{}',NULL);
+ IF r->>'barcode'<>'001234567890TEST' THEN RAISE EXCEPTION 'Manual code not retained'; END IF;
+ SELECT * INTO p FROM public.products WHERE id=(r->>'product_id')::uuid;
+ r:=public.warehouse_reconcile_with_barcode(k,NULL,n,'dona',2,'001234567890TEST',17,'USD','{}',NULL);
+ IF NOT (r->>'replayed')::boolean THEN RAISE EXCEPTION 'Retry not replayed'; END IF;
+ denied:=false;
+ BEGIN PERFORM public.warehouse_reconcile_with_barcode(k,NULL,n,'dona',2,'DIFFERENT',17,'USD','{}',NULL); EXCEPTION WHEN OTHERS THEN denied:=true; END;
+ IF NOT denied THEN RAISE EXCEPTION 'Changed retry accepted'; END IF;
+ newcode:='NEW-'||gen_random_uuid();
+ PERFORM public.set_product_barcode(p.id,newcode,p.barcode);
+ IF (SELECT to_jsonb(x)-'barcode' FROM public.products x WHERE id=p.id) IS DISTINCT FROM to_jsonb(p)-'barcode' THEN RAISE EXCEPTION 'Barcode edit changed product business data'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.product_types WHERE id=p.product_type_id AND barcode=newcode) THEN RAISE EXCEPTION 'Registry not updated'; END IF;
+ IF EXISTS(SELECT 1 FROM public.products WHERE product_type_id=p.product_type_id AND barcode<>newcode) THEN RAISE EXCEPTION 'Batch barcode inconsistent'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(public.scan_catalog(p.barcode)) x WHERE x->>'id'=p.id::text) OR NOT EXISTS(SELECT 1 FROM jsonb_array_elements(public.scan_catalog(newcode)) x WHERE x->>'id'=p.id::text) THEN RAISE EXCEPTION 'Old/new scan failed'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.entity_audit WHERE entity_id=p.product_type_id AND action='barcode_changed' AND old_value->>'barcode'=p.barcode AND new_value->>'barcode'=newcode AND actor_id=actor) THEN RAISE EXCEPTION 'Audit missing'; END IF;
+ denied:=false;
+ BEGIN UPDATE public.product_types SET barcode='DIRECT-EDIT' WHERE id=p.product_type_id; EXCEPTION WHEN OTHERS THEN denied:=true; END;
+ IF NOT denied THEN RAISE EXCEPTION 'Direct edit allowed'; END IF;
+ denied:=false;
+ BEGIN PERFORM public.warehouse_reconcile_with_barcode(gen_random_uuid(),NULL,n||'-duplicate','dona',1,p.barcode,0,'UZS','{}',NULL); EXCEPTION WHEN OTHERS THEN denied:=true; END;
+ IF NOT denied THEN RAISE EXCEPTION 'Alias duplicate accepted'; END IF;
+ denied:=false;
+ BEGIN PERFORM public.warehouse_reconcile_with_barcode(gen_random_uuid(),NULL,n||'-duplicate','dona',1,newcode,0,'UZS','{}',NULL); EXCEPTION WHEN OTHERS THEN denied:=true; END;
+ IF NOT denied THEN RAISE EXCEPTION 'Canonical duplicate accepted'; END IF;
+ r:=public.warehouse_reconcile_with_barcode(gen_random_uuid(),NULL,n||'-automatic','dona',1,NULL,0,'UZS','{}',NULL);
+ IF r->>'barcode' !~ '^ERP[0-9]{9}$' THEN RAISE EXCEPTION 'Auto-generation failed'; END IF;
+ PERFORM set_config('request.jwt.claim.sub',gen_random_uuid()::text,true);
+ denied:=false;
+ BEGIN PERFORM public.set_product_barcode(p.id,'DENIED',newcode); EXCEPTION WHEN OTHERS THEN denied:=true; END;
+ IF NOT denied THEN RAISE EXCEPTION 'Unauthorized edit accepted'; END IF;
+ IF before_catalog IS DISTINCT FROM (SELECT jsonb_agg(to_jsonb(x) ORDER BY id) FROM public.products x WHERE name NOT LIKE n||'%') THEN RAISE EXCEPTION 'Existing catalog changed'; END IF;
+ IF (before_finance->>'cash')::int<>(SELECT count(*) FROM public.cash_incomes) OR (before_finance->>'expense')::int<>(SELECT count(*) FROM public.cash_expenses) OR (before_finance->>'invoices')::int<>(SELECT count(*) FROM public.intake_sessions) OR (before_finance->>'debt')::int<>(SELECT count(*) FROM public.debts) OR (before_finance->>'movements')::int+2<>(SELECT count(*) FROM public.stock_movements) THEN RAISE EXCEPTION 'Unexpected finance/history change'; END IF;
+END $$;
+ROLLBACK;

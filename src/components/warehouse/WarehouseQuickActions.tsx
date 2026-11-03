@@ -12,6 +12,7 @@ import { productSearchText, productTypeKey } from '@/lib/productSearch';
 import { canEnterMxik, canReconcile, validateReconciliation } from '@/lib/warehouseReconciliation';
 import { finalizeScan } from '@/lib/scanHistory';
 import BarcodeChip from '@/components/warehouse/BarcodeChip';
+import { validManualBarcode } from '@/lib/manualBarcode';
 import { fmtNum } from '@/lib/format';
 import { ClipboardCheck, FilePenLine } from 'lucide-react';
 import { toast } from 'sonner';
@@ -30,6 +31,8 @@ export default function WarehouseQuickActions({ products, onUpdated }: { product
   const [comment, setComment] = useState('');
   const [tech, setTech] = useState<Record<string, string>>({});
   const [code, setCode] = useState('');
+  const [barcode, setBarcode] = useState('');
+  const [savedProduct, setSavedProduct] = useState<Product | null>(null);
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [scanId, setScanId] = useState<string | null>(null);
@@ -38,12 +41,13 @@ export default function WarehouseQuickActions({ products, onUpdated }: { product
   const selected = products.find(p => p.id === id);
   const options = [...new Map(products.map(p => [productTypeKey(p), p])).values()].map(p => ({ value: p.id, label: `${p.name} · ${p.unit}`, hint: `Qoldiq: ${fmtNum(p.stock_qty)}`, searchText: productSearchText(p) }));
   const open = (next: 'sverka' | 'mxik') => {
-    setId(''); setIsNew(false); setName(''); setUnit('dona'); setQty(''); setPrice(''); setCurrency('UZS'); setComment(''); setTech({}); setCode(''); setConfirm(false); request.current = null; setScanId(null); setMode(next);
+    setId(''); setIsNew(false); setName(''); setUnit('dona'); setQty(''); setPrice(''); setCurrency('UZS'); setComment(''); setTech({}); setCode(''); setBarcode(''); setSavedProduct(null); setConfirm(false); request.current = null; setScanId(null); setMode(next);
   };
   const prepare = () => {
     if (mode === 'mxik') {
       if (!selected || !code.trim()) { toast.error('Mahsulot va MXIK kodini kiriting'); return; }
     } else {
+      if (isNew && !validManualBarcode(barcode, true)) { toast.error('To‘g‘ri shtrix-kod kiriting'); return; }
       if ((isNew && (!name.trim() || !unit.trim())) || (!isNew && !selected) || !validateReconciliation(Number(qty), price === '' ? null : Number(price), isNew)) { toast.error(isNew ? 'Mahsulot, musbat boshlang‘ich qoldiq va to‘g‘ri narxni kiriting' : 'Mahsulot va yangi yakuniy qoldiqni (0 yoki undan katta) kiriting'); return; }
       if (Object.entries(tech).some(([k,v]) => k !== 'metal_type' && v !== '' && (!Number.isFinite(Number(v)) || Number(v) <= 0))) { toast.error('Texnik o‘lchamlar musbat bo‘lishi kerak'); return; }
     }
@@ -58,14 +62,15 @@ export default function WarehouseQuickActions({ products, onUpdated }: { product
         if (error) throw error;
         toast.success('MXIK saqlandi');
       } else if (mode === 'sverka') {
-        const args = { _product_id: isNew ? null : id, _name: isNew ? name.trim() : null, _unit: isNew ? unit : null, _quantity: Number(qty), _price: price === '' ? null : Number(price), _currency: currency, _technical: tech, _comment: comment || null };
+        const args = { _product_id: isNew ? null : id, _name: isNew ? name.trim() : null, _unit: isNew ? unit : null, _quantity: Number(qty), _price: price === '' ? null : Number(price), _currency: currency, _technical: tech, _comment: comment || null, _barcode: isNew ? barcode.trim() || null : null };
         const payload = JSON.stringify(args);
         if (!request.current || request.current.payload !== payload) request.current = { key: crypto.randomUUID(), payload };
-        const { data, error } = await supabase.rpc('warehouse_reconcile', { ...args, _key: request.current.key });
+        const { data, error } = await supabase.rpc('warehouse_reconcile_with_barcode', { ...args, _key: request.current.key });
         if (error) throw error;
-        const result = data as { before: number; after: number; barcode?: string | null };
+        const result = data as { product_id: string; before: number; after: number; barcode?: string | null };
         if (scanId) await finalizeScan(scanId, 'in', Number(qty), Number(result.after));
         toast.success(`Sverka saqlandi: ${fmtNum(result.before)} → ${fmtNum(result.after)}${result.barcode ? ` · Shtrix-kod: ${result.barcode}` : ''}`);
+        setSavedProduct({ id: result.product_id, name: isNew ? name : selected?.name ?? '', unit: isNew ? unit : selected?.unit ?? 'dona', stock_qty: result.after, barcode: result.barcode, currency, mxik_code: null });
       } else return;
       setConfirm(false); setMode(null); await onUpdated();
     } catch (error) { toast.error((error as { message?: string }).message || 'Saqlashda xatolik'); }
@@ -80,6 +85,7 @@ export default function WarehouseQuickActions({ products, onUpdated }: { product
         {!isNew ? <div className="space-y-2">{mode === 'sverka' && <CatalogScanner products={products} module="Sverka" action="in" onSelect={(p, sid) => { setScanId(sid ?? null); setId(p.id); setCode(p.mxik_code ?? ''); }} />}<Label>Mahsulot</Label><SearchableSelect options={options} value={id} onChange={v => { setId(v); setCode(products.find(p => p.id === v)?.mxik_code ?? ''); }} searchPlaceholder="Mahsulot qidirish..." />{selected && <p className="text-sm text-muted-foreground">{selected.name} · {selected.unit} · Qoldiq: {fmtNum(selected.stock_qty)}</p>}{selected && <BarcodeChip product={selected} />}</div> : <>
           <div className="space-y-2"><Label htmlFor="sverka-name">Mahsulot nomi va texnik xususiyatlari</Label><Input id="sverka-name" required value={name} onChange={e => setName(e.target.value)} /></div>
           <div className="space-y-2"><Label htmlFor="sverka-unit">O‘lchov birligi</Label><Input id="sverka-unit" required value={unit} onChange={e => setUnit(e.target.value)} /></div>
+          <div className="space-y-2"><Label htmlFor="sverka-barcode">Shtrix-kod (ixtiyoriy)</Label><Input id="sverka-barcode" value={barcode} onChange={e => setBarcode(e.target.value)} /></div>
           <div className="grid grid-cols-2 gap-3">{[['metal_type','Metall turi'],['thickness_mm','Qalinlik (mm)'],['width_mm','Eni (mm)'],['length_mm','Uzunlik (mm)'],['weight_kg','Bir dona og‘irligi (kg)']].map(([k,label]) => <div key={k} className="space-y-2"><Label htmlFor={`sverka-${k}`}>{label} (ixtiyoriy)</Label><Input id={`sverka-${k}`} type={k === 'metal_type' ? 'text' : 'number'} min="0" step="any" value={tech[k] ?? ''} onChange={e => setTech(prev => ({ ...prev, [k]: e.target.value }))} /></div>)}</div>
         </>}
         {mode === 'mxik' ? <><p className="text-sm">Hozirgi MXIK: {selected?.mxik_code ?? '—'}</p><div className="space-y-2"><Label htmlFor="manual-mxik">MXIK kodi</Label><Input id="manual-mxik" type="text" required value={code} onChange={e => setCode(e.target.value)} /></div></> : <>
@@ -91,5 +97,6 @@ export default function WarehouseQuickActions({ products, onUpdated }: { product
       </form>
     </DialogContent></Dialog>
     <Dialog open={confirm} onOpenChange={v => { if (!busy) setConfirm(v); }}><DialogContent className="max-w-md"><DialogHeader><DialogTitle>Saqlashni tasdiqlang</DialogTitle></DialogHeader><p className="font-medium">{isNew ? name : selected?.name}</p>{mode === 'mxik' ? <><p>Eski MXIK: {selected?.mxik_code ?? '—'}</p><p className="break-all">Yangi MXIK: {code}</p></> : <><p>{isNew ? 'Boshlang‘ich qoldiq' : 'Yangi yakuniy qoldiq'}: {qty} {isNew ? unit : selected?.unit}</p><p>Qoldiq: {fmtNum(isNew ? 0 : selected?.stock_qty ?? 0)} → {fmtNum(Number(qty))}</p></>}<div className="flex justify-end gap-2"><Button variant="outline" disabled={busy} onClick={() => setConfirm(false)}>Orqaga</Button><Button disabled={busy} onClick={save}>{busy ? 'Saqlanmoqda...' : 'Saqlash'}</Button></div></DialogContent></Dialog>
+    <Dialog open={savedProduct !== null} onOpenChange={v => { if (!v) setSavedProduct(null); }}><DialogContent><DialogHeader><DialogTitle>Sverka saqlandi</DialogTitle></DialogHeader><p>{savedProduct?.name}</p><BarcodeChip product={savedProduct} /><Button onClick={() => setSavedProduct(null)}>Yopish</Button></DialogContent></Dialog>
   </>;
 }
