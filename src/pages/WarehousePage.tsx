@@ -43,6 +43,7 @@ import CatalogReview from "@/components/warehouse/CatalogReview";
 import BulkBarcodeLabels from "@/components/warehouse/BulkBarcodeLabels";
 import ProductTypeReview from "@/components/warehouse/ProductTypeReview";
 import WarehouseQuickActions from "@/components/warehouse/WarehouseQuickActions";
+import ProductBarcodeEditor from "@/components/warehouse/ProductBarcodeEditor";
 import ScanHistoryTab from "@/components/warehouse/ScanHistoryTab";
 import StockBalanceCheck from "@/components/warehouse/StockBalanceCheck";
 import { finalizeScan } from "@/lib/scanHistory";
@@ -1901,6 +1902,7 @@ export default function WarehousePage() {
           <DialogHeader><DialogTitle>{t.common.edit} — {editProd?.name}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>{t.warehouse.productName}</Label><Input list="dl-product-names" value={epName} onChange={e => setEpName(e.target.value)} /></div>
+            {editProd && <ProductBarcodeEditor product={editProd} onUpdated={code => { setEditProd((p: any) => p ? { ...p, barcode: code } : p); void load(); }} />}
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{t.warehouse.unit}</Label>
                 <Select value={epUnit} onValueChange={setEpUnit}>
