@@ -1,8 +1,8 @@
 
 ## Qo‘lda shtrix-kod va tahrirlash
-- [ ] Sverka yangi mahsulotida qo‘lda kod/avtogeneratsiya va saqlangan kod yorlig‘i.
-- [ ] Vakolatli mahsulot turi kodi tahriri, barcha partiyalar sinxronligi, eski alias va audit.
-- [ ] Dublikat/ruxsat/alias/40×30 mm PDF va ma’lumotlarni saqlash sinovlari.
+- [x] Sverka yangi mahsulotida qo‘lda kod/avtogeneratsiya va saqlangan kod yorlig‘i.
+- [x] Vakolatli mahsulot turi kodi tahriri, barcha partiyalar sinxronligi, eski alias va audit.
+- [x] 38 frontend test; DB rollback: qo‘lda/avto kod, tahrir, eski/yangi scan, canonical/alias dublikat, retry, audit, ruxsatsiz rad va eski katalog/Kassa/Nakladnoy saqlanishi. Admin 2 brauzerida yangi maydon, mavjud kod, o‘zgarmagan kodni saqlash taqiqi va haqiqiy 40×30 mm PDF tekshirildi. Brauzerda real mahsulot kodi/kirimi o‘zgartirilmadi; fizik printer/skaner tekshirilmagan.
 
 ## Sklad sverka va qo‘lda MXIK
 - [x] Nakladnoysiz atomik, takrorlanmaydigan sverka kirimi; o‘zgarmas tarix, eski/yangi qoldiq va Kassa/Ta’minotdan mustaqillik.
