@@ -6,6 +6,7 @@ import { ScanBarcode } from "lucide-react";
 import { toast } from "sonner";
 import { resolveScan, type SearchProduct } from "@/lib/productSearch";
 import { normalizeScanCode } from "@/lib/scanCode";
+import { registerScanHandler } from "@/lib/scanChannel";
 import { logScan, type ScanAction } from "@/lib/scanHistory";
 
 interface ScanRow { kind: "product" | "instrument"; id: string; product_type_id: string | null; name: string; unit: string | null; stock_qty: number | null; last_price: number | null; currency: string | null; mxik_code: string | null; barcode: string | null }
@@ -96,8 +97,9 @@ export default function CatalogScanner({ products, onSelect, onCreate, module, a
       }
       buffer += e.key;
     };
-    window.addEventListener("keydown", keydown, true);
-    return () => { window.clearTimeout(ready); window.removeEventListener("keydown", keydown, true); };
+    // Yagona kanal: faqat eng yuqori (oxirgi ochilgan) skaner hodisani qayta ishlaydi.
+    const unregister = registerScanHandler(keydown);
+    return () => { window.clearTimeout(ready); unregister(); };
   }, []);
   return <div className="space-y-2" data-catalog-scan>
     <div className="flex gap-2 items-center">
