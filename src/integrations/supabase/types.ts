@@ -3210,6 +3210,10 @@ export type Database = {
       }
       scan_catalog: { Args: { _code: string }; Returns: Json }
       scan_code_variants: { Args: { _code: string }; Returns: string[] }
+      set_product_barcode: {
+        Args: { _code: string; _expected_code: string; _product_id: string }
+        Returns: Json
+      }
       set_product_mxik: {
         Args: { _code: string; _expected_code: string; _product_id: string }
         Returns: undefined
@@ -3241,6 +3245,21 @@ export type Database = {
       }
       warehouse_reconcile: {
         Args: {
+          _comment?: string
+          _currency?: string
+          _key: string
+          _name: string
+          _price?: number
+          _product_id: string
+          _quantity: number
+          _technical?: Json
+          _unit: string
+        }
+        Returns: Json
+      }
+      warehouse_reconcile_with_barcode: {
+        Args: {
+          _barcode: string
           _comment?: string
           _currency?: string
           _key: string
