@@ -89,3 +89,9 @@
 - [x] scan_history jadvali (RLS: yozish o'z nomidan, o'qish admin/warehouse/chief_accountant), log_scan/finalize_scan RPC, stock_balance_check() — 18 mahsulotda tarixiy farq (boshlang'ich qoldiq tarixsiz), avtomatik o'zgartirish yo'q.
 - [x] Skaner tarixi tabi (Harakatlar tarixi yonida): sana/nom/kod/foydalanuvchi/modul/amal/natija filtrlari; CatalogScanner barcha 5 nuqtada (Sklad, Kirim, Chiqim×2, Sverka) tarix yozadi; chiqim/sverka tasdiqlanganda miqdor va yakuniy qoldiq bog'lanadi.
 - [x] 122 test o'tdi, build toza; Admin 2 brauzerida Topildi/Topilmadi yozuvlari, tab va tekshiruv oynasi tekshirildi. Nakladnoy kirimida miqdor skaner yozuviga bog'lanmaydi (sessiya serverda yakunlanadi).
+
+## Skaner shtrix-kod maydoniga tushishi (03.11.2026) — TAYYOR
+- [x] Yagona skaner kanali (scanChannel.ts): faqat eng yuqori oyna skaneri hodisani qayta ishlaydi
+- [x] BarcodeScanField: Shtrix-kod maydoni + Skanerlash tugmasi (tahrirlash oynasi, Sverka yangi mahsulot)
+- [x] Sverka: noma'lum kod → "Yangi mahsulot yaratish" taklifi, kod avtomatik shtrix-kod maydoniga
+- [x] Testlar: 29 o'tdi, build OK; brauzerda Admin 2 bilan 4 oqim tekshirildi (DB o'zgartirilmadi)
