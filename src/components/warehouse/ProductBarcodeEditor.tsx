@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import BarcodeChip from './BarcodeChip';
+import BarcodeScanField from './BarcodeScanField';
 import { canEditBarcode, validManualBarcode } from '@/lib/manualBarcode';
 import { toast } from 'sonner';
 
@@ -32,7 +33,7 @@ export default function ProductBarcodeEditor({ product, onUpdated }: { product: 
   };
   return <div className="space-y-2">
     <Label htmlFor="edit-product-barcode">Shtrix-kod</Label>
-    <div className="flex gap-2"><Input id="edit-product-barcode" value={code} disabled={busy} onChange={e => setCode(e.target.value)} /><Button type="button" variant="outline" disabled={busy || code.trim() === current} onClick={() => { if (!validManualBarcode(code)) { toast.error('To‘g‘ri shtrix-kod kiriting'); return; } setConfirm(true); }}>Kodni saqlash</Button></div>
+    <div className="flex gap-2"><div className="flex-1"><BarcodeScanField id="edit-product-barcode" value={code} disabled={busy} onChange={setCode} /></div><Button type="button" variant="outline" disabled={busy || code.trim() === current} onClick={() => { if (!validManualBarcode(code)) { toast.error('To‘g‘ri shtrix-kod kiriting'); return; } setConfirm(true); }}>Kodni saqlash</Button></div>
     <BarcodeChip product={{ ...product, barcode: current }} />
     <Dialog open={confirm} onOpenChange={v => { if (!busy) setConfirm(v); }}><DialogContent><DialogHeader><DialogTitle>Shtrix-kodni almashtirish</DialogTitle></DialogHeader><p>{product.name}</p><p className="break-all">Eski kod: {current}</p><p className="break-all">Yangi kod: {code.trim()}</p><div className="flex justify-end gap-2"><Button variant="outline" disabled={busy} onClick={() => setConfirm(false)}>Orqaga</Button><Button disabled={busy} onClick={save}>{busy ? 'Saqlanmoqda...' : 'Tasdiqlash'}</Button></div></DialogContent></Dialog>
   </div>;
