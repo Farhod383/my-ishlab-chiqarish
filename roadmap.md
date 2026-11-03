@@ -1,4 +1,9 @@
 
+## Qo‘lda shtrix-kod va tahrirlash
+- [ ] Sverka yangi mahsulotida qo‘lda kod/avtogeneratsiya va saqlangan kod yorlig‘i.
+- [ ] Vakolatli mahsulot turi kodi tahriri, barcha partiyalar sinxronligi, eski alias va audit.
+- [ ] Dublikat/ruxsat/alias/40×30 mm PDF va ma’lumotlarni saqlash sinovlari.
+
 ## Sklad sverka va qo‘lda MXIK
 - [x] Nakladnoysiz atomik, takrorlanmaydigan sverka kirimi; o‘zgarmas tarix, eski/yangi qoldiq va Kassa/Ta’minotdan mustaqillik.
 - [x] Sklad/bosh buxgalter/admin uchun tasdiqlanadigan MXIK tahriri va server auditi; matn va boshlang‘ich nollar saqlanadi.
