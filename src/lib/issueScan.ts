@@ -26,6 +26,11 @@ export function createIssueScanHandler(onScan: (code: string) => void, clock = (
       buffer = "";
       field = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement ? e.target : null;
       value = field?.value ?? ""; start = field?.selectionStart ?? null; end = field?.selectionEnd ?? null;
+      // Number controls erase their value on the very first alphabetic key.
+      // Suppress that invalid key before React can commit an empty/zero value.
+      if (field instanceof HTMLInputElement && field.type === "number" && /[A-Za-zА-Яа-я]/.test(e.key)) {
+        e.preventDefault(); e.stopPropagation();
+      }
     } else if (buffer.length) {
       e.preventDefault(); e.stopPropagation(); restore();
     }

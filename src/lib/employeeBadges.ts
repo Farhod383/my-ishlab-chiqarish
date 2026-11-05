@@ -37,7 +37,7 @@ export async function buildEmployeeBadges(employees: BadgeEmployee[], perPage: B
     if (page >= doc.getNumberOfPages()) doc.addPage();
     doc.setFillColor(255, 255, 255); doc.rect(x, y, 100, 70, "F");
     // Thin vector strips approximate the requested purple header gradient.
-    for (let i = 0; i < 100; i++) { doc.setFillColor(59 + i * 0.32, 26 + i * 0.07, 120 + i * 0.62); doc.rect(x + i, y, 1.01, 12, "F"); }
+    for (let i = 0; i < 100; i++) { doc.setFillColor(59 + i * 0.32, 26 + i * 0.07, 120 + i * 0.62); doc.rect(x + i, y, 1.05, 12, "F"); }
     if (logoImage) doc.addImage(logoImage, "PNG", x + 3, y + 1.25, 9.5, 9.5);
     doc.setFont("Badge", "bold"); doc.setTextColor(255); doc.setFontSize(16); doc.text("MCITY", x + 15, y + 5.8);
     doc.setTextColor(253, 230, 138); doc.setFontSize(8); doc.text("XODIM GUVOHNOMASI", x + 15, y + 10);
