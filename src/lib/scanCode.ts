@@ -7,6 +7,11 @@ const RU_TO_EN: Record<string, string> = {
   "я": "z", "ч": "x", "с": "c", "м": "v", "и": "b", "т": "n", "ь": "m",
 };
 
+/** Chiqim bejik/tovar skaneri uchun EN normallashtirish. */
+export const normalizeScan = (raw: string): string => ruLayoutToEn(normalizeScanCode(raw));
+export const classifyScan = (code: string): "employee" | "product" | "unknown" =>
+  code.startsWith("MCT") ? "employee" : code.startsWith("ERP") ? "product" : "unknown";
+
 /** Bo'sh joylar, Enter va boshqaruv belgilarini olib tashlaydi, katta harfga o'tkazadi. */
 export function normalizeScanCode(raw: string): string {
   return (raw ?? "").replace(/[\x00-\x1f\x7f]+/g, "").replace(/\s+/g, "").toUpperCase();

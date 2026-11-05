@@ -456,6 +456,13 @@
       "when": 1793690444901,
       "tag": "0064_manual_product_type_barcode",
       "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1793862036884,
+      "tag": "0065_employee_immutable_badge_codes",
+      "breakpoints": true
     }
   ]
 }
