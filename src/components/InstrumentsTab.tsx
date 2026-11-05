@@ -24,6 +24,7 @@ import { currentUserName } from "@/lib/userNames";
 import { matchesProduct, productSearchText } from "@/lib/productSearch";
 import BarcodeLabel from "@/components/warehouse/BarcodeLabel";
 import BulkBarcodeLabels from "@/components/warehouse/BulkBarcodeLabels";
+import IssueScanner from "@/components/warehouse/IssueScanner";
 
 type Instrument = {
   id: string;
@@ -324,6 +325,7 @@ export default function InstrumentsTab() {
               <DialogContent>
                 <DialogHeader><DialogTitle>Instrument berish</DialogTitle></DialogHeader>
                 <div className="space-y-3">
+                  <IssueScanner kind="instrument" onEmployee={id => setIssueForm(f => ({ ...f, employee_id: id }))} onProduct={row => { const group = groups.find(g => g.batches.some(b => b.id === row.id)); if (group) setIssueForm(f => ({ ...f, group_key: group.key })); }} />
                   <div><Label>Xodim *</Label>
                     <SearchableSelect
                       value={issueForm.employee_id}

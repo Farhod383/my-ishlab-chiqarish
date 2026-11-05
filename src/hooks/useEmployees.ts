@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 export interface CentralEmployee {
   id: string;
   full_name: string;
+  badge_code: string;
   position: string | null;
   department: string | null;
   phone: string | null;
