@@ -37,6 +37,7 @@ import { currentUserName, displayUser } from "@/lib/userNames";
 import { useFocusEntity } from "@/notifications/FocusHighlighter";
 import { matchesProduct, matchesProductText, productSearchText, scannedQuantity, productTypeKey } from "@/lib/productSearch";
 import CatalogScanner from "@/components/warehouse/CatalogScanner";
+import IssueScanner from "@/components/warehouse/IssueScanner";
 import BarcodeLabel from "@/components/warehouse/BarcodeLabel";
 import BarcodeChip from "@/components/warehouse/BarcodeChip";
 import CatalogReview from "@/components/warehouse/CatalogReview";
@@ -1124,7 +1125,7 @@ export default function WarehousePage() {
                 <DialogContent>
                   <DialogHeader><DialogTitle>{t.warehouse.otherOutTitle}</DialogTitle></DialogHeader>
                   <div className="space-y-3">
-                    <CatalogScanner products={products} module="Chiqim" action="out" onSelect={(p, scanId) => { setOtherScanId(scanId ?? null); setOtherProduct(p.id); const qty=scannedQuantity(p.unit,p.id===otherProduct,otherQty); setOtherQty(qty ?? (p.id===otherProduct ? otherQty : 0)); }} onCreate={() => { setOtherOpen(false); setAddOpen(true); }} />
+                    <IssueScanner kind="product" onEmployee={setOtherRecipient} onProduct={(p, scanId) => { setOtherScanId(scanId); setOtherProduct(p.id); }} />
                     <div><Label>{t.warehouse.cols.product}</Label>
                       <SearchableSelect
                         value={otherProduct}
@@ -1153,7 +1154,7 @@ export default function WarehousePage() {
                 <DialogContent>
                   <DialogHeader><DialogTitle>{t.warehouse.releaseTitle}</DialogTitle></DialogHeader>
                   <div className="space-y-3">
-                    <CatalogScanner products={products} module="Chiqim" action="out" onSelect={(p, scanId) => { setOutScanId(scanId ?? null); setOutProduct(p.id); const qty=scannedQuantity(p.unit,p.id===outProduct,outQty); setOutQty(qty ?? (p.id===outProduct ? outQty : 0)); }} onCreate={() => { setReleaseOpen(false); setAddOpen(true); }} />
+                    <IssueScanner kind="product" onEmployee={setOutRecipient} onProduct={(p, scanId) => { setOutScanId(scanId); setOutProduct(p.id); }} />
                     <div><Label>{t.warehouse.forOrder}</Label>
                       <SearchableSelect
                         value={outOrder}
@@ -1595,7 +1596,6 @@ export default function WarehousePage() {
               </SelectContent>
             </Select>
           </div>
-          <CatalogScanner products={products} module="Sklad" action="search" onSelect={(p) => { const full: any = products.find((x: any) => x.id === p.id) ?? p; setSelectedProduct(full); }} onCreate={() => setAddOpen(true)} />
           <Card><CardContent className="p-0">
             <div className="border rounded-md overflow-x-auto">
               <Table>
