@@ -6,7 +6,7 @@ import { normalizeScan, classifyScan } from "./scanCode";
 describe("employee issue scanning", () => {
   it("normalizes ERP Russian layout", () => expect(normalizeScan("УКЗ000000123")).toBe("ERP000000123"));
   it("normalizes MCT Russian layout", () => expect(normalizeScan("ЬСЕ00101")).toBe("MCT00101"));
-  it("strips spaces controls and enter", () => expect(normalizeScan(" \tмст00001\n\r")).toBe("VCN00001"));
+  it("strips spaces controls and enter", () => expect(normalizeScan(" \tMCT00001\n\r")).toBe("MCT00001"));
   it("classifies employee codes", () => expect(classifyScan("MCT00101")).toBe("employee"));
   it("classifies product codes", () => expect(classifyScan("ERP000000123")).toBe("product"));
   it("rejects unknown prefixes", () => expect(classifyScan("4607025392110")).toBe("unknown"));

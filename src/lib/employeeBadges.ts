@@ -35,29 +35,29 @@ export async function buildEmployeeBadges(employees: BadgeEmployee[], perPage: B
   for (const [index, emp] of employees.entries()) {
     const { page, x, y } = badgePosition(index, perPage);
     if (page >= doc.getNumberOfPages()) doc.addPage();
-    doc.setFillColor(255); doc.rect(x, y, 100, 70, "F");
+    doc.setFillColor(255, 255, 255); doc.rect(x, y, 100, 70, "F");
     // Thin vector strips approximate the requested purple header gradient.
     for (let i = 0; i < 100; i++) { doc.setFillColor(59 + i * 0.32, 26 + i * 0.07, 120 + i * 0.62); doc.rect(x + i, y, 1.01, 12, "F"); }
     if (logoImage) doc.addImage(logoImage, "PNG", x + 3, y + 1.25, 9.5, 9.5);
     doc.setFont("Badge", "bold"); doc.setTextColor(255); doc.setFontSize(16); doc.text("MCITY", x + 15, y + 5.8);
     doc.setTextColor(253, 230, 138); doc.setFontSize(8); doc.text("XODIM GUVOHNOMASI", x + 15, y + 10);
-    doc.setFillColor(244); doc.roundedRect(x + 3, y + 14, 30, 40, 1.5, 1.5, "F");
+    doc.setFillColor(244, 244, 244); doc.roundedRect(x + 3, y + 14, 30, 40, 1.5, 1.5, "F");
     if (photos[index]) {
       doc.saveGraphicsState(); doc.roundedRect(x + 3, y + 14, 30, 40, 1.5, 1.5, null); doc.clip(); doc.discardPath();
       doc.addImage(photos[index] as string, "PNG", x + 3, y + 14, 30, 40); doc.restoreGraphicsState();
-    } else { doc.setFillColor(180); doc.circle(x + 18, y + 28, 6, "F"); doc.roundedRect(x + 8, y + 36, 20, 15, 5, 5, "F"); }
+    } else { doc.setFillColor(180, 180, 180); doc.circle(x + 18, y + 28, 6, "F"); doc.roundedRect(x + 8, y + 36, 20, 15, 5, 5, "F"); }
     doc.setDrawColor(251, 191, 36); doc.setLineWidth(0.6); doc.roundedRect(x + 3, y + 14, 30, 40, 1.5, 1.5, "S");
     doc.setTextColor(25); doc.setFont("Badge", "bold");
     let size = 13, nameLines: string[] = [];
     do { doc.setFontSize(size); nameLines = doc.splitTextToSize(localize(emp.full_name), 61); if (nameLines.length <= 2 && nameLines.every(line => doc.getTextWidth(line) <= 61)) break; size -= 0.5; } while (size > 3);
     doc.text(nameLines, x + 36, y + 19, { lineHeightFactor: 1.1 });
-    let cursor = y + 19 + nameLines.length * size * 0.39;
+    let cursor = y + 25;
     for (const [label, value] of [["Lavozim", localize(emp.position ?? "—")], ["Bo'lim", localize(emp.department ?? "—")], ["Ishga kirgan sana", fmtDate(emp.hire_date)]]) {
       doc.setFont("Badge", "normal"); doc.setFontSize(6.5); doc.setTextColor(115); doc.text(label, x + 36, cursor + 2.5);
       doc.setFontSize(8); doc.setTextColor(30);
       let lines = doc.splitTextToSize(value, 61); let s = 8;
-      while (lines.length > 2 && s > 3) { s -= 0.5; doc.setFontSize(s); lines = doc.splitTextToSize(value, 61); }
-      doc.text(lines, x + 36, cursor + 6); cursor += 7 + lines.length * s * 0.35;
+      while ((lines.length > 2 || lines.length * s * 0.35 > 4) && s > 3) { s -= 0.5; doc.setFontSize(s); lines = doc.splitTextToSize(value, 61); }
+      doc.text(lines, x + 36, cursor + 6, { lineHeightFactor: 1 }); cursor += 10;
     }
     doc.setFillColor(242, 235, 251); doc.rect(x, y + 57, 100, 13, "F"); doc.setDrawColor(251, 191, 36); doc.setLineWidth(0.6); doc.line(x, y + 57, x + 100, y + 57);
     doc.setFont("Badge", "normal"); doc.setFontSize(6); doc.setTextColor(100); doc.text("Tabel №", x + 3, y + 61);
@@ -68,7 +68,7 @@ export async function buildEmployeeBadges(employees: BadgeEmployee[], perPage: B
     if (!bars) throw new Error("Bejik shtrix-kodi yaratilmadi");
     const moduleWidth = 0.33, barcodeWidth = bars.length * moduleWidth;
     const bx = x + 99 - 3.3 - barcodeWidth;
-    doc.setFillColor(0);
+    doc.setFillColor(0, 0, 0);
     for (let i = 0; i < bars.length; i++) if (bars[i] === "1") doc.rect(bx + i * moduleWidth, y + 59, moduleWidth, 9, "F");
     doc.setDrawColor(165); doc.setLineWidth(0.2); doc.setLineDashPattern([1, 1], 0); doc.rect(x, y, 100, 70); doc.setLineDashPattern([], 0);
   }
