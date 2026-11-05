@@ -1,9 +1,9 @@
 
 ## Xodim bejigi va chiqim skaneri
-- [ ] Doimiy MCT kodlari, mavjud HR yozuvlariga backfill va yangi xodim triggeri.
-- [ ] HR tanlovi va 4/6/8 talik vektor A4 bejik PDF.
-- [ ] Faqat chiqim/instrument berishda xodim+tovar skaneri; miqdor va zakaz saqlanadi.
-- [ ] DB, testlar va haqiqiy hisobda brauzer tekshiruvi.
+- [x] 116 mavjud HR yozuviga 116 doimiy MCT kodi; yangi xodim avtomatik kodi va tahrir taqiqi rollback sinovida tasdiqlandi.
+- [x] HR checkbox tanlovi va 4/6/8 talik vektor A4 bejik PDF; haqiqiy sakkiz xodim bitta A4 sahifada, matn vektor.
+- [x] Faqat chiqim/instrument berishda xodim+tovar skaneri; miqdor va zakaz saqlanadi, kirim skaneriga tegilmadi.
+- [x] 21 test; Admin 2 brauzerida uchala chiqim oynasida ikki kod va miqdor 17/9/2 saqlanishi, tashqi sahifada ishlamasligi, 575 px ekran tekshirildi. Haqiqiy chiqim saqlanmadi; fizik printer/skaner mavjud emas.
 
 ## Qo‘lda shtrix-kod va tahrirlash
 - [x] Sverka yangi mahsulotida qo‘lda kod/avtogeneratsiya va saqlangan kod yorlig‘i.
