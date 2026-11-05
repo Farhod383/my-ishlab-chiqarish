@@ -1,4 +1,10 @@
 
+## Xodim bejigi va chiqim skaneri
+- [ ] Doimiy MCT kodlari, mavjud HR yozuvlariga backfill va yangi xodim triggeri.
+- [ ] HR tanlovi va 4/6/8 talik vektor A4 bejik PDF.
+- [ ] Faqat chiqim/instrument berishda xodim+tovar skaneri; miqdor va zakaz saqlanadi.
+- [ ] DB, testlar va haqiqiy hisobda brauzer tekshiruvi.
+
 ## Qo‘lda shtrix-kod va tahrirlash
 - [x] Sverka yangi mahsulotida qo‘lda kod/avtogeneratsiya va saqlangan kod yorlig‘i.
 - [x] Vakolatli mahsulot turi kodi tahriri, barcha partiyalar sinxronligi, eski alias va audit.
