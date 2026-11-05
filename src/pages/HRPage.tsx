@@ -22,6 +22,8 @@ import { toast } from "sonner";
 import { useEmployees, refreshEmployees } from "@/hooks/useEmployees";
 import { currentUserName, displayUser } from "@/lib/userNames";
 import { useFocusEntity } from "@/notifications/FocusHighlighter";
+import { Checkbox } from "@/components/ui/checkbox";
+import EmployeeBadgePrint from "@/components/hr/EmployeeBadgePrint";
 
 // Uzbek phone format validator: +998 XX XXX XX XX  or XX XXX XX XX  (spaces optional)
 const PHONE_RE = /^(\+?998)?\s*\d{2}\s*\d{3}\s*\d{2}\s*\d{2}$/;
@@ -48,6 +50,7 @@ export default function HRPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm());
   const [attEmp, setAttEmp] = useState<{ id: string; full_name: string } | null>(null);
+  const [badgeSelection, setBadgeSelection] = useState<Set<string>>(new Set());
 
   const load = async () => {
     const [aRes] = await Promise.all([
@@ -335,10 +338,13 @@ export default function HRPage() {
           {statusFilter === "vacancy" ? (
             <div className="p-3"><VacanciesTab /></div>
           ) : (
+          <>
+          <div className="p-3 flex justify-end"><EmployeeBadgePrint employees={employees.filter(e => badgeSelection.has(e.id))} /></div>
           <div className="border rounded-md overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10"><Checkbox aria-label="Barcha ko‘rinayotgan xodimlarni tanlash" checked={filteredEmployees.length > 0 && filteredEmployees.every(e => badgeSelection.has(e.id))} onCheckedChange={checked => setBadgeSelection(prev => { const next = new Set(prev); filteredEmployees.forEach(e => checked ? next.add(e.id) : next.delete(e.id)); return next; })} /></TableHead>
                   <TableHead className="w-12 text-right">№</TableHead>
                   <TableHead>Ism</TableHead>
                   <TableHead>Lavozim</TableHead>
@@ -362,6 +368,7 @@ export default function HRPage() {
                     className={`${canManage ? "cursor-pointer hover:bg-muted/40" : ""} ${isNew(e) ? "bg-status-green/5" : ""}`.trim() || undefined}
                     onClick={canManage ? () => openEdit(e) : undefined}
                   >
+                    <TableCell onClick={ev => ev.stopPropagation()}><Checkbox aria-label={`Bejik: ${localize(e.full_name)}`} checked={badgeSelection.has(e.id)} onCheckedChange={checked => setBadgeSelection(prev => { const next = new Set(prev); if (checked) next.add(e.id); else next.delete(e.id); return next; })} /></TableCell>
                     <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
@@ -425,6 +432,7 @@ export default function HRPage() {
               </TableBody>
             </Table>
           </div>
+          </>
           )}
         </CardContent>
       </Card>
