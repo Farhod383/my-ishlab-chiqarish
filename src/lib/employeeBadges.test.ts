@@ -1,13 +1,17 @@
 import { describe, it, expect } from "vitest";
-import { badgePosition } from "./employeeBadges";
+import { badgePosition, BADGE_W, BADGE_H, BADGES_PER_PAGE } from "./employeeBadges";
 describe("badge sheet geometry", () => {
-  it("places eight badges on one centered A4 page", () => {
-    const positions = Array.from({ length: 8 }, (_, i) => badgePosition(i, 8));
-    expect(positions.map(p => p.page)).toEqual(Array(8).fill(0));
-    expect(positions[0]).toEqual({ page: 0, x: 5, y: 8.5 });
-    expect(positions[7]).toEqual({ page: 0, x: 105, y: 218.5 });
-    expect(badgePosition(8, 8).page).toBe(1);
+  it("uses 90×54 mm badges, ten per page", () => {
+    expect(BADGE_W).toBe(90); expect(BADGE_H).toBe(54); expect(BADGES_PER_PAGE).toBe(10);
   });
-  it("centers six badges in three rows", () => expect(badgePosition(0, 6).y).toBe(43.5));
-  it("centers four badges in two rows", () => expect(badgePosition(0, 4).y).toBe(78.5));
+  it("places ten badges on one centered A4 page (2 columns × 5 rows)", () => {
+    const positions = Array.from({ length: 10 }, (_, i) => badgePosition(i));
+    expect(positions.map(p => p.page)).toEqual(Array(10).fill(0));
+    expect(positions[0]).toEqual({ page: 0, x: 15, y: 13.5 });
+    expect(positions[1]).toEqual({ page: 0, x: 105, y: 13.5 });
+    expect(positions[9]).toEqual({ page: 0, x: 105, y: 229.5 });
+    // Varaq markazida: chap/o‘ng chekka 15 mm, yuqori/pastki 13.5 mm.
+    expect(positions[9].y + BADGE_H).toBe(283.5);
+  });
+  it("starts a new page after ten badges", () => expect(badgePosition(10).page).toBe(1));
 });
