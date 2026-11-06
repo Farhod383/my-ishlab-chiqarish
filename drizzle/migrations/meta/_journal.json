@@ -470,6 +470,13 @@
       "when": 1793945260815,
       "tag": "0066_scan_leading_zeros_and_alias_bind",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1793950715710,
+      "tag": "0067_factory_alias_management_raw_scans",
+      "breakpoints": true
     }
   ]
 }
