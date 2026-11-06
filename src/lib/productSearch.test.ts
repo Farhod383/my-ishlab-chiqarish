@@ -27,7 +27,8 @@ describe("catalog rules", () => {
     const items = [{ id: "n1", name: "Gvozd", barcode: "000123" }, { id: "n2", name: "Bolt", barcode: "ERP000000123" }];
     expect(resolveScan(items, "123").map(p => p.id)).toEqual(["n1"]);
     expect(resolveScan(items, "000123").map(p => p.id)).toEqual(["n1"]);
-    // ERP kodi raqamli emas — bosh nol qoidasi unga taalluqli emas.
-    expect(resolveScan(items, "000000123")).toEqual([]);
+    expect(resolveScan(items, "000000123").map(p => p.id)).toEqual(["n1"]);
+    // ERP kodi raqamli emas — bosh nol qoidasi uni "123" bilan bog'lamaydi.
+    expect(resolveScan(items, "123").map(p => p.id)).not.toContain("n2");
   });
 });
