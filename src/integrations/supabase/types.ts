@@ -3046,6 +3046,10 @@ export type Database = {
         Args: { _rows: Json; _source_key: string }
         Returns: Json
       }
+      bind_barcode_alias: {
+        Args: { _code: string; _product_id: string }
+        Returns: Json
+      }
       can_edit_intake: { Args: { _user_id: string }; Returns: boolean }
       can_manage_daily_tasks: { Args: { _u: string }; Returns: boolean }
       can_manage_trips: { Args: { _user_id: string }; Returns: boolean }
