@@ -1,8 +1,8 @@
 
 ## Yakuniy skaner talabi
-- [ ] Shift/modifikatorlar buferni buzmasligi; kirim/chiqim maydonlari saqlanishi.
-- [ ] Zavod aliaslarini barcha tegishli oynalarda qo‘shish/o‘chirish va yorliq filtri.
-- [ ] Xom va tozalangan kod tarixi; ERP000000812/854, alias va chiqim sinovlari.
+- [x] Shift/modifikatorlar buferni buzmasligi; umumiy kirim/chiqim tutgichi maydon qiymatini saqlaydi.
+- [x] Zavod aliaslari kirim/chiqim/instrument tanlovi, mahsulot/instrument tahriri va yangi mahsulotda; default yorliq filtri.
+- [x] Admin 2 brauzerida ERP000000812, RU ERP000000854, MCT00012; miqdor 17 va zakaz o‘zgarmadi. Sinov zavod aliasi ikkala kod bilan topildi va olib tashlandi; raw tarix, collision/MCT rad tekshirildi. 46 tegishli test o‘tdi; fizik qurilma tekshirilmagan.
 
 ## Xodim bejigi va chiqim skaneri
 - [x] 116 mavjud HR yozuviga 116 doimiy MCT kodi; yangi xodim avtomatik kodi va tahrir taqiqi rollback sinovida tasdiqlandi.

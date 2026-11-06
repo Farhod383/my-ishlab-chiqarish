@@ -20,9 +20,6 @@ interface Props { products: SearchProduct[]; onSelect: (p: any, scanId?: string 
 
 // Skaner klaviaturadan farqli ravishda belgilarni bir-biriga juda tez (≤50 ms) yozadi,
 // oxirida Enter yoki Tab yuboradi; kodi kamida 4 belgi.
-const RAPID_GAP_MS = 50;
-const RESET_GAP_MS = 150;
-const MIN_SCAN_LEN = 4;
 
 export default function CatalogScanner({ products, onSelect, module, action = "search" }: Props) {
   const { roles } = useAuth();
@@ -86,7 +83,7 @@ export default function CatalogScanner({ products, onSelect, module, action = "s
       const row = data as any;
       toast.success(`Kod biriktirildi: ${missing} → ${row.name}`);
       setBindOpen(false); setMissing(""); setBindId("");
-      onSelect({ id: row.product_id, product_type_id: row.product_type_id, name: row.name, unit: row.unit, barcode: row.barcode }, scanIdRef.current);
+      onSelect(products.find(p => p.id === row.product_id) ?? { id: row.product_id, product_type_id: row.product_type_id, name: row.name, unit: row.unit, barcode: row.barcode }, scanIdRef.current);
     } catch (e: any) { toast.error(e.message ?? "Kod biriktirishda xatolik"); }
     finally { setBusy(false); }
   };
