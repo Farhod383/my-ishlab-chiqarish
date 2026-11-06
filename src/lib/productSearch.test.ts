@@ -23,4 +23,11 @@ describe("catalog rules", () => {
   it("starts different piece product at one", () => expect(scannedQuantity("dona", false, 9)).toBe(1));
   it("does not increment kilograms", () => expect(scannedQuantity("kg", true, 2)).toBeNull());
   it("does not create unknown scan matches", () => expect(resolveScan(products, "unknown")).toEqual([]));
+  it("matches numeric barcodes ignoring leading zeros (000123 = 123)", () => {
+    const items = [{ id: "n1", name: "Gvozd", barcode: "000123" }, { id: "n2", name: "Bolt", barcode: "ERP000000123" }];
+    expect(resolveScan(items, "123").map(p => p.id)).toEqual(["n1"]);
+    expect(resolveScan(items, "000123").map(p => p.id)).toEqual(["n1"]);
+    // ERP kodi raqamli emas — bosh nol qoidasi unga taalluqli emas.
+    expect(resolveScan(items, "000000123")).toEqual([]);
+  });
 });
