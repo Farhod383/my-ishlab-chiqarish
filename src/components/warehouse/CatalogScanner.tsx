@@ -2,24 +2,34 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ScanBarcode } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { ScanBarcode, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { resolveScan, type SearchProduct } from "@/lib/productSearch";
-import { normalizeScanCode } from "@/lib/scanCode";
+import { normalizeScanCode, classifyScan } from "@/lib/scanCode";
 import { registerScanHandler } from "@/lib/scanChannel";
 import { logScan, type ScanAction } from "@/lib/scanHistory";
+import { useAuth } from "@/auth/AuthContext";
+import { canEditBarcode } from "@/lib/manualBarcode";
+import SearchableSelect from "@/components/SearchableSelect";
 
 interface ScanRow { kind: "product" | "instrument"; id: string; product_type_id: string | null; name: string; unit: string | null; stock_qty: number | null; last_price: number | null; currency: string | null; mxik_code: string | null; barcode: string | null }
-interface Props { products: SearchProduct[]; onSelect: (p: any, scanId?: string | null) => void; onCreate?: (code: string) => void; module: string; action?: ScanAction }
+interface Props { products: SearchProduct[]; onSelect: (p: any, scanId?: string | null) => void; module: string; action?: ScanAction }
 
-// Skaner klaviaturadan farqli ravishda belgilarni bir-biriga juda tez (odatda <35 ms) yozadi.
-const RAPID_GAP_MS = 35;
-const RESET_GAP_MS = 120;
+// Skaner klaviaturadan farqli ravishda belgilarni bir-biriga juda tez (≤50 ms) yozadi,
+// oxirida Enter yoki Tab yuboradi; kodi kamida 4 belgi.
+const RAPID_GAP_MS = 50;
+const RESET_GAP_MS = 150;
+const MIN_SCAN_LEN = 4;
 
-export default function CatalogScanner({ products, onSelect, onCreate, module, action = "search" }: Props) {
+export default function CatalogScanner({ products, onSelect, module, action = "search" }: Props) {
+  const { roles } = useAuth();
   const [code, setCode] = useState("");
   const [matches, setMatches] = useState<any[]>([]);
   const [missing, setMissing] = useState("");
+  const [bindOpen, setBindOpen] = useState(false);
+  const [bindId, setBindId] = useState("");
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const scanIdRef = useRef<string | null>(null);
@@ -30,6 +40,12 @@ export default function CatalogScanner({ products, onSelect, onCreate, module, a
     setBusy(true); setMissing(""); setMatches([]);
     scanIdRef.current = null;
     try {
+      // Xodim bejigi (MCT...) bu oynalarda tovar emas — faqat ogohlantirish.
+      if (classifyScan(value) === "employee") {
+        await logScan({ code: value, module, action, result: "not_found" });
+        toast.warning("Bu xodim bejigi — tovar kodini skanerlang");
+        return;
+      }
       let found: any[] = resolveScan(products, value);
       let instrumentHit: ScanRow | null = null;
       if (!found.length) {
@@ -54,11 +70,24 @@ export default function CatalogScanner({ products, onSelect, onCreate, module, a
         kind: hit ? (single ? "product" : "instrument") : null,
         result: hit || found.length > 1 ? "found" : "not_found",
       });
-      if (found.length === 1) { onSelect(found[0], scanIdRef.current); toast.success(found[0].name); }
+      if (found.length === 1) { onSelect(found[0], scanIdRef.current); toast.success(`Tovar: ${found[0].name}`); }
       else if (found.length > 1) setMatches(found);
-      else if (!missing) { setMissing(value); toast.error("Mahsulot topilmadi"); }
+      else { setMissing(value); toast.error(`Kod topilmadi: ${value}`); }
     } catch (e: any) { toast.error(e.message ?? "Skanerlashda xatolik"); }
     finally { setBusy(false); setCode(""); inputRef.current?.focus(); }
+  };
+  const bindAlias = async () => {
+    if (!bindId || !missing) return;
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.rpc("bind_barcode_alias", { _code: missing, _product_id: bindId });
+      if (error) throw error;
+      const row = data as any;
+      toast.success(`Kod biriktirildi: ${missing} → ${row.name}`);
+      setBindOpen(false); setMissing(""); setBindId("");
+      onSelect({ id: row.product_id, product_type_id: row.product_type_id, name: row.name, unit: row.unit, barcode: row.barcode }, scanIdRef.current);
+    } catch (e: any) { toast.error(e.message ?? "Kod biriktirishda xatolik"); }
+    finally { setBusy(false); }
   };
   useEffect(() => {
     const ready = window.setTimeout(() => inputRef.current?.focus(), 100);
@@ -80,8 +109,8 @@ export default function CatalogScanner({ products, onSelect, onCreate, module, a
       const now = performance.now();
       const gap = now - last; last = now;
       if (gap > RESET_GAP_MS) { buffer = ""; rapid = false; leakTarget = null; leaked = 0; }
-      if (e.key === "Enter") {
-        if (buffer.length >= 6 && (rapid || !inField)) {
+      if (e.key === "Enter" || e.key === "Tab") {
+        if (buffer.length >= MIN_SCAN_LEN && (rapid || !inField)) {
           e.preventDefault(); e.stopPropagation();
           const value = buffer; buffer = ""; rapid = false;
           stripLeaked(); leakTarget = null; leaked = 0;
@@ -108,6 +137,12 @@ export default function CatalogScanner({ products, onSelect, onCreate, module, a
       <Button type="button" variant="outline" disabled={busy || !code.trim()} onClick={() => callback.current(code)} aria-label="Skanerni qidirish"><ScanBarcode className="h-4 w-4" /></Button>
     </div>
     {matches.length > 1 && <div className="border rounded-md divide-y max-h-48 overflow-auto"><p className="p-2 text-sm font-medium">Mahsulot turini tanlang</p>{matches.map(p => <Button key={p.id} type="button" variant="ghost" className="w-full justify-start h-auto whitespace-normal text-left" onClick={() => { onSelect(p, scanIdRef.current); setMatches([]); }}>{p.name} · {p.unit}</Button>)}</div>}
-    {missing && onCreate && <Button type="button" variant="outline" onClick={() => onCreate(missing)}>Yangi mahsulot yaratish</Button>}
+    {missing && canEditBarcode(roles) && <Button type="button" variant="outline" onClick={() => setBindOpen(true)}><Link2 className="h-4 w-4 mr-2" />Shu kodni tovarga biriktirish</Button>}
+    <Dialog open={bindOpen} onOpenChange={setBindOpen}><DialogContent><DialogHeader><DialogTitle>Kodni tovarga biriktirish</DialogTitle></DialogHeader>
+      <p className="text-sm text-muted-foreground">Kod: <span className="font-mono font-medium text-foreground">{missing}</span> — asosiy ERP kod o‘zgarmaydi, bu kod qo‘shimcha alias bo‘lib saqlanadi.</p>
+      <Label>Tovar</Label>
+      <SearchableSelect options={products.filter(p => p.id).map(p => ({ value: p.id as string, label: `${p.name}${p.unit ? ` · ${p.unit}` : ""}` }))} value={bindId} onChange={setBindId} searchPlaceholder="Tovarni qidirish..." />
+      <Button type="button" disabled={busy || !bindId} onClick={bindAlias}>{busy ? "Saqlanmoqda…" : "Biriktirish"}</Button>
+    </DialogContent></Dialog>
   </div>;
 }
