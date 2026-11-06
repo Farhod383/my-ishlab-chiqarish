@@ -1,4 +1,9 @@
 
+## Yakuniy skaner talabi
+- [ ] Shift/modifikatorlar buferni buzmasligi; kirim/chiqim maydonlari saqlanishi.
+- [ ] Zavod aliaslarini barcha tegishli oynalarda qo‘shish/o‘chirish va yorliq filtri.
+- [ ] Xom va tozalangan kod tarixi; ERP000000812/854, alias va chiqim sinovlari.
+
 ## Xodim bejigi va chiqim skaneri
 - [x] 116 mavjud HR yozuviga 116 doimiy MCT kodi; yangi xodim avtomatik kodi va tahrir taqiqi rollback sinovida tasdiqlandi.
 - [x] HR checkbox tanlovi va 4/6/8 talik vektor A4 bejik PDF; haqiqiy sakkiz xodim bitta A4 sahifada, matn vektor.
