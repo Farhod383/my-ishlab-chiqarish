@@ -1,5 +1,5 @@
 import { searchNorm } from "@/lib/translit";
-import { scanCodeVariants } from "@/lib/scanCode";
+import { scanCodeVariants, stripLeadingZeros } from "@/lib/scanCode";
 
 export interface SearchProduct { id?: string; product_type_id?: string | null; name: string; old_names?: string[] | null; mxik_code?: string | null; barcode?: string | null; unit?: string | null }
 export function productTypeKey(p: SearchProduct): string { return p.product_type_id ?? p.id ?? p.barcode ?? `${p.name}|${p.unit}`; }
@@ -24,5 +24,13 @@ export function scannedQuantity(unit: string | null | undefined, same: boolean, 
 export function resolveScan<T extends SearchProduct>(products: T[], code: string): T[] {
   const variants = scanCodeVariants(code);
   if (!variants.length) return [];
-  return uniqueProductTypes(products.filter(p => p.barcode && variants.includes(p.barcode.toUpperCase())));
+  const exact = variants.map(v => v.toUpperCase());
+  const numeric = variants.map(stripLeadingZeros).filter(v => /^\d+$/.test(v));
+  return uniqueProductTypes(products.filter(p => {
+    if (!p.barcode) return false;
+    const bar = p.barcode.toUpperCase();
+    if (exact.includes(bar)) return true;
+    // Bosh nollarsiz solishtirish: 000123 = 123 (faqat sof raqamli kodlar uchun).
+    return numeric.length > 0 && /^\d+$/.test(bar) && numeric.includes(stripLeadingZeros(bar));
+  }));
 }
