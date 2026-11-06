@@ -51,6 +51,6 @@ export default function IssueScanner({ kind, onEmployee, onProduct }: Props) {
       <Input aria-label="Xodim yoki tovar kodi" placeholder="Xodim / tovar kodi (ixtiyoriy)" value={code} onChange={e => setCode(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); scan.current(code); } }} />
       <Button type="button" variant="outline" aria-label="Kodni skanerlash" title="Kodni skanerlash" disabled={!code.trim()} onClick={() => scan.current(code)}><ScanBarcode className="h-4 w-4" /></Button>
     </div>
-    {matches.length > 1 && <div className="divide-y border rounded-md max-h-40 overflow-auto">{matches.map(row => <Button type="button" key={row.id} variant="ghost" className="w-full justify-start whitespace-normal h-auto text-left" onClick={() => { onProduct(row, scanId.current); setMatches([]); toast.success(`Mahsulot: ${row.name}`); }}>{row.name} · {row.unit}</Button>)}</div>}
+    {matches.length > 1 && <div className="divide-y border rounded-md max-h-40 overflow-auto">{matches.map(row => <Button type="button" key={row.id} variant="ghost" className="w-full justify-start whitespace-normal h-auto text-left" onClick={() => { onProduct(row, scanId.current); setMatches([]); toast.success(`Tovar: ${row.name}`); }}>{row.name} · {row.unit}</Button>)}</div>}
   </div>;
 }
