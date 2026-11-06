@@ -13,6 +13,7 @@ export const scanResultLabel = (r: string | null | undefined): string =>
 
 export interface LogScanArgs {
   code: string;
+  raw?: string;
   module: string;
   action: ScanAction;
   productId?: string | null;
@@ -25,8 +26,9 @@ export interface LogScanArgs {
 /** Skanerlashni tarixga yozadi. Xato bo'lsa ham skaner oqimini to'xtatmaydi — null qaytaradi. */
 export async function logScan(a: LogScanArgs): Promise<string | null> {
   try {
-    const { data, error } = await supabase.rpc("log_scan", {
+    const { data, error } = await supabase.rpc("log_scan_raw", {
       _code: a.code,
+      _raw: a.raw ?? a.code,
       _module: a.module,
       _action: a.action,
       _product_id: a.productId ?? null,
@@ -54,6 +56,7 @@ export interface ScanHistoryRow {
   id: string;
   scanned_at: string;
   code: string;
+  raw_code?: string | null;
   product_id: string | null;
   product_name: string | null;
   product_type_id: string | null;
@@ -84,7 +87,7 @@ export function matchesScanFilters(row: ScanHistoryRow, f: ScanFilters): boolean
   if (f.from && row.scanned_at.slice(0, 10) < f.from) return false;
   if (f.to && row.scanned_at.slice(0, 10) > f.to) return false;
   if (f.product.trim() && !(row.product_name ?? "").toLowerCase().includes(f.product.trim().toLowerCase())) return false;
-  if (f.code.trim() && !row.code.toLowerCase().includes(f.code.trim().toLowerCase())) return false;
+  if (f.code.trim() && !`${row.code} ${row.raw_code ?? ""}`.toLowerCase().includes(f.code.trim().toLowerCase())) return false;
   if (f.user && f.user !== "all" && (row.scanned_by_name ?? "") !== f.user) return false;
   if (f.module !== "all" && row.module !== f.module) return false;
   if (f.action !== "all" && row.action !== f.action) return false;

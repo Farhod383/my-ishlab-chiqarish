@@ -82,7 +82,8 @@ export default function ScanHistoryTab() {
             <TableHeader><TableRow>
               <TableHead>Sana va vaqt</TableHead>
               <TableHead>Mahsulot</TableHead>
-              <TableHead>Shtrix-kod</TableHead>
+              <TableHead>Xom kod (raw)</TableHead>
+              <TableHead>Tozalangan kod</TableHead>
               <TableHead>Modul</TableHead>
               <TableHead>Amal</TableHead>
               <TableHead>Natija</TableHead>
@@ -91,11 +92,12 @@ export default function ScanHistoryTab() {
               <TableHead>Foydalanuvchi</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {shown.length === 0 && <TableRow><TableCell colSpan={9} className="text-center py-8 text-sm text-muted-foreground">Skanerlashlar topilmadi</TableCell></TableRow>}
+              {shown.length === 0 && <TableRow><TableCell colSpan={10} className="text-center py-8 text-sm text-muted-foreground">Skanerlashlar topilmadi</TableCell></TableRow>}
               {shown.map(r => (
                 <TableRow key={r.id}>
                   <TableCell className="whitespace-nowrap">{fmtDateTime24(r.scanned_at)}</TableCell>
                   <TableCell className="max-w-[220px] truncate" title={r.product_name ?? ""}>{r.product_name ?? "—"}</TableCell>
+                  <TableCell className="font-mono text-xs whitespace-pre-wrap">{r.raw_code ?? "—"}</TableCell>
                   <TableCell className="font-mono text-xs">{r.code}</TableCell>
                   <TableCell>{r.module}</TableCell>
                   <TableCell>{scanActionLabel(r.action)}</TableCell>
