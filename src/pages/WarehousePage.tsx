@@ -48,6 +48,7 @@ import ProductBarcodeEditor from "@/components/warehouse/ProductBarcodeEditor";
 import ScanHistoryTab from "@/components/warehouse/ScanHistoryTab";
 import StockBalanceCheck from "@/components/warehouse/StockBalanceCheck";
 import { finalizeScan } from "@/lib/scanHistory";
+import BarcodeScanField from "@/components/warehouse/BarcodeScanField";
 
 const UNITS = ["dona", "kg", "tonna", "metr", "litr", "rulon", "komplekt"] as const;
 
@@ -1060,7 +1061,7 @@ export default function WarehousePage() {
                   <DialogHeader><DialogTitle>{t.warehouse.addProduct}</DialogTitle></DialogHeader>
                   <div className="space-y-3">
                     <div><Label>{t.warehouse.productName} *</Label><Input list="dl-product-names" value={newName} onChange={e => setNewName(e.target.value)} /></div>
-                    <div><Label>Zavod shtrix kodi (ixtiyoriy)</Label><Input value={newFactoryCode} onChange={e => setNewFactoryCode(e.target.value)} placeholder="Zavod shtrix kodi (ixtiyoriy)" /></div>
+                    <div><Label>Zavod shtrix kodi (ixtiyoriy)</Label><BarcodeScanField id="new-factory-code" value={newFactoryCode} onChange={setNewFactoryCode} placeholder="Zavod shtrix kodi (ixtiyoriy)" /></div>
                     {isMetalProduct && (
                       <div className="rounded-md border p-3 space-y-3">
                         <div className="text-sm font-medium">Metall o'lchamlari <span className="text-muted-foreground font-normal">(majburiy emas)</span></div>
