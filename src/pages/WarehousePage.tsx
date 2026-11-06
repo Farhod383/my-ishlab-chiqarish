@@ -98,6 +98,7 @@ export default function WarehousePage() {
   // Add product
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState("");
+  const [newFactoryCode, setNewFactoryCode] = useState("");
   const [newQty, setNewQty] = useState<string>("");
   const [newUnit, setNewUnit] = useState<string>("dona");
   const [newPrice, setNewPrice] = useState<string>("");
@@ -381,6 +382,10 @@ export default function WarehousePage() {
     if ((error as any)?.code === "23505") { toast.error("Bu mahsulot (nomi, birligi, o'lchami, valyutasi) allaqachon mavjud"); return; }
     if (error || !created) { toast.error(error?.message || "Error"); return; }
     const createdBarcode = (created as any).barcode as string | null;
+    if (newFactoryCode.trim()) {
+      const { error: aliasError } = await supabase.rpc("bind_barcode_alias", { _code: newFactoryCode, _product_id: created.id });
+      if (aliasError) toast.error(`Mahsulot yaratildi, zavod kodi biriktirilmadi: ${aliasError.message}`);
+    }
     // Metall normativi: Konstruktor sarfida ishlatilishi uchun saqlanadi
     if (isMetalProduct && newMetalType.trim() && num(newThick) && num(newWidth) && num(newLength) && num(newWeightKg)) {
       const mt = newMetalType.trim();
@@ -435,7 +440,7 @@ export default function WarehousePage() {
       setProducts(prev => prev.some(x => x.id === created.id) ? prev : [...prev, newProd]);
       if (importOpen) { setImpProductId(created.id); setImpProductName(newProd.name); setImpUnit(newProd.unit); }
     }
-    setNewName(""); setNewQty(""); setNewUnit("dona"); setNewPrice(""); setNewMin(""); setNewPhone(""); setNewSource(""); setNewSupplier(""); setNewImage(null);
+    setNewName(""); setNewFactoryCode(""); setNewQty(""); setNewUnit("dona"); setNewPrice(""); setNewMin(""); setNewPhone(""); setNewSource(""); setNewSupplier(""); setNewImage(null);
     setNewMetalType(""); setNewThick(""); setNewWidth(""); setNewLength(""); setNewWeightKg("");
     setAddOpen(false);
     loadSession();
@@ -1055,6 +1060,7 @@ export default function WarehousePage() {
                   <DialogHeader><DialogTitle>{t.warehouse.addProduct}</DialogTitle></DialogHeader>
                   <div className="space-y-3">
                     <div><Label>{t.warehouse.productName} *</Label><Input list="dl-product-names" value={newName} onChange={e => setNewName(e.target.value)} /></div>
+                    <div><Label>Zavod shtrix kodi (ixtiyoriy)</Label><Input value={newFactoryCode} onChange={e => setNewFactoryCode(e.target.value)} placeholder="Zavod shtrix kodi (ixtiyoriy)" /></div>
                     {isMetalProduct && (
                       <div className="rounded-md border p-3 space-y-3">
                         <div className="text-sm font-medium">Metall o'lchamlari <span className="text-muted-foreground font-normal">(majburiy emas)</span></div>
