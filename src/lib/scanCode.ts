@@ -9,8 +9,13 @@ const RU_TO_EN: Record<string, string> = {
 
 /** Chiqim bejik/tovar skaneri uchun EN normallashtirish. */
 export const normalizeScan = (raw: string): string => ruLayoutToEn(normalizeScanCode(raw));
-export const classifyScan = (code: string): "employee" | "product" | "unknown" =>
-  code.startsWith("MCT") ? "employee" : code.startsWith("ERP") ? "product" : "unknown";
+/** MCT... → xodim bejigi; qolgan HAR QANDAY kod → tovar (prefiks shart emas). */
+export const classifyScan = (code: string): "employee" | "product" =>
+  code.startsWith("MCT") ? "employee" : "product";
+
+/** Faqat raqamlardan iborat kodlarni bosh nollarsiz solishtirish uchun (000123 = 123). */
+export const stripLeadingZeros = (code: string): string =>
+  /^\d+$/.test(code) ? code.replace(/^0+/, "") || "0" : code;
 
 /** Bo'sh joylar, Enter va boshqaruv belgilarini olib tashlaydi, katta harfga o'tkazadi. */
 export function normalizeScanCode(raw: string): string {

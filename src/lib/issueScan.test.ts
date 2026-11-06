@@ -9,7 +9,7 @@ describe("employee issue scanning", () => {
   it("strips spaces controls and enter", () => expect(normalizeScan(" \tMCT00001\n\r")).toBe("MCT00001"));
   it("classifies employee codes", () => expect(classifyScan("MCT00101")).toBe("employee"));
   it("classifies product codes", () => expect(classifyScan("ERP000000123")).toBe("product"));
-  it("rejects unknown prefixes", () => expect(classifyScan("4607025392110")).toBe("unknown"));
+  it("treats any non-MCT code as a product", () => expect(classifyScan("4607025392110")).toBe("product"));
   it("restores a focused quantity field and does not change order", () => {
     const input = document.createElement("input"); input.value = "17"; input.setSelectionRange(0, 1);
     const order = "SEL0081"; const scans: string[] = []; let time = 100;
@@ -28,7 +28,7 @@ describe("employee issue scanning", () => {
     const scans: string[] = []; let time = 0;
     const handler = createIssueScanHandler(code => scans.push(code), () => time);
     for (const key of [..."MCT00001", "Enter"]) { handler(new KeyboardEvent("keydown", { key })); time += 51; }
-    for (const key of [..."ERP12", "Enter"]) { handler(new KeyboardEvent("keydown", { key })); time += 20; }
+    for (const key of [..."ER1", "Enter"]) { handler(new KeyboardEvent("keydown", { key })); time += 20; }
     expect(scans).toEqual([]);
   });
 });

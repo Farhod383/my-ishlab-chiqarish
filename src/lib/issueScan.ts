@@ -15,8 +15,8 @@ export function createIssueScanHandler(onScan: (code: string) => void, clock = (
   return (e: KeyboardEvent) => {
     if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return;
     const now = clock(), gap = now - last;
-    if (e.key === "Enter") {
-      if (gap <= 50 && buffer.length >= 6) {
+    if (e.key === "Enter" || e.key === "Tab") {
+      if (gap <= 50 && buffer.length >= 4) {
         e.preventDefault(); e.stopPropagation(); restore(); onScan(normalizeScan(buffer));
       }
       buffer = ""; last = -Infinity; field = null; return;
