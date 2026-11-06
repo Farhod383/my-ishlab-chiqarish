@@ -4,6 +4,16 @@ import { createIssueScanHandler } from "./issueScan";
 import { normalizeScan, classifyScan } from "./scanCode";
 
 describe("employee issue scanning", () => {
+  for (const [raw, expected] of [["ERP000000812", "ERP000000812"], ["УКЗ000000812", "ERP000000812"], ["MCT00012", "MCT00012"]]) {
+    it(`preserves Shift/CapsLock burst ${raw}`, () => {
+      const scans: string[] = []; const raws: string[] = []; let time = 100;
+      const handler = createIssueScanHandler((code, value) => { scans.push(code); raws.push(value); }, () => time);
+      for (const key of ["CapsLock", ...raw.split("").flatMap(k => ["Shift", k]), "Enter"]) {
+        handler(new KeyboardEvent("keydown", { key })); time += 10;
+      }
+      expect(scans).toEqual([expected]); expect(raws).toEqual([raw]);
+    });
+  }
   it("normalizes ERP Russian layout", () => expect(normalizeScan("УКЗ000000123")).toBe("ERP000000123"));
   it("normalizes MCT Russian layout", () => expect(normalizeScan("ЬСЕ00101")).toBe("MCT00101"));
   it("strips spaces controls and enter", () => expect(normalizeScan(" \tMCT00001\n\r")).toBe("MCT00001"));

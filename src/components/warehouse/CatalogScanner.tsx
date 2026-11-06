@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { ScanBarcode, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { resolveScan, type SearchProduct } from "@/lib/productSearch";
-import { normalizeScanCode, classifyScan } from "@/lib/scanCode";
+import { normalizeScan, classifyScan } from "@/lib/scanCode";
+import { createIssueScanHandler } from "@/lib/issueScan";
 import { registerScanHandler } from "@/lib/scanChannel";
 import { logScan, type ScanAction } from "@/lib/scanHistory";
 import { useAuth } from "@/auth/AuthContext";
@@ -35,14 +36,14 @@ export default function CatalogScanner({ products, onSelect, module, action = "s
   const scanIdRef = useRef<string | null>(null);
   const callback = useRef<(value: string) => void>(() => {});
   callback.current = async (raw) => {
-    const value = normalizeScanCode(raw);
+    const value = normalizeScan(raw);
     if (!value || busy) return;
     setBusy(true); setMissing(""); setMatches([]);
     scanIdRef.current = null;
     try {
       // Xodim bejigi (MCT...) bu oynalarda tovar emas — faqat ogohlantirish.
       if (classifyScan(value) === "employee") {
-        await logScan({ code: value, module, action, result: "not_found" });
+        await logScan({ code: value, raw, module, action, result: "not_found" });
         toast.warning("Bu xodim bejigi — tovar kodini skanerlang");
         return;
       }
@@ -63,7 +64,7 @@ export default function CatalogScanner({ products, onSelect, module, action = "s
       const single = found.length === 1 ? found[0] : null;
       const hit = single ?? instrumentHit;
       scanIdRef.current = await logScan({
-        code: value, module, action,
+        code: value, raw, module, action,
         productId: hit?.id ?? null,
         productName: hit?.name ?? null,
         productTypeId: hit?.product_type_id ?? null,
@@ -91,43 +92,8 @@ export default function CatalogScanner({ products, onSelect, module, action = "s
   };
   useEffect(() => {
     const ready = window.setTimeout(() => inputRef.current?.focus(), 100);
-    let buffer = "", last = 0, rapid = false;
-    let leakTarget: HTMLInputElement | HTMLTextAreaElement | null = null, leaked = 0;
-    const stripLeaked = () => {
-      if (!leakTarget || leaked <= 0) return;
-      const el = leakTarget;
-      const next = el.value.slice(0, Math.max(0, el.value.length - leaked));
-      const proto = el instanceof HTMLTextAreaElement ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
-      Object.getOwnPropertyDescriptor(proto, "value")?.set?.call(el, next);
-      el.dispatchEvent(new Event("input", { bubbles: true }));
-    };
-    const keydown = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.altKey || e.metaKey) return;
-      const target = e.target as HTMLElement | null;
-      const inScanBox = !!target?.closest?.("[data-catalog-scan]");
-      const inField = !inScanBox && !!target?.closest?.("input, textarea, [contenteditable=true]");
-      const now = performance.now();
-      const gap = now - last; last = now;
-      if (gap > RESET_GAP_MS) { buffer = ""; rapid = false; leakTarget = null; leaked = 0; }
-      if (e.key === "Enter" || e.key === "Tab") {
-        if (buffer.length >= MIN_SCAN_LEN && (rapid || !inField)) {
-          e.preventDefault(); e.stopPropagation();
-          const value = buffer; buffer = ""; rapid = false;
-          stripLeaked(); leakTarget = null; leaked = 0;
-          callback.current(value);
-        }
-        return;
-      }
-      if (e.key.length !== 1 || inScanBox) return;
-      if (gap < RAPID_GAP_MS && buffer.length > 0) rapid = true;
-      if (inField) {
-        if (rapid) { e.preventDefault(); e.stopPropagation(); }
-        else { if (leakTarget !== target) { leakTarget = target as HTMLInputElement; leaked = 0; } leaked++; }
-      }
-      buffer += e.key;
-    };
     // Yagona kanal: faqat eng yuqori (oxirgi ochilgan) skaner hodisani qayta ishlaydi.
-    const unregister = registerScanHandler(keydown);
+    const unregister = registerScanHandler(createIssueScanHandler((_code, raw) => callback.current(raw)));
     return () => { window.clearTimeout(ready); unregister(); };
   }, []);
   return <div className="space-y-2" data-catalog-scan>
