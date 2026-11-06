@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScanBarcode } from "lucide-react";
-import { normalizeScanCode } from "@/lib/scanCode";
+import { normalizeScan } from "@/lib/scanCode";
+import { SCAN_MODIFIERS } from "@/lib/issueScan";
 import { registerScanHandler } from "@/lib/scanChannel";
 
 interface Props {
@@ -16,7 +17,7 @@ interface Props {
 
 // Skaner belgilarni juda tez yozadi (<35 ms); Enter kod oxirini bildiradi.
 const RAPID_GAP_MS = 35;
-const RESET_GAP_MS = 120;
+const RESET_GAP_MS = 150;
 
 /**
  * Shtrix-kod maydoni + "Skanerlash" tugmasi.
@@ -39,7 +40,7 @@ export default function BarcodeScanField({ id, value, onChange, onScanned, disab
   useEffect(() => {
     let buffer = "", last = 0;
     const commit = (raw: string) => {
-      const code = normalizeScanCode(raw);
+      const code = normalizeScan(raw);
       buffer = "";
       if (!code) return;
       onChange(code);
@@ -48,11 +49,12 @@ export default function BarcodeScanField({ id, value, onChange, onScanned, disab
     };
     const keydown = (e: KeyboardEvent) => {
       if (!stateRef.current.armed) return;
+      if (SCAN_MODIFIERS.has(e.key)) return;
       if (e.ctrlKey || e.altKey || e.metaKey) return;
       const now = performance.now();
       const gap = now - last; last = now;
       if (gap > RESET_GAP_MS) buffer = "";
-      if (e.key === "Enter") {
+      if (e.key === "Enter" || e.key === "Tab") {
         // Enter qiymatga qo'shilmasin va forma yuborilmasin.
         e.preventDefault(); e.stopPropagation();
         commit(buffer);

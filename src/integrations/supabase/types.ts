@@ -2537,6 +2537,7 @@ export type Database = {
           product_name: string | null
           product_type_id: string | null
           quantity: number | null
+          raw_code: string | null
           result: string
           scanned_at: string
           scanned_by: string | null
@@ -2554,6 +2555,7 @@ export type Database = {
           product_name?: string | null
           product_type_id?: string | null
           quantity?: number | null
+          raw_code?: string | null
           result: string
           scanned_at?: string
           scanned_by?: string | null
@@ -2571,6 +2573,7 @@ export type Database = {
           product_name?: string | null
           product_type_id?: string | null
           quantity?: number | null
+          raw_code?: string | null
           result?: string
           scanned_at?: string
           scanned_by?: string | null
@@ -3126,6 +3129,20 @@ export type Database = {
         }
         Returns: string
       }
+      log_scan_raw: {
+        Args: {
+          _action: string
+          _code: string
+          _kind: string
+          _module: string
+          _product_id: string
+          _product_name: string
+          _product_type_id: string
+          _raw: string
+          _result: string
+        }
+        Returns: string
+      }
       metal_consume: {
         Args: {
           _actor_name?: string
@@ -3178,6 +3195,10 @@ export type Database = {
       }
       order_prefix: { Args: { _name: string }; Returns: string }
       order_series: { Args: { _prefix: string }; Returns: string }
+      remove_factory_barcode: {
+        Args: { _code: string; _type_id: string }
+        Returns: undefined
+      }
       renumber_orders: {
         Args: { _include_completed: boolean }
         Returns: number

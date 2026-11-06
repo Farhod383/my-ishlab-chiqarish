@@ -25,6 +25,8 @@ import { matchesProduct, productSearchText } from "@/lib/productSearch";
 import BarcodeLabel from "@/components/warehouse/BarcodeLabel";
 import BulkBarcodeLabels from "@/components/warehouse/BulkBarcodeLabels";
 import IssueScanner from "@/components/warehouse/IssueScanner";
+import FactoryBarcodeEditor from "@/components/warehouse/FactoryBarcodeEditor";
+import BarcodeScanField from "@/components/warehouse/BarcodeScanField";
 
 type Instrument = {
   id: string;
@@ -40,6 +42,7 @@ type Instrument = {
   old_names?: string[] | null;
   mxik_code?: string | null;
   barcode?: string | null;
+  product_type_id?: string | null;
 };
 
 type Assignment = {
@@ -203,7 +206,8 @@ export default function InstrumentsTab() {
   }, [detailGroup, assignments]);
 
   // -------- CRUD --------
-  const resetIForm = () => setIForm({ name: "", category: "", inventory_number: "", quantity: "1", status: "active", comment: "", price: "0", currency: "UZS" });
+  const [factoryCode, setFactoryCode] = useState("");
+  const resetIForm = () => { setFactoryCode(""); setIForm({ name: "", category: "", inventory_number: "", quantity: "1", status: "active", comment: "", price: "0", currency: "UZS" }); };
 
   const openAdd = (prefName?: string) => {
     setIEditId(null);
@@ -239,8 +243,12 @@ export default function InstrumentsTab() {
       await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Instrument tahrirlandi", entity: "instrument", details: `${payload.name}` });
     } else {
       payload.created_by = user?.id;
-      const { error } = await supabase.from("instruments").insert(payload);
+      const { data: created, error } = await supabase.from("instruments").insert(payload).select("id").single();
       if (error) { toast.error(error.message); return; }
+      if (created && factoryCode.trim()) {
+        const { error: aliasError } = await supabase.rpc("bind_barcode_alias", { _code: factoryCode, _product_id: created.id });
+        if (aliasError) toast.error(`Instrument yaratildi, zavod kodi biriktirilmadi: ${aliasError.message}`);
+      }
       await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Instrument kirimi (batch)", entity: "instrument", details: `${payload.name} ×${payload.quantity}` });
     }
     if (payload.category) await rememberFormValue("instrument_category", payload.category, user?.id);
@@ -623,6 +631,7 @@ export default function InstrumentsTab() {
           <DialogHeader><DialogTitle>{iEditId ? "Batchni tahrirlash" : "Yangi batch (kirim)"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>Nomi *</Label><SmartAutocomplete fieldKey="instrument_name" value={iForm.name} onChange={v => setIForm({ ...iForm, name: v })} placeholder="Masalan: Bolgarka 125 mm" /></div>
+            {iEditId ? instruments.filter(row => row.id === iEditId).map(row => <FactoryBarcodeEditor key={row.id} product={row} />) : <div><Label>Zavod shtrix kodi (ixtiyoriy)</Label><BarcodeScanField id="instrument-factory-code" value={factoryCode} onChange={setFactoryCode} placeholder="Zavod shtrix kodi (ixtiyoriy)" /></div>}
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Kategoriya</Label><SmartAutocomplete fieldKey="instrument_category" value={iForm.category} onChange={v => setIForm({ ...iForm, category: v })} placeholder="Elektr / Qo'l asbobi / Payvandlash" /></div>
               <div><Label>Inventar №</Label><Input value={iForm.inventory_number} onChange={e => setIForm({ ...iForm, inventory_number: e.target.value })} /></div>

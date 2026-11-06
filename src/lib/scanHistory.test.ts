@@ -22,6 +22,11 @@ describe("scanHistory yorliqlari", () => {
 });
 
 describe("matchesScanFilters", () => {
+  it("searches the original Russian-layout code independently", () => {
+    const scan = { ...row, raw_code: "УКЗ000000123" };
+    expect(matchesScanFilters(scan, { ...EMPTY_SCAN_FILTERS, code: "УКЗ" })).toBe(true);
+    expect(matchesScanFilters(scan, { ...EMPTY_SCAN_FILTERS, code: "ЬСЕ" })).toBe(false);
+  });
   it("bo'sh filtrlar hamma yozuvni o'tkazadi", () => {
     expect(matchesScanFilters(row, EMPTY_SCAN_FILTERS)).toBe(true);
   });

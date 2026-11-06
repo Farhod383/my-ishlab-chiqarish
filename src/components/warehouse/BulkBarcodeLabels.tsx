@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,11 +12,24 @@ import { toast } from "sonner";
 export default function BulkBarcodeLabels({ products }: { products: SearchProduct[] }) {
   const [open, setOpen] = useState(false), [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set()), [busy, setBusy] = useState(false);
+  const [onlyWithoutFactory, setOnlyWithoutFactory] = useState(true);
+  const [factoryTypes, setFactoryTypes] = useState<Set<string>>(new Set());
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    setLoaded(false);
+    void (async () => {
+      const { data, error } = await supabase.from("product_type_barcode_aliases").select("product_type_id").in("reason", ["factory_code", "Qo‘lda kod biriktirish"]);
+      if (error) { toast.error(error.message); return; }
+      setFactoryTypes(new Set((data ?? []).map(row => row.product_type_id))); setLoaded(true);
+    })();
+  }, [open]);
   const types = useMemo(() => uniqueProductTypes(products).filter(p => p.barcode), [products]);
-  const visible = types.filter(p => matchesProduct(p, query));
+  const eligible = types.filter(p => !onlyWithoutFactory || !factoryTypes.has(p.product_type_id ?? ""));
+  const visible = eligible.filter(p => matchesProduct(p, query));
   const download = async () => {
     setBusy(true);
-    try { const doc = await createBarcodeLabels(types.filter(p => selected.has(productTypeKey(p)))); doc.save("Mahsulot_turlari_40x30.pdf"); }
+    try { const doc = await createBarcodeLabels(eligible.filter(p => selected.has(productTypeKey(p)))); doc.save("Mahsulot_turlari_40x30.pdf"); }
     catch (error) { toast.error(error instanceof Error ? error.message : "Yorliq yaratishda xatolik"); }
     finally { setBusy(false); }
   };
@@ -23,9 +37,10 @@ export default function BulkBarcodeLabels({ products }: { products: SearchProduc
     <Button variant="outline" onClick={() => setOpen(true)}><ScanBarcode className="mr-2 h-4 w-4" />Yorliqlar PDF</Button>
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-w-3xl"><DialogHeader className="z-0"><DialogTitle>Mahsulot turi yorliqlari · 40×30 mm</DialogTitle></DialogHeader>
       <Input aria-label="Yorliq mahsulotlarini qidirish" placeholder="Qidirish..." value={query} onChange={e => setQuery(e.target.value)} />
+      <label className="flex items-center gap-2"><Checkbox checked={onlyWithoutFactory} onCheckedChange={value => { setOnlyWithoutFactory(value === true); setSelected(new Set()); }} />Faqat zavod kodi yo‘q tovarlar</label>
       <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => setSelected(prev => new Set([...prev, ...visible.map(productTypeKey)]))}>Barchasini tanlash ({visible.length})</Button><Button variant="ghost" onClick={() => setSelected(new Set())}>Tanlovni tozalash</Button></div>
       <div className="max-h-[50dvh] overflow-auto divide-y">{visible.map(p => <label key={productTypeKey(p)} className="flex items-center gap-3 py-3 cursor-pointer"><Checkbox checked={selected.has(productTypeKey(p))} onCheckedChange={checked => setSelected(prev => { const next = new Set(prev); if (checked) next.add(productTypeKey(p)); else next.delete(productTypeKey(p)); return next; })} /><span className="min-w-0 flex-1 break-words">{p.name} · {p.unit}</span><span className="text-xs text-muted-foreground">{p.barcode}</span></label>)}</div>
-      <Button disabled={busy || !selected.size} onClick={download}><Download className="mr-2 h-4 w-4" />{busy ? "Tayyorlanmoqda..." : `PDF yuklab olish (${selected.size})`}</Button>
+      <Button disabled={busy || !loaded || !selected.size} onClick={download}><Download className="mr-2 h-4 w-4" />{busy ? "Tayyorlanmoqda..." : `PDF yuklab olish (${eligible.filter(p => selected.has(productTypeKey(p))).length})`}</Button>
     </DialogContent></Dialog>
   </>;
 }
