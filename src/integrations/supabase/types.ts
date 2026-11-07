@@ -3236,6 +3236,10 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      scan_barcode_matches: {
+        Args: { _barcode: string; _code: string }
+        Returns: boolean
+      }
       scan_catalog: { Args: { _code: string }; Returns: Json }
       scan_code_variants: { Args: { _code: string }; Returns: string[] }
       set_product_barcode: {

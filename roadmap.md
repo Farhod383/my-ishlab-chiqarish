@@ -1,4 +1,9 @@
 
+## ERP prefiksli va prefikssiz skaner tekshiruvi
+- [x] Barcha katalog manbalari va EN/RU variantlari: umumiy server qidiruvi, saqlangan kod normalizatsiyasi, tarixiy product→instrument bog‘lanishi; tur/kind bo‘yicha aniq tanlov.
+- [x] ERP/prefikssiz/zavod/alias/instrument kodlari haqiqiy hisobning API so‘rovlarida topildi; 52 test va build OK. Kod/qoldiq/MXIK yozuvlari o‘zgartirilmadi.
+- [ ] Oynadagi to‘liq skaner oqimini qayta tekshirish: joriy o‘z hisobida Sklad yozish/skaner oynalari ochilmaydi; fizik skaner mavjud emas.
+
 ## Yakuniy skaner talabi
 - [x] Shift/modifikatorlar buferni buzmasligi; umumiy kirim/chiqim tutgichi maydon qiymatini saqlaydi.
 - [x] Zavod aliaslari kirim/chiqim/instrument tanlovi, mahsulot/instrument tahriri va yangi mahsulotda; default yorliq filtri.
