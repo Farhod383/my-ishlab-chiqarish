@@ -17,6 +17,10 @@ import { validManualBarcode } from '@/lib/manualBarcode';
 import { fmtNum } from '@/lib/format';
 import { ClipboardCheck, FilePenLine } from 'lucide-react';
 import { toast } from 'sonner';
+import SupplierExpenseFields from '@/components/supply/SupplierExpenseFields';
+import { expenseTotals, freshExpense, validExpense, type ExpenseDraft } from '@/lib/supplierExpenses';
+import { fmtMoney, fmtDateTime24 } from '@/lib/format';
+import { Plus, Trash2 } from 'lucide-react';
 
 type Product = { id: string; name: string; unit: string; stock_qty: number; mxik_code: string | null; currency: string; product_type_id?: string | null; barcode?: string | null; old_names?: string[] };
 export default function WarehouseQuickActions({ products, onUpdated }: { products: Product[]; onUpdated: () => void | Promise<void> }) {
@@ -37,12 +41,14 @@ export default function WarehouseQuickActions({ products, onUpdated }: { product
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [scanId, setScanId] = useState<string | null>(null);
+  const [expenses, setExpenses] = useState<ExpenseDraft[]>([]);
+  const totals = expenseTotals(expenses);
   const lock = useRef(false);
   const request = useRef<{ key: string; payload: string } | null>(null);
   const selected = products.find(p => p.id === id);
   const options = [...new Map(products.map(p => [productTypeKey(p), p])).values()].map(p => ({ value: p.id, label: `${p.name} · ${p.unit}`, hint: `Qoldiq: ${fmtNum(p.stock_qty)}`, searchText: productSearchText(p) }));
   const open = (next: 'sverka' | 'mxik') => {
-    setId(''); setIsNew(false); setName(''); setUnit('dona'); setQty(''); setPrice(''); setCurrency('UZS'); setComment(''); setTech({}); setCode(''); setBarcode(''); setSavedProduct(null); setConfirm(false); request.current = null; setScanId(null); setMode(next);
+    setId(''); setIsNew(false); setName(''); setUnit('dona'); setQty(''); setPrice(''); setCurrency('UZS'); setComment(''); setTech({}); setCode(''); setBarcode(''); setSavedProduct(null); setConfirm(false); setExpenses([]); request.current = null; setScanId(null); setMode(next);
   };
   const prepare = () => {
     if (mode === 'mxik') {
@@ -51,6 +57,7 @@ export default function WarehouseQuickActions({ products, onUpdated }: { product
       if (isNew && !validManualBarcode(barcode, true)) { toast.error('To‘g‘ri shtrix-kod kiriting'); return; }
       if ((isNew && (!name.trim() || !unit.trim())) || (!isNew && !selected) || !validateReconciliation(Number(qty), price === '' ? null : Number(price), isNew)) { toast.error(isNew ? 'Mahsulot, musbat boshlang‘ich qoldiq va to‘g‘ri narxni kiriting' : 'Mahsulot va yangi yakuniy qoldiqni (0 yoki undan katta) kiriting'); return; }
       if (Object.entries(tech).some(([k,v]) => k !== 'metal_type' && v !== '' && (!Number.isFinite(Number(v)) || Number(v) <= 0))) { toast.error('Texnik o‘lchamlar musbat bo‘lishi kerak'); return; }
+      if (expenses.some(e => !validExpense(e))) { toast.error('Ta’minotchi xarajatlarining barcha maydonlarini to‘g‘ri kiriting'); return; }
     }
     setConfirm(true);
   };
@@ -63,10 +70,10 @@ export default function WarehouseQuickActions({ products, onUpdated }: { product
         if (error) throw error;
         toast.success('MXIK saqlandi');
       } else if (mode === 'sverka') {
-        const args = { _product_id: isNew ? null : id, _name: isNew ? name.trim() : null, _unit: isNew ? unit : null, _quantity: Number(qty), _price: price === '' ? null : Number(price), _currency: currency, _technical: tech, _comment: comment || null, _barcode: isNew ? barcode.trim() || null : null };
+        const args = { _product_id: isNew ? null : id, _name: isNew ? name.trim() : null, _unit: isNew ? unit : null, _quantity: Number(qty), _price: price === '' ? null : Number(price), _currency: currency, _technical: tech, _comment: comment || null, _barcode: isNew ? barcode.trim() || null : null, _expenses: expenses.map(e => ({ ...e })) };
         const payload = JSON.stringify(args);
         if (!request.current || request.current.payload !== payload) request.current = { key: crypto.randomUUID(), payload };
-        const { data, error } = await supabase.rpc('warehouse_reconcile_with_barcode', { ...args, _key: request.current.key });
+        const { data, error } = await supabase.rpc('warehouse_reconcile_expenses', { ...args, _key: request.current.key });
         if (error) throw error;
         const result = data as { product_id: string; before: number; after: number; barcode?: string | null };
         if (scanId) await finalizeScan(scanId, 'in', Number(qty), Number(result.after));
@@ -93,11 +100,15 @@ export default function WarehouseQuickActions({ products, onUpdated }: { product
           <div className="grid grid-cols-2 gap-3"><div className="space-y-2"><Label htmlFor="sverka-quantity">{isNew ? 'Boshlang‘ich qoldiq' : 'Yangi qoldiq (yakuniy)'}{selected ? ` (${selected.unit})` : ''}</Label><Input id="sverka-quantity" required type="number" min={isNew ? '0.000001' : '0'} step="any" value={qty} onChange={e => setQty(e.target.value)} /></div><div className="space-y-2"><Label htmlFor="sverka-price">Birlik narxi (ixtiyoriy)</Label><Input id="sverka-price" type="number" min="0" step="any" value={price} onChange={e => setPrice(e.target.value)} /></div></div>
           <div className="space-y-2"><Label>Valyuta</Label><Select value={currency} onValueChange={setCurrency}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="UZS">UZS</SelectItem><SelectItem value="USD">USD</SelectItem></SelectContent></Select></div>
           <div className="space-y-2"><Label htmlFor="sverka-comment">Izoh (ixtiyoriy)</Label><Input id="sverka-comment" value={comment} onChange={e => setComment(e.target.value)} /></div>
+          <section className="border-t pt-4 space-y-4"><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold">Ta’minotchi xarajatlari (ixtiyoriy)</h3><Button type="button" variant="outline" size="sm" onClick={() => setExpenses(prev => [...prev, freshExpense()])}><Plus className="mr-1 h-4 w-4" />Xarajat qo‘shish</Button></div>
+            {expenses.map((e, i) => <div key={i} className="space-y-2 border-b pb-4"><div className="flex justify-between items-center"><span className="text-sm font-medium">Xarajat {i + 1}</span><Button type="button" variant="ghost" size="icon" title="Xarajatni olib tashlash" aria-label={`Xarajat ${i + 1} ni olib tashlash`} onClick={() => setExpenses(prev => prev.filter((_, n) => n !== i))}><Trash2 className="h-4 w-4" /></Button></div><SupplierExpenseFields value={e} onChange={v => setExpenses(prev => prev.map((r, n) => n === i ? v : r))} /></div>)}
+            {!!expenses.length && <p className="font-semibold">Jami xarajat: {fmtMoney(totals.UZS, 'UZS')} · {fmtMoney(totals.USD, 'USD')}</p>}
+          </section>
         </>}
         <Button type="submit" disabled={busy} className="w-full">Tasdiqlash</Button>
       </form>
     </DialogContent></Dialog>
-    <Dialog open={confirm} onOpenChange={v => { if (!busy) setConfirm(v); }}><DialogContent className="max-w-md"><DialogHeader><DialogTitle>Saqlashni tasdiqlang</DialogTitle></DialogHeader><p className="font-medium">{isNew ? name : selected?.name}</p>{mode === 'mxik' ? <><p>Eski MXIK: {selected?.mxik_code ?? '—'}</p><p className="break-all">Yangi MXIK: {code}</p></> : <><p>{isNew ? 'Boshlang‘ich qoldiq' : 'Yangi yakuniy qoldiq'}: {qty} {isNew ? unit : selected?.unit}</p><p>Qoldiq: {fmtNum(isNew ? 0 : selected?.stock_qty ?? 0)} → {fmtNum(Number(qty))}</p></>}<div className="flex justify-end gap-2"><Button variant="outline" disabled={busy} onClick={() => setConfirm(false)}>Orqaga</Button><Button disabled={busy} onClick={save}>{busy ? 'Saqlanmoqda...' : 'Saqlash'}</Button></div></DialogContent></Dialog>
+    <Dialog open={confirm} onOpenChange={v => { if (!busy) setConfirm(v); }}><DialogContent className="max-w-xl max-h-[90dvh] overflow-y-auto"><DialogHeader><DialogTitle>Saqlashni tasdiqlang</DialogTitle></DialogHeader><p className="font-medium">{isNew ? name : selected?.name}</p>{mode === 'mxik' ? <><p>Eski MXIK: {selected?.mxik_code ?? '—'}</p><p className="break-all">Yangi MXIK: {code}</p></> : <><p>{isNew ? 'Boshlang‘ich qoldiq' : 'Yangi yakuniy qoldiq'}: {qty} {isNew ? unit : selected?.unit}</p><p>Qoldiq: {fmtNum(isNew ? 0 : selected?.stock_qty ?? 0)} → {fmtNum(Number(qty))}</p><p>Tovar summasi: {price === '' ? '—' : fmtMoney(Math.abs(Number(qty) - (isNew ? 0 : selected?.stock_qty ?? 0)) * Number(price), currency)}</p><h3 className="font-semibold border-t pt-3">Ta’minotchi xarajatlari</h3>{expenses.map((e, i) => <p key={i} className="text-sm">{e.category} · {fmtMoney(e.amount, e.currency)} · {e.account === 'supply2' ? 'Ta’minot 2' : 'Ta’minot'} · {fmtDateTime24(e.spent_at)}{e.comment ? ` · ${e.comment}` : ''}</p>)}<p className="font-semibold">Jami xarajat: {fmtMoney(totals.UZS, 'UZS')} · {fmtMoney(totals.USD, 'USD')}</p></>}<div className="flex justify-end gap-2"><Button variant="outline" disabled={busy} onClick={() => setConfirm(false)}>Orqaga</Button><Button disabled={busy} onClick={save}>{busy ? 'Saqlanmoqda...' : 'Saqlash'}</Button></div></DialogContent></Dialog>
     <Dialog open={savedProduct !== null} onOpenChange={v => { if (!v) setSavedProduct(null); }}><DialogContent><DialogHeader><DialogTitle>Sverka saqlandi</DialogTitle></DialogHeader><p>{savedProduct?.name}</p><BarcodeChip product={savedProduct} /><Button onClick={() => setSavedProduct(null)}>Yopish</Button></DialogContent></Dialog>
   </>;
 }

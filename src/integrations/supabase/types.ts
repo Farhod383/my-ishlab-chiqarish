@@ -2462,6 +2462,30 @@ export type Database = {
         }
         Relationships: []
       }
+      reconciliation_documents: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          payload: Json
+          result: Json
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id: string
+          payload: Json
+          result: Json
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          payload?: Json
+          result?: Json
+        }
+        Relationships: []
+      }
       returns: {
         Row: {
           comment: string | null
@@ -2886,6 +2910,75 @@ export type Database = {
           },
         ]
       }
+      supplier_expenses: {
+        Row: {
+          account: string
+          amount: number
+          category: string
+          comment: string | null
+          created_at: string
+          created_by: string
+          currency: string
+          deleted_at: string | null
+          document_id: string
+          employee_id: string
+          employee_name: string
+          id: string
+          spent_at: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          account: string
+          amount: number
+          category: string
+          comment?: string | null
+          created_at?: string
+          created_by: string
+          currency: string
+          deleted_at?: string | null
+          document_id: string
+          employee_id: string
+          employee_name: string
+          id?: string
+          spent_at: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          account?: string
+          amount?: number
+          category?: string
+          comment?: string | null
+          created_at?: string
+          created_by?: string
+          currency?: string
+          deleted_at?: string | null
+          document_id?: string
+          employee_id?: string
+          employee_name?: string
+          id?: string
+          spent_at?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_expenses_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_expenses_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -3072,6 +3165,15 @@ export type Database = {
       }
       cash_reset_at: { Args: { _kassa: string }; Returns: string }
       catalog_name_key: { Args: { _name: string }; Returns: string }
+      change_supplier_expense: {
+        Args: {
+          _delete?: boolean
+          _id: string
+          _values?: Json
+          _version: number
+        }
+        Returns: undefined
+      }
       clear_intake_invoice_image: {
         Args: { _session_id: string }
         Returns: undefined
@@ -3261,6 +3363,10 @@ export type Database = {
           unit: string
         }[]
       }
+      supplier_available: {
+        Args: { _account: string; _currency: string }
+        Returns: number
+      }
       sync_intake_debt: { Args: { _session_id: string }; Returns: undefined }
       update_intake_invoice: {
         Args: { _image_url?: string; _session_id: string; _supplier?: string }
@@ -3279,6 +3385,22 @@ export type Database = {
         Args: {
           _comment?: string
           _currency?: string
+          _key: string
+          _name: string
+          _price?: number
+          _product_id: string
+          _quantity: number
+          _technical?: Json
+          _unit: string
+        }
+        Returns: Json
+      }
+      warehouse_reconcile_expenses: {
+        Args: {
+          _barcode: string
+          _comment?: string
+          _currency?: string
+          _expenses?: Json
           _key: string
           _name: string
           _price?: number

@@ -33,6 +33,7 @@ import NumberInput from "@/components/NumberInput";
 import { currentUserName } from "@/lib/userNames";
 import { fmtDate, fmtDateTime24 as fmtDT } from "@/lib/format";
 import { supplyRequestDates } from "@/lib/supplyRequestDates";
+import SupplierExpensesHistory from '@/components/supply/SupplierExpensesHistory';
 
 type Filter = "all" | Status;
 
@@ -393,6 +394,8 @@ export default function SupplyRequestsPage() {
           onCreated={load}
         />
       )}
+
+      <SupplierExpensesHistory />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {(["pending", "fulfilled"] as const).map((s) => (
