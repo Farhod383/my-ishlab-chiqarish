@@ -1,8 +1,8 @@
 
 ## Nakladnoysiz kirim: ta’minotchi xarajatlari
-- [ ] Alohida xarajatlar, hisob/valyuta/HR tanlovi, tasdiqlash va atomik saqlash.
-- [ ] Ta’minot tarixi/filtrlari, ruxsatli tahrirlash/o‘chirish, balans va audit.
-- [ ] Takrorlanmaslik, mablag‘ tekshiruvi, hisoblar mustaqilligi va ekran sinovlari.
+- [x] Alohida xarajatlar, hisob/valyuta/HR tanlovi, tasdiqlash va atomik saqlash.
+- [x] Ta’minot tarixi/filtrlari, ruxsatli tahrirlash/o‘chirish, balans va audit.
+- [x] 24 test; Admin 2 haqiqiy oynasida USD xarajati saqlanib tarixdan o‘qildi va tasdiqlab o‘chirildi. API: retry/bitta debit, tahrir, eski versiya/payload collision va mablag‘ rad, tovar narx/qoldiq mustaqilligi sinaldi; 390 px oynada tashqi overflow yo‘q. Sinov xarajatlari soft-delete, audit saqlandi, balans tiklandi. Mavjud UZS Ta’minot balansi manfiy: yangi UZS xarajati serverda rad etiladi; eski operatsiyalar o‘zgartirilmadi.
 
 ## ERP prefiksli va prefikssiz skaner tekshiruvi
 - [x] Barcha katalog manbalari va EN/RU variantlari: umumiy server qidiruvi, saqlangan kod normalizatsiyasi, tarixiy product→instrument bog‘lanishi; tur/kind bo‘yicha aniq tanlov.
