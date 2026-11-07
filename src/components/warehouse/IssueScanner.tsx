@@ -7,6 +7,7 @@ import { useLocalize } from "@/i18n/context";
 import { registerScanHandler } from "@/lib/scanChannel";
 import { createIssueScanHandler } from "@/lib/issueScan";
 import { normalizeScan, classifyScan } from "@/lib/scanCode";
+import { uniqueCatalogScanRows } from "@/lib/productSearch";
 import { logScan } from "@/lib/scanHistory";
 import { toast } from "sonner";
 import { useAuth } from "@/auth/AuthContext";
@@ -43,11 +44,9 @@ export default function IssueScanner({ kind, onEmployee, onProduct }: Props) {
       }
       // MCT dan tashqari HAR QANDAY kod tovar/instrument sifatida qidiriladi.
       // Unified catalog resolver includes instruments and retained aliases.
-      const { data, error } = kind === "product"
-        ? await supabase.rpc("resolve_catalog_scan", { _code: normalized })
-        : await supabase.rpc("scan_catalog", { _code: normalized });
+      const { data, error } = await supabase.rpc("scan_catalog", { _code: normalized });
       if (error) throw error;
-      const rows: Row[] = ((data as unknown as Row[]) ?? []).filter(r => kind === "product" || r.kind === kind);
+      const rows: Row[] = uniqueCatalogScanRows(((data as unknown as Row[]) ?? []).filter(r => r.kind === kind));
       scanId.current = await logScan({ code: normalized, raw, module: kind === "instrument" ? "Instrument berish" : "Chiqim", action: "out", productId: rows.length === 1 ? rows[0].id : null, productName: rows.length === 1 ? rows[0].name : null, productTypeId: rows.length === 1 ? rows[0].product_type_id : null, kind: rows.length ? kind : null, result: rows.length ? "found" : "not_found" });
       if (rows.length === 1) { onProduct(rows[0], scanId.current); toast.success(`Tovar: ${rows[0].name}`); }
       else if (rows.length > 1) setMatches(rows);

@@ -1,11 +1,32 @@
 import { describe, expect, it } from "vitest";
-import { matchesProduct, resolveScan, scannedQuantity, uniqueProductTypes } from "./productSearch";
+import { matchesProduct, resolveScan, scannedQuantity, uniqueProductTypes, uniqueCatalogScanRows } from "./productSearch";
 import { scanCodeVariants } from "./scanCode";
 const products = [
   { id: "uuid-1", name: "Углошлифовальная машина (болгарка) EPA 125 мм", old_names: ["балгарка эпа 125"], barcode: "ERP000000001", mxik_code: "08467001096000000", unit: "dona" },
   { id: "uuid-2", name: "EPA 180 мм", barcode: "ERP000000002", mxik_code: "08467001096000000", unit: "kg" },
 ];
 describe("catalog rules", () => {
+  it("normalizes stored whitespace and mixed case without changing the stored code", () => {
+    const row = { id: "stored", name: "Bolt", barcode: "  erp000000123\t" };
+    expect(resolveScan([row], "УКЗ000000123").map(p => p.id)).toEqual(["stored"]);
+    expect(row.barcode).toBe("  erp000000123\t");
+  });
+  it("keeps ambiguous product and instrument types instead of choosing one", () => {
+    const rows = [
+      { id: "p1", name: "Bolt", kind: "product", product_type_id: "t1" },
+      { id: "p2", name: "Bolt", kind: "product", product_type_id: "t2" },
+      { id: "i1", name: "Drill", kind: "instrument", product_type_id: "t3" },
+    ];
+    expect(uniqueCatalogScanRows(rows).map(p => p.id)).toEqual(["p1", "p2", "i1"]);
+  });
+  it("deduplicates catalog batches only within the same kind and type", () => {
+    const rows = [
+      { id: "p1", name: "Bolt", kind: "product", product_type_id: "t1" },
+      { id: "p2", name: "Bolt", kind: "product", product_type_id: "t1" },
+      { id: "i1", name: "Bolt", kind: "instrument", product_type_id: "t1" },
+    ];
+    expect(uniqueCatalogScanRows(rows).map(p => p.id)).toEqual(["p2", "i1"]);
+  });
   it("finds old name with case and whitespace differences", () => expect(matchesProduct(products[0], "  БАЛГАРКА   ЭПА 125 ")).toBe(true));
   it("finds current name", () => expect(matchesProduct(products[0], "машина EPA 125")).toBe(true));
   it("does not search internal IDs in normal product search", () => expect(matchesProduct(products[0], "uuid-1")).toBe(false));

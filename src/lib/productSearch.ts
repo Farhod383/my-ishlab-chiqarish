@@ -1,10 +1,14 @@
 import { searchNorm } from "@/lib/translit";
-import { scanCodeVariants, stripLeadingZeros } from "@/lib/scanCode";
+import { normalizeScanCode, scanCodeVariants, stripLeadingZeros } from "@/lib/scanCode";
 
 export interface SearchProduct { id?: string; product_type_id?: string | null; name: string; old_names?: string[] | null; mxik_code?: string | null; barcode?: string | null; unit?: string | null }
 export function productTypeKey(p: SearchProduct): string { return p.product_type_id ?? p.id ?? p.barcode ?? `${p.name}|${p.unit}`; }
 export function uniqueProductTypes<T extends SearchProduct>(products: T[]): T[] {
   return Array.from(new Map(products.map(p => [productTypeKey(p), p])).values());
+}
+/** Keep different catalog types/kinds visible; batches of one type are one choice. */
+export function uniqueCatalogScanRows<T extends SearchProduct & { kind?: string }>(rows: T[]): T[] {
+  return Array.from(new Map(rows.map(row => [`${row.kind ?? "product"}:${productTypeKey(row)}`, row])).values());
 }
 export function catalogNorm(value: string): string {
   return searchNorm(value.normalize("NFKC")).replace(/yo/g, "e").replace(/[^a-z0-9]+/g, " ").trim();
@@ -28,7 +32,7 @@ export function resolveScan<T extends SearchProduct>(products: T[], code: string
   const numeric = variants.map(stripLeadingZeros).filter(v => /^\d+$/.test(v));
   return uniqueProductTypes(products.filter(p => {
     if (!p.barcode) return false;
-    const bar = p.barcode.toUpperCase();
+    const bar = normalizeScanCode(p.barcode);
     if (exact.includes(bar)) return true;
     // Bosh nollarsiz solishtirish: 000123 = 123 (faqat sof raqamli kodlar uchun).
     return numeric.length > 0 && /^\d+$/.test(bar) && numeric.includes(stripLeadingZeros(bar));

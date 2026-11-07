@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { ScanBarcode, Link2 } from "lucide-react";
 import { toast } from "sonner";
-import { resolveScan, type SearchProduct } from "@/lib/productSearch";
+import { uniqueCatalogScanRows, type SearchProduct } from "@/lib/productSearch";
 import { normalizeScan, classifyScan } from "@/lib/scanCode";
 import { createIssueScanHandler } from "@/lib/issueScan";
 import { registerScanHandler } from "@/lib/scanChannel";
@@ -44,31 +44,25 @@ export default function CatalogScanner({ products, onSelect, module, action = "s
         toast.warning("Bu xodim bejigi — tovar kodini skanerlang");
         return;
       }
-      let found: any[] = resolveScan(products, value);
-      let instrumentHit: ScanRow | null = null;
-      if (!found.length) {
-        const { data, error } = await supabase.rpc("scan_catalog", { _code: value });
-        if (error) throw error;
-        const rows = (data as unknown as ScanRow[]) ?? [];
-        const instruments = rows.filter(r => r.kind === "instrument");
-        found = rows.filter(r => r.kind === "product");
-        if (!found.length && instruments.length) {
-          instrumentHit = instruments[0];
-          toast.info(`Bu instrument: ${instruments[0].name}. Instrumentlar alohida bo'limda boshqariladi.`);
-        }
-      }
+      // Always search every server catalog source: a local hit must not hide aliases or ambiguity.
+      const { data, error } = await supabase.rpc("scan_catalog", { _code: value });
+      if (error) throw error;
+      const found = uniqueCatalogScanRows((data as unknown as ScanRow[]) ?? []);
       // Har bir skanerlash tarixga yoziladi (topildi/topilmadi) — qoldiqga ta'sir qilmaydi.
       const single = found.length === 1 ? found[0] : null;
-      const hit = single ?? instrumentHit;
+      const hit = single;
       scanIdRef.current = await logScan({
         code: value, raw, module, action,
         productId: hit?.id ?? null,
         productName: hit?.name ?? null,
         productTypeId: hit?.product_type_id ?? null,
-        kind: hit ? (single ? "product" : "instrument") : null,
+        kind: hit?.kind ?? null,
         result: hit || found.length > 1 ? "found" : "not_found",
       });
-      if (found.length === 1) { onSelect(found[0], scanIdRef.current); toast.success(`Tovar: ${found[0].name}`); }
+      if (single) {
+        if (single.kind === "instrument") toast.info(`Bu instrument: ${single.name}. Instrumentlar alohida bo'limda boshqariladi.`);
+        else { onSelect(single, scanIdRef.current); toast.success(`Tovar: ${single.name}`); }
+      }
       else if (found.length > 1) setMatches(found);
       else { setMissing(value); toast.error(`Kod topilmadi: ${value}`); }
     } catch (e: any) { toast.error(e.message ?? "Skanerlashda xatolik"); }
@@ -99,7 +93,7 @@ export default function CatalogScanner({ products, onSelect, module, action = "s
       <Input ref={inputRef} aria-label="Shtrix-kod" placeholder="Shtrix-kod (ixtiyoriy)" value={code} onChange={e => setCode(e.target.value)} onKeyDown={e => { if(e.key === "Enter") { e.preventDefault(); callback.current(code); } }} />
       <Button type="button" variant="outline" disabled={busy || !code.trim()} onClick={() => callback.current(code)} aria-label="Skanerni qidirish"><ScanBarcode className="h-4 w-4" /></Button>
     </div>
-    {matches.length > 1 && <div className="border rounded-md divide-y max-h-48 overflow-auto"><p className="p-2 text-sm font-medium">Mahsulot turini tanlang</p>{matches.map(p => <Button key={p.id} type="button" variant="ghost" className="w-full justify-start h-auto whitespace-normal text-left" onClick={() => { onSelect(p, scanIdRef.current); setMatches([]); }}>{p.name} · {p.unit}</Button>)}</div>}
+    {matches.length > 1 && <div className="border rounded-md divide-y max-h-48 overflow-auto"><p className="p-2 text-sm font-medium">Mahsulot turini tanlang</p>{matches.map(p => <Button key={`${p.kind}:${p.id}`} type="button" variant="ghost" className="w-full justify-start h-auto whitespace-normal text-left" onClick={() => { if (p.kind === "instrument") toast.info(`Bu instrument: ${p.name}. Instrumentlar alohida bo'limda boshqariladi.`); else onSelect(p, scanIdRef.current); setMatches([]); }}>{p.name} · {p.kind === "instrument" ? "Instrument" : p.unit}</Button>)}</div>}
     {missing && canEditBarcode(roles) && <Button type="button" variant="outline" onClick={() => setBindOpen(true)}><Link2 className="h-4 w-4 mr-2" />Shu kodni tovarga biriktirish</Button>}
     <Dialog open={bindOpen} onOpenChange={setBindOpen}><DialogContent><DialogHeader><DialogTitle>Kodni tovarga biriktirish</DialogTitle></DialogHeader>
       <p className="text-sm text-muted-foreground">Kod: <span className="font-mono font-medium text-foreground">{missing}</span> — asosiy ERP kod o‘zgarmaydi, bu kod qo‘shimcha alias bo‘lib saqlanadi.</p>
