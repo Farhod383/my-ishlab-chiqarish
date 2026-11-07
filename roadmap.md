@@ -1,4 +1,8 @@
 
+## ERP prefiksli va prefikssiz skaner tekshiruvi
+- [ ] Barcha katalog manbalari va EN/RU kod variantlarini tekshirish; faqat qidiruvdagi kamchiliklarni tuzatish.
+- [ ] ERP/prefikssiz/zavod/alias/instrument kodlarini alohida sinash; mavjud kod, qoldiq va tarixni saqlash.
+
 ## Yakuniy skaner talabi
 - [x] Shift/modifikatorlar buferni buzmasligi; umumiy kirim/chiqim tutgichi maydon qiymatini saqlaydi.
 - [x] Zavod aliaslari kirim/chiqim/instrument tanlovi, mahsulot/instrument tahriri va yangi mahsulotda; default yorliq filtri.
