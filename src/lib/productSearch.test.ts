@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { matchesProduct, resolveScan, scannedQuantity, uniqueProductTypes } from "./productSearch";
+import { scanCodeVariants } from "./scanCode";
 const products = [
   { id: "uuid-1", name: "Углошлифовальная машина (болгарка) EPA 125 мм", old_names: ["балгарка эпа 125"], barcode: "ERP000000001", mxik_code: "08467001096000000", unit: "dona" },
   { id: "uuid-2", name: "EPA 180 мм", barcode: "ERP000000002", mxik_code: "08467001096000000", unit: "kg" },
@@ -27,8 +28,21 @@ describe("catalog rules", () => {
     const items = [{ id: "n1", name: "Gvozd", barcode: "000123" }, { id: "n2", name: "Bolt", barcode: "ERP000000123" }];
     expect(resolveScan(items, "123").map(p => p.id)).toEqual(["n1"]);
     expect(resolveScan(items, "000123").map(p => p.id)).toEqual(["n1"]);
-    expect(resolveScan(items, "000000123").map(p => p.id)).toEqual(["n1"]);
+    // Prefikssiz skan ERP prefiksli kodni ham topadi — ikkalasi ham qaytariladi (tasodifiy tanlanmaydi).
+    expect(resolveScan(items, "000000123").map(p => p.id).sort()).toEqual(["n1", "n2"]);
     // ERP kodi raqamli emas — bosh nol qoidasi uni "123" bilan bog'lamaydi.
     expect(resolveScan(items, "123").map(p => p.id)).not.toContain("n2");
+  });
+  it("finds ERP-prefixed barcode when scanned without prefix", () => {
+    expect(resolveScan(products, "000000002").map(p => p.id)).toEqual(["uuid-2"]);
+  });
+  it("finds prefix-less barcode when scanned with ERP prefix", () => {
+    const items = [{ id: "p1", name: "Gvozd", barcode: "000000777" }];
+    expect(resolveScan(items, "ERP000000777").map(p => p.id)).toEqual(["p1"]);
+  });
+  it("scanCodeVariants includes ERP and non-ERP forms plus RU layout", () => {
+    expect(scanCodeVariants("ERP000000454")).toEqual(expect.arrayContaining(["ERP000000454", "000000454"]));
+    expect(scanCodeVariants("000000454")).toEqual(expect.arrayContaining(["000000454", "ERP000000454"]));
+    expect(scanCodeVariants("УКЗ000000454")).toEqual(expect.arrayContaining(["ERP000000454", "000000454"]));
   });
 });
