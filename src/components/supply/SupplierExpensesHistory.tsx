@@ -50,5 +50,10 @@ function DocumentDetails({ id }: { id: string }) {
   useEffect(() => { supabase.from('reconciliation_documents').select('*').eq('id', id).single().then(({ data, error }) => { if (error) toast.error(error.message); else setDoc(data); }); }, [id]);
   if (!doc) return <p>Yuklanmoqda...</p>;
   const p = doc.payload as Record<string, unknown>; const r = doc.result as Record<string, unknown>;
-  return <div className="space-y-2"><p className="break-all">#{doc.id}</p><p>{fmtDateTime24(doc.created_at)}</p><p>Mahsulot: {String(p.name ?? r.product_id ?? '')}</p><p>Qoldiq: {String(r.before)} → {String(r.after)}</p><p>Tovar summasi: {fmtMoney(Math.abs(Number(r.after) - Number(r.before)) * Number(p.price ?? 0), String(p.currency))}</p><p>Izoh: {String(p.comment ?? '')}</p></div>;
+  return <div className="space-y-2"><p className="break-all">#{doc.id}</p><p>{fmtDateTime24(doc.created_at)}</p><ProductName id={String(r.product_id ?? '')} name={p.name} /><p>Qoldiq: {String(r.before)} → {String(r.after)}</p><p>Tovar summasi: {p.price == null ? '—' : fmtMoney(Math.abs(Number(r.after) - Number(r.before)) * Number(p.price), String(p.currency))}</p><p>Izoh: {String(p.comment ?? '')}</p></div>;
+}
+function ProductName({ id, name }: { id: string; name: unknown }) {
+  const [text, setText] = useState(String(name ?? ''));
+  useEffect(() => { if (!name && id) supabase.from('products').select('name').eq('id', id).single().then(({ data }) => setText(data?.name ?? '—')); }, [id, name]);
+  return <p>Mahsulot: {text || '—'}</p>;
 }
