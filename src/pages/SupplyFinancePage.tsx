@@ -5,6 +5,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, FileBarChart, Info, Plus } from "lucide-react";
 import { fmtDateTime24 } from "@/lib/format";
 import { fmtSpace } from "@/components/kassa/KassaOverview";
+import SupplierExpensesHistory from '@/components/supply/SupplierExpensesHistory';
+import { toast } from 'sonner';
 
 const PT_LABEL: Record<string, string> = { cash: "Naqd pul", transfer: "O'tkazma", corporate_card: "Korporativ karta", card: "Karta", other: "Boshqa" };
 
@@ -33,6 +35,9 @@ interface OutRow {
   currency: string;
   order_number: string | null;
   actor: string;
+  recorded_at?: string;
+  comment?: string | null;
+  supplier_expense?: boolean;
 }
 
 const PT_KEYS = ["cash", "transfer", "corporate_card"] as const;
@@ -78,7 +83,7 @@ export default function SupplyFinancePage({ canManage = false, onGive, kassa = "
 
   const load = async () => {
     setLoading(true);
-    const [{ data: exp }, { data: mov }, { data: profs }] = await Promise.all([
+    const [{ data: exp }, { data: mov }, { data: profs }, { data: supplierCosts, error: supplierError }] = await Promise.all([
       supabase
         .from("cash_expenses")
         .select("id,amount,total_uzs,currency,reason,comment,payment_type,expense_date,created_at,created_by,recipient_name")
@@ -95,7 +100,13 @@ export default function SupplyFinancePage({ canManage = false, onGive, kassa = "
         return { data: all };
       })(),
       supabase.from("profiles").select("id,full_name,email"),
+      (async () => {
+        const all: import('@/integrations/supabase/types').Tables<'supplier_expenses'>[] = [];
+        for (let f = 0; ; f += 1000) { const { data, error } = await supabase.from('supplier_expenses').select('*').eq('account', kassa).is('deleted_at', null).order('created_at', { ascending: false }).range(f, f + 999); if (error) return { data: all, error }; all.push(...(data ?? [])); if (!data || data.length < 1000) break; }
+        return { data: all, error: null };
+      })(),
     ]);
+    if (supplierError) toast.error(supplierError.message);
     const { data: rs } = await (supabase as any).from("cash_resets").select("reset_at,opening").eq("kassa", kassa).order("reset_at", { ascending: false }).limit(1);
     setResetAt(rs?.[0]?.reset_at ? new Date(rs[0].reset_at).getTime() : 0);
     setOpening((rs?.[0]?.opening ?? {}) as Record<string, number>);
@@ -122,7 +133,7 @@ export default function SupplyFinancePage({ canManage = false, onGive, kassa = "
     );
 
     setOuts(
-      ((mov ?? []) as any[]).map((m) => {
+      [...((mov ?? []) as any[]).map((m) => {
         const price = Number(m.unit_price) || 0;
         const qty = Number(m.quantity) || 0;
         return {
@@ -137,7 +148,7 @@ export default function SupplyFinancePage({ canManage = false, onGive, kassa = "
           order_number: m.order_number ?? null,
           actor: m.brought_by || nameOf(m.created_by),
         };
-      }),
+      }), ...(supplierCosts ?? []).map(e => ({ id: e.id, created_at: e.spent_at, recorded_at: e.created_at, product_name: `Ta’minotchi xarajatlari · ${e.category}`, quantity: 1, unit: null, unit_price: Number(e.amount), total: Number(e.amount), currency: e.currency, order_number: null, actor: e.employee_name, comment: e.comment, supplier_expense: true }))],
     );
     setLoading(false);
   };
@@ -150,11 +161,11 @@ export default function SupplyFinancePage({ canManage = false, onGive, kassa = "
       .on("postgres_changes", { event: "*", schema: "public", table: "stock_movements" }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, []);
+  }, [kassa]);
 
   // Formulalar o'zgarmagan: kirim = Kassadan berilgan, chiqim = Sklad kirimlari (narx × miqdor).
   const pIn = useMemo(() => (month ? incomes.filter((r) => ymOf(r.created_at) === month) : incomes.filter((r) => new Date(r.rec_at).getTime() >= resetAt)), [incomes, month, resetAt]);
-  const pOut = useMemo(() => (month ? outs.filter((r) => ymOf(r.created_at) === month) : outs.filter((r) => new Date(r.created_at).getTime() >= resetAt)), [outs, month, resetAt]);
+  const pOut = useMemo(() => (month ? outs.filter((r) => ymOf(r.created_at) === month) : outs.filter((r) => new Date(r.recorded_at ?? r.created_at).getTime() >= resetAt)), [outs, month, resetAt]);
   const sumBy = (rows: { currency: string }[], val: (r: any) => number) => {
     const m: Record<string, number> = { UZS: 0, USD: 0 };
     for (const r of rows) m[normCur(r.currency)] += val(r);
@@ -164,7 +175,7 @@ export default function SupplyFinancePage({ canManage = false, onGive, kassa = "
   const outSum = useMemo(() => sumBy(pOut, (r) => Number(r.total) || 0), [pOut]);
   // Joriy balans faqat oxirgi nolga tushirishdan keyingi operatsiyalardan (eski tarix hisobotlarda qoladi).
   const curIn = useMemo(() => incomes.filter((r) => new Date(r.rec_at).getTime() >= resetAt), [incomes, resetAt]);
-  const curOut = useMemo(() => outs.filter((r) => new Date(r.created_at).getTime() >= resetAt), [outs, resetAt]);
+  const curOut = useMemo(() => outs.filter((r) => new Date(r.recorded_at ?? r.created_at).getTime() >= resetAt), [outs, resetAt]);
   const allIn = useMemo(() => sumBy(curIn, (r) => Number(r.amount) || 0), [curIn]);
   const allOut = useMemo(() => sumBy(curOut, (r) => Number(r.total) || 0), [curOut]);
   const op = (c: string) => PT_KEYS.reduce((s, pt) => s + (Number(opening[`${pt}_${c}`]) || 0), 0);
@@ -222,9 +233,9 @@ export default function SupplyFinancePage({ canManage = false, onGive, kassa = "
 
   const downloadReport = () => {
     const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const lines = [["Turi", "Sana va vaqt", "Nomi", "Miqdor", "Birlik", "Narx", "Summa", "Valyuta", "Kim", "To'lov turi"].map(esc).join(";")];
-    for (const r of pIn) lines.push(["Berilgan", fmtDateTime24(r.created_at), "Kassadan berildi", "", "", "", r.amount, normCur(r.currency), r.giver, PT_LABEL[normPT(r.payment_type)]].map(esc).join(";"));
-    for (const r of pOut) lines.push(["Sarflangan", fmtDateTime24(r.created_at), r.product_name, r.quantity, r.unit ?? "", r.unit_price, r.total, r.currency, r.actor, ""].map(esc).join(";"));
+    const lines = [["Turi", "Sana va vaqt", "Nomi", "Miqdor", "Birlik", "Narx", "Summa", "Valyuta", "Kim", "To'lov turi", "Izoh"].map(esc).join(";")];
+    for (const r of pIn) lines.push(["Berilgan", fmtDateTime24(r.created_at), "Kassadan berildi", "", "", "", r.amount, normCur(r.currency), r.giver, PT_LABEL[normPT(r.payment_type)], r.comment ?? ''].map(esc).join(";"));
+    for (const r of pOut) lines.push([r.supplier_expense ? 'Ta’minotchi xarajatlari' : "Sarflangan", fmtDateTime24(r.created_at), r.product_name, r.supplier_expense ? '' : r.quantity, r.unit ?? "", r.supplier_expense ? '' : r.unit_price, r.total, r.currency, r.actor, "", r.comment ?? ''].map(esc).join(";"));
     const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -269,7 +280,7 @@ export default function SupplyFinancePage({ canManage = false, onGive, kassa = "
         </button>
         <button type="button" aria-pressed={selOut} onClick={() => setSelOut(!selOut)} className="kassa-card kassa-kpi" data-tone="out">
           <span className="kassa-check">{selOut && <Check className="h-3 w-3" />}</span>
-          <div className="kassa-muted text-sm">Sarflangan (Sklad kirimlari)</div>
+          <div className="kassa-muted text-sm">Sarflangan</div>
           <div className="kassa-big kassa-red">−{money(outSum.UZS, "UZS")}</div>
           {usdLine(outSum, "−") && <div className="kassa-red font-semibold tabular-nums">{usdLine(outSum, "−")}</div>}
           <div className="kassa-muted text-xs">{pOut.length} ta operatsiya</div>
@@ -356,6 +367,7 @@ export default function SupplyFinancePage({ canManage = false, onGive, kassa = "
           </div>
         </div>
       </div>
+      <SupplierExpensesHistory key={kassa} account={kassa} onUpdated={load} />
     </div>
   );
 }
