@@ -27,9 +27,16 @@ export function ruLayoutToEn(code: string): string {
   return code.split("").map((ch) => RU_TO_EN[ch.toLowerCase()] ?? ch).join("").toUpperCase();
 }
 
-/** Avval original kod, keyin klaviatura varianti — ikkalasi ham tekshiriladi. */
+/** Avval original kod, keyin klaviatura varianti — ikkalasi ham tekshiriladi.
+ *  ERP prefiksli/prefikssiz variantlar ham qo'shiladi (ERP000123 ↔ 000123). */
 export function scanCodeVariants(raw: string): string[] {
   const orig = normalizeScanCode(raw);
   const alt = ruLayoutToEn(orig);
-  return [...new Set([orig, alt].filter(Boolean))];
+  const base = [...new Set([orig, alt].filter(Boolean))];
+  const out = new Set(base);
+  for (const v of base) {
+    if (v.startsWith("ERP") && v.length > 3) out.add(v.slice(3));
+    else out.add(`ERP${v}`);
+  }
+  return [...out];
 }
