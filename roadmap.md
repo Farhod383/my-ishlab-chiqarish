@@ -1,4 +1,9 @@
 
+## Nakladnoysiz kirim: ta’minotchi xarajatlari
+- [ ] Alohida xarajatlar, hisob/valyuta/HR tanlovi, tasdiqlash va atomik saqlash.
+- [ ] Ta’minot tarixi/filtrlari, ruxsatli tahrirlash/o‘chirish, balans va audit.
+- [ ] Takrorlanmaslik, mablag‘ tekshiruvi, hisoblar mustaqilligi va ekran sinovlari.
+
 ## ERP prefiksli va prefikssiz skaner tekshiruvi
 - [x] Barcha katalog manbalari va EN/RU variantlari: umumiy server qidiruvi, saqlangan kod normalizatsiyasi, tarixiy product→instrument bog‘lanishi; tur/kind bo‘yicha aniq tanlov.
 - [x] ERP/prefikssiz/zavod/alias/instrument kodlari haqiqiy hisobning API so‘rovlarida topildi; 52 test va build OK. Kod/qoldiq/MXIK yozuvlari o‘zgartirilmadi.
