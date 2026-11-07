@@ -484,6 +484,13 @@
       "when": 1794034757221,
       "tag": "0068_scan_erp_prefix_variants",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1794043097594,
+      "tag": "0069_complete_catalog_scan_lookup",
+      "breakpoints": true
     }
   ]
 }
