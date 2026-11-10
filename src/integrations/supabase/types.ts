@@ -2767,6 +2767,86 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_inventory_operations: {
+        Row: {
+          actor_id: string
+          actor_name: string | null
+          comment: string | null
+          created_at: string
+          delta: number
+          id: string
+          movement_id: string | null
+          payload: Json
+          product_id: string
+          product_name: string
+          requested_stock: number
+          result: Json
+          stock_after: number
+          stock_before: number
+        }
+        Insert: {
+          actor_id: string
+          actor_name?: string | null
+          comment?: string | null
+          created_at?: string
+          delta: number
+          id: string
+          movement_id?: string | null
+          payload: Json
+          product_id: string
+          product_name: string
+          requested_stock: number
+          result: Json
+          stock_after: number
+          stock_before: number
+        }
+        Update: {
+          actor_id?: string
+          actor_name?: string | null
+          comment?: string | null
+          created_at?: string
+          delta?: number
+          id?: string
+          movement_id?: string | null
+          payload?: Json
+          product_id?: string
+          product_name?: string
+          requested_stock?: number
+          result?: Json
+          stock_after?: number
+          stock_before?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_inventory_operations_movement_id_fkey"
+            columns: ["movement_id"]
+            isOneToOne: false
+            referencedRelation: "stock_movements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_inventory_operations_movement_id_fkey"
+            columns: ["movement_id"]
+            isOneToOne: false
+            referencedRelation: "supply_spendings"
+            referencedColumns: ["stock_movement_id"]
+          },
+          {
+            foreignKeyName: "stock_inventory_operations_movement_id_fkey"
+            columns: ["movement_id"]
+            isOneToOne: false
+            referencedRelation: "supply2_spendings"
+            referencedColumns: ["stock_movement_id"]
+          },
+          {
+            foreignKeyName: "stock_inventory_operations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_movements: {
         Row: {
           comment: string | null
@@ -3337,6 +3417,17 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      save_product_inventory: {
+        Args: {
+          _changes?: Json
+          _comment?: string
+          _expected_stock: number
+          _key: string
+          _product_id: string
+          _quantity: number
+        }
+        Returns: Json
       }
       scan_barcode_matches: {
         Args: { _barcode: string; _code: string }

@@ -498,6 +498,13 @@
       "when": 1794046987098,
       "tag": "0070_reconciliation_supplier_expenses",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1794295519223,
+      "tag": "0071_atomic_inventory_final_stock",
+      "breakpoints": true
     }
   ]
 }
