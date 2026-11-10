@@ -1,7 +1,7 @@
 
 ## Inventarizatsiya qoldig‘i
-- [ ] Ikki martalik yozishni olib tashlash; atomik, takrorlanmaydigan va auditli yakuniy qoldiq.
-- [ ] Oltita haqiqiy DB sinovi va mahsulot tahrirlash oynasini tekshirish; mavjud tarixga tegmaslik.
+- [x] Ikki martalik yozish olib tashlandi; save_product_inventory: rol tekshiruvi, mahsulot qulfi, expected-stock, bir martalik delta, audit va nol-delta retry.
+- [x] Haqiqiy test mahsulotida 7 API testi: 120/80/100/125/122, parallel ikki saqlash→120 va eski qoldiq rad; 24 regressiya testi, build OK. Admin 2 oynasida 0→120→0 saqlanib ro‘yxatdan o‘qildi. Test mahsuloti 0 qoldiqda, narxi 0; sinov tarixi saqlandi, mavjud mahsulotlar o‘zgarmadi.
 
 ## Nakladnoysiz kirim: ta’minotchi xarajatlari
 - [x] Alohida xarajatlar, hisob/valyuta/HR tanlovi, tasdiqlash va atomik saqlash.
