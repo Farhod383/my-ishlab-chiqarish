@@ -179,6 +179,9 @@ export default function WarehousePage() {
   const [epPhone, setEpPhone] = useState(""); const [epSource, setEpSource] = useState("");
   const [epPriority, setEpPriority] = useState("green"); const [epCurrency, setEpCurrency] = useState("UZS");
   const [epStock, setEpStock] = useState(""); const [epStockReason, setEpStockReason] = useState("");
+  const [epBusy, setEpBusy] = useState(false);
+  const epLock = useRef(false);
+  const epRequest = useRef<{ key: string; payload: string } | null>(null);
 
 
   // Edit movement
@@ -719,6 +722,7 @@ export default function WarehousePage() {
   };
 
   const openEditProduct = (p: any) => {
+    epRequest.current = null;
     setEditProd(p);
     setEpName(p.name ?? ""); setEpUnit(p.unit ?? "dona");
     setEpPrice(String(p.last_price ?? "")); setEpMin(String(p.min_limit ?? ""));
@@ -728,50 +732,28 @@ export default function WarehousePage() {
     setEditProdOpen(true);
   };
   const saveEditProduct = async () => {
-    if (!editProd) return;
+    if (!editProd || epLock.current) return;
+    const newStock = Number(epStock);
+    if (epStock.trim() === "" || !Number.isFinite(newStock) || newStock < 0) {
+      toast.error("Yangi yakuniy qoldiqni (0 yoki undan katta) kiriting"); return;
+    }
     const newVals = {
       name: epName.trim(), unit: epUnit, last_price: Number(epPrice) || 0,
       min_limit: Number(epMin) || 0, phone: epPhone || null, source: epSource.trim() || null,
       priority: epPriority, currency: epCurrency,
     };
-    const diffs: string[] = [];
-    (["name","unit","last_price","min_limit","phone","source","priority","currency"] as const).forEach(k => {
-      const oldV = (editProd as any)[k] ?? ""; const newV = (newVals as any)[k] ?? "";
-      if (String(oldV) !== String(newV)) diffs.push(`${k}: ${oldV || "—"} → ${newV || "—"}`);
-    });
-    const { error } = await supabase.from("products").update(newVals).eq("id", editProd.id);
-    if (error) { toast.error(error.message); return; }
-
-    // Stock adjustment
-    const oldStock = Number(editProd.stock_qty ?? 0);
-    const newStock = Number(epStock);
-    if (!Number.isNaN(newStock) && newStock !== oldStock) {
-      const delta = newStock - oldStock;
-      await supabase.from("products").update({ stock_qty: newStock }).eq("id", editProd.id);
-      await supabase.from("stock_movements").insert({
-        product_id: editProd.id,
-        direction: delta > 0 ? "in" : "out",
-        quantity: Math.abs(delta),
-        recipient_name: "Qoldiq tuzatish",
-        source: "Qo'lda tuzatish",
-        comment: `Qoldiq tuzatish: ${oldStock} → ${newStock} (${delta > 0 ? "+" : ""}${delta} ${editProd.unit ?? ""})${epStockReason ? ` · ${epStockReason}` : ""}`,
-        created_by: user?.id,
-      } as any);
-      await logAudit(supabase, {
-        actor_id: user?.id, actor_name: currentUserName(user),
-        action: "Qoldiq tuzatildi", entity: "product",
-        details: `${editProd.name}: ${oldStock} → ${newStock} (${delta > 0 ? "+" : ""}${delta} ${editProd.unit ?? ""})${epStockReason ? ` · ${epStockReason}` : ""}`,
-      });
-      diffs.push(`qoldiq: ${oldStock} → ${newStock}`);
-    }
-
-    await logAudit(supabase, {
-      actor_id: user?.id, actor_name: currentUserName(user),
-      action: "Mahsulot tahrirlandi", entity: "product",
-      details: diffs.length ? `${editProd.name}: ${diffs.join("; ")}` : `${editProd.name}: o'zgarish yo'q`,
-    });
-    toast.success(t.common.save);
-    setEditProdOpen(false); setEditProd(null); load();
+    const args = { _product_id: editProd.id, _quantity: newStock, _expected_stock: Number(editProd.stock_qty ?? 0), _changes: newVals, _comment: epStockReason || null };
+    const payload = JSON.stringify(args);
+    if (!epRequest.current || epRequest.current.payload !== payload) epRequest.current = { key: crypto.randomUUID(), payload };
+    epLock.current = true; setEpBusy(true);
+    try {
+      const { error } = await supabase.rpc("save_product_inventory", { ...args, _key: epRequest.current.key });
+      if (error) throw error;
+      toast.success(t.common.save);
+      setEditProdOpen(false); setEditProd(null); await load();
+    } catch (error) {
+      toast.error((error as { message?: string }).message || "Saqlashda xatolik");
+    } finally { epLock.current = false; setEpBusy(false); }
   };
 
 
@@ -1904,7 +1886,7 @@ export default function WarehousePage() {
       </Dialog>
 
       {/* Edit Product */}
-      <Dialog open={editProdOpen} onOpenChange={setEditProdOpen}>
+      <Dialog open={editProdOpen} onOpenChange={v => { if (!epBusy) setEditProdOpen(v); }}>
         <DialogContent>
           <DialogHeader><DialogTitle>{t.common.edit} — {editProd?.name}</DialogTitle></DialogHeader>
           <div className="space-y-3">
@@ -1956,13 +1938,13 @@ export default function WarehousePage() {
                     {Number(editProd?.stock_qty ?? 0)} → {Number(epStock)} ({Number(epStock) - Number(editProd?.stock_qty ?? 0) > 0 ? "+" : ""}{Number(epStock) - Number(editProd?.stock_qty ?? 0)} {editProd?.unit ?? ""})
                   </div>
                   <div>
-                    <Label>Tuzatish sababi (audit log uchun)</Label>
-                    <Input value={epStockReason} onChange={e => setEpStockReason(e.target.value)} placeholder="Masalan: inventarizatsiya, yo'qotish..." />
+                    <Label>Tuzatish sababi (ixtiyoriy)</Label>
+                    <Input value={epStockReason} onChange={e => setEpStockReason(e.target.value)} placeholder="Masalan: inventarizatsiya, yo'qotish... (ixtiyoriy)" />
                   </div>
                 </>
               )}
             </div>
-            <Button className="w-full" onClick={saveEditProduct}>{t.common.save}</Button>
+            <Button className="w-full" disabled={epBusy} onClick={saveEditProduct}>{t.common.save}</Button>
 
           </div>
         </DialogContent>
