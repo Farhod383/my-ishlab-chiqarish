@@ -1,4 +1,8 @@
 
+## Inventarizatsiya qoldig‘i
+- [ ] Ikki martalik yozishni olib tashlash; atomik, takrorlanmaydigan va auditli yakuniy qoldiq.
+- [ ] Oltita haqiqiy DB sinovi va mahsulot tahrirlash oynasini tekshirish; mavjud tarixga tegmaslik.
+
 ## Nakladnoysiz kirim: ta’minotchi xarajatlari
 - [x] Alohida xarajatlar, hisob/valyuta/HR tanlovi, tasdiqlash va atomik saqlash.
 - [x] Ta’minot tarixi/filtrlari, ruxsatli tahrirlash/o‘chirish, balans va audit.
