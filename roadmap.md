@@ -1,3 +1,7 @@
+## HR shtrix-kod: faqat Admin 2
+- [ ] Admin 2 uchun xavfsiz ko‘rish/tahrirlash, eski alias, unikal kod va audit.
+- [ ] HR maydoni, nusxalash, skaner, faol/nofaol qidiruv va boshqa rollardan yashirish.
+- [ ] Haqiqiy hisoblarda API/brauzer va regressiya sinovlari.
 
 ## Inventarizatsiya qoldig‘i
 - [x] Ikki martalik yozish olib tashlandi; save_product_inventory: rol tekshiruvi, mahsulot qulfi, expected-stock, bir martalik delta, audit va nol-delta retry.
