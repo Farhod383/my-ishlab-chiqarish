@@ -1,7 +1,7 @@
 ## HR shtrix-kod: faqat Admin 2
-- [ ] Admin 2 uchun xavfsiz ko‘rish/tahrirlash, eski alias, unikal kod va audit.
-- [ ] HR maydoni, nusxalash, skaner, faol/nofaol qidiruv va boshqa rollardan yashirish.
-- [ ] Haqiqiy hisoblarda API/brauzer va regressiya sinovlari.
+- [x] Admin 2 uchun himoyalangan kod ko‘rish/tahrirlash; unikal kod, eski alias, optimistic tekshiruv va server audit. Barcha 122 HR yozuvi saqlandi.
+- [x] HR maydoni, nusxalash/skaner, faol/nofaol kod qidiruvi; boshqa rollarga maydon/PDF/API yopiq. Kod-only tahrir tarixiy HR maydonlarini o‘zgartirmaydi.
+- [x] Admin 2 qo‘lda/skaner saqlash va eski/yangi kod; oddiy Admin UI/API rad; 33 test, 575 px dialog va build OK. Sinov kodlari tiklandi, alias/audit qoldi. Fizik skaner mavjud emas.
 
 ## Inventarizatsiya qoldig‘i
 - [x] Ikki martalik yozish olib tashlandi; save_product_inventory: rol tekshiruvi, mahsulot qulfi, expected-stock, bir martalik delta, audit va nol-delta retry.

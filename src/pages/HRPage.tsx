@@ -57,6 +57,7 @@ export default function HRPage() {
   const [badgeMap, setBadgeMap] = useState<Record<string, string | null>>({});
   const [badgeDraft, setBadgeDraft] = useState("");
   const [saving, setSaving] = useState(false);
+  const [originalForm, setOriginalForm] = useState("");
   const loadBadges = async () => {
     const { data, error } = await supabase.rpc("get_employee_badges");
     if (error) { toast.error(error.message); return; }
@@ -150,6 +151,17 @@ export default function HRPage() {
     if (editId && canManageBadges && badgeDraft !== (badgeMap[editId] ?? "")) {
       try { newBadge = employeeBadgeCode(badgeDraft); }
       catch (error) { toast.error((error as Error).message); return; }
+      // Historical employees may lack fields required for a full HR edit.
+      // A badge-only edit must not rewrite or validate unrelated HR data.
+      if (JSON.stringify(form) === originalForm) {
+        setSaving(true);
+        const { data, error } = await supabase.rpc("set_employee_badge", { _employee_id: editId, _code: newBadge, _expected_code: badgeMap[editId] ?? undefined });
+        setSaving(false);
+        if (error) { toast.error(error.message); return; }
+        setBadgeMap(prev => ({ ...prev, [editId]: data }));
+        toast.success("Shtrix-kod saqlandi"); setAddOpen(false); setEditId(null); resetForm();
+        return;
+      }
     }
     // Required fields
     const first = form.first_name.trim();
@@ -242,7 +254,7 @@ export default function HRPage() {
     const parts = String(emp.full_name ?? "").trim().split(/\s+/);
     const last = parts.shift() ?? "";
     const first = parts.join(" ");
-    setForm({
+    const editForm = {
       full_name: emp.full_name ?? "",
       first_name: first, last_name: last,
       position: emp.position ?? "", department: emp.department ?? "",
@@ -252,7 +264,8 @@ export default function HRPage() {
       login: emp.login ?? "", password: emp.password ?? "",
       birth_date: emp.birth_date ?? "", passport: emp.passport ?? "",
       address: emp.address ?? "", note: emp.note ?? "",
-    });
+    };
+    setForm(editForm); setOriginalForm(JSON.stringify(editForm));
     setEditId(emp.id);
     setBadgeDraft(badgeMap[emp.id] ?? "");
     setAddOpen(true);
