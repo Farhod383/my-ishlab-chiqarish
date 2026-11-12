@@ -1064,6 +1064,35 @@ export type Database = {
           },
         ]
       }
+      employee_badge_aliases: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          employee_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          employee_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_badge_aliases_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           address: string | null
@@ -3228,6 +3257,7 @@ export type Database = {
       }
       can_edit_intake: { Args: { _user_id: string }; Returns: boolean }
       can_manage_daily_tasks: { Args: { _u: string }; Returns: boolean }
+      can_manage_employee_badges: { Args: never; Returns: boolean }
       can_manage_trips: { Args: { _user_id: string }; Returns: boolean }
       cash_available: { Args: { _cur: string; _pt: string }; Returns: number }
       cash_exchange: {
@@ -3284,6 +3314,13 @@ export type Database = {
           _stock_after: number
         }
         Returns: undefined
+      }
+      get_employee_badges: {
+        Args: never
+        Returns: {
+          badge_code: string
+          id: string
+        }[]
       }
       has_any_role: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
@@ -3375,6 +3412,7 @@ export type Database = {
         }
         Returns: string
       }
+      normalize_employee_badge: { Args: { _code: string }; Returns: string }
       order_prefix: { Args: { _name: string }; Returns: string }
       order_series: { Args: { _prefix: string }; Returns: string }
       remove_factory_barcode: {
@@ -3418,6 +3456,14 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      resolve_employee_badge: {
+        Args: { _code: string }
+        Returns: {
+          full_name: string
+          id: string
+          status: string
+        }[]
+      }
       save_product_inventory: {
         Args: {
           _changes?: Json
@@ -3435,6 +3481,10 @@ export type Database = {
       }
       scan_catalog: { Args: { _code: string }; Returns: Json }
       scan_code_variants: { Args: { _code: string }; Returns: string[] }
+      set_employee_badge: {
+        Args: { _code: string; _employee_id: string; _expected_code: string }
+        Returns: string
+      }
       set_product_barcode: {
         Args: { _code: string; _expected_code: string; _product_id: string }
         Returns: Json
