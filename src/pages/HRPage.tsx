@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Users, Plus, Edit2, Wrench, UserX, UserCheck, Briefcase, CalendarDays, FileDown, FileText } from "lucide-react";
+import { Users, Plus, Edit2, Wrench, UserX, UserCheck, Briefcase, CalendarDays, FileDown, FileText, Copy } from "lucide-react";
 import { exportEmployeesPDF, exportEmployeesDocx } from "@/lib/hrExport";
 
 import VacanciesTab from "@/components/hr/VacanciesTab";
@@ -24,6 +24,8 @@ import { currentUserName, displayUser } from "@/lib/userNames";
 import { useFocusEntity } from "@/notifications/FocusHighlighter";
 import { Checkbox } from "@/components/ui/checkbox";
 import EmployeeBadgePrint from "@/components/hr/EmployeeBadgePrint";
+import BarcodeScanField from "@/components/warehouse/BarcodeScanField";
+import { employeeBadgeCode } from "@/lib/employeeBadgeAccess";
 
 // Uzbek phone format validator: +998 XX XXX XX XX  or XX XXX XX XX  (spaces optional)
 const PHONE_RE = /^(\+?998)?\s*\d{2}\s*\d{3}\s*\d{2}\s*\d{2}$/;
@@ -51,6 +53,29 @@ export default function HRPage() {
   const [form, setForm] = useState(emptyForm());
   const [attEmp, setAttEmp] = useState<{ id: string; full_name: string } | null>(null);
   const [badgeSelection, setBadgeSelection] = useState<Set<string>>(new Set());
+  const [canManageBadges, setCanManageBadges] = useState(false);
+  const [badgeMap, setBadgeMap] = useState<Record<string, string | null>>({});
+  const [badgeDraft, setBadgeDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [originalForm, setOriginalForm] = useState("");
+  const loadBadges = async () => {
+    const { data, error } = await supabase.rpc("get_employee_badges");
+    if (error) { toast.error(error.message); return; }
+    setBadgeMap(Object.fromEntries((data ?? []).map(e => [e.id, e.badge_code])));
+  };
+  useEffect(() => {
+    let active = true;
+    setCanManageBadges(false); setBadgeMap({}); setBadgeSelection(new Set());
+    if (user) void supabase.rpc("can_manage_employee_badges").then(async ({ data }) => {
+      if (!active || !data) return;
+      const result = await supabase.rpc("get_employee_badges");
+      if (!active) return;
+      if (result.error) { toast.error(result.error.message); return; }
+      setBadgeMap(Object.fromEntries((result.data ?? []).map(e => [e.id, e.badge_code])));
+      setCanManageBadges(true);
+    });
+    return () => { active = false; };
+  }, [user?.id]);
 
   const load = async () => {
     const [aRes] = await Promise.all([
@@ -114,13 +139,30 @@ export default function HRPage() {
       : employees.filter(e => (e.status ?? "active") === statusFilter);
     const q = empSearch.trim().toLowerCase().replace(/['ʼ‘’`]/g, "").replace(/\s+/g, " ");
     if (!q) return base;
-    return base.filter(e => (e.full_name ?? "").toLowerCase().replace(/['ʼ‘’`]/g, "").replace(/\s+/g, " ").includes(q));
-  }, [employees, statusFilter, empSearch]);
+    return base.filter(e => (e.full_name ?? "").toLowerCase().replace(/['ʼ‘’`]/g, "").replace(/\s+/g, " ").includes(q) || (canManageBadges && (badgeMap[e.id] ?? "").toLowerCase().includes(q)));
+  }, [employees, statusFilter, empSearch, canManageBadges, badgeMap]);
   const nameKey = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
 
   const resetForm = () => setForm(emptyForm());
 
   const save = async () => {
+    if (saving) return;
+    let newBadge = badgeDraft;
+    if (editId && canManageBadges && badgeDraft !== (badgeMap[editId] ?? "")) {
+      try { newBadge = employeeBadgeCode(badgeDraft); }
+      catch (error) { toast.error((error as Error).message); return; }
+      // Historical employees may lack fields required for a full HR edit.
+      // A badge-only edit must not rewrite or validate unrelated HR data.
+      if (JSON.stringify(form) === originalForm) {
+        setSaving(true);
+        const { data, error } = await supabase.rpc("set_employee_badge", { _employee_id: editId, _code: newBadge, _expected_code: badgeMap[editId] ?? undefined });
+        setSaving(false);
+        if (error) { toast.error(error.message); return; }
+        setBadgeMap(prev => ({ ...prev, [editId]: data }));
+        toast.success("Shtrix-kod saqlandi"); setAddOpen(false); setEditId(null); resetForm();
+        return;
+      }
+    }
     // Required fields
     const first = form.first_name.trim();
     const last = form.last_name.trim();
@@ -170,6 +212,13 @@ export default function HRPage() {
     };
 
     if (editId) {
+      if (canManageBadges && newBadge !== (badgeMap[editId] ?? "")) {
+        setSaving(true);
+        const { data, error } = await supabase.rpc("set_employee_badge", { _employee_id: editId, _code: newBadge, _expected_code: badgeMap[editId] ?? undefined });
+        setSaving(false);
+        if (error) { toast.error(error.message); return; }
+        setBadgeDraft(data); setBadgeMap(prev => ({ ...prev, [editId]: data }));
+      }
       const { error } = await supabase.from("employees").update(payload).eq("id", editId);
       if (error) { toast.error(error.message); return; }
       await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Xodim tahrirlandi", entity: "employee", details: composedName });
@@ -191,6 +240,7 @@ export default function HRPage() {
     }
     toast.success(hr.saved ?? "Saqlandi");
     setAddOpen(false); setEditId(null); resetForm(); refreshEmployees(); load();
+    if (canManageBadges) void loadBadges();
   };
 
   // "Yangi" marker — employees added within the last 7 days (real created_at).
@@ -204,7 +254,7 @@ export default function HRPage() {
     const parts = String(emp.full_name ?? "").trim().split(/\s+/);
     const last = parts.shift() ?? "";
     const first = parts.join(" ");
-    setForm({
+    const editForm = {
       full_name: emp.full_name ?? "",
       first_name: first, last_name: last,
       position: emp.position ?? "", department: emp.department ?? "",
@@ -214,8 +264,10 @@ export default function HRPage() {
       login: emp.login ?? "", password: emp.password ?? "",
       birth_date: emp.birth_date ?? "", passport: emp.passport ?? "",
       address: emp.address ?? "", note: emp.note ?? "",
-    });
+    };
+    setForm(editForm); setOriginalForm(JSON.stringify(editForm));
     setEditId(emp.id);
+    setBadgeDraft(badgeMap[emp.id] ?? "");
     setAddOpen(true);
   };
 
@@ -272,6 +324,13 @@ export default function HRPage() {
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>{editId ? "Tahrirlash" : "Yangi xodim"}</DialogTitle></DialogHeader>
               <div className="space-y-3">
+                {editId && canManageBadges && <div className="space-y-1">
+                  <Label htmlFor="employee-badge-code">Shtrix-kod (ixtiyoriy)</Label>
+                  <div className="flex gap-2">
+                    <div className="min-w-0 flex-1"><BarcodeScanField id="employee-badge-code" value={badgeDraft} onChange={setBadgeDraft} placeholder="MCT… (ixtiyoriy)" /></div>
+                    <Button type="button" size="icon" variant="outline" aria-label="Shtrix-kodni nusxalash" title="Shtrix-kodni nusxalash" disabled={!badgeDraft} onClick={async () => { try { await navigator.clipboard.writeText(badgeDraft); toast.success("Kod nusxalandi"); } catch { toast.error("Nusxalash amalga oshmadi"); } }}><Copy className="h-4 w-4" /></Button>
+                  </div>
+                </div>}
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>Familiya *</Label><Input value={form.last_name} onChange={e => setForm({ ...form, last_name: e.target.value })} /></div>
                   <div><Label>Ism *</Label><Input value={form.first_name} onChange={e => setForm({ ...form, first_name: e.target.value })} /></div>
@@ -305,7 +364,7 @@ export default function HRPage() {
                     </div>
                   </div>
                 )}
-                <Button className="w-full" onClick={save}>{t.common.save}</Button>
+                <Button className="w-full" disabled={saving} onClick={save}>{t.common.save}</Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -327,7 +386,7 @@ export default function HRPage() {
             </Tabs>
             {statusFilter !== "vacancy" && (
               <div className="flex items-center gap-2">
-                <Input value={empSearch} onChange={e => setEmpSearch(e.target.value)} placeholder="Xodimni ism yoki familiya bo'yicha qidiring..." className="h-9 w-72" />
+                <Input value={empSearch} onChange={e => setEmpSearch(e.target.value)} placeholder={canManageBadges ? "Ism, familiya yoki shtrix-kod bo‘yicha qidirish..." : "Xodimni ism yoki familiya bo'yicha qidiring..."} className="h-9 w-72 max-w-full" />
                 {newCount > 0 && (
                   <Badge className="bg-status-green text-status-green-foreground">{newCount} yangi xodim</Badge>
                 )}
@@ -339,14 +398,15 @@ export default function HRPage() {
             <div className="p-3"><VacanciesTab /></div>
           ) : (
           <>
-          <div className="p-3 flex justify-end"><EmployeeBadgePrint employees={employees.filter(e => badgeSelection.has(e.id))} /></div>
+          {canManageBadges && <div className="p-3 flex justify-end"><EmployeeBadgePrint employees={employees.filter(e => badgeSelection.has(e.id) && badgeMap[e.id]).map(e => ({ ...e, badge_code: badgeMap[e.id] ?? "" }))} /></div>}
           <div className="border rounded-md overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-10"><Checkbox aria-label="Barcha ko‘rinayotgan xodimlarni tanlash" checked={filteredEmployees.length > 0 && filteredEmployees.every(e => badgeSelection.has(e.id))} onCheckedChange={checked => setBadgeSelection(prev => { const next = new Set(prev); filteredEmployees.forEach(e => checked ? next.add(e.id) : next.delete(e.id)); return next; })} /></TableHead>
+                  {canManageBadges && <TableHead className="w-10"><Checkbox aria-label="Barcha ko‘rinayotgan xodimlarni tanlash" checked={filteredEmployees.length > 0 && filteredEmployees.every(e => badgeSelection.has(e.id))} onCheckedChange={checked => setBadgeSelection(prev => { const next = new Set(prev); filteredEmployees.forEach(e => checked ? next.add(e.id) : next.delete(e.id)); return next; })} /></TableHead>}
                   <TableHead className="w-12 text-right">№</TableHead>
                   <TableHead>Ism</TableHead>
+                  {canManageBadges && <TableHead>Shtrix-kod</TableHead>}
                   <TableHead>Lavozim</TableHead>
                   <TableHead>Bo'lim</TableHead>
                   <TableHead>Telefon</TableHead>
@@ -368,7 +428,7 @@ export default function HRPage() {
                     className={`${canManage ? "cursor-pointer hover:bg-muted/40" : ""} ${isNew(e) ? "bg-status-green/5" : ""}`.trim() || undefined}
                     onClick={canManage ? () => openEdit(e) : undefined}
                   >
-                    <TableCell onClick={ev => ev.stopPropagation()}><Checkbox aria-label={`Bejik: ${localize(e.full_name)}`} checked={badgeSelection.has(e.id)} onCheckedChange={checked => setBadgeSelection(prev => { const next = new Set(prev); if (checked) next.add(e.id); else next.delete(e.id); return next; })} /></TableCell>
+                    {canManageBadges && <TableCell onClick={ev => ev.stopPropagation()}><Checkbox aria-label={`Bejik: ${localize(e.full_name)}`} checked={badgeSelection.has(e.id)} onCheckedChange={checked => setBadgeSelection(prev => { const next = new Set(prev); if (checked) next.add(e.id); else next.delete(e.id); return next; })} /></TableCell>}
                     <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
@@ -378,6 +438,7 @@ export default function HRPage() {
                         )}
                       </div>
                     </TableCell>
+                    {canManageBadges && <TableCell className="font-mono whitespace-nowrap">{badgeMap[e.id] ?? ""}</TableCell>}
                     <TableCell className="text-sm">{e.position}</TableCell>
                     <TableCell className="text-sm">{e.department}</TableCell>
                     <TableCell className="text-sm">{e.phone ?? "—"}</TableCell>

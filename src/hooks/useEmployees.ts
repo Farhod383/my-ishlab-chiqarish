@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 export interface CentralEmployee {
   id: string;
   full_name: string;
-  badge_code: string;
   position: string | null;
   department: string | null;
   phone: string | null;
@@ -28,7 +27,7 @@ const listeners = new Set<(rows: CentralEmployee[]) => void>();
 const emit = () => listeners.forEach((l) => l(cache ?? []));
 
 async function fetchAll() {
-  const { data } = await supabase.from("employees").select("*").order("full_name");
+  const { data } = await supabase.from("employees").select("id,full_name,position,department,phone,hire_date,leave_date,status,created_at,updated_at,salary,neighborhood,birth_date,passport,address,note,login,password,hikvision_person_id,work_site,shift_id,photo_url").order("full_name");
   cache = (data as any) ?? [];
   emit();
 }

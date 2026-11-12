@@ -505,6 +505,20 @@
       "when": 1794295519223,
       "tag": "0071_atomic_inventory_final_stock",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1794479175655,
+      "tag": "0072_admin2_employee_badge_access",
+      "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1794479485854,
+      "tag": "0073_guard_generated_badge_alias_collisions",
+      "breakpoints": true
     }
   ]
 }
