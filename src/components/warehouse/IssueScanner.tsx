@@ -36,8 +36,9 @@ export default function IssueScanner({ kind, onEmployee, onProduct }: Props) {
     try {
       const type = classifyScan(normalized);
       if (type === "employee") {
-        const { data, error } = await supabase.from("employees").select("id, full_name, status").eq("badge_code", normalized).maybeSingle();
+        const { data: found, error } = await supabase.rpc("resolve_employee_badge", { _code: normalized });
         if (error) throw error;
+        const data = found?.[0];
         await logScan({ code: normalized, raw, module: "Chiqim", action: "out", kind: "employee", productName: data?.full_name ?? null, result: data?.status === "active" ? "found" : "not_found" });
         if (!data || data.status !== "active") { toast.error(`Kod topilmadi: ${normalized}`); return; }
         onEmployee(data.id); toast.success(`Xodim: ${localize(data.full_name)}`); return;
