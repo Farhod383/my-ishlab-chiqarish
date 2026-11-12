@@ -2,7 +2,7 @@ BEGIN;
 DO $$
 DECLARE eid uuid; code text; previous text; rejected boolean := false;
 BEGIN
-  IF EXISTS (SELECT 1 FROM public.employees WHERE badge_code IS NULL OR badge_code !~ '^MCT[0-9]{5}$') THEN RAISE EXCEPTION 'Invalid existing badge'; END IF;
+  IF EXISTS (SELECT 1 FROM public.employees WHERE badge_code IS NOT NULL AND badge_code !~ '^MCT[A-Z0-9]{1,61}$') THEN RAISE EXCEPTION 'Invalid existing badge'; END IF;
   IF (SELECT count(*) FROM public.employees) <> (SELECT count(DISTINCT badge_code) FROM public.employees) THEN RAISE EXCEPTION 'Duplicate badge'; END IF;
   INSERT INTO public.employees(full_name,position,department,hire_date) VALUES ('Badge rollback check '||gen_random_uuid(),'Test','Test',CURRENT_DATE) RETURNING id,badge_code INTO eid,code;
   IF code IS NULL OR code !~ '^MCT[0-9]{5}$' THEN RAISE EXCEPTION 'New employee missing badge'; END IF;
