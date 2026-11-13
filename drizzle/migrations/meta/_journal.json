@@ -554,6 +554,13 @@
       "when": 1794570167772,
       "tag": "0078_warehouse_deletion_harden_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1794570335598,
+      "tag": "0079_warehouse_reversal_cash_isolation",
+      "breakpoints": true
     }
   ]
 }
