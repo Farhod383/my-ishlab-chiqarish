@@ -108,14 +108,17 @@ export default function WarehouseHistory({
       if (!data || (data as any[]).length < pageSize) break;
     }
 
-    const [{ data: metal }, { data: normData }] = await Promise.all([
+    const [{ data: metal }, { data: normData }, { data: deletions }] = await Promise.all([
       supabase
         .from("metal_movements")
         .select("*, stock:metal_stock(metal_type, length_mm, width_mm, thickness_mm, weight_kg), order:orders(order_number)")
         .order("created_at", { ascending: false })
         .limit(2000),
       supabase.from("metal_norms").select("*").order("metal_type"),
+      supabase.from("warehouse_deletions").select("entity_id").eq("entity", "movement"),
     ]);
+    const cancelledIds = new Set((deletions ?? []).map((row) => row.entity_id));
+    all = all.map((row) => ({ ...row, warehouse_cancelled: cancelledIds.has(row.id) }));
     setNorms(normData ?? []);
 
     const ids = Array.from(
@@ -380,7 +383,7 @@ export default function WarehouseHistory({
                 <TableRow
                   key={`${r.kind}-${r.id}`}
                   className={canManage && r.kind === "product" ? "cursor-pointer hover:bg-muted/40" : undefined}
-                  onClick={canManage && r.kind === "product" && !r.raw.reconciliation_key && !r.raw.issue_document_id && onEdit ? () => onEdit(r.raw) : undefined}
+                  onClick={canManage && r.kind === "product" && !r.raw.warehouse_cancelled && !r.raw.reconciliation_key && !r.raw.issue_document_id && onEdit ? () => onEdit(r.raw) : undefined}
                 >
                   <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
                   <TableCell className="text-xs whitespace-nowrap">{fmtDateTime24(r.created_at)}</TableCell>
@@ -389,7 +392,7 @@ export default function WarehouseHistory({
                       ? <span className="inline-flex items-center gap-1 text-status-red text-xs font-semibold"><ArrowDownCircle className="h-3.5 w-3.5" />{wt("Chiqim")}</span>
                       : <span className="inline-flex items-center gap-1 text-status-green text-xs font-semibold"><ArrowUpCircle className="h-3.5 w-3.5" />{r.raw.reconciliation_key ? wt("Sverka — nakladnoysiz kirim") : wt("Kirim")}</span>}
                   </TableCell>
-                  <TableCell className="text-sm font-medium">{r.productName}{r.raw.issue_document_id && <div className="text-xs font-mono text-muted-foreground">TOP-{r.raw.issue_document_id.slice(0, 8).toUpperCase()}</div>}</TableCell>
+                  <TableCell className="text-sm font-medium">{r.productName}{r.raw.warehouse_cancelled && <div className="text-xs text-destructive">Отменено · история сохранена</div>}{r.raw.reason === "warehouse_reversal" && <div className="text-xs text-muted-foreground">Обратная операция</div>}{r.raw.issue_document_id && <div className="text-xs font-mono text-muted-foreground">TOP-{r.raw.issue_document_id.slice(0, 8).toUpperCase()}</div>}</TableCell>
                   <TableCell className="text-xs">{r.metalType || "—"}</TableCell>
                   <TableCell className="text-right text-xs font-mono">{dim(r.thickness)}</TableCell>
                   <TableCell className="text-right text-xs font-mono">{dim(r.length)}</TableCell>
@@ -415,7 +418,7 @@ export default function WarehouseHistory({
                   <TableCell className="text-xs italic text-muted-foreground max-w-[200px] truncate">{r.comment || "—"}</TableCell>
                   {canManage && (
                     <TableCell onClick={e => e.stopPropagation()}>
-                      {r.kind === "product" && (
+                      {r.kind === "product" && !r.raw.warehouse_cancelled && r.raw.reason !== "warehouse_reversal" && (
                         <div className="flex gap-1">
                           {onEdit && !r.raw.reconciliation_key && !r.raw.issue_document_id && <Button size="sm" variant="ghost" onClick={() => onEdit(r.raw)}><Pencil className="h-3.5 w-3.5" /></Button>}
                           {onDelete && <Button size="sm" variant="ghost" title="Удалить / отменить" aria-label={`Удалить операцию ${r.productName}`} onClick={() => onDelete(r.raw)}><Trash2 className="h-3.5 w-3.5 text-status-red" /></Button>}
