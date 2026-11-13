@@ -526,6 +526,13 @@
       "when": 1794565191690,
       "tag": "0074_atomic_employee_stock_issue",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1794565296623,
+      "tag": "0075_guard_issue_document_inserts",
+      "breakpoints": true
     }
   ]
 }
