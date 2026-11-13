@@ -200,7 +200,7 @@ export default function InvoicesPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex flex-wrap items-center gap-2">
               <span className="font-mono">{wt("Открытая накладная")}{intakeCode(active)}</span>
-              <Badge variant="outline" className={wt(INTAKE_STATUS_META[active.status].cls}>{INTAKE_STATUS_META[active.status].label)}</Badge>
+              <Badge variant="outline" className={INTAKE_STATUS_META[active.status].cls}>{wt(INTAKE_STATUS_META[active.status].label)}</Badge>
             </CardTitle>
             <p className="text-xs text-muted-foreground">{wt("Начато:")}{fmtDateTime24(active.started_at)}
               {active.finished_at ? ` · Tugagan: ${fmtDateTime24(active.finished_at)}` : ""}
@@ -343,7 +343,7 @@ export default function InvoicesPage() {
               <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
                 <DialogTitle className="flex flex-wrap items-center gap-2">
                   <span className="font-mono">{wt("Накладная")}{intakeCode(current)}</span>
-                  <Badge variant="outline" className={wt(INTAKE_STATUS_META[current.status].cls}>{INTAKE_STATUS_META[current.status].label)}</Badge>
+                  <Badge variant="outline" className={INTAKE_STATUS_META[current.status].cls}>{wt(INTAKE_STATUS_META[current.status].label)}</Badge>
                 </DialogTitle>
                 <DialogDescription>{wt("Кто добавил:")}{displayUser(current.created_by_name) || "—"}
                   {current.supplier ? ` · ${wt("brought")} ${current.supplier}` : ""}

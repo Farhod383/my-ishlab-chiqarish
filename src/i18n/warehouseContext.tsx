@@ -20,7 +20,7 @@ export function useWarehouseError() {
   return (message: string) => {
     if (!enabled) return message;
     const translated = warehouseText(message);
-    if (translated !== message || /[А-Яа-яЁё]/.test(message)) return translated;
+    if (translated !== message || !/[A-Za-zʻ‘’]|[ўқғҳ]/i.test(message)) return translated;
     if (/stock|qoldiq|yetarli|insufficient/i.test(message)) return "Недостаточный остаток или остаток уже изменён. Обновите данные и повторите попытку.";
     if (/barcode|shtrix|duplicate|unique|kod.*band/i.test(message)) return "Код уже используется или введён некорректно. Проверьте штрихкод.";
     if (/permission|forbidden|denied|ruxsat|unauthorized/i.test(message)) return "Недостаточно прав для этого действия.";
