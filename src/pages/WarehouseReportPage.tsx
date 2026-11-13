@@ -161,7 +161,7 @@ export default function WarehouseReportPage() {
   const qtyByUnit = (rows: { q: number; u: string }[]) => {
     const r: Record<string, number> = {};
     rows.forEach(({ q, u }) => (r[u || "—"] = (r[u || "—"] ?? 0) + q));
-    return Object.entries(r).map(([u, q]) => `${fmtNum(q)} ${u}`).join(" · ") || "0";
+    return Object.entries(r).map(([u, q]) => `${fmtNum(q)} ${wt(u)}`).join(" · ") || "0";
   };
 
   const filterText = [
@@ -199,7 +199,7 @@ export default function WarehouseReportPage() {
       <Label className="text-xs whitespace-normal break-words">{label}{" "}{wt("(ixtiyoriy)")}</Label>
       {label.startsWith(wt("Mahsulot")) ? <SearchableSelect value={v} onChange={set} options={[{value:ALL,label:wt("Barchasi")},...list.map(o=>({value:o.v,label:o.l,searchText:[...products,...instruments].filter(p=>p.name===o.v).map(productSearchText).join(" ")}))]} /> : <Select value={v} onValueChange={set}>
         <SelectTrigger><SelectValue /></SelectTrigger>
-        <SelectContent><SelectItem value={ALL}>{wt("Barchasi")}</SelectItem>{list.map((o) => <SelectItem key={o.v} value={o.v}>{o.l}</SelectItem>)}</SelectContent>
+        <SelectContent><SelectItem value={ALL}>{wt("Barchasi")}</SelectItem>{list.map((o) => <SelectItem key={o.v} value={o.v}>{wt(o.l)}</SelectItem>)}</SelectContent>
       </Select>}
     </div>
   );

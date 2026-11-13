@@ -462,7 +462,7 @@ export default function WarehousePage() {
         phone: impPhone || null,
         image_url: imgUrl,
         created_by: user?.id,
-        comment: `Nakladnoy${impSupplier ? ` · ${impSupplier}` : ""} · ${impLocation}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
+        comment: `Nakladnoy${impSupplier ? ` · ${impSupplier}` : ""} · ${wt(impLocation)}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
       });
       merged = res.merged;
     } catch (e: any) { toast.error(we(e.message ?? wt("Xatolik"))); return; }
@@ -1001,7 +1001,7 @@ export default function WarehousePage() {
                       onChange={setImpOrderId}
                       placeholder={wt("Tanlanmasa — umumiy ombor kirimi")}
                       options={[
-                        { value: "", label: "— Yo'q (umumiy) —" },
+                        { value: "", label: wt("Без заказа (общее)") },
                         ...orders.map((o: any) => ({ value: o.id, label: `${o.order_number} — ${o.product_name}${o.client?.name ? ` (${o.client.name})` : ""}` })),
                       ]}
                     />
@@ -1060,7 +1060,7 @@ export default function WarehousePage() {
                         const pr: any = products.find((x: any) => x.id === impProductId);
                         if (!pr || (pr.unit || "").toLowerCase() === (impUnit || "").toLowerCase()) return null;
                         const c = convertQty(Number(impQty) || 0, impUnit, pr.unit, Number(pr.weight_kg) || 0);
-                        return <p className="text-[11px] text-muted-foreground mt-1">{c !== null ? ("= " + (fmt(c)) + " " + (pr.unit) + " " + wt("(qoldiqqa)") + "") : (wt("Alohida \"") + (impUnit) + wt("\" pozitsiya"))}</p>;
+                        return <p className="text-[11px] text-muted-foreground mt-1">{c !== null ? ("= " + (fmt(c)) + " " + (wt(pr.unit)) + " " + wt("(qoldiqqa)") + "") : (wt("Alohida \"") + (impUnit) + wt("\" pozitsiya"))}</p>;
                       })()}
                     </div>
                   </div>
@@ -1085,7 +1085,7 @@ export default function WarehousePage() {
                     </div>
                   )}
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="col-span-2"><Label>1 {impUnit || "dona"}{wt(" — цена")}</Label><NumberInput min={0} step={0.001} value={impPrice} onChange={e => setImpPrice(e.target.value)} placeholder={`${wt("Цена за единицу")} (${wt(impUnit || "dona")})`} /></div>
+                    <div className="col-span-2"><Label>1 {wt(impUnit || "dona")}{wt(" — цена")}</Label><NumberInput min={0} step={0.001} value={impPrice} onChange={e => setImpPrice(e.target.value)} placeholder={`${wt("Цена за единицу")} (${wt(impUnit || "dona")})`} /></div>
                     <div><Label>{wt("Valyuta")}</Label>
                       <Select value={impCurrency} onValueChange={setImpCurrency}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
@@ -1112,7 +1112,7 @@ export default function WarehousePage() {
                   {Number(impQty) > 0 && Number(impPrice) > 0 && (
                     <div className="text-sm bg-primary/5 border border-primary/20 rounded p-2 space-y-1">
                       <div className="text-xs text-muted-foreground font-mono">
-                        {fmt(Number(impQty))} {impUnit || "dona"} × {fmt(Number(impPrice))} {impCurrency} / 1 {impUnit || "dona"}
+                        {fmt(Number(impQty))} {wt(impUnit || "dona")} × {fmt(Number(impPrice))} {impCurrency} / 1 {wt(impUnit || "dona")}
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">{wt(t.supply.totalValue)}:</span>
@@ -1120,7 +1120,7 @@ export default function WarehousePage() {
                       </div>
                     </div>
                   )}
-                  <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={impSource} onChange={e => setImpSource(e.target.value)} placeholder={(t.warehouse as any).sourcePh} /></div>
+                  <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={wt(impSource)} onChange={e => setImpSource(e.target.value)} placeholder={(t.warehouse as any).sourcePh} /></div>
                   <div>
                     <Label>{wt(t.supply.bringer)}</Label>
                     <Select value={impSupplier} onValueChange={setImpSupplier}>
@@ -1747,7 +1747,7 @@ export default function WarehousePage() {
           <DialogHeader><DialogTitle>{wt(t.common.edit)} — {editMov?.direction === "in" ? t.warehouse.in : t.warehouse.out}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>{wt(t.warehouse.forOrder)}</Label>
-              <Input readOnly disabled value={(() => { const o = orders.find((x: any) => x.id === editMov?.order_id); return o ? `${o.order_number} — ${o.product_name}` : "— Yo'q (umumiy) —"; })()} />
+              <Input readOnly disabled value={(() => { const o = orders.find((x: any) => x.id === editMov?.order_id); return o ? `${o.order_number} — ${o.product_name}` : wt("Без заказа (общее)"); })()} />
             </div>
             <div className="text-sm text-muted-foreground">{editMov?.product?.name} · {editMov && fmtDateTime(editMov.created_at)}</div>
             <div><Label>{wt(t.warehouse.qty)} *</Label><NumberInput step="any" value={emQty} onChange={e => setEmQty(e.target.value)} /></div>
@@ -1765,7 +1765,7 @@ export default function WarehousePage() {
             <AlertDialogTitle>{wt("Mahsulotni o'chirish")}</AlertDialogTitle>
             <AlertDialogDescription>
               <span className="font-semibold">{delTarget?.name}</span>{wt(" — удалить?")}{delTarget && delTarget.ids.length > 1 ? (" " + wt("Barcha") + " " + (delTarget.ids.length) + " partiya o'chiriladi.") : ""}
-              {" "}{wt("Joriy qoldiq:")}{delTarget?.qty} {delTarget?.unit}{wt(". Bu amalni ortga qaytarib bo'lmaydi, harakatlar tarixi saqlanadi.")}</AlertDialogDescription>
+              {" "}{wt("Joriy qoldiq:")}{delTarget?.qty} {wt(delTarget?.unit)}{wt(". Bu amalni ortga qaytarib bo'lmaydi, harakatlar tarixi saqlanadi.")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={delBusy}>{wt("Bekor qilish")}</AlertDialogCancel>

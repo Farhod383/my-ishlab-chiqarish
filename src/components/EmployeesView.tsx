@@ -282,7 +282,7 @@ async function exportEmployeePDF(
     headStyles: { fillColor: [120, 90, 200] },
     head: [[wt("Maydon"), wt("Qiymat")]],
     body: [
-      [wt("F.I.SH"), emp.full_name],
+      [wt("F.I.SH"), localize(emp.full_name)],
       [wt("Lavozim"), emp.position || "—"],
       [wt("Bo'lim"), emp.department || "—"],
       [wt("Telefon"), emp.phone ?? "—"],
@@ -350,7 +350,7 @@ async function exportEmployeePDF(
     doc.text("—", 40, y); y += 14;
   } else {
     entries.forEach(([cur, sum]) => {
-      const suffix = cur === "USD" ? "$" : cur === "UZS" ? "so'm" : cur;
+      const suffix = cur === "USD" ? "$" : cur === "UZS" ? "UZS" : cur;
       doc.text(`${cur}: ${fmtMoney(sum)} ${suffix}`, 40, y);
       y += 14;
     });
