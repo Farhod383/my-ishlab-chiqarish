@@ -1,3 +1,4 @@
+import { useWarehouseText } from "@/i18n/warehouseContext";
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -34,11 +35,12 @@ interface Props {
  */
 export default function SearchableSelect({
   options, value, onChange,
-  placeholder = "Tanlang",
+  placeholder = {wt("Tanlang")},
   searchPlaceholder = "🔍 Qidirish...",
-  emptyText = "Topilmadi",
+  emptyText = {wt("Topilmadi")},
   disabled, className, clearLabel,
 }: Props) {
+  const wt = useWarehouseText();
   const [open, setOpen] = useState(false);
   const selected = options.find(o => o.value === value);
 

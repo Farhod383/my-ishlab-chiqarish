@@ -1,3 +1,4 @@
+import { useWarehouseText } from "@/i18n/warehouseContext";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -82,6 +83,7 @@ const daysBetween = (a: string, b?: string | null) => {
 };
 
 export default function InstrumentsTab() {
+  const wt = useWarehouseText();
   const { user, hasRole } = useAuth();
   const localize = useLocalize();
   const canManage = hasRole(["warehouse", "admin", "cashier", "hr"]);
@@ -111,14 +113,14 @@ export default function InstrumentsTab() {
     });
   }, [assignments, boxSearch, showReturned]);
   const editBox = async (a: Assignment) => {
-    const v = window.prompt("Karobka raqami (bo'sh qoldirsangiz o'chiriladi):", a.box_number ?? "");
+    const v = window.prompt(wt("Karobka raqami (bo'sh qoldirsangiz o'chiriladi):"), a.box_number ?? "");
     if (v === null) return;
     const next = v.trim() || null;
     const { error } = await supabase.from("instrument_assignments").update({ box_number: next } as any).eq("id", a.id);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Instrument karobka raqami o'zgartirildi", entity: "instrument_assignment", details: `${a.instrument?.name ?? ""} · ${a.employee?.full_name ?? ""}: ${a.box_number ?? "—"} → ${next ?? "—"}` });
     setAssignments(prev => prev.map(x => x.id === a.id ? { ...x, box_number: next } : x));
-    toast.success("Saqlandi");
+    toast.success(wt("Saqlandi"));
   };
 
   // return
@@ -226,7 +228,7 @@ export default function InstrumentsTab() {
   };
 
   const saveInstrument = async () => {
-    if (!iForm.name.trim()) { toast.error("Nomini kiriting"); return; }
+    if (!iForm.name.trim()) { toast.error(wt("Nomini kiriting")); return; }
     const payload: any = {
       name: iForm.name.trim(),
       category: iForm.category.trim(),
@@ -247,35 +249,35 @@ export default function InstrumentsTab() {
       if (error) { toast.error(error.message); return; }
       if (created && factoryCode.trim()) {
         const { error: aliasError } = await supabase.rpc("bind_barcode_alias", { _code: factoryCode, _product_id: created.id });
-        if (aliasError) toast.error(`Instrument yaratildi, zavod kodi biriktirilmadi: ${aliasError.message}`);
+        if (aliasError) toast.error(("" + wt("Instrument yaratildi, zavod kodi biriktirilmadi:") + " " + (aliasError.message) + ""));
       }
       await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Instrument kirimi (batch)", entity: "instrument", details: `${payload.name} ×${payload.quantity}` });
     }
     if (payload.category) await rememberFormValue("instrument_category", payload.category, user?.id);
     if (payload.name) await rememberFormValue("instrument_name", payload.name, user?.id);
-    toast.success("Saqlandi");
+    toast.success(wt("Saqlandi"));
     setIOpen(false); resetIForm(); setIEditId(null);
   };
 
   const deleteInstrument = async (it: Instrument) => {
     const held = assignments.some(a => a.instrument_id === it.id && !a.returned_at);
-    if (held) { toast.error("Bu batch xodimlarda mavjud. Avval qaytarib oling."); return; }
-    if (!window.confirm(`Batchni o'chirish: ${it.name} (${it.quantity} dona)?`)) return;
+    if (held) { toast.error(wt("Bu batch xodimlarda mavjud. Avval qaytarib oling.")); return; }
+    if (!window.confirm(("" + wt("Batchni o'chirish:") + " " + (it.name) + " (" + (it.quantity) + " dona)?"))) return;
     const { error } = await supabase.from("instruments").delete().eq("id", it.id);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Instrument batch o'chirildi", entity: "instrument", details: it.name });
-    toast.success("O'chirildi");
+    toast.success(wt("O'chirildi"));
   };
 
   // -------- Issue (FIFO across batches) --------
   const doIssue = async () => {
     const qty = Number(issueForm.quantity);
     const g = groups.find(x => x.key === issueForm.group_key);
-    if (!issueForm.employee_id || !g || !qty) { toast.error("Maydonlarni to'ldiring"); return; }
+    if (!issueForm.employee_id || !g || !qty) { toast.error(wt("Maydonlarni to'ldiring")); return; }
     if (!ensureOnline((m) => toast.error(m))) return;
     if (qty > g.totalQty) {
       await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Instrument berish BLOKLANDI", entity: "instrument_assignment", details: `${g.name}: so'ralgan ${qty}, mavjud ${g.totalQty}` });
-      toast.error(`Skladda yetarli emas (${g.totalQty})`); return;
+      toast.error((wt("Skladda yetarli emas (") + (g.totalQty) + ")")); return;
     }
     // FIFO: oldest active batches first
     const usable = [...g.batches]
@@ -298,16 +300,16 @@ export default function InstrumentsTab() {
       if (error) { toast.error(error.message); return; }
       remaining -= take;
     }
-    if (remaining > 0) { toast.error("Faol batchlarda yetarli emas"); return; }
+    if (remaining > 0) { toast.error(wt("Faol batchlarda yetarli emas")); return; }
     await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Instrument berildi", entity: "instrument_assignment", details: `${g.name} ×${qty} → ${emp?.full_name}` });
-    toast.success("Berildi");
+    toast.success(wt("Berildi"));
     setIssueForm({ employee_id: "", group_key: "", quantity: "1", issued_at: new Date().toISOString().slice(0, 10), comment: "", box_number: "" });
     setIssueOpen(false);
   };
 
   const empHeld = returnEmp ? (heldByEmp[returnEmp] ?? []) : [];
   const doReturn = async () => {
-    if (!returnEmp || !returnAssignment) { toast.error("Tanlang"); return; }
+    if (!returnEmp || !returnAssignment) { toast.error(wt("Tanlang")); return; }
     const a = assignments.find(x => x.id === returnAssignment);
     if (!a) return;
     const { error } = await supabase.from("instrument_assignments").update({
@@ -317,7 +319,7 @@ export default function InstrumentsTab() {
     }).eq("id", returnAssignment);
     if (error) { toast.error(error.message); return; }
     await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Instrument qaytarildi", entity: "instrument_assignment", details: `${a.instrument?.name} ×${a.quantity} ← ${a.employee?.full_name}` });
-    toast.success("Qaytarildi");
+    toast.success(wt("Qaytarildi"));
     setReturnEmp(""); setReturnAssignment(""); setReturnComment("");
     setReturnOpen(false);
   };
@@ -325,52 +327,52 @@ export default function InstrumentsTab() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Qidirish..." className="max-w-md" />
+        <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={wt("Qidirish...")} className="max-w-md" />
         {canManage && (
           <div className="flex gap-2 flex-wrap">
             <Dialog open={issueOpen} onOpenChange={setIssueOpen}>
-              <DialogTrigger asChild><Button variant="default"><ArrowRightLeft className="h-4 w-4 mr-2" />Berish</Button></DialogTrigger>
+              <DialogTrigger asChild><Button variant="default"><ArrowRightLeft className="h-4 w-4 mr-2" />{wt("Berish")}</Button></DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Instrument berish</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{wt("Instrument berish")}</DialogTitle></DialogHeader>
                 <div className="space-y-3">
                   <IssueScanner kind="instrument" onEmployee={id => setIssueForm(f => ({ ...f, employee_id: id }))} onProduct={row => { const group = groups.find(g => g.batches.some(b => b.id === row.id)); if (group) setIssueForm(f => ({ ...f, group_key: group.key })); }} />
-                  <div><Label>Xodim *</Label>
+                  <div><Label>{wt("Xodim *")}</Label>
                     <SearchableSelect
                       value={issueForm.employee_id}
                       onChange={v => setIssueForm({ ...issueForm, employee_id: v })}
-                      placeholder="Xodim tanlang"
+                      placeholder={wt("Xodim tanlang")}
                       options={employees.map(e => ({ value: e.id, label: localize(e.full_name), hint: [e.position, e.department, e.phone ? `…${String(e.phone).replace(/\D/g, "").slice(-4)}` : null].filter(Boolean).join(" · ") }))}
                     />
                   </div>
-                  <div><Label>Instrument *</Label>
+                  <div><Label>{wt("Instrument *")}</Label>
                     <SearchableSelect
                       value={issueForm.group_key}
                       onChange={v => setIssueForm({ ...issueForm, group_key: v })}
-                      placeholder="Instrument tanlang"
+                      placeholder={wt("Instrument tanlang")}
                       options={groups.filter(g => g.totalQty > 0).map(g => ({ value: g.key, label: g.name, searchText:g.batches.map(productSearchText).join(" "), hint: `jami: ${g.totalQty}` }))}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Miqdor *</Label><NumberInput min={1} value={issueForm.quantity} onChange={e => setIssueForm({ ...issueForm, quantity: e.target.value })} /></div>
-                    <div><Label>Sana</Label><Input type="date" value={issueForm.issued_at} onChange={e => setIssueForm({ ...issueForm, issued_at: e.target.value })} /></div>
+                    <div><Label>{wt("Miqdor *")}</Label><NumberInput min={1} value={issueForm.quantity} onChange={e => setIssueForm({ ...issueForm, quantity: e.target.value })} /></div>
+                    <div><Label>{wt("Sana")}</Label><Input type="date" value={issueForm.issued_at} onChange={e => setIssueForm({ ...issueForm, issued_at: e.target.value })} /></div>
                   </div>
-                  <div><Label>Karobka raqami <span className="text-muted-foreground font-normal">(ixtiyoriy)</span></Label><Input value={issueForm.box_number} onChange={e => setIssueForm({ ...issueForm, box_number: e.target.value })} placeholder="K-025" /></div>
-                  <div><Label>Izoh</Label><Textarea value={issueForm.comment} onChange={e => setIssueForm({ ...issueForm, comment: e.target.value })} /></div>
-                  <Button className="w-full" onClick={doIssue}>Saqlash</Button>
+                  <div><Label>{wt("Karobka raqami")}<span className="text-muted-foreground font-normal">{wt("(ixtiyoriy)")}</span></Label><Input value={issueForm.box_number} onChange={e => setIssueForm({ ...issueForm, box_number: e.target.value })} placeholder="K-025" /></div>
+                  <div><Label>{wt("Izoh")}</Label><Textarea value={issueForm.comment} onChange={e => setIssueForm({ ...issueForm, comment: e.target.value })} /></div>
+                  <Button className="w-full" onClick={doIssue}>{wt("Saqlash")}</Button>
                 </div>
               </DialogContent>
             </Dialog>
 
             <Dialog open={returnOpen} onOpenChange={(o) => { setReturnOpen(o); if (!o) { setReturnEmp(""); setReturnAssignment(""); setReturnComment(""); } }}>
-              <DialogTrigger asChild><Button variant="secondary"><Undo2 className="h-4 w-4 mr-2" />Qaytarib olish</Button></DialogTrigger>
+              <DialogTrigger asChild><Button variant="secondary"><Undo2 className="h-4 w-4 mr-2" />{wt("Qaytarib olish")}</Button></DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Instrument qaytarib olish</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{wt("Instrument qaytarib olish")}</DialogTitle></DialogHeader>
                 <div className="space-y-3">
-                  <div><Label>Xodim *</Label>
+                  <div><Label>{wt("Xodim *")}</Label>
                     <SearchableSelect
                       value={returnEmp}
                       onChange={(v) => { setReturnEmp(v); setReturnAssignment(""); }}
-                      placeholder="Xodim tanlang"
+                      placeholder={wt("Xodim tanlang")}
                       options={Object.keys(heldByEmp).map(empId => {
                         const e = employees.find(x => x.id === empId) || assignments.find(a => a.employee_id === empId)?.employee;
                         const name = (e as any)?.full_name ?? "?";
@@ -378,22 +380,22 @@ export default function InstrumentsTab() {
                       })}
                     />
                   </div>
-                  <div><Label>Instrument *</Label>
+                  <div><Label>{wt("Instrument *")}</Label>
                     <SearchableSelect
                       value={returnAssignment}
                       onChange={setReturnAssignment}
                       disabled={!returnEmp}
-                      placeholder={returnEmp ? "Tanlang" : "Avval xodimni tanlang"}
+                      placeholder={returnEmp ? wt("Tanlang") : wt("Avval xodimni tanlang")}
                       options={empHeld.map(a => ({ value: a.id, label: `${a.instrument?.name} ×${a.quantity}`, hint: fmtDateG(a.issued_at) }))}
                     />
                   </div>
-                  <div><Label>Izoh</Label><Textarea value={returnComment} onChange={e => setReturnComment(e.target.value)} /></div>
-                  <Button className="w-full" onClick={doReturn}>Saqlash</Button>
+                  <div><Label>{wt("Izoh")}</Label><Textarea value={returnComment} onChange={e => setReturnComment(e.target.value)} /></div>
+                  <Button className="w-full" onClick={doReturn}>{wt("Saqlash")}</Button>
                 </div>
               </DialogContent>
             </Dialog>
 
-            <Button variant="outline" onClick={() => openAdd()}><Plus className="h-4 w-4 mr-2" />Instrument qo'shish</Button>
+            <Button variant="outline" onClick={() => openAdd()}><Plus className="h-4 w-4 mr-2" />{wt("Instrument qo'shish")}</Button>
           </div>
         )}
       </div>
@@ -406,12 +408,12 @@ export default function InstrumentsTab() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12 text-right">№</TableHead>
-                  <TableHead>Nomi</TableHead>
-                  <TableHead>Kategoriya</TableHead>
-                  <TableHead className="text-right">Jami (sklad)</TableHead>
-                  <TableHead className="text-right">Berilgan</TableHead>
-                  <TableHead className="text-right">Batchlar</TableHead>
-                  <TableHead>Holat</TableHead>
+                  <TableHead>{wt("Nomi")}</TableHead>
+                  <TableHead>{wt("Kategoriya")}</TableHead>
+                  <TableHead className="text-right">{wt("Jami (sklad)")}</TableHead>
+                  <TableHead className="text-right">{wt("Berilgan")}</TableHead>
+                  <TableHead className="text-right">{wt("Batchlar")}</TableHead>
+                  <TableHead>{wt("Holat")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -429,13 +431,13 @@ export default function InstrumentsTab() {
                     <TableCell className="text-right font-mono text-sm">{g.batches.length}</TableCell>
                     <TableCell>
                       {g.statusMix.includes("active")
-                        ? <Badge variant="default">Faol</Badge>
+                        ? <Badge variant="default">{wt("Faol")}</Badge>
                         : <Badge variant="secondary">{STATUSES.find(s => s.v === g.statusMix[0])?.l ?? g.statusMix[0]}</Badge>}
                     </TableCell>
                   </TableRow>
                 ))}
                 {filteredGroups.length === 0 && (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Instrumentlar yo'q</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{wt("Instrumentlar yo'q")}</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
@@ -445,10 +447,9 @@ export default function InstrumentsTab() {
 
       {/* Active assignments */}
       <div className="flex flex-wrap items-center gap-2">
-        <Input value={boxSearch} onChange={e => setBoxSearch(e.target.value)} placeholder="Karobka raqami bo'yicha qidirish (masalan K-025)" className="max-w-xs" />
+        <Input value={boxSearch} onChange={e => setBoxSearch(e.target.value)} placeholder={wt("Karobka raqami bo'yicha qidirish (masalan K-025)")} className="max-w-xs" />
         <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <input type="checkbox" checked={showReturned} onChange={e => setShowReturned(e.target.checked)} /> Qaytarilganlarni ham ko'rsatish
-        </label>
+          <input type="checkbox" checked={showReturned} onChange={e => setShowReturned(e.target.checked)} />{wt("Qaytarilganlarni ham ko'rsatish")}</label>
       </div>
       <Card>
         <CardContent className="p-0">
@@ -457,12 +458,12 @@ export default function InstrumentsTab() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12 text-right">№</TableHead>
-                  <TableHead>Xodim</TableHead>
-                  <TableHead>Instrument</TableHead>
-                  <TableHead className="text-right">Miqdor</TableHead>
-                  <TableHead>Berilgan sana</TableHead>
-                  <TableHead>Karobka raqami</TableHead>
-                  <TableHead>Izoh</TableHead>
+                  <TableHead>{wt("Xodim")}</TableHead>
+                  <TableHead>{wt("Instrument")}</TableHead>
+                  <TableHead className="text-right">{wt("Miqdor")}</TableHead>
+                  <TableHead>{wt("Berilgan sana")}</TableHead>
+                  <TableHead>{wt("Karobka raqami")}</TableHead>
+                  <TableHead>{wt("Izoh")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -471,15 +472,15 @@ export default function InstrumentsTab() {
                     <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
                     <TableCell className="font-medium">
                       {localize(a.employee?.full_name) || "—"}
-                      {a.employee?.status && a.employee.status !== "active" && <Badge variant="secondary" className="ml-1 text-[10px]">Bo'shagan</Badge>}
+                      {a.employee?.status && a.employee.status !== "active" && <Badge variant="secondary" className="ml-1 text-[10px]">{wt("Bo'shagan")}</Badge>}
                     </TableCell>
-                    <TableCell>{a.instrument?.name ?? "—"}{a.instrument?.inventory_number && <span className="text-xs text-muted-foreground ml-1">№{a.instrument.inventory_number}</span>}{a.returned_at && <span className="text-xs text-muted-foreground ml-1">(qaytarilgan)</span>}</TableCell>
+                    <TableCell>{a.instrument?.name ?? "—"}{a.instrument?.inventory_number && <span className="text-xs text-muted-foreground ml-1">№{a.instrument.inventory_number}</span>}{a.returned_at && <span className="text-xs text-muted-foreground ml-1">{wt("(qaytarilgan)")}</span>}</TableCell>
                     <TableCell className="text-right font-mono">{a.quantity}</TableCell>
                     <TableCell className="text-xs whitespace-nowrap">{fmtDateG(a.issued_at)}</TableCell>
                     <TableCell className="text-xs font-mono whitespace-nowrap">
                       {a.box_number || "—"}
                       {canManage && (
-                        <Button size="sm" variant="ghost" className="h-6 px-1.5 ml-1" onClick={() => editBox(a)} title="Karobka raqamini o'zgartirish">
+                        <Button size="sm" variant="ghost" className="h-6 px-1.5 ml-1" onClick={() => editBox(a)} title={wt("Karobka raqamini o'zgartirish")}>
                           <Pencil className="h-3 w-3" />
                         </Button>
                       )}
@@ -488,7 +489,7 @@ export default function InstrumentsTab() {
                   </TableRow>
                 ))}
                 {visibleAssignments.length === 0 && (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6 text-sm">{boxSearch ? "Bu karobka raqami bo'yicha instrument topilmadi" : "Hozircha topshirilmagan instrumentlar yo'q"}</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6 text-sm">{boxSearch ? wt("Bu karobka raqami bo'yicha instrument topilmadi") : wt("Hozircha topshirilmagan instrumentlar yo'q")}</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
@@ -511,15 +512,15 @@ export default function InstrumentsTab() {
               <div className="grid sm:grid-cols-2 gap-3">{detailGroup.batches.map(b => <BarcodeLabel key={b.id} product={b} />)}</div>
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="rounded-md border p-2">
-                  <div className="text-xs text-muted-foreground">Jami sklad</div>
+                  <div className="text-xs text-muted-foreground">{wt("Jami sklad")}</div>
                   <div className="text-lg font-bold font-mono">{detailGroup.totalQty}</div>
                 </div>
                 <div className="rounded-md border p-2">
-                  <div className="text-xs text-muted-foreground">Hozir xodimlarda</div>
+                  <div className="text-xs text-muted-foreground">{wt("Hozir xodimlarda")}</div>
                   <div className="text-lg font-bold font-mono text-status-yellow">{detailGroup.totalIssued}</div>
                 </div>
                 <div className="rounded-md border p-2">
-                  <div className="text-xs text-muted-foreground">Batchlar</div>
+                  <div className="text-xs text-muted-foreground">{wt("Batchlar")}</div>
                   <div className="text-lg font-bold font-mono">{detailGroup.batches.length}</div>
                 </div>
               </div>
@@ -527,11 +528,10 @@ export default function InstrumentsTab() {
               {/* Batches */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold flex items-center gap-1.5"><Package className="h-4 w-4" /> Batchlar (kirimlar)</h4>
+                  <h4 className="text-sm font-semibold flex items-center gap-1.5"><Package className="h-4 w-4" />{wt("Batchlar (kirimlar)")}</h4>
                   {canManage && (
                     <Button size="sm" variant="outline" onClick={() => { setDetailKey(null); openAdd(detailGroup.name); }}>
-                      <Plus className="h-3.5 w-3.5 mr-1" /> Yangi batch
-                    </Button>
+                      <Plus className="h-3.5 w-3.5 mr-1" />{wt("Yangi batch")}</Button>
                   )}
                 </div>
                 <div className="border rounded-md overflow-x-auto">
@@ -539,11 +539,11 @@ export default function InstrumentsTab() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>#</TableHead>
-                        <TableHead>Inventar №</TableHead>
-                        <TableHead>Kirim sanasi</TableHead>
-                        <TableHead className="text-right">Miqdor</TableHead>
-                        <TableHead className="text-right">Narx</TableHead>
-                        <TableHead>Holat</TableHead>
+                        <TableHead>{wt("Inventar №")}</TableHead>
+                        <TableHead>{wt("Kirim sanasi")}</TableHead>
+                        <TableHead className="text-right">{wt("Miqdor")}</TableHead>
+                        <TableHead className="text-right">{wt("Narx")}</TableHead>
+                        <TableHead>{wt("Holat")}</TableHead>
                         {canManage && <TableHead></TableHead>}
                       </TableRow>
                     </TableHeader>
@@ -576,9 +576,9 @@ export default function InstrumentsTab() {
 
               {/* Full history timeline */}
               <div className="space-y-2">
-                <h4 className="text-sm font-semibold flex items-center gap-1.5"><History className="h-4 w-4" /> To'liq foydalanish tarixi</h4>
+                <h4 className="text-sm font-semibold flex items-center gap-1.5"><History className="h-4 w-4" />{wt("To'liq foydalanish tarixi")}</h4>
                 {detailHistory.length === 0 && (
-                  <div className="text-sm text-muted-foreground italic text-center py-4">Hech kimga berilmagan</div>
+                  <div className="text-sm text-muted-foreground italic text-center py-4">{wt("Hech kimga berilmagan")}</div>
                 )}
                 <div className="space-y-2">
                   {detailHistory.map(a => {
@@ -589,23 +589,23 @@ export default function InstrumentsTab() {
                           <div className="font-medium text-sm">{localize(a.employee?.full_name) || "—"}</div>
                           {active
                             ? <Badge className="bg-status-green text-white">🟢 Hozir shu xodimda</Badge>
-                            : <Badge variant="outline">Qaytarilgan</Badge>}
+                            : <Badge variant="outline">{wt("Qaytarilgan")}</Badge>}
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1.5 text-xs">
                           <div>
-                            <div className="text-muted-foreground">Berildi</div>
+                            <div className="text-muted-foreground">{wt("Berildi")}</div>
                             <div className="font-mono">{fmtDateG(a.issued_at)}</div>
                           </div>
                           <div>
-                            <div className="text-muted-foreground">Qaytarildi</div>
+                            <div className="text-muted-foreground">{wt("Qaytarildi")}</div>
                             <div className="font-mono">{a.returned_at ? fmtDateG(a.returned_at) : "—"}</div>
                           </div>
                           <div>
-                            <div className="text-muted-foreground">Kun</div>
-                            <div className="font-mono">{daysBetween(a.issued_at, a.returned_at)} kun{active ? " (davom etmoqda)" : ""}</div>
+                            <div className="text-muted-foreground">{wt("Kun")}</div>
+                            <div className="font-mono">{daysBetween(a.issued_at, a.returned_at)} kun{active ? wt(" (davom etmoqda)") : ""}</div>
                           </div>
                           <div>
-                            <div className="text-muted-foreground">Miqdor</div>
+                            <div className="text-muted-foreground">{wt("Miqdor")}</div>
                             <div className="font-mono">{a.quantity}</div>
                           </div>
                         </div>
@@ -628,38 +628,38 @@ export default function InstrumentsTab() {
       {/* Add/edit single batch */}
       <Dialog open={iOpen} onOpenChange={(o) => { setIOpen(o); if (!o) { setIEditId(null); resetIForm(); } }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{iEditId ? "Batchni tahrirlash" : "Yangi batch (kirim)"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{iEditId ? wt("Batchni tahrirlash") : wt("Yangi batch (kirim)")}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>Nomi *</Label><SmartAutocomplete fieldKey="instrument_name" value={iForm.name} onChange={v => setIForm({ ...iForm, name: v })} placeholder="Masalan: Bolgarka 125 mm" /></div>
-            {iEditId ? instruments.filter(row => row.id === iEditId).map(row => <FactoryBarcodeEditor key={row.id} product={row} />) : <div><Label>Zavod shtrix kodi (ixtiyoriy)</Label><BarcodeScanField id="instrument-factory-code" value={factoryCode} onChange={setFactoryCode} placeholder="Zavod shtrix kodi (ixtiyoriy)" /></div>}
+            <div><Label>{wt("Nomi *")}</Label><SmartAutocomplete fieldKey="instrument_name" value={iForm.name} onChange={v => setIForm({ ...iForm, name: v })} placeholder={wt("Masalan: Bolgarka 125 mm")} /></div>
+            {iEditId ? instruments.filter(row => row.id === iEditId).map(row => <FactoryBarcodeEditor key={row.id} product={row} />) : <div><Label>{wt("Zavod shtrix kodi (ixtiyoriy)")}</Label><BarcodeScanField id="instrument-factory-code" value={factoryCode} onChange={setFactoryCode} placeholder={wt("Zavod shtrix kodi (ixtiyoriy)")} /></div>}
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Kategoriya</Label><SmartAutocomplete fieldKey="instrument_category" value={iForm.category} onChange={v => setIForm({ ...iForm, category: v })} placeholder="Elektr / Qo'l asbobi / Payvandlash" /></div>
-              <div><Label>Inventar №</Label><Input value={iForm.inventory_number} onChange={e => setIForm({ ...iForm, inventory_number: e.target.value })} /></div>
+              <div><Label>{wt("Kategoriya")}</Label><SmartAutocomplete fieldKey="instrument_category" value={iForm.category} onChange={v => setIForm({ ...iForm, category: v })} placeholder={wt("Elektr / Qo'l asbobi / Payvandlash")} /></div>
+              <div><Label>{wt("Inventar №")}</Label><Input value={iForm.inventory_number} onChange={e => setIForm({ ...iForm, inventory_number: e.target.value })} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Miqdor *</Label><NumberInput min={0} value={iForm.quantity} onChange={e => setIForm({ ...iForm, quantity: e.target.value })} disabled={!!iEditId} /></div>
-              <div><Label>Holat</Label>
+              <div><Label>{wt("Miqdor *")}</Label><NumberInput min={0} value={iForm.quantity} onChange={e => setIForm({ ...iForm, quantity: e.target.value })} disabled={!!iEditId} /></div>
+              <div><Label>{wt("Holat")}</Label>
                 <Select value={iForm.status} onValueChange={v => setIForm({ ...iForm, status: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{STATUSES.map(s => <SelectItem key={s.v} value={s.v}>{s.l}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             </div>
-            {iEditId && <p className="text-xs text-muted-foreground">Miqdorni tahrirlash uchun berish/qaytarib olishdan foydalaning.</p>}
+            {iEditId && <p className="text-xs text-muted-foreground">{wt("Miqdorni tahrirlash uchun berish/qaytarib olishdan foydalaning.")}</p>}
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Narx</Label><NumberInput min={0} value={iForm.price} onChange={e => setIForm({ ...iForm, price: e.target.value })} /></div>
-              <div><Label>Valyuta</Label>
+              <div><Label>{wt("Narx")}</Label><NumberInput min={0} value={iForm.price} onChange={e => setIForm({ ...iForm, price: e.target.value })} /></div>
+              <div><Label>{wt("Valyuta")}</Label>
                 <Select value={iForm.currency} onValueChange={v => setIForm({ ...iForm, currency: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="UZS">UZS (so'm)</SelectItem>
-                    <SelectItem value="USD">USD ($)</SelectItem>
+                    <SelectItem value="UZS">{wt("UZS (so'm)")}</SelectItem>
+                    <SelectItem value="USD">{wt("USD ($)")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
-            <div><Label>Izoh</Label><Textarea value={iForm.comment} onChange={e => setIForm({ ...iForm, comment: e.target.value })} /></div>
-            <Button className="w-full" onClick={saveInstrument}>Saqlash</Button>
+            <div><Label>{wt("Izoh")}</Label><Textarea value={iForm.comment} onChange={e => setIForm({ ...iForm, comment: e.target.value })} /></div>
+            <Button className="w-full" onClick={saveInstrument}>{wt("Saqlash")}</Button>
           </div>
         </DialogContent>
       </Dialog>

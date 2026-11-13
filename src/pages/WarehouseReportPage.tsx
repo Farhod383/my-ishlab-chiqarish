@@ -1,3 +1,4 @@
+import { useWarehouseText } from "@/i18n/warehouseContext";
 import { useEffect, useMemo, useState } from "react";
 import { isWarehouseProduct } from "@/lib/productClassification";
 import { Link } from "react-router-dom";
@@ -37,6 +38,7 @@ interface Mv {
 }
 
 export default function WarehouseReportPage() {
+  const wt = useWarehouseText();
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<any[]>([]);
   const [instruments, setInstruments] = useState<any[]>([]);
@@ -162,9 +164,9 @@ export default function WarehouseReportPage() {
   };
 
   const filterText = [
-    from || to ? `Sana: ${from ? fmtDate(from) : "…"} — ${to ? fmtDate(to) : "…"}` : "Sana: barcha davr",
-    item !== ALL && `Nomi: ${item}`, dir !== ALL && `Yo'nalish: ${dir === "in" ? "Kirim" : "Chiqim"}`,
-    emp !== ALL && `Xodim: ${emp}`, ord !== ALL && `Zakaz: ${ord}`, loc !== ALL && `Joylashuv: ${loc}`, unit !== ALL && `Birlik: ${unit}`,
+    from || to ? ("" + wt("Sana:") + " " + (from ? fmtDate(from) : "…") + " — " + (to ? fmtDate(to) : "…") + "") : wt("Sana: barcha davr"),
+    item !== ALL && ("" + wt("Nomi:") + " " + (item) + ""), dir !== ALL && ("" + wt("Yo'nalish:") + " " + (dir === "in" ? "Kirim" : "Chiqim") + ""),
+    emp !== ALL && ("" + wt("Xodim:") + " " + (emp) + ""), ord !== ALL && ("" + wt("Zakaz:") + " " + (ord) + ""), loc !== ALL && ("" + wt("Joylashuv:") + " " + (loc) + ""), unit !== ALL && ("" + wt("Birlik:") + " " + (unit) + ""),
   ].filter(Boolean).join(" | ");
 
   const reset = () => { setFrom(""); setTo(""); setItem(ALL); setDir(ALL); setEmp(ALL); setOrd(ALL); setLoc(ALL); setUnit(ALL); };
@@ -178,7 +180,7 @@ export default function WarehouseReportPage() {
   const [pdfBusy, setPdfBusy] = useState(false);
   const downloadStockPdf = async () => {
     if (!fProducts.length && !fInstruments.length) {
-      toast.error("Tanlangan filtrlar bo'yicha mahsulot topilmadi — bo'sh hisobot yuklab olinmaydi.");
+      toast.error(wt("Tanlangan filtrlar bo'yicha mahsulot topilmadi — bo'sh hisobot yuklab olinmaydi."));
       return;
     }
     setPdfBusy(true);
@@ -187,16 +189,16 @@ export default function WarehouseReportPage() {
       doc.save(`Sklad_Qoldiqlari_${todayFile()}.pdf`);
     } catch (e) {
       console.error(e);
-      toast.error("PDF yaratishda xatolik yuz berdi. Qayta urinib ko'ring.");
+      toast.error(wt("PDF yaratishda xatolik yuz berdi. Qayta urinib ko'ring."));
     } finally { setPdfBusy(false); }
   };
 
   const sel = (label: string, v: string, set: (s: string) => void, list: { v: string; l: string }[]) => (
     <div className="space-y-1 basis-40 min-w-0 flex-1">
-      <Label className="text-xs whitespace-normal break-words">{label} (ixtiyoriy)</Label>
-      {label.startsWith("Mahsulot") ? <SearchableSelect value={v} onChange={set} options={[{value:ALL,label:"Barchasi"},...list.map(o=>({value:o.v,label:o.l,searchText:[...products,...instruments].filter(p=>p.name===o.v).map(productSearchText).join(" ")}))]} /> : <Select value={v} onValueChange={set}>
+      <Label className="text-xs whitespace-normal break-words">{label}{wt("(ixtiyoriy)")}</Label>
+      {label.startsWith(wt("Mahsulot")) ? <SearchableSelect value={v} onChange={set} options={[{value:ALL,label:wt("Barchasi")},...list.map(o=>({value:o.v,label:o.l,searchText:[...products,...instruments].filter(p=>p.name===o.v).map(productSearchText).join(" ")}))]} /> : <Select value={v} onValueChange={set}>
         <SelectTrigger><SelectValue /></SelectTrigger>
-        <SelectContent><SelectItem value={ALL}>Barchasi</SelectItem>{list.map((o) => <SelectItem key={o.v} value={o.v}>{o.l}</SelectItem>)}</SelectContent>
+        <SelectContent><SelectItem value={ALL}>{wt("Barchasi")}</SelectItem>{list.map((o) => <SelectItem key={o.v} value={o.v}>{o.l}</SelectItem>)}</SelectContent>
       </Select>}
     </div>
   );
@@ -207,66 +209,66 @@ export default function WarehouseReportPage() {
     <div className="space-y-4">
       <div className="no-print flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" asChild><Link to="/warehouse" aria-label="Orqaga"><ArrowLeft className="h-4 w-4" /></Link></Button>
-          <h1 className="text-2xl font-bold tracking-tight">Sklad hisoboti</h1>
+          <Button variant="outline" size="icon" asChild><Link to="/warehouse" aria-label={wt("Orqaga")}><ArrowLeft className="h-4 w-4" /></Link></Button>
+          <h1 className="text-2xl font-bold tracking-tight">{wt("Sklad hisoboti")}</h1>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => doPrint(false)} disabled={loading}><Printer className="h-4 w-4 mr-2" />Hisobotni chop etish</Button>
-          <Button variant="secondary" onClick={downloadStockPdf} disabled={loading || pdfBusy}><FileDown className="h-4 w-4 mr-2" />{pdfBusy ? "PDF tayyorlanmoqda…" : "PDF yuklab olish"}</Button>
+          <Button onClick={() => doPrint(false)} disabled={loading}><Printer className="h-4 w-4 mr-2" />{wt("Hisobotni chop etish")}</Button>
+          <Button variant="secondary" onClick={downloadStockPdf} disabled={loading || pdfBusy}><FileDown className="h-4 w-4 mr-2" />{pdfBusy ? wt("PDF tayyorlanmoqda…") : wt("PDF yuklab olish")}</Button>
         </div>
       </div>
 
       <Card className="no-print"><CardContent className="pt-4 space-y-3">
         <Tabs value={section} onValueChange={(v) => setSection(v as Section)}>
           <TabsList>
-            <TabsTrigger value="all">Umumiy hisobot</TabsTrigger>
-            <TabsTrigger value="products">Mahsulotlar</TabsTrigger>
-            <TabsTrigger value="instruments">Instrumentlar</TabsTrigger>
-            <TabsTrigger value="movements">Harakatlar tarixi</TabsTrigger>
+            <TabsTrigger value="all">{wt("Umumiy hisobot")}</TabsTrigger>
+            <TabsTrigger value="products">{wt("Mahsulotlar")}</TabsTrigger>
+            <TabsTrigger value="instruments">{wt("Instrumentlar")}</TabsTrigger>
+            <TabsTrigger value="movements">{wt("Harakatlar tarixi")}</TabsTrigger>
           </TabsList>
         </Tabs>
         <div className="flex flex-wrap gap-3 items-end">
-          <div className="space-y-1"><Label className="text-xs">Sanadan (ixtiyoriy)</Label><DateInput value={from} onChange={setFrom} /></div>
-          <div className="space-y-1"><Label className="text-xs">Sanagacha (ixtiyoriy)</Label><DateInput value={to} onChange={setTo} /></div>
-          {sel("Mahsulot / instrument", item, setItem, asList(opts.items))}
-          {sel("Kirim/chiqim", dir, setDir, [{ v: "in", l: "Kirim" }, { v: "out", l: "Chiqim" }])}
-          {sel("Xodim", emp, setEmp, asList(opts.emps))}
-          {sel("Zakaz", ord, setOrd, asList(opts.ords))}
-          {sel("Joylashuv", loc, setLoc, asList(opts.locs))}
-          {sel("O'lchov birligi", unit, setUnit, asList(opts.units))}
-          <Button variant="outline" onClick={reset}><RotateCcw className="h-4 w-4 mr-2" />Filtrni tozalash</Button>
+          <div className="space-y-1"><Label className="text-xs">{wt("Sanadan (ixtiyoriy)")}</Label><DateInput value={from} onChange={setFrom} /></div>
+          <div className="space-y-1"><Label className="text-xs">{wt("Sanagacha (ixtiyoriy)")}</Label><DateInput value={to} onChange={setTo} /></div>
+          {sel(wt("Mahsulot / instrument"), item, setItem, asList(opts.items))}
+          {sel(wt("Kirim/chiqim"), dir, setDir, [{ v: "in", l: wt("Kirim") }, { v: "out", l: wt("Chiqim") }])}
+          {sel(wt("Xodim"), emp, setEmp, asList(opts.emps))}
+          {sel(wt("Zakaz"), ord, setOrd, asList(opts.ords))}
+          {sel(wt("Joylashuv"), loc, setLoc, asList(opts.locs))}
+          {sel(wt("O'lchov birligi"), unit, setUnit, asList(opts.units))}
+          <Button variant="outline" onClick={reset}><RotateCcw className="h-4 w-4 mr-2" />{wt("Filtrni tozalash")}</Button>
         </div>
-        <p className="text-xs text-muted-foreground">Sana, yo'nalish, xodim, zakaz va joylashuv filtrlari harakatlar tarixiga; nomi va birlik filtrlari barcha bo'limlarga qo'llanadi.</p>
+        <p className="text-xs text-muted-foreground">{wt("Sana, yo'nalish, xodim, zakaz va joylashuv filtrlari harakatlar tarixiga; nomi va birlik filtrlari barcha bo'limlarga qo'llanadi.")}</p>
       </CardContent></Card>
 
-      {loading ? <p className="text-muted-foreground">Yuklanmoqda…</p> : (
+      {loading ? <p className="text-muted-foreground">{wt("Yuklanmoqda…")}</p> : (
         <div id="print-area" className="report-sheet space-y-6">
           <div className="report-head">
-            <h2 className="text-xl font-bold">Sklad hisoboti{section !== "all" ? ` — ${{ products: "Mahsulotlar", instruments: "Instrumentlar", movements: "Harakatlar tarixi" }[section]}` : ""}</h2>
-            <p className="text-sm">Chiqarilgan: {fmtDateTime24(printedAt)}</p>
-            <p className="text-sm">Filtrlar: {filterText}</p>
+            <h2 className="text-xl font-bold">{wt("Sklad hisoboti")}{section !== "all" ? ` — ${{ products: wt("Mahsulotlar"), instruments: wt("Instrumentlar"), movements: wt("Harakatlar tarixi") }[section]}` : ""}</h2>
+            <p className="text-sm">{wt("Chiqarilgan:")}{fmtDateTime24(printedAt)}</p>
+            <p className="text-sm">{wt("Filtrlar:")}{filterText}</p>
           </div>
 
           {show("products") && (
             <section>
-              <h3 className="font-semibold mb-2">1. Mahsulotlar ({fProducts.length})</h3>
-              <div className="report-scroll overflow-x-auto max-w-full overscroll-x-contain"><table className="report-table"><thead><tr><th>№</th><th>Nomi</th><th>Qoldiq</th><th>Birlik</th><th>Narxi</th><th>Jami qiymati</th></tr></thead>
+              <h3 className="font-semibold mb-2">{wt("1. Mahsulotlar (")}{fProducts.length})</h3>
+              <div className="report-scroll overflow-x-auto max-w-full overscroll-x-contain"><table className="report-table"><thead><tr><th>№</th><th>{wt("Nomi")}</th><th>{wt("Qoldiq")}</th><th>{wt("Birlik")}</th><th>{wt("Narxi")}</th><th>{wt("Jami qiymati")}</th></tr></thead>
                 <tbody>{fProducts.map((p, i) => (
                   <tr key={p.id}><td>{i + 1}</td><td>{p.name}</td><td className="num">{fmtNum(p.stock_qty)}</td><td>{p.unit}</td><td className="num">{money(p.price, p.currency)}</td><td className="num">{p.price == null ? "" : money(Number(p.stock_qty) * p.price, p.currency)}</td></tr>
                 ))}</tbody>
-                <tfoot><tr><td colSpan={2}>Jami</td><td colSpan={2}>{qtyByUnit(fProducts.map((p) => ({ q: Number(p.stock_qty), u: p.unit })))}</td><td></td><td className="num">{sumByCur(fProducts.filter((p) => p.price != null).map((p) => ({ v: Number(p.stock_qty) * p.price, c: p.currency })))}</td></tr></tfoot>
+                <tfoot><tr><td colSpan={2}>{wt("Jami")}</td><td colSpan={2}>{qtyByUnit(fProducts.map((p) => ({ q: Number(p.stock_qty), u: p.unit })))}</td><td></td><td className="num">{sumByCur(fProducts.filter((p) => p.price != null).map((p) => ({ v: Number(p.stock_qty) * p.price, c: p.currency })))}</td></tr></tfoot>
               </table></div>
             </section>
           )}
 
           {show("instruments") && (
             <section>
-              <h3 className="font-semibold mb-2">2. Instrumentlar ({fInstruments.length})</h3>
-              <div className="report-scroll overflow-x-auto max-w-full overscroll-x-contain"><table className="report-table"><thead><tr><th>№</th><th>Nomi</th><th>Umumiy soni</th><th>Skladda</th><th>Xodimlarda</th><th>Narxi</th><th>Jami qiymati</th></tr></thead>
+              <h3 className="font-semibold mb-2">{wt("2. Instrumentlar (")}{fInstruments.length})</h3>
+              <div className="report-scroll overflow-x-auto max-w-full overscroll-x-contain"><table className="report-table"><thead><tr><th>№</th><th>{wt("Nomi")}</th><th>{wt("Umumiy soni")}</th><th>{wt("Skladda")}</th><th>{wt("Xodimlarda")}</th><th>{wt("Narxi")}</th><th>{wt("Jami qiymati")}</th></tr></thead>
                 <tbody>{fInstruments.map((x, i) => (
                   <tr key={x.id}><td>{i + 1}</td><td>{x.name}</td><td className="num">{fmtNum(x.total)}</td><td className="num">{fmtNum(x.quantity)}</td><td className="num">{fmtNum(x.issued)}</td><td className="num">{money(x.price, x.currency)}</td><td className="num">{x.price == null ? "" : money(x.total * x.price, x.currency)}</td></tr>
                 ))}</tbody>
-                <tfoot><tr><td colSpan={2}>Jami</td>
+                <tfoot><tr><td colSpan={2}>{wt("Jami")}</td>
                   <td className="num">{fmtNum(fInstruments.reduce((s, x) => s + x.total, 0))}</td>
                   <td className="num">{fmtNum(fInstruments.reduce((s, x) => s + Number(x.quantity), 0))}</td>
                   <td className="num">{fmtNum(fInstruments.reduce((s, x) => s + x.issued, 0))}</td><td></td>
@@ -277,14 +279,14 @@ export default function WarehouseReportPage() {
 
           {show("movements") && (
             <section>
-              <h3 className="font-semibold mb-2">3. Harakatlar tarixi ({fMoves.length})</h3>
-              <div className="report-scroll overflow-x-auto max-w-full overscroll-x-contain"><table className="report-table"><thead><tr><th>Sana/vaqt</th><th>Turi</th><th>Nomi</th><th>Yo'nalish</th><th>Miqdor</th><th>Birlik</th><th>1 birlik narxi</th><th>Jami summa</th><th>Kiritgan</th><th>Xodim / oluvchi</th><th>Zakaz</th><th>Joylashuv</th><th>Izoh</th></tr></thead>
+              <h3 className="font-semibold mb-2">{wt("3. Harakatlar tarixi (")}{fMoves.length})</h3>
+              <div className="report-scroll overflow-x-auto max-w-full overscroll-x-contain"><table className="report-table"><thead><tr><th>{wt("Sana/vaqt")}</th><th>{wt("Turi")}</th><th>{wt("Nomi")}</th><th>{wt("Yo'nalish")}</th><th>{wt("Miqdor")}</th><th>{wt("Birlik")}</th><th>{wt("1 birlik narxi")}</th><th>{wt("Jami summa")}</th><th>{wt("Kiritgan")}</th><th>{wt("Xodim / oluvchi")}</th><th>{wt("Zakaz")}</th><th>{wt("Joylashuv")}</th><th>{wt("Izoh")}</th></tr></thead>
                 <tbody>{fMoves.map((m) => (
-                  <tr key={m.id}><td>{fmtDateTime24(m.at)}</td><td>{m.kind}</td><td>{m.name}</td><td>{m.dir === "in" ? "Kirim" : "Chiqim"}</td><td className="num">{fmtNum(m.qty)}</td><td>{m.unit}</td><td className="num">{money(m.price, m.currency)}</td><td className="num">{m.price == null ? "" : money(m.qty * m.price, m.currency)}</td><td>{m.person}</td><td>{m.employee}</td><td>{m.order}</td><td>{m.location}</td><td>{m.comment}</td></tr>
+                  <tr key={m.id}><td>{fmtDateTime24(m.at)}</td><td>{m.kind}</td><td>{m.name}</td><td>{m.dir === "in" ? wt("Kirim") : wt("Chiqim")}</td><td className="num">{fmtNum(m.qty)}</td><td>{m.unit}</td><td className="num">{money(m.price, m.currency)}</td><td className="num">{m.price == null ? "" : money(m.qty * m.price, m.currency)}</td><td>{m.person}</td><td>{m.employee}</td><td>{m.order}</td><td>{m.location}</td><td>{m.comment}</td></tr>
                 ))}</tbody>
                 <tfoot>
-                  <tr><td colSpan={4}>Jami kirim</td><td colSpan={9}>{qtyByUnit(fMoves.filter((m) => m.dir === "in").map((m) => ({ q: m.qty, u: m.unit })))} — qiymati {sumByCur(fMoves.filter((m) => m.dir === "in").filter((m) => m.price != null).map((m) => ({ v: m.qty * (m.price as number), c: m.currency })))}</td></tr>
-                  <tr><td colSpan={4}>Jami chiqim</td><td colSpan={9}>{qtyByUnit(fMoves.filter((m) => m.dir === "out").map((m) => ({ q: m.qty, u: m.unit })))} — qiymati {sumByCur(fMoves.filter((m) => m.dir === "out").filter((m) => m.price != null).map((m) => ({ v: m.qty * (m.price as number), c: m.currency })))}</td></tr>
+                  <tr><td colSpan={4}>{wt("Jami kirim")}</td><td colSpan={9}>{qtyByUnit(fMoves.filter((m) => m.dir === "in").map((m) => ({ q: m.qty, u: m.unit })))} — qiymati {sumByCur(fMoves.filter((m) => m.dir === "in").filter((m) => m.price != null).map((m) => ({ v: m.qty * (m.price as number), c: m.currency })))}</td></tr>
+                  <tr><td colSpan={4}>{wt("Jami chiqim")}</td><td colSpan={9}>{qtyByUnit(fMoves.filter((m) => m.dir === "out").map((m) => ({ q: m.qty, u: m.unit })))} — qiymati {sumByCur(fMoves.filter((m) => m.dir === "out").filter((m) => m.price != null).map((m) => ({ v: m.qty * (m.price as number), c: m.currency })))}</td></tr>
                 </tfoot>
               </table></div>
             </section>

@@ -1,3 +1,4 @@
+import { useWarehouseText } from "@/i18n/warehouseContext";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import { EMPTY_SCAN_FILTERS, matchesScanFilters, scanActionLabel, scanResultLabe
 const PAGE = 200;
 
 export default function ScanHistoryTab() {
+  const wt = useWarehouseText();
   const [rows, setRows] = useState<ScanHistoryRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [f, setF] = useState<ScanFilters>(EMPTY_SCAN_FILTERS);
@@ -37,42 +39,42 @@ export default function ScanHistoryTab() {
     <Card>
       <CardContent className="p-4 space-y-3">
         <div className="flex flex-wrap items-center gap-2">
-          <Input type="date" aria-label="Dan" value={f.from} onChange={e => setF({ ...f, from: e.target.value })} className="w-[150px]" />
-          <Input type="date" aria-label="Gacha" value={f.to} onChange={e => setF({ ...f, to: e.target.value })} className="w-[150px]" />
-          <Input placeholder="Mahsulot nomi" value={f.product} onChange={e => setF({ ...f, product: e.target.value })} className="w-[180px]" />
-          <Input placeholder="Shtrix-kod" value={f.code} onChange={e => setF({ ...f, code: e.target.value })} className="w-[160px]" />
+          <Input type="date" aria-label={wt("Dan")} value={f.from} onChange={e => setF({ ...f, from: e.target.value })} className="w-[150px]" />
+          <Input type="date" aria-label={wt("Gacha")} value={f.to} onChange={e => setF({ ...f, to: e.target.value })} className="w-[150px]" />
+          <Input placeholder={wt("Mahsulot nomi")} value={f.product} onChange={e => setF({ ...f, product: e.target.value })} className="w-[180px]" />
+          <Input placeholder={wt("Shtrix-kod")} value={f.code} onChange={e => setF({ ...f, code: e.target.value })} className="w-[160px]" />
           <Select value={f.user} onValueChange={v => setF({ ...f, user: v })}>
-            <SelectTrigger className="w-[170px]"><SelectValue placeholder="Foydalanuvchi" /></SelectTrigger>
+            <SelectTrigger className="w-[170px]"><SelectValue placeholder={wt("Foydalanuvchi")} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Barcha foydalanuvchilar</SelectItem>
+              <SelectItem value="all">{wt("Barcha foydalanuvchilar")}</SelectItem>
               {users.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={f.module} onValueChange={v => setF({ ...f, module: v })}>
-            <SelectTrigger className="w-[150px]"><SelectValue placeholder="Modul" /></SelectTrigger>
+            <SelectTrigger className="w-[150px]"><SelectValue placeholder={wt("Modul")} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Barcha modullar</SelectItem>
+              <SelectItem value="all">{wt("Barcha modullar")}</SelectItem>
               {modules.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={f.action} onValueChange={v => setF({ ...f, action: v })}>
-            <SelectTrigger className="w-[150px]"><SelectValue placeholder="Amal turi" /></SelectTrigger>
+            <SelectTrigger className="w-[150px]"><SelectValue placeholder={wt("Amal turi")} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Barcha amallar</SelectItem>
-              <SelectItem value="in">Kirim</SelectItem>
-              <SelectItem value="out">Chiqim</SelectItem>
-              <SelectItem value="search">Faqat qidirish</SelectItem>
+              <SelectItem value="all">{wt("Barcha amallar")}</SelectItem>
+              <SelectItem value="in">{wt("Kirim")}</SelectItem>
+              <SelectItem value="out">{wt("Chiqim")}</SelectItem>
+              <SelectItem value="search">{wt("Faqat qidirish")}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={f.result} onValueChange={v => setF({ ...f, result: v })}>
-            <SelectTrigger className="w-[140px]"><SelectValue placeholder="Natija" /></SelectTrigger>
+            <SelectTrigger className="w-[140px]"><SelectValue placeholder={wt("Natija")} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Barcha natijalar</SelectItem>
-              <SelectItem value="found">Topildi</SelectItem>
-              <SelectItem value="not_found">Topilmadi</SelectItem>
+              <SelectItem value="all">{wt("Barcha natijalar")}</SelectItem>
+              <SelectItem value="found">{wt("Topildi")}</SelectItem>
+              <SelectItem value="not_found">{wt("Topilmadi")}</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="icon" onClick={load} disabled={loading} aria-label="Yangilash">
+          <Button variant="outline" size="icon" onClick={load} disabled={loading} aria-label={wt("Yangilash")}>
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
         </div>
@@ -80,19 +82,19 @@ export default function ScanHistoryTab() {
         <div className="border rounded-md overflow-x-auto">
           <Table>
             <TableHeader><TableRow>
-              <TableHead>Sana va vaqt</TableHead>
-              <TableHead>Mahsulot</TableHead>
-              <TableHead>Xom kod (raw)</TableHead>
-              <TableHead>Tozalangan kod</TableHead>
-              <TableHead>Modul</TableHead>
-              <TableHead>Amal</TableHead>
-              <TableHead>Natija</TableHead>
-              <TableHead className="text-right">Miqdor</TableHead>
-              <TableHead className="text-right">Qoldiq</TableHead>
-              <TableHead>Foydalanuvchi</TableHead>
+              <TableHead>{wt("Sana va vaqt")}</TableHead>
+              <TableHead>{wt("Mahsulot")}</TableHead>
+              <TableHead>{wt("Xom kod (raw)")}</TableHead>
+              <TableHead>{wt("Tozalangan kod")}</TableHead>
+              <TableHead>{wt("Modul")}</TableHead>
+              <TableHead>{wt("Amal")}</TableHead>
+              <TableHead>{wt("Natija")}</TableHead>
+              <TableHead className="text-right">{wt("Miqdor")}</TableHead>
+              <TableHead className="text-right">{wt("Qoldiq")}</TableHead>
+              <TableHead>{wt("Foydalanuvchi")}</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {shown.length === 0 && <TableRow><TableCell colSpan={10} className="text-center py-8 text-sm text-muted-foreground">Skanerlashlar topilmadi</TableCell></TableRow>}
+              {shown.length === 0 && <TableRow><TableCell colSpan={10} className="text-center py-8 text-sm text-muted-foreground">{wt("Skanerlashlar topilmadi")}</TableCell></TableRow>}
               {shown.map(r => (
                 <TableRow key={r.id}>
                   <TableCell className="whitespace-nowrap">{fmtDateTime24(r.scanned_at)}</TableCell>

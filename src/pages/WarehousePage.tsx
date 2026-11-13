@@ -1,3 +1,4 @@
+import { useWarehouseText } from "@/i18n/warehouseContext";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureOnline } from "@/components/OnlineGuard";
@@ -69,6 +70,7 @@ export function convertQty(q: number, from: string, to: string, kgPerPiece: numb
 const CURRENCIES = ["UZS", "USD"] as const;
 
 export default function WarehousePage() {
+  const wt = useWarehouseText();
   const { user, hasRole, roles } = useAuth() as any;
   const { t } = useI18n();
   const localize = useLocalize();
@@ -275,12 +277,12 @@ export default function WarehousePage() {
       priority: newPriority, currency: newCurrency,
       ...metalFields,
     } as any).select("id,barcode").single();
-    if ((error as any)?.code === "23505") { toast.error("Bu mahsulot (nomi, birligi, o'lchami, valyutasi) allaqachon mavjud"); return; }
-    if (error || !created) { toast.error(error?.message || "Error"); return; }
+    if ((error as any)?.code === "23505") { toast.error(wt("Bu mahsulot (nomi, birligi, o'lchami, valyutasi) allaqachon mavjud")); return; }
+    if (error || !created) { toast.error(error?.message || wt("Error")); return; }
     const createdBarcode = (created as any).barcode as string | null;
     if (newFactoryCode.trim()) {
       const { error: aliasError } = await supabase.rpc("bind_barcode_alias", { _code: newFactoryCode, _product_id: created.id });
-      if (aliasError) toast.error(`Mahsulot yaratildi, zavod kodi biriktirilmadi: ${aliasError.message}`);
+      if (aliasError) toast.error(("" + wt("Mahsulot yaratildi, zavod kodi biriktirilmadi:") + " " + (aliasError.message) + ""));
     }
     // Metall normativi: Konstruktor sarfida ishlatilishi uchun saqlanadi
     if (isMetalProduct && newMetalType.trim() && num(newThick) && num(newWidth) && num(newLength) && num(newWeightKg)) {
@@ -321,7 +323,7 @@ export default function WarehousePage() {
           comment: `${t.warehouse.addProduct}${newSupplier ? ` · ${newSupplier}` : ""}`,
         } as any);
       } catch (e: any) {
-        toast.error(e.message ?? "Kirim sessiyasini ochib bo'lmadi");
+        toast.error(e.message ?? wt("Kirim sessiyasini ochib bo'lmadi"));
         return;
       }
     }
@@ -330,7 +332,7 @@ export default function WarehousePage() {
       action: "Mahsulot qo'shildi", entity: "product",
       details: `${newName.trim()}${qtyN > 0 ? `: +${qtyN} ${newUnit}` : ""}`,
     });
-    toast.success(`${qtyN > 0 ? "Mahsulot qo'shildi — miqdor Nakladnoyga yozildi" : t.warehouse.productAdded}${createdBarcode ? ` · Shtrix-kod: ${createdBarcode}` : ""}`);
+    toast.success(`${qtyN > 0 ? wt("Mahsulot qo'shildi — miqdor Nakladnoyga yozildi") : t.warehouse.productAdded}${createdBarcode ? ` · Shtrix-kod: ${createdBarcode}` : ""}`);
     if (createdBarcode) {
       const newProd: any = { id: created.id, name: newName.trim(), unit: newUnit || "dona", stock_qty: 0, last_price: priceN, currency: newCurrency || "UZS", barcode: createdBarcode, mxik_code: null, product_type_id: created.id };
       setProducts(prev => prev.some(x => x.id === created.id) ? prev : [...prev, newProd]);
@@ -424,7 +426,7 @@ export default function WarehousePage() {
           } as any)
           .select("id").single();
         if (createError || !newProduct) {
-          toast.error(createError?.message || "Mahsulot yaratishda xatolik");
+          toast.error(createError?.message || wt("Mahsulot yaratishda xatolik"));
           return;
         }
         productId = newProduct.id;
@@ -437,10 +439,10 @@ export default function WarehousePage() {
     let session: any;
     try {
       session = await getOrStartSession(user?.id, currentUserName(user), impSupplier || null);
-    } catch (e: any) { toast.error(e.message ?? "Kirim sessiyasini ochib bo'lmadi"); return; }
+    } catch (e: any) { toast.error(e.message ?? wt("Kirim sessiyasini ochib bo'lmadi")); return; }
     if ((session.payment_type ?? "cash") !== impPayment) {
       try { await updateSessionPayment(session.id, { payment_type: impPayment }); }
-      catch (e: any) { toast.error(e.message ?? "To'lov turini saqlab bo'lmadi"); return; }
+      catch (e: any) { toast.error(e.message ?? wt("To'lov turini saqlab bo'lmadi")); return; }
     }
 
     let merged = false;
@@ -462,7 +464,7 @@ export default function WarehousePage() {
         comment: `Nakladnoy${impSupplier ? ` · ${impSupplier}` : ""} · ${impLocation}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
       });
       merged = res.merged;
-    } catch (e: any) { toast.error(e.message ?? "Xatolik"); return; }
+    } catch (e: any) { toast.error(e.message ?? wt("Xatolik")); return; }
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: currentUserName(user),
       action: "Nakladnoyga mahsulot qo'shildi", entity: "intake_item",
@@ -470,8 +472,8 @@ export default function WarehousePage() {
       details: `${trimmedName}: +${qtyN} ${impUnit} × ${fmt(priceN)} = ${fmt(qtyN * priceN)} ${impCurrency}${impKg > 0 ? ` · ${fmt(impKg)} kg = ${(impKg / 1000).toFixed(4)} t` : ""}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
     });
     toast.success(merged
-      ? "Nakladnoyda mavjud mahsulotga jamlandi"
-      : "Nakladnoyga qo'shildi — kirim tugatilgach skladga tushadi");
+      ? wt("Nakladnoyda mavjud mahsulotga jamlandi")
+      : wt("Nakladnoyga qo'shildi — kirim tugatilgach skladga tushadi"));
     setImpProductId(""); setImpProductName(""); setImpQty(""); setImpUnit("dona"); setImpPrice(""); setImpPhone(""); setImpSource(""); setImpImage(null); setImpOrderId(""); setImpTons(""); setImpTonsManual(false);
     loadSession();
     load();
@@ -525,10 +527,10 @@ export default function WarehousePage() {
         action: "Nakladnoy mahsuloti tahrirlandi", entity: "intake_item",
         details: `${editItem.product_name}: ${editItem.quantity} → ${qtyN} ${editItem.unit}, narx ${editItem.unit_price} → ${priceN} ${editItem.currency}`,
       });
-      toast.success("Mahsulot yangilandi");
+      toast.success(wt("Mahsulot yangilandi"));
       setEditItem(null);
       await loadSession();
-    } catch (e: any) { toast.error(e.message ?? "Xatolik"); }
+    } catch (e: any) { toast.error(e.message ?? wt("Xatolik")); }
     finally { setEiBusy(false); }
   };
 
@@ -551,17 +553,17 @@ export default function WarehousePage() {
       const { error } = await supabase.from("intake_sessions").update({ image_url: url } as any).eq("id", openSession.id);
       if (error) throw error;
       setNaklFile(null);
-      toast.success("Nakladnoy rasmi yuklandi");
+      toast.success(wt("Nakladnoy rasmi yuklandi"));
       await loadSession();
     } catch (e: any) {
-      toast.error(e.message ?? "Rasm yuklashda xatolik");
+      toast.error(e.message ?? wt("Rasm yuklashda xatolik"));
     } finally { setNaklBusy(false); }
   };
 
   /** Tugatish — rasm majburiy; sessiya yopiladi va skladga kirim qilinadi */
   const doFinishSession = async () => {
     if (!openSession) return;
-    if (sessionItems.length === 0) { toast.error("Avval mahsulot qo'shing"); return; }
+    if (sessionItems.length === 0) { toast.error(wt("Avval mahsulot qo'shing")); return; }
     setNaklBusy(true);
     try {
       await closeInvoice(openSession.id);
@@ -570,7 +572,7 @@ export default function WarehousePage() {
         action: "Nakladnoy yakunlandi", entity: "intake_session",
         details: `Nakladnoy ${intakeCode(openSession)} · ${sessionItems.length} mahsulot · ${fmt(itemsTotal(sessionItems as any))}`,
       });
-      toast.success("Nakladnoy yakunlandi — mahsulotlar skladga kirim qilindi");
+      toast.success(wt("Nakladnoy yakunlandi — mahsulotlar skladga kirim qilindi"));
       // vaqtinchalik ma'lumotlarni tozalash
       setOpenSession(null); setSessionItems([]); setNaklFile(null);
       setImpProductId(""); setImpProductName(""); setImpQty(""); setImpPrice("");
@@ -578,7 +580,7 @@ export default function WarehousePage() {
       setImportOpen(false);
       await loadSession();
       await load();
-    } catch (e: any) { toast.error(e.message ?? "Xatolik"); }
+    } catch (e: any) { toast.error(e.message ?? wt("Xatolik")); }
     finally { setNaklBusy(false); }
   };
 
@@ -596,7 +598,7 @@ export default function WarehousePage() {
     if (!editProd || epLock.current) return;
     const newStock = Number(epStock);
     if (epStock.trim() === "" || !Number.isFinite(newStock) || newStock < 0) {
-      toast.error("Yangi yakuniy qoldiqni (0 yoki undan katta) kiriting"); return;
+      toast.error(wt("Yangi yakuniy qoldiqni (0 yoki undan katta) kiriting")); return;
     }
     const newVals = {
       name: epName.trim(), unit: epUnit, last_price: Number(epPrice) || 0,
@@ -613,7 +615,7 @@ export default function WarehousePage() {
       toast.success(t.common.save);
       setEditProdOpen(false); setEditProd(null); await load();
     } catch (error) {
-      toast.error((error as { message?: string }).message || "Saqlashda xatolik");
+      toast.error((error as { message?: string }).message || wt("Saqlashda xatolik"));
     } finally { epLock.current = false; setEpBusy(false); }
   };
 
@@ -679,7 +681,7 @@ export default function WarehousePage() {
       action: "Mahsulot o'chirildi", entity: "product",
       details: `${delTarget.name} (${delTarget.ids.length} partiya, qoldiq: ${delTarget.qty} ${delTarget.unit})`,
     });
-    toast.success("Mahsulot o'chirildi");
+    toast.success(wt("Mahsulot o'chirildi"));
     if (delTarget.ids.includes(selectedProduct?.id)) setSelectedProduct(null);
     setProducts((prev) => prev.filter((p: any) => !delTarget.ids.includes(p.id)));
     setDelTarget(null);
@@ -688,7 +690,7 @@ export default function WarehousePage() {
 
 
   const deleteMovement = async (m: any) => {
-    if (!window.confirm(`${t.common.delete ?? "O'chirish"}: ${m.product?.name ?? ""} ${m.direction === "in" ? "+" : "-"}${m.quantity}?`)) return;
+    if (!window.confirm(`${t.common.delete ?? wt("O'chirish")}: ${m.product?.name ?? ""} ${m.direction === "in" ? "+" : "-"}${m.quantity}?`)) return;
     // revert stock
     if (m.product_id) {
       const signed = m.direction === "in" ? -Number(m.quantity) : Number(m.quantity);
@@ -711,7 +713,7 @@ export default function WarehousePage() {
       entity: "stock_movement", order_id: m.order_id ?? null,
       details: `${m.product?.name ?? "—"}: ${m.direction === "in" ? "+" : "-"}${m.quantity}${m.recipient_name ? `, ${m.recipient_name}` : ""}`,
     });
-    toast.success(t.common.delete ?? "O'chirildi");
+    toast.success(t.common.delete ?? wt("O'chirildi"));
     load();
   };
 
@@ -807,17 +809,15 @@ export default function WarehousePage() {
         <div className="flex flex-wrap gap-2">
           <WarehouseQuickActions products={products} onUpdated={load} />
           <Button variant="outline" className="min-h-11" asChild>
-            <Link to="/warehouse/report"><ClipboardList className="h-4 w-4 mr-2" />Hisobot (atshot)</Link>
+            <Link to="/warehouse/report"><ClipboardList className="h-4 w-4 mr-2" />{wt("Hisobot (atshot)")}</Link>
           </Button>
           {canManage && (
             <Button className="min-h-11 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm" onClick={() => { setImpLocation("Sklad"); setImpVariant("sklad"); setChooseIn(true); }}>
-              <ArrowDownToLine className="h-4 w-4 mr-2" />Kirim qilish
-            </Button>
+              <ArrowDownToLine className="h-4 w-4 mr-2" />{wt("Kirim qilish")}</Button>
           )}
           {canOut && (
             <Button className="min-h-11 bg-red-600 hover:bg-red-700 text-white shadow-sm" onClick={() => setChooseOut(true)}>
-              <ArrowUpFromLine className="h-4 w-4 mr-2" />Chiqim qilish
-            </Button>
+              <ArrowUpFromLine className="h-4 w-4 mr-2" />{wt("Chiqim qilish")}</Button>
           )}
         </div>
 
@@ -825,7 +825,7 @@ export default function WarehousePage() {
         <Dialog open={chooseIn} onOpenChange={(o) => { setChooseIn(o); if (o) { setImpLocation("Sklad"); setImpVariant("sklad"); } }}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
-              <DialogTitle className="text-2xl">Kirim varianti — Sklad</DialogTitle>
+              <DialogTitle className="text-2xl">{wt("Kirim varianti — Sklad")}</DialogTitle>
             </DialogHeader>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
               <button
@@ -835,8 +835,8 @@ export default function WarehousePage() {
                 <div className="h-12 w-12 rounded-xl bg-emerald-500/20 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Plus className="h-7 w-7" />
                 </div>
-                <div className="text-lg font-bold">Yangi mahsulot kirim qilish</div>
-                <div className="text-sm text-muted-foreground">Katalogda yo'q yangi mahsulot yaratish va kirimga qo'shish</div>
+                <div className="text-lg font-bold">{wt("Yangi mahsulot kirim qilish")}</div>
+                <div className="text-sm text-muted-foreground">{wt("Katalogda yo'q yangi mahsulot yaratish va kirimga qo'shish")}</div>
               </button>
               <button
                 onClick={() => { setImpLocation("Sklad"); setImpVariant("sklad"); setChooseIn(false); setImportOpen(true); }}
@@ -845,8 +845,8 @@ export default function WarehousePage() {
                 <div className="h-12 w-12 rounded-xl bg-sky-500/20 text-sky-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <ArrowDownToLine className="h-7 w-7" />
                 </div>
-                <div className="text-lg font-bold">Kirim qilish</div>
-                <div className="text-sm text-muted-foreground">Mavjud mahsulotlarga yangi partiya qo'shish — bitta nakladnoyga bir nechta mahsulot</div>
+                <div className="text-lg font-bold">{wt("Kirim qilish")}</div>
+                <div className="text-sm text-muted-foreground">{wt("Mavjud mahsulotlarga yangi partiya qo'shish — bitta nakladnoyga bir nechta mahsulot")}</div>
               </button>
               <button
                 onClick={() => { setImpLocation("Zavod51"); setImpVariant("351"); setChooseIn(false); setImportOpen(true); }}
@@ -855,8 +855,8 @@ export default function WarehousePage() {
                 <div className="h-12 w-12 rounded-xl bg-violet-500/20 text-violet-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Factory className="h-7 w-7" />
                 </div>
-                <div className="text-lg font-bold">3-51 ga kirim qilish</div>
-                <div className="text-sm text-muted-foreground">3-51 uchun alohida kirim — hisob va tarix alohida yuritiladi</div>
+                <div className="text-lg font-bold">{wt("3-51 ga kirim qilish")}</div>
+                <div className="text-sm text-muted-foreground">{wt("3-51 uchun alohida kirim — hisob va tarix alohida yuritiladi")}</div>
               </button>
             </div>
           </DialogContent>
@@ -866,7 +866,7 @@ export default function WarehousePage() {
         <Dialog open={chooseOut} onOpenChange={setChooseOut}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
-              <DialogTitle className="text-2xl">Chiqim varianti</DialogTitle>
+              <DialogTitle className="text-2xl">{wt("Chiqim varianti")}</DialogTitle>
             </DialogHeader>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
               <button
@@ -876,8 +876,8 @@ export default function WarehousePage() {
                 <div className="h-14 w-14 rounded-xl bg-red-500/20 text-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <ClipboardList className="h-8 w-8" />
                 </div>
-                <div className="text-xl font-bold">Zakaz uchun chiqim</div>
-                <div className="text-sm text-muted-foreground">Aniq zakaz uchun mahsulot berish</div>
+                <div className="text-xl font-bold">{wt("Zakaz uchun chiqim")}</div>
+                <div className="text-sm text-muted-foreground">{wt("Aniq zakaz uchun mahsulot berish")}</div>
               </button>
               <button
                 onClick={() => { setChooseOut(false); setOtherOpen(true); }}
@@ -886,8 +886,8 @@ export default function WarehousePage() {
                 <div className="h-14 w-14 rounded-xl bg-orange-500/20 text-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <PackageMinus className="h-8 w-8" />
                 </div>
-                <div className="text-xl font-bold">Boshqa chiqim</div>
-                <div className="text-sm text-muted-foreground">Zavod ehtiyoji yoki boshqa maqsad uchun</div>
+                <div className="text-xl font-bold">{wt("Boshqa chiqim")}</div>
+                <div className="text-sm text-muted-foreground">{wt("Zavod ehtiyoji yoki boshqa maqsad uchun")}</div>
               </button>
             </div>
           </DialogContent>
@@ -904,21 +904,21 @@ export default function WarehousePage() {
                   <DialogHeader><DialogTitle>{t.warehouse.addProduct}</DialogTitle></DialogHeader>
                   <div className="space-y-3">
                     <div><Label>{t.warehouse.productName} *</Label><Input list="dl-product-names" value={newName} onChange={e => setNewName(e.target.value)} /></div>
-                    <div><Label>Zavod shtrix kodi (ixtiyoriy)</Label><BarcodeScanField id="new-factory-code" value={newFactoryCode} onChange={setNewFactoryCode} placeholder="Zavod shtrix kodi (ixtiyoriy)" /></div>
+                    <div><Label>{wt("Zavod shtrix kodi (ixtiyoriy)")}</Label><BarcodeScanField id="new-factory-code" value={newFactoryCode} onChange={setNewFactoryCode} placeholder={wt("Zavod shtrix kodi (ixtiyoriy)")} /></div>
                     {isMetalProduct && (
                       <div className="rounded-md border p-3 space-y-3">
-                        <div className="text-sm font-medium">Metall o'lchamlari <span className="text-muted-foreground font-normal">(majburiy emas)</span></div>
-                        <div><Label>Metall turi</Label>
-                          <Input list="dl-metal-types" value={newMetalType} onChange={e => setNewMetalType(e.target.value)} placeholder="Nerj" />
+                        <div className="text-sm font-medium">{wt("Metall o'lchamlari")}<span className="text-muted-foreground font-normal">{wt("(majburiy emas)")}</span></div>
+                        <div><Label>{wt("Metall turi")}</Label>
+                          <Input list="dl-metal-types" value={newMetalType} onChange={e => setNewMetalType(e.target.value)} placeholder={wt("Nerj")} />
                           <datalist id="dl-metal-types">{metalTypes.map(m => <option key={m} value={m} />)}</datalist>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                          <div><Label>Qalinligi S (mm)</Label><Input inputMode="decimal" value={newThick} onChange={e => setNewThick(e.target.value.replace(/[^0-9.,]/g, ""))} placeholder="1.8" /></div>
-                          <div><Label>Eni (mm)</Label><Input inputMode="decimal" value={newWidth} onChange={e => setNewWidth(e.target.value.replace(/[^0-9.,]/g, ""))} placeholder="1500" /></div>
+                          <div><Label>{wt("Qalinligi S (mm)")}</Label><Input inputMode="decimal" value={newThick} onChange={e => setNewThick(e.target.value.replace(/[^0-9.,]/g, ""))} placeholder="1.8" /></div>
+                          <div><Label>{wt("Eni (mm)")}</Label><Input inputMode="decimal" value={newWidth} onChange={e => setNewWidth(e.target.value.replace(/[^0-9.,]/g, ""))} placeholder="1500" /></div>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                          <div><Label>Bo'yi (mm)</Label><Input inputMode="decimal" value={newLength} onChange={e => setNewLength(e.target.value.replace(/[^0-9.,]/g, ""))} placeholder="6000" /></div>
-                          <div><Label>1 dona og'irligi (kg)</Label><Input inputMode="decimal" value={newWeightKg} onChange={e => setNewWeightKg(e.target.value.replace(/[^0-9.,]/g, ""))} placeholder="282.6" /></div>
+                          <div><Label>{wt("Bo'yi (mm)")}</Label><Input inputMode="decimal" value={newLength} onChange={e => setNewLength(e.target.value.replace(/[^0-9.,]/g, ""))} placeholder="6000" /></div>
+                          <div><Label>{wt("1 dona og'irligi (kg)")}</Label><Input inputMode="decimal" value={newWeightKg} onChange={e => setNewWeightKg(e.target.value.replace(/[^0-9.,]/g, ""))} placeholder="282.6" /></div>
                         </div>
                       </div>
                     )}
@@ -936,13 +936,13 @@ export default function WarehousePage() {
                       <div><Label>{t.warehouse.price}</Label><NumberInput min={0} value={newPrice} onChange={e => setNewPrice(e.target.value)} placeholder="0" /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <div><Label>Muhimlik</Label>
+                      <div><Label>{wt("Muhimlik")}</Label>
                         <Select value={newPriority} onValueChange={setNewPriority}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>{PRIORITY_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}><span className="inline-flex items-center gap-2"><span className={`inline-block h-2.5 w-2.5 rounded-full ${p.color}`} />{p.label}</span></SelectItem>)}</SelectContent>
                         </Select>
                       </div>
-                      <div><Label>Valyuta</Label>
+                      <div><Label>{wt("Valyuta")}</Label>
                         <Select value={newCurrency} onValueChange={setNewCurrency}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>{CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
@@ -953,7 +953,7 @@ export default function WarehousePage() {
                     <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={newSource} onChange={e => setNewSource(e.target.value)} placeholder={(t.warehouse as any).sourcePh} /></div>
                     <div><Label>{(t.warehouse.cols as any).supplier}</Label>
                       <Select value={newSupplier} onValueChange={setNewSupplier}>
-                        <SelectTrigger><SelectValue placeholder="Tanlang" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={wt("Tanlang")} /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Davronxo'ja">Davronxo'ja</SelectItem>
                           <SelectItem value="Sanjar">Sanjar</SelectItem>
@@ -988,17 +988,17 @@ export default function WarehousePage() {
               <DialogTrigger asChild><Button variant="secondary"><ArrowUpCircle className="h-4 w-4 mr-2" />{t.supply.receive}</Button></DialogTrigger>
               <DialogContent className="max-w-lg max-h-[90vh] flex flex-col p-0 gap-0">
                 <DialogHeader className="px-6 pt-6 pb-3 border-b shrink-0">
-                  <DialogTitle>{impVariant === "351" ? "3-51 ga kirim qilish" : t.supply.receiveTitle}</DialogTitle>
-                  <DialogDescription>Joylashuv: <b>{impVariant === "351" ? "3-51 (Zavod51)" : "Sklad"}</b> — kirim shu joyga yoziladi</DialogDescription>
+                  <DialogTitle>{impVariant === "351" ? wt("3-51 ga kirim qilish") : t.supply.receiveTitle}</DialogTitle>
+                  <DialogDescription>{wt("Joylashuv:")}<b>{impVariant === "351" ? "3-51 (Zavod51)" : "Sklad"}</b> — kirim shu joyga yoziladi</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-3 overflow-y-auto px-6 py-4 flex-1">
                   <CatalogScanner products={products} module="Kirim" action="in" onSelect={p => { if (!products.some(x => x.id===p.id)) setProducts(prev => [...prev,p]); const qty=scannedQuantity(p.unit,p.id===impProductId,Number(impQty)); setImpProductId(p.id); setImpProductName(p.name); setImpUnit(p.unit || "dona"); setImpPrice(String(p.last_price ?? 0)); if(qty!==null) setImpQty(String(qty)); else if(p.id!==impProductId) setImpQty(""); }} />
                   <div>
-                    <Label>Qaysi zakaz uchun olib kelindi <span className="text-muted-foreground text-xs">(ixtiyoriy)</span></Label>
+                    <Label>{wt("Qaysi zakaz uchun olib kelindi")}<span className="text-muted-foreground text-xs">{wt("(ixtiyoriy)")}</span></Label>
                     <SearchableSelect
                       value={impOrderId}
                       onChange={setImpOrderId}
-                      placeholder="Tanlanmasa — umumiy ombor kirimi"
+                      placeholder={wt("Tanlanmasa — umumiy ombor kirimi")}
                       options={[
                         { value: "", label: "— Yo'q (umumiy) —" },
                         ...orders.map((o: any) => ({ value: o.id, label: `${o.order_number} — ${o.product_name}${o.client?.name ? ` (${o.client.name})` : ""}` })),
@@ -1018,14 +1018,13 @@ export default function WarehousePage() {
                       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                         <Command filter={(value, query) => matchesProductText(value,query) ? 1 : 0}>
                           <CommandInput
-                            placeholder={(t.warehouse as any).search || "Qidirish..."}
+                            placeholder={(t.warehouse as any).search || wt("Qidirish...")}
                             value={impProductName}
                             onValueChange={(v) => { setImpProductName(v); setImpProductId(""); }}
                           />
                           <CommandList>
                             <CommandEmpty>
-                              <button type="button" className="w-full text-left px-2 py-1.5 text-sm hover:bg-accent rounded" onClick={() => setImpPickerOpen(false)}>
-                                + Yangi mahsulot qo'shish: <b>{impProductName || "..."}</b>
+                              <button type="button" className="w-full text-left px-2 py-1.5 text-sm hover:bg-accent rounded" onClick={() => setImpPickerOpen(false)}>{wt("+ Yangi mahsulot qo'shish:")}<b>{impProductName || "..."}</b>
                               </button>
                             </CommandEmpty>
                             <CommandGroup>
@@ -1060,13 +1059,13 @@ export default function WarehousePage() {
                         const pr: any = products.find((x: any) => x.id === impProductId);
                         if (!pr || (pr.unit || "").toLowerCase() === (impUnit || "").toLowerCase()) return null;
                         const c = convertQty(Number(impQty) || 0, impUnit, pr.unit, Number(pr.weight_kg) || 0);
-                        return <p className="text-[11px] text-muted-foreground mt-1">{c !== null ? `= ${fmt(c)} ${pr.unit} (qoldiqqa)` : `Alohida "${impUnit}" pozitsiya`}</p>;
+                        return <p className="text-[11px] text-muted-foreground mt-1">{c !== null ? ("= " + (fmt(c)) + " " + (pr.unit) + " " + wt("(qoldiqqa)") + "") : (wt("Alohida \"") + (impUnit) + wt("\" pozitsiya"))}</p>;
                       })()}
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-3 items-end">
                     <div className="col-span-2">
-                      <Label>Tonna <span className="text-muted-foreground text-xs">(ixtiyoriy)</span></Label>
+                      <Label>{wt("Tonna")}<span className="text-muted-foreground text-xs">{wt("(ixtiyoriy)")}</span></Label>
                       <NumberInput
                         min={0} step={0.001}
                         value={impTons}
@@ -1075,25 +1074,25 @@ export default function WarehousePage() {
                       />
                     </div>
                     {impTonsManual && (
-                      <Button variant="ghost" size="sm" onClick={() => { setImpTonsManual(false); }}>Avtomatik</Button>
+                      <Button variant="ghost" size="sm" onClick={() => { setImpTonsManual(false); }}>{wt("Avtomatik")}</Button>
                     )}
                   </div>
                   {impKg > 0 && (
                     <div className="text-sm bg-muted/40 border rounded p-2 flex justify-between">
-                      <span className="text-muted-foreground">Og'irlik:</span>
+                      <span className="text-muted-foreground">{wt("Og'irlik:")}</span>
                       <span className="font-mono font-semibold">{fmt(impKg)} kg = {(impKg / 1000).toFixed(4)} t</span>
                     </div>
                   )}
                   <div className="grid grid-cols-3 gap-3">
                     <div className="col-span-2"><Label>1 {impUnit || "dona"} narxi</Label><NumberInput min={0} step={0.001} value={impPrice} onChange={e => setImpPrice(e.target.value)} placeholder={`1 ${impUnit || "dona"} narxi`} /></div>
-                    <div><Label>Valyuta</Label>
+                    <div><Label>{wt("Valyuta")}</Label>
                       <Select value={impCurrency} onValueChange={setImpCurrency}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>{CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
                   </div>
-                  <div><Label>To'lov turi</Label>
+                  <div><Label>{wt("To'lov turi")}</Label>
                     <Select value={impPayment} onValueChange={(v) => {
                       setImpPayment(v as IntakePaymentType);
                       if (openSession) updateSessionPayment(openSession.id, { payment_type: v as IntakePaymentType }).then(loadSession).catch((e) => toast.error(e.message));
@@ -1101,10 +1100,10 @@ export default function WarehousePage() {
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>{INTAKE_PAYMENT_TYPES.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}</SelectContent>
                     </Select>
-                    <p className="text-[11px] text-muted-foreground mt-1">Butun Nakladnoyga qo'llanadi{impPayment === "debt" ? " · yakunlangach Kassa → Qarz bo'limiga yoziladi, kassadan pul yechilmaydi" : ""}</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">{wt("Butun Nakladnoyga qo'llanadi")}{impPayment === "debt" ? " · yakunlangach Kassa → Qarz bo'limiga yoziladi, kassadan pul yechilmaydi" : ""}</p>
                   </div>
                   <div>
-                    <Label>Zavod / joylashuv</Label>
+                    <Label>{wt("Zavod / joylashuv")}</Label>
                     <div className="mt-1 rounded-md border bg-muted/40 px-3 py-2 text-sm font-medium">
                       {impVariant === "351" ? "3-51 (Zavod51)" : "Sklad"}
                     </div>
@@ -1125,7 +1124,7 @@ export default function WarehousePage() {
                     <Label>{t.supply.bringer}</Label>
                     <Select value={impSupplier} onValueChange={setImpSupplier}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Tanlang" />
+                        <SelectValue placeholder={wt("Tanlang")} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Davronxo'ja">Davronxo'ja</SelectItem>
@@ -1139,15 +1138,13 @@ export default function WarehousePage() {
 
                   {openSession && sessionItems.length > 0 && (
                     <div className="rounded-lg border border-status-yellow/40 bg-status-yellow/5 p-3 space-y-3">
-                      <div className="text-sm font-semibold">
-                        Ochiq Nakladnoy <span className="font-mono">{intakeCode(openSession)}</span>
+                      <div className="text-sm font-semibold">{wt("Ochiq Nakladnoy")}<span className="font-mono">{intakeCode(openSession)}</span>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        Boshlangan: {fmtDateTime24(openSession.started_at)} · {sessionItems.length} mahsulot · Jami: {fmt(itemsTotal(sessionItems as any))}
+                      <div className="text-xs text-muted-foreground">{wt("Boshlangan:")}{fmtDateTime24(openSession.started_at)} · {sessionItems.length} mahsulot · Jami: {fmt(itemsTotal(sessionItems as any))}
                         {openSession.supplier ? ` · Olib keldi: ${openSession.supplier}` : ""}
                       </div>
                       <div className="max-h-40 overflow-y-auto rounded border bg-background divide-y">
-                        {sessionItems.length === 0 && <div className="p-2 text-xs text-muted-foreground text-center">Mahsulot qo'shing</div>}
+                        {sessionItems.length === 0 && <div className="p-2 text-xs text-muted-foreground text-center">{wt("Mahsulot qo'shing")}</div>}
                         {sessionItems.map((i, idx) => (
                           <div key={i.id} className="flex items-center gap-2 px-2 py-1.5 text-sm">
                             <span className="text-muted-foreground text-xs w-4">{idx + 1}</span>
@@ -1158,17 +1155,14 @@ export default function WarehousePage() {
                           </div>
                         ))}
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Barcha kirimlar shu Nakladnoyga yig'iladi. Rasm yuklash va yakunlash — "Nakladnoy" bo'limida.
-                      </p>
+                      <p className="text-xs text-muted-foreground">{wt("Barcha kirimlar shu Nakladnoyga yig'iladi. Rasm yuklash va yakunlash — \"Nakladnoy\" bo'limida.")}</p>
                     </div>
                   )}
                 </div>
                 <div className="px-6 py-4 border-t bg-background shrink-0 flex flex-col sm:flex-row gap-2">
-                  <Button className="flex-1" onClick={doImport}>Kirimni saqlash</Button>
+                  <Button className="flex-1" onClick={doImport}>{wt("Kirimni saqlash")}</Button>
                   <Button variant="outline" className="flex-1" onClick={resetImportForm}>
-                    <Plus className="h-4 w-4 mr-2" />Yana mahsulot qo'shish
-                  </Button>
+                    <Plus className="h-4 w-4 mr-2" />{wt("Yana mahsulot qo'shish")}</Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -1192,11 +1186,11 @@ export default function WarehousePage() {
               <div className="flex items-center gap-2">
                 <span className={`inline-block h-3 w-3 rounded-full ${meta.dot}`} />
                 <div className="text-sm font-medium text-foreground">
-                  {s === "green" ? "Yetarli mahsulotlar" : s === "yellow" ? "Kam qolgan mahsulotlar" : "Tugagan mahsulotlar"}
+                  {s === "green" ? wt("Yetarli mahsulotlar") : s === "yellow" ? wt("Kam qolgan mahsulotlar") : wt("Tugagan mahsulotlar")}
                 </div>
               </div>
               <div className={`text-3xl font-bold font-mono mt-2 ${meta.text}`}>{count}</div>
-              <div className="text-xs text-muted-foreground mt-1">{active ? "Filtr yoqilgan — bosib olib tashlang" : "Kartani bosing — filtr"}</div>
+              <div className="text-xs text-muted-foreground mt-1">{active ? wt("Filtr yoqilgan — bosib olib tashlang") : wt("Kartani bosing — filtr")}</div>
             </button>
           );
         })}
@@ -1208,17 +1202,15 @@ export default function WarehousePage() {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <ArrowDownToLine className="h-4 w-4 text-status-yellow" />
-                  Ochiq kirim — Nakladnoy <span className="font-mono">{intakeCode(openSession)}</span>
+                  <ArrowDownToLine className="h-4 w-4 text-status-yellow" />{wt("Ochiq kirim — Nakladnoy")}<span className="font-mono">{intakeCode(openSession)}</span>
                 </CardTitle>
-                <CardDescription>
-                  Boshlangan: {fmtDateTime24(openSession.started_at)} · {sessionItems.length} mahsulot · Jami: {fmt(itemsTotal(sessionItems as any))}
+                <CardDescription>{wt("Boshlangan:")}{fmtDateTime24(openSession.started_at)} · {sessionItems.length} mahsulot · Jami: {fmt(itemsTotal(sessionItems as any))}
                   {openSession.supplier ? ` · Olib keldi: ${openSession.supplier}` : ""}
                 </CardDescription>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" asChild><Link to="/invoices">Nakladnoy bo'limi</Link></Button>
-                <Button size="sm" onClick={() => { setImpLocation("Sklad"); setImpVariant("sklad"); setImportOpen(true); }}>Nakladnoyni tugatish</Button>
+                <Button variant="outline" size="sm" asChild><Link to="/invoices">{wt("Nakladnoy bo'limi")}</Link></Button>
+                <Button size="sm" onClick={() => { setImpLocation("Sklad"); setImpVariant("sklad"); setImportOpen(true); }}>{wt("Nakladnoyni tugatish")}</Button>
               </div>
             </div>
           </CardHeader>
@@ -1228,18 +1220,18 @@ export default function WarehousePage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>№</TableHead>
-                    <TableHead>Mahsulot</TableHead>
-                    <TableHead className="text-right">Miqdor</TableHead>
-                    <TableHead className="text-right">1 birlik narxi</TableHead>
-                    <TableHead>Valyuta</TableHead>
-                    <TableHead className="text-right">Jami</TableHead>
-                    <TableHead>Vaqt</TableHead>
+                    <TableHead>{wt("Mahsulot")}</TableHead>
+                    <TableHead className="text-right">{wt("Miqdor")}</TableHead>
+                    <TableHead className="text-right">{wt("1 birlik narxi")}</TableHead>
+                    <TableHead>{wt("Valyuta")}</TableHead>
+                    <TableHead className="text-right">{wt("Jami")}</TableHead>
+                    <TableHead>{wt("Vaqt")}</TableHead>
                     <TableHead />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {sessionItems.length === 0 && (
-                    <TableRow><TableCell colSpan={8} className="text-center py-6 text-muted-foreground">Mahsulot qo'shing — "Mahsulot kirimi"</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={8} className="text-center py-6 text-muted-foreground">{wt("Mahsulot qo'shing — \"Mahsulot kirimi\"")}</TableCell></TableRow>
                   )}
                   {sessionItems.map((i, idx) => (
                     <TableRow key={i.id}>
@@ -1269,19 +1261,19 @@ export default function WarehousePage() {
       <Dialog open={!!editItem} onOpenChange={(o) => { if (!o) setEditItem(null); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Mahsulotni tahrirlash</DialogTitle>
+            <DialogTitle>{wt("Mahsulotni tahrirlash")}</DialogTitle>
             <DialogDescription>{editItem?.product_name} — Nakladnoy yakunlanmaguncha miqdor va narxni o'zgartirish mumkin</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            <div><Label>Miqdor ({editItem?.unit}) *</Label><NumberInput min={0.001} step="any" value={eiQty} onChange={e => setEiQty(e.target.value)} /></div>
+            <div><Label>{wt("Miqdor (")}{editItem?.unit}) *</Label><NumberInput min={0.001} step="any" value={eiQty} onChange={e => setEiQty(e.target.value)} /></div>
             <div><Label>1 {editItem?.unit} narxi ({editItem?.currency}) *</Label><NumberInput min={0} step="any" value={eiPrice} onChange={e => setEiPrice(e.target.value)} /></div>
             {Number(eiQty) > 0 && (
               <div className="text-sm bg-muted/40 border rounded p-2 flex justify-between">
-                <span className="text-muted-foreground">Jami:</span>
+                <span className="text-muted-foreground">{wt("Jami:")}</span>
                 <span className="font-mono font-semibold">{fmt(Number(eiQty) * (Number(eiPrice) || 0))} {editItem?.currency}</span>
               </div>
             )}
-            <Button className="w-full" disabled={eiBusy} onClick={saveEditItem}>{eiBusy ? "Saqlanmoqda..." : t.common.save}</Button>
+            <Button className="w-full" disabled={eiBusy} onClick={saveEditItem}>{eiBusy ? wt("Saqlanmoqda...") : t.common.save}</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -1290,10 +1282,10 @@ export default function WarehousePage() {
         <TabsList>
           <TabsTrigger value="stock">{t.warehouse.tabs.stock}</TabsTrigger>
           <TabsTrigger value="history">{t.warehouse.tabs.history}</TabsTrigger>
-          <TabsTrigger value="scans">Skaner tarixi</TabsTrigger>
-          <TabsTrigger value="instruments">Instrumentlar</TabsTrigger>
-          <TabsTrigger value="employees">Xodimlar</TabsTrigger>
-          <TabsTrigger value="reorder">Qayta zakaz berish kerak ({lowStock.length})</TabsTrigger>
+          <TabsTrigger value="scans">{wt("Skaner tarixi")}</TabsTrigger>
+          <TabsTrigger value="instruments">{wt("Instrumentlar")}</TabsTrigger>
+          <TabsTrigger value="employees">{wt("Xodimlar")}</TabsTrigger>
+          <TabsTrigger value="reorder">{wt("Qayta zakaz berish kerak (")}{lowStock.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="scans" className="mt-4">
@@ -1310,7 +1302,7 @@ export default function WarehousePage() {
 
         <TabsContent value="reorder" className="mt-4">
           {lowStock.length === 0 ? (
-            <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Qayta zakaz talab qilayotgan mahsulot yo'q</CardContent></Card>
+            <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">{wt("Qayta zakaz talab qilayotgan mahsulot yo'q")}</CardContent></Card>
           ) : (
             <Card className="border-status-red/30 bg-status-red/5">
               <CardHeader className="py-3">
@@ -1339,19 +1331,19 @@ export default function WarehousePage() {
                         </div>
                         <div className="grid grid-cols-4 gap-2 text-[11px]">
                           <div>
-                            <div className="text-muted-foreground">Qoldiq</div>
+                            <div className="text-muted-foreground">{wt("Qoldiq")}</div>
                             <div className={`font-mono font-bold text-sm ${meta.text}`}>{fmt(g.totalQty)}</div>
                           </div>
                           <div>
-                            <div className="text-muted-foreground">Min. limit</div>
+                            <div className="text-muted-foreground">{wt("Min. limit")}</div>
                             <div className="font-mono font-semibold text-sm">{fmt(g.minLim)}</div>
                           </div>
                           <div>
-                            <div className="text-muted-foreground">Kerak</div>
+                            <div className="text-muted-foreground">{wt("Kerak")}</div>
                             <div className="font-mono font-bold text-sm text-primary">{fmt(need)}</div>
                           </div>
                           <div>
-                            <div className="text-muted-foreground">Birligi</div>
+                            <div className="text-muted-foreground">{wt("Birligi")}</div>
                             <div className="font-semibold text-sm">{g.first.unit || "dona"}</div>
                           </div>
                         </div>
@@ -1368,16 +1360,16 @@ export default function WarehousePage() {
 
           <div className="flex flex-wrap items-center gap-2">
             <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={(t.warehouse as any).search} className="max-w-md" />
-            <Input aria-label="Mahsulot ID filtri" value={idFilter} onChange={e => setIdFilter(e.target.value)} placeholder="ID filtri (ixtiyoriy)" className="max-w-xs" />
-            <Button variant={mxikReviewOnly ? "secondary" : "outline"} onClick={() => setMxikReviewOnly(v => !v)}>MXIK tekshiruvi kerak ({products.filter(p => !p.mxik_code).length})</Button>
+            <Input aria-label={wt("Mahsulot ID filtri")} value={idFilter} onChange={e => setIdFilter(e.target.value)} placeholder={wt("ID filtri (ixtiyoriy)")} className="max-w-xs" />
+            <Button variant={mxikReviewOnly ? "secondary" : "outline"} onClick={() => setMxikReviewOnly(v => !v)}>{wt("MXIK tekshiruvi kerak (")}{products.filter(p => !p.mxik_code).length})</Button>
             <CatalogReview canEdit={hasRole(["admin"])} onUpdated={load} />
             <BulkBarcodeLabels products={products} />
             <StockBalanceCheck />
             <ProductTypeReview />
             <Select value={locFilter} onValueChange={setLocFilter}>
-              <SelectTrigger className="w-[200px]"><SelectValue placeholder="Joylashuv" /></SelectTrigger>
+              <SelectTrigger className="w-[200px]"><SelectValue placeholder={wt("Joylashuv")} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Barcha joylashuvlar</SelectItem>
+                <SelectItem value="all">{wt("Barcha joylashuvlar")}</SelectItem>
                 {Array.from(new Set([...["Oshxona", "Sklad", "Office", "Zavod"], ...locations.map(l => l.name)])).map((n) => (
                   <SelectItem key={n} value={n}>{n}</SelectItem>
                 ))}
@@ -1391,10 +1383,10 @@ export default function WarehousePage() {
                   <TableHead className="w-12 text-right">№</TableHead>
                   <TableHead>{t.warehouse.cols.product}</TableHead>
                   <TableHead className="text-right">{t.warehouse.cols.stock}</TableHead>
-                  <TableHead className="text-right">Partiyalar</TableHead>
+                  <TableHead className="text-right">{wt("Partiyalar")}</TableHead>
                   <TableHead className="text-right">{t.warehouse.price}</TableHead>
                   <TableHead>{t.warehouse.cols.state}</TableHead>
-                  {canManage && <TableHead className="w-24 text-right">{t.common.edit ?? "Amal"}</TableHead>}
+                  {canManage && <TableHead className="w-24 text-right">{t.common.edit ?? wt("Amal")}</TableHead>}
                 </TableRow></TableHeader>
                 <TableBody>
                   {(() => {
@@ -1413,7 +1405,7 @@ export default function WarehousePage() {
                         const maxP = prices.length ? Math.max(...prices) : 0;
                         return { ...g, minP, maxP };
                       });
-                    if (rows.length === 0) return <TableRow><TableCell colSpan={canManage ? 7 : 6} className="text-center text-muted-foreground py-8">{q || stockFilter !== "all" || locFilter !== "all" ? (t.warehouse as any).noResults ?? "Natija topilmadi" : t.common.noRecords}</TableCell></TableRow>;
+                    if (rows.length === 0) return <TableRow><TableCell colSpan={canManage ? 7 : 6} className="text-center text-muted-foreground py-8">{q || stockFilter !== "all" || locFilter !== "all" ? (t.warehouse as any).noResults ?? wt("Natija topilmadi") : t.common.noRecords}</TableCell></TableRow>;
                     return rows.map((r, i) => {
                       const meta = stockStatusMeta[r.status];
                       return (
@@ -1453,10 +1445,10 @@ export default function WarehousePage() {
                           {canManage && (
                             <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                               <div className="flex justify-end gap-1">
-                                <Button size="sm" variant="ghost" title={t.common.edit ?? "Tahrirlash"} onClick={() => openEditProduct(r.first)}>
+                                <Button size="sm" variant="ghost" title={t.common.edit ?? wt("Tahrirlash")} onClick={() => openEditProduct(r.first)}>
                                   <Pencil className="h-3.5 w-3.5" />
                                 </Button>
-                                <Button size="sm" variant="ghost" title={t.common.delete ?? "O'chirish"} onClick={() => setDelTarget({ ids: r.batches.map((b: any) => b.id), name: r.first.name, qty: r.totalQty, unit: r.first.unit })}>
+                                <Button size="sm" variant="ghost" title={t.common.delete ?? wt("O'chirish")} onClick={() => setDelTarget({ ids: r.batches.map((b: any) => b.id), name: r.first.name, qty: r.totalQty, unit: r.first.unit })}>
                                   <Trash2 className="h-3.5 w-3.5 text-status-red" />
                                 </Button>
 
@@ -1486,16 +1478,16 @@ export default function WarehousePage() {
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2"><Package className="h-5 w-5" />{groupModal.name}</DialogTitle>
-                <DialogDescription>Partiyalar ro'yxati — narx va sanasi bo'yicha</DialogDescription>
+                <DialogDescription>{wt("Partiyalar ro'yxati — narx va sanasi bo'yicha")}</DialogDescription>
               </DialogHeader>
               <div className="border rounded-md overflow-x-auto mt-3">
                 <Table>
                   <TableHeader><TableRow>
                     <TableHead className="w-12 text-right">№</TableHead>
-                    <TableHead>Kelgan sana</TableHead>
-                    <TableHead className="text-right">Qoldiq</TableHead>
-                    <TableHead className="text-right">Narx</TableHead>
-                    <TableHead>Manba</TableHead>
+                    <TableHead>{wt("Kelgan sana")}</TableHead>
+                    <TableHead className="text-right">{wt("Qoldiq")}</TableHead>
+                    <TableHead className="text-right">{wt("Narx")}</TableHead>
+                    <TableHead>{wt("Manba")}</TableHead>
                   </TableRow></TableHeader>
                   <TableBody>
                     {groupModal.batches.map((b: any, i: number) => (
@@ -1510,7 +1502,7 @@ export default function WarehousePage() {
                   </TableBody>
                 </Table>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">Partiya ustiga bosing — to'liq kartochka ochiladi.</p>
+              <p className="text-xs text-muted-foreground mt-2">{wt("Partiya ustiga bosing — to'liq kartochka ochiladi.")}</p>
             </>
           )}
         </DialogContent>
@@ -1568,19 +1560,19 @@ export default function WarehousePage() {
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
                 <div className="border rounded-md p-2 bg-status-green/5">
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Jami kirim</div>
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{wt("Jami kirim")}</div>
                   <div className="text-base font-bold font-mono text-status-green">+{fmt(productStats.totalIn)} <span className="text-[10px] font-normal text-muted-foreground">{selectedProduct.unit}</span></div>
                 </div>
                 <div className="border rounded-md p-2 bg-status-red/5">
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Jami chiqim</div>
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{wt("Jami chiqim")}</div>
                   <div className="text-base font-bold font-mono text-status-red">−{fmt(productStats.totalOut)} <span className="text-[10px] font-normal text-muted-foreground">{selectedProduct.unit}</span></div>
                 </div>
                 <div className="border rounded-md p-2">
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Oxirgi kirim</div>
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{wt("Oxirgi kirim")}</div>
                   <div className="text-xs font-medium">{productStats.lastIn ? fmtDateTime(productStats.lastIn) : "—"}</div>
                 </div>
                 <div className="border rounded-md p-2">
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Oxirgi chiqim</div>
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{wt("Oxirgi chiqim")}</div>
                   <div className="text-xs font-medium">{productStats.lastOut ? fmtDateTime(productStats.lastOut) : "—"}</div>
                 </div>
               </div>
@@ -1599,8 +1591,8 @@ export default function WarehousePage() {
                     <Table>
                       <TableHeader><TableRow>
                         <TableHead>{t.warehouse.cols.datetime}</TableHead>
-                        <TableHead>Kim kiritdi</TableHead>
-                        <TableHead>Yetkazib beruvchi</TableHead>
+                        <TableHead>{wt("Kim kiritdi")}</TableHead>
+                        <TableHead>{wt("Yetkazib beruvchi")}</TableHead>
                         <TableHead className="text-right">{t.warehouse.cols.qty}</TableHead>
                         <TableHead className="text-right">{t.warehouse.price}</TableHead>
                         <TableHead>{(t.warehouse.cols as any).source}</TableHead>
@@ -1706,13 +1698,13 @@ export default function WarehousePage() {
             </div>
             <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={epSource} onChange={e => setEpSource(e.target.value)} /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Muhimlik</Label>
+              <div><Label>{wt("Muhimlik")}</Label>
                 <Select value={epPriority} onValueChange={setEpPriority}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{PRIORITY_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}><span className="inline-flex items-center gap-2"><span className={`inline-block h-2.5 w-2.5 rounded-full ${p.color}`} />{p.label}</span></SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div><Label>Valyuta</Label>
+              <div><Label>{wt("Valyuta")}</Label>
                 <Select value={epCurrency} onValueChange={setEpCurrency}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
@@ -1720,14 +1712,14 @@ export default function WarehousePage() {
               </div>
             </div>
             <div className="border-t pt-3 mt-1 space-y-2">
-              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Qoldiqni tuzatish</div>
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{wt("Qoldiqni tuzatish")}</div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>Joriy qoldiq</Label>
+                  <Label>{wt("Joriy qoldiq")}</Label>
                   <Input value={`${editProd?.stock_qty ?? 0} ${editProd?.unit ?? ""}`} disabled />
                 </div>
                 <div>
-                  <Label>Yangi qoldiq</Label>
+                  <Label>{wt("Yangi qoldiq")}</Label>
                   <NumberInput step="any" value={epStock} onChange={e => setEpStock(e.target.value)} />
                 </div>
               </div>
@@ -1737,8 +1729,8 @@ export default function WarehousePage() {
                     {Number(editProd?.stock_qty ?? 0)} → {Number(epStock)} ({Number(epStock) - Number(editProd?.stock_qty ?? 0) > 0 ? "+" : ""}{Number(epStock) - Number(editProd?.stock_qty ?? 0)} {editProd?.unit ?? ""})
                   </div>
                   <div>
-                    <Label>Tuzatish sababi (ixtiyoriy)</Label>
-                    <Input value={epStockReason} onChange={e => setEpStockReason(e.target.value)} placeholder="Masalan: inventarizatsiya, yo'qotish... (ixtiyoriy)" />
+                    <Label>{wt("Tuzatish sababi (ixtiyoriy)")}</Label>
+                    <Input value={epStockReason} onChange={e => setEpStockReason(e.target.value)} placeholder={wt("Masalan: inventarizatsiya, yo'qotish... (ixtiyoriy)")} />
                   </div>
                 </>
               )}
@@ -1770,22 +1762,20 @@ export default function WarehousePage() {
       <AlertDialog open={!!delTarget} onOpenChange={(o) => { if (!o) setDelTarget(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Mahsulotni o'chirish</AlertDialogTitle>
+            <AlertDialogTitle>{wt("Mahsulotni o'chirish")}</AlertDialogTitle>
             <AlertDialogDescription>
               <span className="font-semibold">{delTarget?.name}</span> o'chirilsinmi?
-              {delTarget && delTarget.ids.length > 1 ? ` Barcha ${delTarget.ids.length} partiya o'chiriladi.` : ""}
-              {" "}Joriy qoldiq: {delTarget?.qty} {delTarget?.unit}. Bu amalni ortga qaytarib bo'lmaydi, harakatlar tarixi saqlanadi.
+              {delTarget && delTarget.ids.length > 1 ? (" " + wt("Barcha") + " " + (delTarget.ids.length) + " partiya o'chiriladi.") : ""}
+              {" "}{wt("Joriy qoldiq:")}{delTarget?.qty} {delTarget?.unit}. Bu amalni ortga qaytarib bo'lmaydi, harakatlar tarixi saqlanadi.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={delBusy}>Bekor qilish</AlertDialogCancel>
+            <AlertDialogCancel disabled={delBusy}>{wt("Bekor qilish")}</AlertDialogCancel>
             <AlertDialogAction
               disabled={delBusy}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={(e) => { e.preventDefault(); confirmDeleteProduct(); }}
-            >
-              O'chirish
-            </AlertDialogAction>
+            >{wt("O'chirish")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
