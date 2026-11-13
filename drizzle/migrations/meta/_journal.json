@@ -519,6 +519,13 @@
       "when": 1794479485854,
       "tag": "0073_guard_generated_badge_alias_collisions",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1794565191690,
+      "tag": "0074_atomic_employee_stock_issue",
+      "breakpoints": true
     }
   ]
 }

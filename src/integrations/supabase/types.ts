@@ -2876,6 +2876,44 @@ export type Database = {
           },
         ]
       }
+      stock_issue_documents: {
+        Row: {
+          created_at: string
+          created_by: string
+          created_by_name: string
+          employee_id: string
+          employee_name: string
+          id: string
+          payload: Json
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          created_by_name: string
+          employee_id: string
+          employee_name: string
+          id: string
+          payload: Json
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          created_by_name?: string
+          employee_id?: string
+          employee_name?: string
+          id?: string
+          payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_issue_documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_movements: {
         Row: {
           comment: string | null
@@ -2888,6 +2926,7 @@ export type Database = {
           image_url: string | null
           intake_item_id: string | null
           intake_session_id: string | null
+          issue_document_id: string | null
           location: string
           order_id: string | null
           phone: string | null
@@ -2918,6 +2957,7 @@ export type Database = {
           image_url?: string | null
           intake_item_id?: string | null
           intake_session_id?: string | null
+          issue_document_id?: string | null
           location?: string
           order_id?: string | null
           phone?: string | null
@@ -2948,6 +2988,7 @@ export type Database = {
           image_url?: string | null
           intake_item_id?: string | null
           intake_session_id?: string | null
+          issue_document_id?: string | null
           location?: string
           order_id?: string | null
           phone?: string | null
@@ -2980,6 +3021,13 @@ export type Database = {
             columns: ["intake_session_id"]
             isOneToOne: false
             referencedRelation: "intake_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_issue_document_id_fkey"
+            columns: ["issue_document_id"]
+            isOneToOne: false
+            referencedRelation: "stock_issue_documents"
             referencedColumns: ["id"]
           },
           {
@@ -3335,6 +3383,10 @@ export type Database = {
         Returns: boolean
       }
       is_my_trip: { Args: { _trip: string; _user: string }; Returns: boolean }
+      issue_employee_products: {
+        Args: { _employee_id: string; _items: Json; _key: string }
+        Returns: Json
+      }
       log_scan: {
         Args: {
           _action: string
