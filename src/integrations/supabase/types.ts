@@ -3231,6 +3231,39 @@ export type Database = {
           },
         ]
       }
+      warehouse_deletions: {
+        Row: {
+          actor_id: string | null
+          actor_name: string | null
+          created_at: string
+          entity: string
+          entity_id: string
+          id: string
+          result: Json
+          snapshot: Json
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          entity: string
+          entity_id: string
+          id?: string
+          result: Json
+          snapshot: Json
+        }
+        Update: {
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          entity?: string
+          entity_id?: string
+          id?: string
+          result?: Json
+          snapshot?: Json
+        }
+        Relationships: []
+      }
     }
     Views: {
       employee_integrity_issues: {
@@ -3348,6 +3381,10 @@ export type Database = {
       delete_intake_invoice_item: {
         Args: { _item_id: string }
         Returns: undefined
+      }
+      delete_warehouse_record: {
+        Args: { _entity: string; _expected_qty: number; _ids: string[] }
+        Returns: Json
       }
       employee_name_key: { Args: { _n: string }; Returns: string }
       finalize_intake_session: {
