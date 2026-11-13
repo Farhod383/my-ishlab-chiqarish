@@ -547,6 +547,13 @@
       "when": 1794570071606,
       "tag": "0077_warehouse_safe_deletion",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1794570167772,
+      "tag": "0078_warehouse_deletion_harden_guards",
+      "breakpoints": true
     }
   ]
 }
