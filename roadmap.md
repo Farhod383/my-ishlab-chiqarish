@@ -1,3 +1,8 @@
+## Sklad: testlarni tozalash va xavfsiz o‘chirish
+- [x] 15 tasdiqlangan TEST Multi issue / TEST UI Multi va test-only harakat/hujjatlar tozalandi; haqiqiy mahsulotlar fingerprinti o‘zgarmadi. Yetim test turlari ham audit bilan tozalandi.
+- [x] Sklad/Admin uchun tasdiqlash, atomik qoldiq qaytarish, bog‘langan hujjatlar himoyasi va server auditi; himoyalangan topshirish butun hujjat bo‘yicha teskari harakat bilan bekor qilinadi.
+- [x] Haqiqiy Sklad hisobida oynadan kirimni o‘chirish 10→0, mahsulotni o‘chirish va audit qayta o‘qildi; 32 sinov o‘tdi, sahifa xatosiz. Sinov mahsulotlari olib tashlandi.
+
 ## Склад: полный русский интерфейс
 - [x] Русские страница, формы, сканеры, сообщения и отчёты; хранимые данные и расчёты не менялись.
 - [x] Пользователь «Склад»: реальные 751 товара, 78 накладных, окна поступления/расхода/сверки, вкладки; свежая сессия, русский PDF и окно 575×586 проверены без сохранения операций. 85 тестов пройдено; физический сканер недоступен.

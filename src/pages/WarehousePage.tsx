@@ -153,6 +153,7 @@ export default function WarehousePage() {
   // Mahsulotni o'chirish tasdig'i
   const [delTarget, setDelTarget] = useState<{ ids: string[]; name: string; qty: number; unit: string } | null>(null);
   const [delBusy, setDelBusy] = useState(false);
+  const [delMovement, setDelMovement] = useState<any | null>(null);
 
 
   // Edit product
@@ -674,14 +675,9 @@ export default function WarehousePage() {
     if (!delTarget) return;
     if (!ensureOnline((m) => toast.error(we(m)))) return;
     setDelBusy(true);
-    const { error } = await supabase.from("products").delete().in("id", delTarget.ids);
+    const { error } = await supabase.rpc("delete_warehouse_record", { _entity: "product", _ids: delTarget.ids, _expected_qty: delTarget.qty });
     setDelBusy(false);
     if (error) { toast.error(we(error.message)); return; }
-    await logAudit(supabase, {
-      actor_id: user?.id, actor_name: currentUserName(user),
-      action: "Mahsulot o'chirildi", entity: "product",
-      details: `${delTarget.name} (${delTarget.ids.length} partiya, qoldiq: ${delTarget.qty} ${delTarget.unit})`,
-    });
     toast.success(wt("Mahsulot o'chirildi"));
     if (delTarget.ids.includes(selectedProduct?.id)) setSelectedProduct(null);
     setProducts((prev) => prev.filter((p: any) => !delTarget.ids.includes(p.id)));
@@ -691,31 +687,19 @@ export default function WarehousePage() {
 
 
   const deleteMovement = async (m: any) => {
-    if (!window.confirm(`${t.common.delete ?? wt("O'chirish")}: ${m.product?.name ?? ""} ${m.direction === "in" ? "+" : "-"}${m.quantity}?`)) return;
-    // revert stock
-    if (m.product_id) {
-      const signed = m.direction === "in" ? -Number(m.quantity) : Number(m.quantity);
-      const prod = products.find(p => p.id === m.product_id);
-      const newStock = Number(prod?.stock_qty ?? 0) + signed;
-      await supabase.from("products").update({ stock_qty: newStock }).eq("id", m.product_id);
-      if (m.direction === "out" && m.order_id) {
-        const { data: parts } = await supabase.from("order_parts").select("id, actual_qty")
-          .eq("order_id", m.order_id).eq("product_id", m.product_id).limit(1);
-        if (parts && parts[0]) {
-          await supabase.from("order_parts").update({ actual_qty: Math.max(0, Number(parts[0].actual_qty) - Number(m.quantity)) }).eq("id", parts[0].id);
-        }
-      }
-    }
-    const { error } = await supabase.from("stock_movements").delete().eq("id", m.id);
+    setDelMovement(m);
+  };
+
+  const confirmDeleteMovement = async () => {
+    if (!delMovement || delBusy || !ensureOnline((m) => toast.error(we(m)))) return;
+    setDelBusy(true);
+    const { error } = await supabase.rpc("delete_warehouse_record", { _entity: "movement", _ids: [delMovement.id], _expected_qty: Number(delMovement.quantity) });
+    setDelBusy(false);
     if (error) { toast.error(we(error.message)); return; }
-    await logAudit(supabase, {
-      actor_id: user?.id, actor_name: currentUserName(user),
-      action: m.direction === "in" ? "Kirim o'chirildi" : "Chiqim o'chirildi",
-      entity: "stock_movement", order_id: m.order_id ?? null,
-      details: `${m.product?.name ?? "—"}: ${m.direction === "in" ? "+" : "-"}${m.quantity}${m.recipient_name ? `, ${m.recipient_name}` : ""}`,
-    });
-    toast.success(t.common.delete ?? wt("O'chirildi"));
-    load();
+    toast.success("Операция удалена или безопасно отменена");
+    setDelMovement(null);
+    setHistoryReload((v) => v + 1);
+    await load();
   };
 
   const productMovements = useMemo(
@@ -1448,7 +1432,7 @@ export default function WarehousePage() {
                                 <Button size="sm" variant="ghost" title={t.common.edit ?? wt("Tahrirlash")} onClick={() => openEditProduct(r.first)}>
                                   <Pencil className="h-3.5 w-3.5" />
                                 </Button>
-                                <Button size="sm" variant="ghost" title={t.common.delete ?? wt("O'chirish")} onClick={() => setDelTarget({ ids: r.batches.map((b: any) => b.id), name: r.first.name, qty: r.totalQty, unit: r.first.unit })}>
+                                <Button size="sm" variant="ghost" aria-label={`Удалить ${r.first.name}`} title="Удалить" onClick={() => setDelTarget({ ids: r.batches.map((b: any) => b.id), name: r.first.name, qty: r.totalQty, unit: r.first.unit })}>
                                   <Trash2 className="h-3.5 w-3.5 text-status-red" />
                                 </Button>
 
@@ -1764,8 +1748,7 @@ export default function WarehousePage() {
           <AlertDialogHeader>
             <AlertDialogTitle>{wt("Mahsulotni o'chirish")}</AlertDialogTitle>
             <AlertDialogDescription>
-              <span className="font-semibold">{delTarget?.name}</span>{wt(" — удалить?")}{delTarget && delTarget.ids.length > 1 ? (" " + wt("Barcha") + " " + (delTarget.ids.length) + " partiya o'chiriladi.") : ""}
-              {" "}{wt("Joriy qoldiq:")}{delTarget?.qty} {wt(delTarget?.unit)}{wt(". Bu amalni ortga qaytarib bo'lmaydi, harakatlar tarixi saqlanadi.")}</AlertDialogDescription>
+              <span className="font-semibold">{delTarget?.name}</span> — удалить товар ({delTarget?.ids.length} партий)? Остаток: {delTarget?.qty} {wt(delTarget?.unit)}. Товар с остатком или связанной историей удалить нельзя. Коды и связанные документы сохраняются; действие записывается в аудит.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={delBusy}>{wt("Bekor qilish")}</AlertDialogCancel>
@@ -1774,6 +1757,22 @@ export default function WarehousePage() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={(e) => { e.preventDefault(); confirmDeleteProduct(); }}
             >{wt("O'chirish")}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={!!delMovement} onOpenChange={(open) => { if (!open && !delBusy) setDelMovement(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить операцию?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {delMovement?.product?.name ?? "—"} · {delMovement?.direction === "in" ? "Поступление" : "Расход"} · {delMovement?.quantity} {wt(delMovement?.product?.unit)} · {delMovement && fmtDateTime24(delMovement.created_at)}.
+              {delMovement?.issue_document_id ? " Будет отменён весь документ выдачи сотруднику, включая остальные товары." : " Остаток будет восстановлен один раз."}
+              {" Защищённая история сохраняется с обратной операцией. Связанные накладные и заявки не удаляются."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={delBusy}>Отмена</AlertDialogCancel>
+            <AlertDialogAction disabled={delBusy} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={(e) => { e.preventDefault(); void confirmDeleteMovement(); }}>Подтвердить удаление</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
