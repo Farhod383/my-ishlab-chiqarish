@@ -47,14 +47,14 @@ export default function ScanHistoryTab() {
             <SelectTrigger className="w-[170px]"><SelectValue placeholder={wt("Foydalanuvchi")} /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{wt("Barcha foydalanuvchilar")}</SelectItem>
-              {users.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+              {users.map(u => <SelectItem key={u} value={u}>{wt(u)}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={f.module} onValueChange={v => setF({ ...f, module: v })}>
             <SelectTrigger className="w-[150px]"><SelectValue placeholder={wt("Modul")} /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{wt("Barcha modullar")}</SelectItem>
-              {modules.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+              {modules.map(m => <SelectItem key={m} value={m}>{wt(m)}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={f.action} onValueChange={v => setF({ ...f, action: v })}>
@@ -101,11 +101,11 @@ export default function ScanHistoryTab() {
                   <TableCell className="max-w-[220px] truncate" title={r.product_name ?? ""}>{r.product_name ?? "—"}</TableCell>
                   <TableCell className="font-mono text-xs whitespace-pre-wrap">{r.raw_code ?? "—"}</TableCell>
                   <TableCell className="font-mono text-xs">{r.code}</TableCell>
-                  <TableCell>{r.module}</TableCell>
-                  <TableCell>{scanActionLabel(r.action)}</TableCell>
+                  <TableCell>{wt(r.module)}</TableCell>
+                  <TableCell>{wt(scanActionLabel(r.action))}</TableCell>
                   <TableCell>
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${r.result === "found" ? "bg-status-green/15 text-status-green" : "bg-status-red/15 text-status-red"}`}>
-                      {scanResultLabel(r.result)}
+                      {wt(scanResultLabel(r.result))}
                     </span>
                   </TableCell>
                   <TableCell className="text-right font-mono">{r.quantity != null ? fmtNum(r.quantity) : "—"}</TableCell>

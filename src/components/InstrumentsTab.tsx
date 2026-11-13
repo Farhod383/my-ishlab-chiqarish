@@ -433,7 +433,7 @@ export default function InstrumentsTab() {
                     <TableCell>
                       {g.statusMix.includes("active")
                         ? <Badge variant="default">{wt("Faol")}</Badge>
-                        : <Badge variant="secondary">{STATUSES.find(s => s.v === g.statusMix[0])?.l ?? g.statusMix[0]}</Badge>}
+                        : <Badge variant="secondary">{wt(STATUSES.find(s => s.v === g.statusMix[0])?.l ?? g.statusMix[0])}</Badge>}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -558,7 +558,7 @@ export default function InstrumentsTab() {
                             <TableCell className="text-xs whitespace-nowrap">{fmtDateG(b.created_at)}</TableCell>
                             <TableCell className="text-right font-mono">{b.quantity}</TableCell>
                             <TableCell className="text-right font-mono text-xs">{Number(b.price) > 0 ? `${Number(b.price).toLocaleString("ru-RU")} ${b.currency}` : "—"}</TableCell>
-                            <TableCell><Badge variant={b.status === "active" ? "default" : "secondary"}>{st?.l ?? b.status}</Badge></TableCell>
+                            <TableCell><Badge variant={b.status === "active" ? "default" : "secondary"}>{wt(st?.l ?? b.status)}</Badge></TableCell>
                             {canManage && (
                               <TableCell>
                                 <div className="flex gap-1">
@@ -642,7 +642,7 @@ export default function InstrumentsTab() {
               <div><Label>{wt("Holat")}</Label>
                 <Select value={iForm.status} onValueChange={v => setIForm({ ...iForm, status: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{STATUSES.map(s => <SelectItem key={s.v} value={s.v}>{s.l}</SelectItem>)}</SelectContent>
+                  <SelectContent>{STATUSES.map(s => <SelectItem key={s.v} value={s.v}>{wt(s.l)}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             </div>

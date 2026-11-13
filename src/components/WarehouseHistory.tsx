@@ -396,7 +396,7 @@ export default function WarehouseHistory({
                   <TableCell className="text-right text-xs font-mono">{dim(r.length)}</TableCell>
                   <TableCell className="text-right text-xs font-mono">{dim(r.width)}</TableCell>
                   <TableCell className={`text-right font-mono font-semibold ${r.direction === "out" ? "text-status-red" : "text-status-green"}`}>
-                    {r.direction === "out" ? "-" : "+"}{fmtNum(r.qty)} {r.unit}
+                    {r.direction === "out" ? "-" : "+"}{fmtNum(r.qty)} {wt(r.unit)}
                     {r.raw.reconciliation_key && <div className="text-xs text-muted-foreground">{fmtNum(r.raw.stock_before)} → {fmtNum(r.raw.stock_after)}</div>}
                   </TableCell>
                   <TableCell className="text-right text-xs font-mono">{r.kg !== null ? fmtNum(r.kg) : "—"}</TableCell>

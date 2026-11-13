@@ -33,7 +33,7 @@ export function IntakePaymentFields({ session, onSaved }: { session: IntakeSessi
         <Label>{wt("To'lov turi")}</Label>
         <Select value={pt} onValueChange={(v) => { setPt(v as IntakePaymentType); save({ payment_type: v as IntakePaymentType }); }}>
           <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>{INTAKE_PAYMENT_TYPES.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}</SelectContent>
+          <SelectContent>{INTAKE_PAYMENT_TYPES.map((p) => <SelectItem key={p.value} value={p.value}>{wt(p.label)}</SelectItem>)}</SelectContent>
         </Select>
         {pt === "debt" && <p className="text-[11px] text-muted-foreground mt-1">{wt("Yakunlangach Kassa → Qarz bo'limiga yoziladi, kassadan pul yechilmaydi")}</p>}
       </div>

@@ -196,7 +196,7 @@ export default function WarehouseReportPage() {
 
   const sel = (label: string, v: string, set: (s: string) => void, list: { v: string; l: string }[]) => (
     <div className="space-y-1 basis-40 min-w-0 flex-1">
-      <Label className="text-xs whitespace-normal break-words">{label}{wt("(ixtiyoriy)")}</Label>
+      <Label className="text-xs whitespace-normal break-words">{label}{" "}{wt("(ixtiyoriy)")}</Label>
       {label.startsWith(wt("Mahsulot")) ? <SearchableSelect value={v} onChange={set} options={[{value:ALL,label:wt("Barchasi")},...list.map(o=>({value:o.v,label:o.l,searchText:[...products,...instruments].filter(p=>p.name===o.v).map(productSearchText).join(" ")}))]} /> : <Select value={v} onValueChange={set}>
         <SelectTrigger><SelectValue /></SelectTrigger>
         <SelectContent><SelectItem value={ALL}>{wt("Barchasi")}</SelectItem>{list.map((o) => <SelectItem key={o.v} value={o.v}>{o.l}</SelectItem>)}</SelectContent>
@@ -255,7 +255,7 @@ export default function WarehouseReportPage() {
               <h3 className="font-semibold mb-2">{wt("1. Mahsulotlar (")}{fProducts.length})</h3>
               <div className="report-scroll overflow-x-auto max-w-full overscroll-x-contain"><table className="report-table"><thead><tr><th>№</th><th>{wt("Nomi")}</th><th>{wt("Qoldiq")}</th><th>{wt("Birlik")}</th><th>{wt("Narxi")}</th><th>{wt("Jami qiymati")}</th></tr></thead>
                 <tbody>{fProducts.map((p, i) => (
-                  <tr key={p.id}><td>{i + 1}</td><td>{p.name}</td><td className="num">{fmtNum(p.stock_qty)}</td><td>{p.unit}</td><td className="num">{money(p.price, p.currency)}</td><td className="num">{p.price == null ? "" : money(Number(p.stock_qty) * p.price, p.currency)}</td></tr>
+                  <tr key={p.id}><td>{i + 1}</td><td>{p.name}</td><td className="num">{fmtNum(p.stock_qty)}</td><td>{wt(p.unit)}</td><td className="num">{money(p.price, p.currency)}</td><td className="num">{p.price == null ? "" : money(Number(p.stock_qty) * p.price, p.currency)}</td></tr>
                 ))}</tbody>
                 <tfoot><tr><td colSpan={2}>{wt("Jami")}</td><td colSpan={2}>{qtyByUnit(fProducts.map((p) => ({ q: Number(p.stock_qty), u: p.unit })))}</td><td></td><td className="num">{sumByCur(fProducts.filter((p) => p.price != null).map((p) => ({ v: Number(p.stock_qty) * p.price, c: p.currency })))}</td></tr></tfoot>
               </table></div>
