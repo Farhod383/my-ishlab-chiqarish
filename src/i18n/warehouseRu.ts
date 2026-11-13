@@ -545,6 +545,11 @@ export const warehouseRu: Record<string, string> = {
   "Kirim davom etmoqda": "Поступление продолжается",
   "Rasm kutilmoqda": "Ожидается изображение",
   "Yakunlangan": "Завершено",
-  "brought": "Доставил:"
+  "brought": "Доставил:",
+"KK.OY.YYYY": "ДД.ММ.ГГГГ",
+"Приход товара": "Поступление товара",
+"— Yo'q (umumiy) —": "— Без заказа (общее) —"
 };
 export function warehouseText(text: string | null | undefined): string { if (!text) return ""; return warehouseRu[text] ?? warehouseRu[text.trim()] ?? text; }
+
+export function warehouseDuration(text: string): string { return text.replace(/\bkun\b/g, "дн.").replace(/\bsoat\b/g, "ч.").replace(/\bdaqiqa\b/g, "мин."); }

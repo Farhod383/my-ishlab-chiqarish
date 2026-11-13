@@ -1,3 +1,4 @@
+import { warehouseDuration } from "@/i18n/warehouseRu";
 import { useWarehouseText, useWarehouseError } from "@/i18n/warehouseContext";
 import { currentUserName, displayUser } from "@/lib/userNames";
 import { useEffect, useMemo, useState } from "react";
@@ -314,7 +315,7 @@ export default function InvoicesPage() {
                         <TableCell className="text-right font-mono">{fmt(itemsTotal(list))}</TableCell>
                         <TableCell className="whitespace-nowrap text-sm">{fmtDateTime24(s.started_at)}</TableCell>
                         <TableCell className="whitespace-nowrap text-sm">{s.finished_at ? fmtDateTime24(s.finished_at) : "—"}</TableCell>
-                        <TableCell className="whitespace-nowrap text-sm">{intakeDuration(s)}</TableCell>
+                        <TableCell className="whitespace-nowrap text-sm">{warehouseDuration(intakeDuration(s))}</TableCell>
                         <TableCell className="text-sm">{displayUser(s.created_by_name) || "—"}</TableCell>
                         <TableCell className="text-sm">{s.supplier ?? "—"}</TableCell>
                         <TableCell className="text-sm whitespace-nowrap">{s.payment_type === "debt" ? <Badge variant="outline" className="border-status-red/40 text-status-red">{wt("В долг")}</Badge> : wt(intakePaymentLabel(s.payment_type))}</TableCell>
@@ -354,7 +355,7 @@ export default function InvoicesPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
                   <div className="rounded border p-2"><div className="text-muted-foreground text-xs">{wt("Начато")}</div><div className="font-medium">{fmtDateTime24(current.started_at)}</div></div>
                   <div className="rounded border p-2"><div className="text-muted-foreground text-xs">{wt("Завершено")}</div><div className="font-medium">{current.finished_at ? fmtDateTime24(current.finished_at) : "—"}</div></div>
-                  <div className="rounded border p-2"><div className="text-muted-foreground text-xs">{wt("Длительность")}</div><div className="font-medium">{intakeDuration(current)}</div></div>
+                  <div className="rounded border p-2"><div className="text-muted-foreground text-xs">{wt("Длительность")}</div><div className="font-medium">{warehouseDuration(intakeDuration(current))}</div></div>
                 </div>
 
                 <div className="rounded border overflow-hidden">
