@@ -18,4 +18,4 @@ Display employee names through the shared locale-aware name helper while retaini
 - Catalog scanners always query scan_catalog before selecting, deduplicate by kind/type identity, and expose distinct matching types; linked historical product codes resolve to their existing instrument rather than resurrecting stock products.
 - Supplier monetary expenses live separately from stock and Kassa transactions, linked to an idempotent reconciliation document; save reconciliation and expenses in one role-checked RPC with serialized supply account checks, audit and versioned soft deletion so retries and edits cannot double-debit or alter product cost.
 - Inventory and multi-issues use locked idempotent RPCs; movement INSERT alone applies stock. HR-keyed immutable documents prevent partial saves.
-- Scope warehouse/invoice Russian UI with locale boundaries; translate display labels, never stored units, names, codes or history, to preserve other modules.
+- Scope Russian warehouse/invoice UI with locale boundaries; never translate stored data, preserving other modules.
