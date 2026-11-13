@@ -462,7 +462,7 @@ export default function WarehousePage() {
         phone: impPhone || null,
         image_url: imgUrl,
         created_by: user?.id,
-        comment: `Nakladnoy${impSupplier ? ` · ${impSupplier}` : ""} · ${wt(impLocation)}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
+        comment: `Nakladnoy${impSupplier ? ` · ${impSupplier}` : ""} · ${impLocation}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
       });
       merged = res.merged;
     } catch (e: any) { toast.error(we(e.message ?? wt("Xatolik"))); return; }
@@ -990,7 +990,7 @@ export default function WarehousePage() {
               <DialogContent className="max-w-lg max-h-[90vh] flex flex-col p-0 gap-0">
                 <DialogHeader className="px-6 pt-6 pb-3 border-b shrink-0">
                   <DialogTitle>{impVariant === "351" ? wt("3-51 ga kirim qilish") : t.supply.receiveTitle}</DialogTitle>
-                  <DialogDescription>{wt("Joylashuv:")}<b>{impVariant === "351" ? "3-51 (Zavod51)" : "Sklad"}</b>{wt(" — поступление учитывается в этом месте")}</DialogDescription>
+                  <DialogDescription>{wt("Joylashuv:")}<b>{impVariant === "351" ? "3-51 (Zavod51)" : wt("Sklad")}</b>{wt(" — поступление учитывается в этом месте")}</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-3 overflow-y-auto px-6 py-4 flex-1">
                   <CatalogScanner products={products} module="Kirim" action="in" onSelect={p => { if (!products.some(x => x.id===p.id)) setProducts(prev => [...prev,p]); const qty=scannedQuantity(p.unit,p.id===impProductId,Number(impQty)); setImpProductId(p.id); setImpProductName(p.name); setImpUnit(p.unit || "dona"); setImpPrice(String(p.last_price ?? 0)); if(qty!==null) setImpQty(String(qty)); else if(p.id!==impProductId) setImpQty(""); }} />
@@ -1106,7 +1106,7 @@ export default function WarehousePage() {
                   <div>
                     <Label>{wt("Zavod / joylashuv")}</Label>
                     <div className="mt-1 rounded-md border bg-muted/40 px-3 py-2 text-sm font-medium">
-                      {impVariant === "351" ? "3-51 (Zavod51)" : "Sklad"}
+                      {impVariant === "351" ? "3-51 (Zavod51)" : wt("Sklad")}
                     </div>
                   </div>
                   {Number(impQty) > 0 && Number(impPrice) > 0 && (
@@ -1716,7 +1716,7 @@ export default function WarehousePage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>{wt("Joriy qoldiq")}</Label>
-                  <Input value={`${editProd?.stock_qty ?? 0} ${editProd?.unit ?? ""}`} disabled />
+                  <Input value={`${editProd?.stock_qty ?? 0} ${wt(editProd?.unit ?? "")}`} disabled />
                 </div>
                 <div>
                   <Label>{wt("Yangi qoldiq")}</Label>
@@ -1726,7 +1726,7 @@ export default function WarehousePage() {
               {epStock !== "" && Number(epStock) !== Number(editProd?.stock_qty ?? 0) && (
                 <>
                   <div className={`text-sm font-mono font-semibold ${Number(epStock) > Number(editProd?.stock_qty ?? 0) ? "text-status-green" : "text-status-red"}`}>
-                    {Number(editProd?.stock_qty ?? 0)} → {Number(epStock)} ({Number(epStock) - Number(editProd?.stock_qty ?? 0) > 0 ? "+" : ""}{Number(epStock) - Number(editProd?.stock_qty ?? 0)} {editProd?.unit ?? ""})
+                    {Number(editProd?.stock_qty ?? 0)} → {Number(epStock)} ({Number(epStock) - Number(editProd?.stock_qty ?? 0) > 0 ? "+" : ""}{Number(epStock) - Number(editProd?.stock_qty ?? 0)} {wt(editProd?.unit ?? "")})
                   </div>
                   <div>
                     <Label>{wt("Tuzatish sababi (ixtiyoriy)")}</Label>
