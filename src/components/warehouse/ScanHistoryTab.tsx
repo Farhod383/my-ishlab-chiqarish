@@ -78,7 +78,7 @@ export default function ScanHistoryTab() {
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground">{filtered.length} ta skanerlash{filtered.length > PAGE ? ` (birinchilari ${PAGE} ta ko'rsatildi)` : ""}</p>
+        <p className="text-xs text-muted-foreground">{filtered.length}{wt(" сканирований")}{filtered.length > PAGE ? ` (показаны первые ${PAGE})` : ""}</p>
         <div className="border rounded-md overflow-x-auto">
           <Table>
             <TableHeader><TableRow>

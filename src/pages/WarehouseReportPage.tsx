@@ -286,8 +286,8 @@ export default function WarehouseReportPage() {
                   <tr key={m.id}><td>{fmtDateTime24(m.at)}</td><td>{m.kind}</td><td>{m.name}</td><td>{m.dir === "in" ? wt("Kirim") : wt("Chiqim")}</td><td className="num">{fmtNum(m.qty)}</td><td>{m.unit}</td><td className="num">{money(m.price, m.currency)}</td><td className="num">{m.price == null ? "" : money(m.qty * m.price, m.currency)}</td><td>{m.person}</td><td>{m.employee}</td><td>{m.order}</td><td>{m.location}</td><td>{m.comment}</td></tr>
                 ))}</tbody>
                 <tfoot>
-                  <tr><td colSpan={4}>{wt("Jami kirim")}</td><td colSpan={9}>{qtyByUnit(fMoves.filter((m) => m.dir === "in").map((m) => ({ q: m.qty, u: m.unit })))} — qiymati {sumByCur(fMoves.filter((m) => m.dir === "in").filter((m) => m.price != null).map((m) => ({ v: m.qty * (m.price as number), c: m.currency })))}</td></tr>
-                  <tr><td colSpan={4}>{wt("Jami chiqim")}</td><td colSpan={9}>{qtyByUnit(fMoves.filter((m) => m.dir === "out").map((m) => ({ q: m.qty, u: m.unit })))} — qiymati {sumByCur(fMoves.filter((m) => m.dir === "out").filter((m) => m.price != null).map((m) => ({ v: m.qty * (m.price as number), c: m.currency })))}</td></tr>
+                  <tr><td colSpan={4}>{wt("Jami kirim")}</td><td colSpan={9}>{qtyByUnit(fMoves.filter((m) => m.dir === "in").map((m) => ({ q: m.qty, u: m.unit })))}{wt(" — стоимость ")}{sumByCur(fMoves.filter((m) => m.dir === "in").filter((m) => m.price != null).map((m) => ({ v: m.qty * (m.price as number), c: m.currency })))}</td></tr>
+                  <tr><td colSpan={4}>{wt("Jami chiqim")}</td><td colSpan={9}>{qtyByUnit(fMoves.filter((m) => m.dir === "out").map((m) => ({ q: m.qty, u: m.unit })))}{wt(" — стоимость ")}{sumByCur(fMoves.filter((m) => m.dir === "out").filter((m) => m.price != null).map((m) => ({ v: m.qty * (m.price as number), c: m.currency })))}</td></tr>
                 </tfoot>
               </table></div>
             </section>

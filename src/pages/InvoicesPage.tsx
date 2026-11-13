@@ -1,3 +1,4 @@
+import { useWarehouseText, useWarehouseError } from "@/i18n/warehouseContext";
 import { currentUserName, displayUser } from "@/lib/userNames";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +28,8 @@ import {
 const fmt = (n: number) => fmtNum(n);
 
 export default function InvoicesPage() {
+ const wt = useWarehouseText();
+ const we = useWarehouseError();
   const { hasRole } = useAuth();
   const canEdit = hasRole(["admin", "warehouse"]);
 
@@ -117,9 +120,9 @@ export default function InvoicesPage() {
     setBusy(false);
     const removed = delId;
     setDelId(null);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(we(error.message)); return; }
     if (openId === removed) setOpenId(null);
-    toast.success("Nakladnoy o'chirildi — sklad qoldig'i qayta hisoblandi");
+    toast.success(wt("Накладная удалена — остатки склада пересчитаны"));
     await load();
   };
 
@@ -138,10 +141,10 @@ export default function InvoicesPage() {
       }
       const { error } = await supabase.rpc("clear_intake_invoice_image" as any, { _session_id: s.id });
       if (error) throw error;
-      toast.success("Rasm o'chirildi");
+      toast.success(wt("Изображение удалено"));
       setDelImgId(null);
       await load();
-    } catch (e: any) { toast.error(e.message ?? "Rasmni o'chirishda xatolik"); }
+    } catch (e: any) { toast.error(e.message ?? wt("Ошибка удаления изображения")); }
     finally { setBusy(false); }
   };
 
@@ -155,8 +158,8 @@ export default function InvoicesPage() {
   /** Nakladnoyni yopish — rasm shu paytda saqlanadi, barcha kirimlar bir martada skladga tushadi */
   const closeActive = async () => {
     if (!active) return;
-    if (activeItems.length === 0) { toast.error("Nakladnoyda mahsulot yo'q"); return; }
-    if (!active.image_url && !actFile) { toast.error("Avval rasm tanlang"); return; }
+    if (activeItems.length === 0) { toast.error(wt("В накладной нет товаров")); return; }
+    if (!active.image_url && !actFile) { toast.error(wt("Сначала выберите изображение")); return; }
     if (active.status === "finalized") return;
     setActBusy(true);
     try {
@@ -173,9 +176,9 @@ export default function InvoicesPage() {
       if (actPreviewUrl) URL.revokeObjectURL(actPreviewUrl);
       setActFile(null);
       setActPreviewUrl(null);
-      toast.success("Nakladnoy yopildi — mahsulotlar skladga kirim qilindi");
+      toast.success(wt("Накладная закрыта — товары поступили на склад"));
       await load();
-    } catch (e: any) { toast.error(e.message ?? "Xatolik"); }
+    } catch (e: any) { toast.error(e.message ?? wt("Ошибка")); }
     finally { setActBusy(false); }
   };
 
@@ -183,12 +186,12 @@ export default function InvoicesPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2"><FileText className="h-6 w-6 text-primary" /> Nakladnoy</h1>
-          <p className="text-sm text-muted-foreground">Yopilgan Nakladnoylar tarixi ({rows.length})</p>
+          <h1 className="text-2xl font-bold flex items-center gap-2"><FileText className="h-6 w-6 text-primary" />{wt("Накладная")}</h1>
+          <p className="text-sm text-muted-foreground">{wt("История закрытых накладных (")}{rows.length})</p>
         </div>
         <div className="relative w-full sm:w-72">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Nakladnoy, mahsulot, xodim..." value={q} onChange={(e) => setQ(e.target.value)} />
+          <Input className="pl-8" placeholder={wt("Поиск накладной, товара, сотрудника...")} value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
       </div>
 
@@ -196,13 +199,12 @@ export default function InvoicesPage() {
         <Card className="border-status-yellow/50 bg-status-yellow/5">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex flex-wrap items-center gap-2">
-              <span className="font-mono">Ochiq Nakladnoy {intakeCode(active)}</span>
-              <Badge variant="outline" className={INTAKE_STATUS_META[active.status].cls}>{INTAKE_STATUS_META[active.status].label}</Badge>
+              <span className="font-mono">{wt("Открытая накладная")}{intakeCode(active)}</span>
+              <Badge variant="outline" className={wt(INTAKE_STATUS_META[active.status].cls}>{INTAKE_STATUS_META[active.status].label)}</Badge>
             </CardTitle>
-            <p className="text-xs text-muted-foreground">
-              Boshlangan: {fmtDateTime24(active.started_at)}
+            <p className="text-xs text-muted-foreground">{wt("Начато:")}{fmtDateTime24(active.started_at)}
               {active.finished_at ? ` · Tugagan: ${fmtDateTime24(active.finished_at)}` : ""}
-              {active.supplier ? ` · Olib keldi: ${active.supplier}` : ""}
+              {active.supplier ? ` · ${wt("brought")} ${active.supplier}` : ""}
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -213,11 +215,11 @@ export default function InvoicesPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>№</TableHead>
-                      <TableHead>Mahsulot</TableHead>
-                      <TableHead className="text-right">Miqdor</TableHead>
-                      <TableHead className="text-right">1 birlik narxi</TableHead>
-                      <TableHead>Valyuta</TableHead>
-                      <TableHead className="text-right">Jami</TableHead>
+                      <TableHead>{wt("Товар")}</TableHead>
+                      <TableHead className="text-right">{wt("Количество")}</TableHead>
+                      <TableHead className="text-right">{wt("Цена за единицу")}</TableHead>
+                      <TableHead>{wt("Валюта")}</TableHead>
+                      <TableHead className="text-right">{wt("Итого")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -225,13 +227,13 @@ export default function InvoicesPage() {
                       <TableRow key={i.id}>
                         <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
                         <TableCell className="font-medium">{i.product_name}</TableCell>
-                        <TableCell className="text-right font-mono">{fmt(Number(i.quantity))} {i.unit}</TableCell>
+                        <TableCell className="text-right font-mono">{fmt(Number(i.quantity))} {wt(i.unit)}</TableCell>
                         <TableCell className="text-right font-mono">{fmt(Number(i.unit_price))}</TableCell>
                         <TableCell>{i.currency}</TableCell>
                         <TableCell className="text-right font-mono font-semibold">{fmt(Number(i.quantity) * Number(i.unit_price))}</TableCell>
                       </TableRow>
                     ))}
-                    {activeItems.length === 0 && <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">Mahsulot yo'q</TableCell></TableRow>}
+                    {activeItems.length === 0 && <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">{wt("Товаров нет")}</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </div>
@@ -242,7 +244,7 @@ export default function InvoicesPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Nakladnoy rasmi <span className="text-destructive">*</span></Label>
+              <Label>{wt("Изображение накладной")}<span className="text-destructive">*</span></Label>
               {active.image_url || actPreviewUrl ? (
                 <div className="flex items-start gap-2 flex-wrap">
                   <a href={active.image_url ?? actPreviewUrl!} target="_blank" rel="noreferrer">
@@ -250,8 +252,7 @@ export default function InvoicesPage() {
                   </a>
                   {canEdit && active.image_url && (
                     <Button variant="outline" size="sm" className="text-destructive" onClick={() => setDelImgId(active.id)}>
-                      <Trash2 className="h-4 w-4 mr-1" /> Rasmni o'chirish
-                    </Button>
+                      <Trash2 className="h-4 w-4 mr-1" />{wt("Удалить изображение")}</Button>
                   )}
                 </div>
               ) : (
@@ -268,11 +269,10 @@ export default function InvoicesPage() {
                 disabled={actBusy}
                 onClick={closeActive}
               >
-                <CheckCircle2 className="h-4 w-4 mr-2" /> Nakladnoyni yopish
-              </Button>
+                <CheckCircle2 className="h-4 w-4 mr-2" />{wt("Закрыть накладную")}</Button>
             )}
             {!active.image_url && !actPreviewUrl && (
-              <p className="text-xs text-muted-foreground text-center">Rasm tanlanmaguncha Nakladnoy yopilmaydi.</p>
+              <p className="text-xs text-muted-foreground text-center">{wt("Накладную нельзя закрыть без изображения.")}</p>
             )}
           </CardContent>
         </Card>
@@ -280,36 +280,36 @@ export default function InvoicesPage() {
 
       <div className="mt-4">
         <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-base">Nakladnoylar ro'yxati</CardTitle></CardHeader>
+          <CardHeader className="pb-3"><CardTitle className="text-base">{wt("Список накладных")}</CardTitle></CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nakladnoy</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Mahsulot</TableHead>
-                    <TableHead className="text-right">Jami summa</TableHead>
-                    <TableHead>Boshlangan</TableHead>
-                    <TableHead>Tugagan</TableHead>
-                    <TableHead>Davomiyligi</TableHead>
-                    <TableHead>Kim kiritgan</TableHead>
-                    <TableHead>Yetkazib beruvchi</TableHead>
-                    <TableHead>To'lov turi</TableHead>
-                    <TableHead>Rasm</TableHead>
-                    {canEdit && <TableHead className="text-right">Amallar</TableHead>}
+                    <TableHead>{wt("Накладная")}</TableHead>
+                    <TableHead>{wt("Статус")}</TableHead>
+                    <TableHead className="text-right">{wt("Товар")}</TableHead>
+                    <TableHead className="text-right">{wt("Общая сумма")}</TableHead>
+                    <TableHead>{wt("Начато")}</TableHead>
+                    <TableHead>{wt("Завершено")}</TableHead>
+                    <TableHead>{wt("Длительность")}</TableHead>
+                    <TableHead>{wt("Кто добавил")}</TableHead>
+                    <TableHead>{wt("Поставщик")}</TableHead>
+                    <TableHead>{wt("Тип оплаты")}</TableHead>
+                    <TableHead>{wt("Изображение")}</TableHead>
+                    {canEdit && <TableHead className="text-right">{wt("Действия")}</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {loading && <TableRow><TableCell colSpan={canEdit ? 12 : 11} className="text-center py-8 text-muted-foreground">Yuklanmoqda...</TableCell></TableRow>}
-                  {!loading && rows.length === 0 && <TableRow><TableCell colSpan={canEdit ? 12 : 11} className="text-center py-8 text-muted-foreground">Nakladnoy yo'q</TableCell></TableRow>}
+                  {loading && <TableRow><TableCell colSpan={canEdit ? 12 : 11} className="text-center py-8 text-muted-foreground">{wt("Загрузка...")}</TableCell></TableRow>}
+                  {!loading && rows.length === 0 && <TableRow><TableCell colSpan={canEdit ? 12 : 11} className="text-center py-8 text-muted-foreground">{wt("Накладных нет")}</TableCell></TableRow>}
                   {rows.map((s) => {
                     const list = itemsBySession[s.id] ?? [];
                     const meta = INTAKE_STATUS_META[s.status];
                     return (
                       <TableRow key={s.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setOpenId(s.id)}>
                         <TableCell className="font-mono font-semibold whitespace-nowrap">{intakeCode(s)}</TableCell>
-                        <TableCell><Badge variant="outline" className={meta.cls}>{meta.label}</Badge></TableCell>
+                        <TableCell><Badge variant="outline" className={meta.cls}>{wt(meta.label)}</Badge></TableCell>
                         <TableCell className="text-right">{list.length}</TableCell>
                         <TableCell className="text-right font-mono">{fmt(itemsTotal(list))}</TableCell>
                         <TableCell className="whitespace-nowrap text-sm">{fmtDateTime24(s.started_at)}</TableCell>
@@ -317,11 +317,11 @@ export default function InvoicesPage() {
                         <TableCell className="whitespace-nowrap text-sm">{intakeDuration(s)}</TableCell>
                         <TableCell className="text-sm">{displayUser(s.created_by_name) || "—"}</TableCell>
                         <TableCell className="text-sm">{s.supplier ?? "—"}</TableCell>
-                        <TableCell className="text-sm whitespace-nowrap">{s.payment_type === "debt" ? <Badge variant="outline" className="border-status-red/40 text-status-red">Qarz</Badge> : intakePaymentLabel(s.payment_type)}</TableCell>
+                        <TableCell className="text-sm whitespace-nowrap">{s.payment_type === "debt" ? <Badge variant="outline" className="border-status-red/40 text-status-red">{wt("В долг")}</Badge> : wt(intakePaymentLabel(s.payment_type))}</TableCell>
                         <TableCell>{s.image_url ? <ImageIcon className="h-4 w-4 text-status-green" /> : <Clock className="h-4 w-4 text-muted-foreground" />}</TableCell>
                         {canEdit && (
                           <TableCell className="text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                            <Button variant="ghost" size="icon" title="O'chirish" className="text-destructive" onClick={() => setDelId(s.id)}>
+                            <Button variant="ghost" size="icon" title={wt("Удалить")} className="text-destructive" onClick={() => setDelId(s.id)}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </TableCell>
@@ -342,20 +342,19 @@ export default function InvoicesPage() {
             <>
               <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
                 <DialogTitle className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono">Nakladnoy {intakeCode(current)}</span>
-                  <Badge variant="outline" className={INTAKE_STATUS_META[current.status].cls}>{INTAKE_STATUS_META[current.status].label}</Badge>
+                  <span className="font-mono">{wt("Накладная")}{intakeCode(current)}</span>
+                  <Badge variant="outline" className={wt(INTAKE_STATUS_META[current.status].cls}>{INTAKE_STATUS_META[current.status].label)}</Badge>
                 </DialogTitle>
-                <DialogDescription>
-                  Kim kiritgan: {displayUser(current.created_by_name) || "—"}
-                  {current.supplier ? ` · Olib keldi: ${current.supplier}` : ""}
+                <DialogDescription>{wt("Кто добавил:")}{displayUser(current.created_by_name) || "—"}
+                  {current.supplier ? ` · ${wt("brought")} ${current.supplier}` : ""}
                 </DialogDescription>
               </DialogHeader>
 
               <div className="px-6 py-4 overflow-y-auto space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-                  <div className="rounded border p-2"><div className="text-muted-foreground text-xs">Boshlangan</div><div className="font-medium">{fmtDateTime24(current.started_at)}</div></div>
-                  <div className="rounded border p-2"><div className="text-muted-foreground text-xs">Tugagan</div><div className="font-medium">{current.finished_at ? fmtDateTime24(current.finished_at) : "—"}</div></div>
-                  <div className="rounded border p-2"><div className="text-muted-foreground text-xs">Davomiyligi</div><div className="font-medium">{intakeDuration(current)}</div></div>
+                  <div className="rounded border p-2"><div className="text-muted-foreground text-xs">{wt("Начато")}</div><div className="font-medium">{fmtDateTime24(current.started_at)}</div></div>
+                  <div className="rounded border p-2"><div className="text-muted-foreground text-xs">{wt("Завершено")}</div><div className="font-medium">{current.finished_at ? fmtDateTime24(current.finished_at) : "—"}</div></div>
+                  <div className="rounded border p-2"><div className="text-muted-foreground text-xs">{wt("Длительность")}</div><div className="font-medium">{intakeDuration(current)}</div></div>
                 </div>
 
                 <div className="rounded border overflow-hidden">
@@ -364,11 +363,11 @@ export default function InvoicesPage() {
                       <TableHeader>
                         <TableRow>
                           <TableHead>№</TableHead>
-                          <TableHead>Mahsulot</TableHead>
-                          <TableHead className="text-right">Miqdor</TableHead>
-                          <TableHead className="text-right">1 birlik narxi</TableHead>
-                          <TableHead>Valyuta</TableHead>
-                          <TableHead className="text-right">Jami</TableHead>
+                          <TableHead>{wt("Товар")}</TableHead>
+                          <TableHead className="text-right">{wt("Количество")}</TableHead>
+                          <TableHead className="text-right">{wt("Цена за единицу")}</TableHead>
+                          <TableHead>{wt("Валюта")}</TableHead>
+                          <TableHead className="text-right">{wt("Итого")}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -376,24 +375,24 @@ export default function InvoicesPage() {
                           <TableRow key={i.id}>
                             <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
                             <TableCell className="font-medium">{i.product_name}</TableCell>
-                            <TableCell className="text-right font-mono">{fmt(Number(i.quantity))} {i.unit}</TableCell>
+                            <TableCell className="text-right font-mono">{fmt(Number(i.quantity))} {wt(i.unit)}</TableCell>
                             <TableCell className="text-right font-mono">{fmt(Number(i.unit_price))}</TableCell>
                             <TableCell>{i.currency}</TableCell>
                             <TableCell className="text-right font-mono font-semibold">{fmt(Number(i.quantity) * Number(i.unit_price))}</TableCell>
                           </TableRow>
                         ))}
-                        {currentItems.length === 0 && <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">Mahsulot yo'q</TableCell></TableRow>}
+                        {currentItems.length === 0 && <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">{wt("Товаров нет")}</TableCell></TableRow>}
                       </TableBody>
                     </Table>
                   </div>
                   <div className="flex justify-between px-4 py-2 bg-muted/40 text-sm">
-                    <span className="text-muted-foreground">Jami summa</span>
+                    <span className="text-muted-foreground">{wt("Общая сумма")}</span>
                     <span className="font-mono font-bold">{fmt(itemsTotal(currentItems))}</span>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Nakladnoy rasmi</Label>
+                  <Label>{wt("Изображение накладной")}</Label>
                   {current.image_url ? (
                     <div className="flex items-start gap-2">
                       <a href={current.image_url} target="_blank" rel="noreferrer">
@@ -401,22 +400,20 @@ export default function InvoicesPage() {
                       </a>
                       {canEdit && (
                         <Button variant="outline" size="sm" className="text-destructive" onClick={() => setDelImgId(current.id)}>
-                          <Trash2 className="h-4 w-4 mr-1" /> Rasmni o'chirish
-                        </Button>
+                          <Trash2 className="h-4 w-4 mr-1" />{wt("Удалить изображение")}</Button>
                       )}
                     </div>
                   ) : (
-                    <p className="text-xs text-muted-foreground">Rasm yo'q</p>
+                    <p className="text-xs text-muted-foreground">{wt("Изображения нет")}</p>
                   )}
                 </div>
               </div>
 
               <div className="px-6 py-4 border-t bg-background shrink-0 flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-status-green text-sm"><CheckCircle2 className="h-4 w-4" /> Skladga kirim qilingan</div>
+                <div className="flex items-center gap-2 text-status-green text-sm"><CheckCircle2 className="h-4 w-4" />{wt("Поступило на склад")}</div>
                 {canEdit && (
                   <Button variant="destructive" size="sm" onClick={() => setDelId(current.id)}>
-                    <Trash2 className="h-4 w-4 mr-1" /> O'chirish
-                  </Button>
+                    <Trash2 className="h-4 w-4 mr-1" />{wt("Удалить")}</Button>
                 )}
               </div>
             </>
@@ -428,14 +425,12 @@ export default function InvoicesPage() {
       <AlertDialog open={!!delId} onOpenChange={(o) => { if (!o) setDelId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Nakladnoy o'chirilsinmi?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bu Nakladnoy va uning barcha mahsulotlari o'chiriladi. Skladga tushgan miqdorlar qoldiqdan qaytariladi. Amalni qaytarib bo'lmaydi.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{wt("Удалить накладную?")}</AlertDialogTitle>
+            <AlertDialogDescription>{wt("Накладная и все её позиции будут удалены. Поступившее количество будет вычтено из остатков. Это действие нельзя отменить.")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>Bekor qilish</AlertDialogCancel>
-            <AlertDialogAction onClick={deleteSession} disabled={busy} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">O'chirish</AlertDialogAction>
+            <AlertDialogCancel disabled={busy}>{wt("Отмена")}</AlertDialogCancel>
+            <AlertDialogAction onClick={deleteSession} disabled={busy} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{wt("Удалить")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -444,14 +439,12 @@ export default function InvoicesPage() {
       <AlertDialog open={!!delImgId} onOpenChange={(o) => { if (!o) setDelImgId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Nakladnoy rasmi o'chirilsinmi?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Faqat rasm o'chiriladi. Nakladnoyning mahsulotlari, summalari va tarixi saqlanib qoladi.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{wt("Удалить изображение накладной?")}</AlertDialogTitle>
+            <AlertDialogDescription>{wt("Будет удалено только изображение. Товары, суммы и история накладной сохранятся.")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>Bekor qilish</AlertDialogCancel>
-            <AlertDialogAction onClick={removeImage} disabled={busy} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">O'chirish</AlertDialogAction>
+            <AlertDialogCancel disabled={busy}>{wt("Отмена")}</AlertDialogCancel>
+            <AlertDialogAction onClick={removeImage} disabled={busy} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{wt("Удалить")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

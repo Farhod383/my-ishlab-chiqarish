@@ -35,7 +35,7 @@ export default function StockBalanceCheck() {
           )}
           {!busy && rows !== null && rows.length > 0 && (
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">{rows.length} ta mahsulotda qoldiq tarix yig'indisidan farq qiladi (boshlang'ich qoldiq tarixsiz kiritilgan bo'lishi mumkin):</p>
+              <p className="text-sm text-muted-foreground">{rows.length}{wt(" товаров имеют расхождения с историей (начальный остаток мог быть внесён без движения):")}</p>
               <div className="border rounded-md max-h-[50vh] overflow-auto">
                 <Table>
                   <TableHeader><TableRow>

@@ -350,7 +350,7 @@ export default function InstrumentsTab() {
                       value={issueForm.group_key}
                       onChange={v => setIssueForm({ ...issueForm, group_key: v })}
                       placeholder={wt("Instrument tanlang")}
-                      options={groups.filter(g => g.totalQty > 0).map(g => ({ value: g.key, label: g.name, searchText:g.batches.map(productSearchText).join(" "), hint: `jami: ${g.totalQty}` }))}
+                      options={groups.filter(g => g.totalQty > 0).map(g => ({ value: g.key, label: g.name, searchText:g.batches.map(productSearchText).join(" "), hint: `Итого: ${g.totalQty}` }))}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -377,7 +377,7 @@ export default function InstrumentsTab() {
                       options={Object.keys(heldByEmp).map(empId => {
                         const e = employees.find(x => x.id === empId) || assignments.find(a => a.employee_id === empId)?.employee;
                         const name = (e as any)?.full_name ?? "?";
-                        return { value: empId, label: localize(name), hint: `${heldByEmp[empId].length} ta` };
+                        return { value: empId, label: localize(name), hint: `${heldByEmp[empId].length}` };
                       })}
                     />
                   </div>
@@ -603,7 +603,7 @@ export default function InstrumentsTab() {
                           </div>
                           <div>
                             <div className="text-muted-foreground">{wt("Kun")}</div>
-                            <div className="font-mono">{daysBetween(a.issued_at, a.returned_at)} kun{active ? wt(" (davom etmoqda)") : ""}</div>
+                            <div className="font-mono">{daysBetween(a.issued_at, a.returned_at)}{wt(" дней")}{active ? wt(" (davom etmoqda)") : ""}</div>
                           </div>
                           <div>
                             <div className="text-muted-foreground">{wt("Miqdor")}</div>

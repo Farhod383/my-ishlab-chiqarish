@@ -299,8 +299,7 @@ export default function WarehouseHistory({
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <CardTitle className="text-base">{wt("Harakatlar tarixi")}</CardTitle>
-            <CardDescription>{wt("Sklad kirim/chiqimlari va Konstruktor metall sarfi —")}{fmtNum(filtered.length)} ta yozuv
-            </CardDescription>
+            <CardDescription>{wt("Sklad kirim/chiqimlari va Konstruktor metall sarfi —")}{fmtNum(filtered.length)}{wt(" записей")}</CardDescription>
           </div>
           <div className="flex items-center gap-2">
             <Input value={q} onChange={e => setQ(e.target.value)} placeholder={wt("Qidirish...")} className="h-9 w-48" />

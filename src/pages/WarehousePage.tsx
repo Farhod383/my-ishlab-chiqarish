@@ -333,7 +333,7 @@ export default function WarehousePage() {
       action: "Mahsulot qo'shildi", entity: "product",
       details: `${newName.trim()}${qtyN > 0 ? `: +${qtyN} ${newUnit}` : ""}`,
     });
-    toast.success(`${qtyN > 0 ? wt("Mahsulot qo'shildi — miqdor Nakladnoyga yozildi") : t.warehouse.productAdded}${createdBarcode ? ` · Shtrix-kod: ${createdBarcode}` : ""}`);
+    toast.success(`${qtyN > 0 ? wt("Mahsulot qo'shildi — miqdor Nakladnoyga yozildi") : t.warehouse.productAdded}${createdBarcode ? ` · ${wt("Shtrix-kod:")} ${createdBarcode}` : ""}`);
     if (createdBarcode) {
       const newProd: any = { id: created.id, name: newName.trim(), unit: newUnit || "dona", stock_qty: 0, last_price: priceN, currency: newCurrency || "UZS", barcode: createdBarcode, mxik_code: null, product_type_id: created.id };
       setProducts(prev => prev.some(x => x.id === created.id) ? prev : [...prev, newProd]);
@@ -990,7 +990,7 @@ export default function WarehousePage() {
               <DialogContent className="max-w-lg max-h-[90vh] flex flex-col p-0 gap-0">
                 <DialogHeader className="px-6 pt-6 pb-3 border-b shrink-0">
                   <DialogTitle>{impVariant === "351" ? wt("3-51 ga kirim qilish") : t.supply.receiveTitle}</DialogTitle>
-                  <DialogDescription>{wt("Joylashuv:")}<b>{impVariant === "351" ? "3-51 (Zavod51)" : "Sklad"}</b> — kirim shu joyga yoziladi</DialogDescription>
+                  <DialogDescription>{wt("Joylashuv:")}<b>{impVariant === "351" ? "3-51 (Zavod51)" : "Sklad"}</b>{wt(" — поступление учитывается в этом месте")}</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-3 overflow-y-auto px-6 py-4 flex-1">
                   <CatalogScanner products={products} module="Kirim" action="in" onSelect={p => { if (!products.some(x => x.id===p.id)) setProducts(prev => [...prev,p]); const qty=scannedQuantity(p.unit,p.id===impProductId,Number(impQty)); setImpProductId(p.id); setImpProductName(p.name); setImpUnit(p.unit || "dona"); setImpPrice(String(p.last_price ?? 0)); if(qty!==null) setImpQty(String(qty)); else if(p.id!==impProductId) setImpQty(""); }} />
@@ -1046,7 +1046,7 @@ export default function WarehousePage() {
                         </Command>
                       </PopoverContent>
                     </Popover>
-                    {impProductId && <p className="text-xs text-status-green mt-1">✓ Mavjud mahsulot — miqdor qo'shiladi</p>}
+                    {impProductId && <p className="text-xs text-status-green mt-1">{wt("✓ Существующий товар — количество будет добавлено")}</p>}
                     {impProductId && <div className="mt-1"><BarcodeChip product={products.find((x: any) => x.id === impProductId)} /></div>}
                   </div>
                   <div className="grid grid-cols-3 gap-3">
@@ -1081,11 +1081,11 @@ export default function WarehousePage() {
                   {impKg > 0 && (
                     <div className="text-sm bg-muted/40 border rounded p-2 flex justify-between">
                       <span className="text-muted-foreground">{wt("Og'irlik:")}</span>
-                      <span className="font-mono font-semibold">{fmt(impKg)} kg = {(impKg / 1000).toFixed(4)} t</span>
+                      <span className="font-mono font-semibold">{fmt(impKg)}{wt(" кг = ")}{(impKg / 1000).toFixed(4)}{wt(" т")}</span>
                     </div>
                   )}
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="col-span-2"><Label>1 {impUnit || "dona"} narxi</Label><NumberInput min={0} step={0.001} value={impPrice} onChange={e => setImpPrice(e.target.value)} placeholder={`1 ${impUnit || "dona"} narxi`} /></div>
+                    <div className="col-span-2"><Label>1 {impUnit || "dona"}{wt(" — цена")}</Label><NumberInput min={0} step={0.001} value={impPrice} onChange={e => setImpPrice(e.target.value)} placeholder={`${wt("Цена за единицу")} (${wt(impUnit || "dona")})`} /></div>
                     <div><Label>{wt("Valyuta")}</Label>
                       <Select value={impCurrency} onValueChange={setImpCurrency}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
@@ -1141,8 +1141,8 @@ export default function WarehousePage() {
                     <div className="rounded-lg border border-status-yellow/40 bg-status-yellow/5 p-3 space-y-3">
                       <div className="text-sm font-semibold">{wt("Ochiq Nakladnoy")}<span className="font-mono">{intakeCode(openSession)}</span>
                       </div>
-                      <div className="text-xs text-muted-foreground">{wt("Boshlangan:")}{fmtDateTime24(openSession.started_at)} · {sessionItems.length} mahsulot · Jami: {fmt(itemsTotal(sessionItems as any))}
-                        {openSession.supplier ? ` · Olib keldi: ${openSession.supplier}` : ""}
+                      <div className="text-xs text-muted-foreground">{wt("Boshlangan:")}{fmtDateTime24(openSession.started_at)} · {sessionItems.length}{wt(" товаров · Итого:")}{fmt(itemsTotal(sessionItems as any))}
+                        {openSession.supplier ? ` · ${wt("brought")} ${openSession.supplier}` : ""}
                       </div>
                       <div className="max-h-40 overflow-y-auto rounded border bg-background divide-y">
                         {sessionItems.length === 0 && <div className="p-2 text-xs text-muted-foreground text-center">{wt("Mahsulot qo'shing")}</div>}
@@ -1205,8 +1205,8 @@ export default function WarehousePage() {
                 <CardTitle className="text-base flex items-center gap-2">
                   <ArrowDownToLine className="h-4 w-4 text-status-yellow" />{wt("Ochiq kirim — Nakladnoy")}<span className="font-mono">{intakeCode(openSession)}</span>
                 </CardTitle>
-                <CardDescription>{wt("Boshlangan:")}{fmtDateTime24(openSession.started_at)} · {sessionItems.length} mahsulot · Jami: {fmt(itemsTotal(sessionItems as any))}
-                  {openSession.supplier ? ` · Olib keldi: ${openSession.supplier}` : ""}
+                <CardDescription>{wt("Boshlangan:")}{fmtDateTime24(openSession.started_at)} · {sessionItems.length}{wt(" товаров · Итого:")}{fmt(itemsTotal(sessionItems as any))}
+                  {openSession.supplier ? ` · ${wt("brought")} ${openSession.supplier}` : ""}
                 </CardDescription>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -1263,11 +1263,11 @@ export default function WarehousePage() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{wt("Mahsulotni tahrirlash")}</DialogTitle>
-            <DialogDescription>{editItem?.product_name} — Nakladnoy yakunlanmaguncha miqdor va narxni o'zgartirish mumkin</DialogDescription>
+            <DialogDescription>{editItem?.product_name}{wt(" — количество и цену можно изменить до завершения накладной")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div><Label>{wt("Miqdor (")}{wt(editItem?.unit)}) *</Label><NumberInput min={0.001} step="any" value={eiQty} onChange={e => setEiQty(e.target.value)} /></div>
-            <div><Label>1 {wt(editItem?.unit)} narxi ({editItem?.currency}) *</Label><NumberInput min={0} step="any" value={eiPrice} onChange={e => setEiPrice(e.target.value)} /></div>
+            <div><Label>1 {wt(editItem?.unit)}{wt(" — цена (")}{editItem?.currency}) *</Label><NumberInput min={0} step="any" value={eiPrice} onChange={e => setEiPrice(e.target.value)} /></div>
             {Number(eiQty) > 0 && (
               <div className="text-sm bg-muted/40 border rounded p-2 flex justify-between">
                 <span className="text-muted-foreground">{wt("Jami:")}</span>
@@ -1417,11 +1417,11 @@ export default function WarehousePage() {
                               <StockDot status={r.status} />
                               <Package className="h-4 w-4 text-muted-foreground" />
                               <span>{r.first.name}</span>
-                              {r.batches.length > 1 && <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded">{r.batches.length} partiya</span>}
+                              {r.batches.length > 1 && <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded">{r.batches.length}{wt(" партий")}</span>}
                             </div>
                           </TableCell>
                           <TableCell className={`text-right font-mono font-semibold ${meta.text}`}>
-                            {r.totalQty} {r.first.unit}
+                            {r.totalQty} {wt(r.first.unit)}
                             {(() => {
                               const per = Number((r.first as any).weight_kg) || 0;
                               const kg = (r.first.unit ?? "").toLowerCase() === "kg"
@@ -1430,8 +1430,7 @@ export default function WarehousePage() {
                               if (kg <= 0) return null;
                               return (
                                 <div className="text-[11px] font-normal text-muted-foreground">
-                                  {fmt(kg)} kg · {(kg / 1000).toFixed(4)} t
-                                </div>
+                                  {fmt(kg)}{wt(" кг · ")}{(kg / 1000).toFixed(4)}{wt(" т")}</div>
                               );
                             })()}
                           </TableCell>
@@ -1765,8 +1764,7 @@ export default function WarehousePage() {
           <AlertDialogHeader>
             <AlertDialogTitle>{wt("Mahsulotni o'chirish")}</AlertDialogTitle>
             <AlertDialogDescription>
-              <span className="font-semibold">{delTarget?.name}</span> o'chirilsinmi?
-              {delTarget && delTarget.ids.length > 1 ? (" " + wt("Barcha") + " " + (delTarget.ids.length) + " partiya o'chiriladi.") : ""}
+              <span className="font-semibold">{delTarget?.name}</span>{wt(" — удалить?")}{delTarget && delTarget.ids.length > 1 ? (" " + wt("Barcha") + " " + (delTarget.ids.length) + " partiya o'chiriladi.") : ""}
               {" "}{wt("Joriy qoldiq:")}{delTarget?.qty} {delTarget?.unit}{wt(". Bu amalni ortga qaytarib bo'lmaydi, harakatlar tarixi saqlanadi.")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

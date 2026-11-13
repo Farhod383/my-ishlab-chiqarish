@@ -1,4 +1,4 @@
-/** Only explicit UI strings; never translate arbitrary stored names or comments. */
+/** UI labels only: stored names, codes and history remain unchanged. */
 export const warehouseRu: Record<string, string> = {
   "(ixtiyoriy)": "(необязательно)",
   "(majburiy emas)": "(необязательно)",
@@ -450,7 +450,7 @@ export const warehouseRu: Record<string, string> = {
   "Qarz": "В долг",
   "Yetarli": "Достаточно",
   "Kam qoldi": "Мало",
-  "Tugagan": "Закончился",
+  "Tugagan": "Завершено",
   "Yashil — kerak bo'lganda": "Зелёный — по необходимости",
   "Sariq — o'rtacha": "Жёлтый — средний",
   "Qizil — doimo kerak": "Красный — постоянная потребность",
@@ -503,9 +503,48 @@ export const warehouseRu: Record<string, string> = {
   "komplekt": "комплект",
   "so'm": "сум",
   "qiymati": "стоимость",
-  " j ami:": "Итого:"
+  " j ami:": "Итого:",
+  "Naqd pul": "Наличные",
+  " — kirim shu joyga yoziladi": " — поступление учитывается в этом месте",
+  "✓ Mavjud mahsulot — miqdor qo'shiladi": "✓ Существующий товар — количество будет добавлено",
+  " narxi (": " — цена (",
+  " · Tekshirishga qolgan: ": " · Осталось проверить: ",
+  " · Yozuvlar: ": " · Записи: ",
+  " — qiymati ": " — стоимость ",
+  " kg = ": " кг = ",
+  " kg · ": " кг · ",
+  " t": " т",
+  "Nakladnoy o'chirildi — sklad qoldig'i qayta hisoblandi": "Накладная удалена — остатки склада пересчитаны",
+  "Rasm o'chirildi": "Изображение удалено",
+  "Rasmni o'chirishda xatolik": "Ошибка удаления изображения",
+  "Nakladnoyda mahsulot yo'q": "В накладной нет товаров",
+  "Avval rasm tanlang": "Сначала выберите изображение",
+  "Nakladnoy yopildi — mahsulotlar skladga kirim qilindi": "Накладная закрыта — товары поступили на склад",
+  "Yopilgan Nakladnoylar tarixi (": "История закрытых накладных (",
+  "Nakladnoy, mahsulot, xodim...": "Поиск накладной, товара, сотрудника...",
+  "Mahsulot yo'q": "Товаров нет",
+  "Nakladnoy rasmi": "Изображение накладной",
+  "Rasmni o'chirish": "Удалить изображение",
+  "Nakladnoyni yopish": "Закрыть накладную",
+  "Rasm tanlanmaguncha Nakladnoy yopilmaydi.": "Накладную нельзя закрыть без изображения.",
+  "Nakladnoylar ro'yxati": "Список накладных",
+  "Status": "Статус",
+  "Boshlangan": "Начато",
+  "Davomiyligi": "Длительность",
+  "Kim kiritgan": "Кто добавил",
+  "Rasm": "Изображение",
+  "Amallar": "Действия",
+  "Nakladnoy yo'q": "Накладных нет",
+  "Kim kiritgan:": "Кто добавил:",
+  "Rasm yo'q": "Изображения нет",
+  "Skladga kirim qilingan": "Поступило на склад",
+  "Nakladnoy o'chirilsinmi?": "Удалить накладную?",
+  "Bu Nakladnoy va uning barcha mahsulotlari o'chiriladi. Skladga tushgan miqdorlar qoldiqdan qaytariladi. Amalni qaytarib bo'lmaydi.": "Накладная и все её позиции будут удалены. Поступившее количество будет вычтено из остатков. Это действие нельзя отменить.",
+  "Nakladnoy rasmi o'chirilsinmi?": "Удалить изображение накладной?",
+  "Faqat rasm o'chiriladi. Nakladnoyning mahsulotlari, summalari va tarixi saqlanib qoladi.": "Будет удалено только изображение. Товары, суммы и история накладной сохранятся.",
+  "Kirim davom etmoqda": "Поступление продолжается",
+  "Rasm kutilmoqda": "Ожидается изображение",
+  "Yakunlangan": "Завершено",
+  "brought": "Доставил:"
 };
-export function warehouseText(text: string | null | undefined): string {
-  if (!text) return "";
-  return warehouseRu[text] ?? warehouseRu[text.trim()] ?? text;
-}
+export function warehouseText(text: string | null | undefined): string { if (!text) return ""; return warehouseRu[text] ?? warehouseRu[text.trim()] ?? text; }

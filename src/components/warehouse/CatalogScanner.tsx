@@ -99,9 +99,9 @@ export default function CatalogScanner({ products, onSelect, module, action = "s
     {matches.length > 1 && <div className="border rounded-md divide-y max-h-48 overflow-auto"><p className="p-2 text-sm font-medium">{wt("Mahsulot turini tanlang")}</p>{matches.map(p => <Button key={`${p.kind}:${p.id}`} type="button" variant="ghost" className="w-full justify-start h-auto whitespace-normal text-left" onClick={() => { if (p.kind === "instrument") toast.info(("" + wt("Bu instrument:") + " " + (p.name) + wt(". Instrumentlar alohida bo'limda boshqariladi."))); else onSelect(p, scanIdRef.current); setMatches([]); }}>{p.name} · {p.kind === "instrument" ? wt("Instrument") : p.unit}</Button>)}</div>}
     {missing && canEditBarcode(roles) && <Button type="button" variant="outline" onClick={() => setBindOpen(true)}><Link2 className="h-4 w-4 mr-2" />{wt("Shu kodni tovarga biriktirish")}</Button>}
     <Dialog open={bindOpen} onOpenChange={setBindOpen}><DialogContent><DialogHeader><DialogTitle>{wt("Kodni tovarga biriktirish")}</DialogTitle></DialogHeader>
-      <p className="text-sm text-muted-foreground">{wt("Kod:")}<span className="font-mono font-medium text-foreground">{missing}</span> — asosiy ERP kod o‘zgarmaydi, bu kod qo‘shimcha alias bo‘lib saqlanadi.</p>
+      <p className="text-sm text-muted-foreground">{wt("Kod:")}<span className="font-mono font-medium text-foreground">{missing}</span>{wt(" — основной код ERP не изменяется; этот код сохраняется как дополнительный.")}</p>
       <Label>{wt("Tovar")}</Label>
-      <SearchableSelect options={products.filter(p => p.id).map(p => ({ value: p.id as string, label: `${p.name}${p.unit ? ` · ${p.unit}` : ""}` }))} value={bindId} onChange={setBindId} searchPlaceholder={wt("Tovarni qidirish...")} />
+      <SearchableSelect options={products.filter(p => p.id).map(p => ({ value: p.id as string, label: `${p.name}${p.unit ? ` · ${wt(p.unit)}` : ""}` }))} value={bindId} onChange={setBindId} searchPlaceholder={wt("Tovarni qidirish...")} />
       <Button type="button" disabled={busy || !bindId} onClick={bindAlias}>{busy ? wt("Saqlanmoqda…") : wt("Biriktirish")}</Button>
     </DialogContent></Dialog>
   </div>;

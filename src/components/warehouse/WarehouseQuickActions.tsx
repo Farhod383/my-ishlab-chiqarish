@@ -49,7 +49,7 @@ export default function WarehouseQuickActions({ products, onUpdated }: { product
   const lock = useRef(false);
   const request = useRef<{ key: string; payload: string } | null>(null);
   const selected = products.find(p => p.id === id);
-  const options = [...new Map(products.map(p => [productTypeKey(p), p])).values()].map(p => ({ value: p.id, label: `${p.name} · ${p.unit}`, hint: ("" + wt("Qoldiq:") + " " + (fmtNum(p.stock_qty)) + ""), searchText: productSearchText(p) }));
+  const options = [...new Map(products.map(p => [productTypeKey(p), p])).values()].map(p => ({ value: p.id, label: `${p.name} · ${wt(p.unit)}`, hint: ("" + wt("Qoldiq:") + " " + (fmtNum(p.stock_qty)) + ""), searchText: productSearchText(p) }));
   const open = (next: 'sverka' | 'mxik') => {
     setId(''); setIsNew(false); setName(''); setUnit('dona'); setQty(''); setPrice(''); setCurrency('UZS'); setComment(''); setTech({}); setCode(''); setBarcode(''); setSavedProduct(null); setConfirm(false); setExpenses([]); request.current = null; setScanId(null); setMode(next);
   };
@@ -80,7 +80,7 @@ export default function WarehouseQuickActions({ products, onUpdated }: { product
         if (error) throw error;
         const result = data as { product_id: string; before: number; after: number; barcode?: string | null };
         if (scanId) await finalizeScan(scanId, 'in', Number(qty), Number(result.after));
-        toast.success(("" + wt("Sverka saqlandi:") + " " + (fmtNum(result.before)) + " → " + (fmtNum(result.after)) + "" + (result.barcode ? ` · Shtrix-kod: ${result.barcode}` : '') + ""));
+        toast.success(("" + wt("Sverka saqlandi:") + " " + (fmtNum(result.before)) + " → " + (fmtNum(result.after)) + "" + (result.barcode ? ` · ${wt("Shtrix-kod:")} ${result.barcode}` : '') + ""));
         setSavedProduct({ id: result.product_id, name: isNew ? name : selected?.name ?? '', unit: isNew ? unit : selected?.unit ?? 'dona', stock_qty: result.after, barcode: result.barcode, currency, mxik_code: null });
       } else return;
       setConfirm(false); setMode(null); await onUpdated();
@@ -93,7 +93,7 @@ export default function WarehouseQuickActions({ products, onUpdated }: { product
     <Dialog open={mode !== null} onOpenChange={v => { if (!v && !busy) setMode(null); }}><DialogContent className="max-w-xl max-h-[90dvh] overflow-y-auto"><DialogHeader><DialogTitle>{mode === 'mxik' ? wt("MXIK kiritish") : wt("Nakladnoysiz kirim (Sverka)")}</DialogTitle></DialogHeader>
       <form className="space-y-4" onSubmit={e => { e.preventDefault(); prepare(); }}>
         {mode === 'sverka' && <div className="flex gap-2"><Button type="button" variant={!isNew ? 'secondary' : 'outline'} onClick={() => setIsNew(false)}>{wt("Mavjud mahsulot")}</Button><Button type="button" variant={isNew ? 'secondary' : 'outline'} onClick={() => setIsNew(true)}>{wt("Yangi mahsulot")}</Button></div>}
-        {!isNew ? <div className="space-y-2">{mode === 'sverka' && <CatalogScanner products={products} module="Sverka" action="in" onSelect={(p, sid) => { setScanId(sid ?? null); setId(p.id); setCode(p.mxik_code ?? ''); }} />}<Label>{wt("Mahsulot")}</Label><SearchableSelect options={options} value={id} onChange={v => { setId(v); setCode(products.find(p => p.id === v)?.mxik_code ?? ''); }} searchPlaceholder={wt("Mahsulot qidirish...")} />{selected && <p className="text-sm text-muted-foreground">{selected.name} · {wt(selected.unit)} · Qoldiq: {fmtNum(selected.stock_qty)}</p>}{selected && <BarcodeChip product={selected} />}</div> : <>
+        {!isNew ? <div className="space-y-2">{mode === 'sverka' && <CatalogScanner products={products} module="Sverka" action="in" onSelect={(p, sid) => { setScanId(sid ?? null); setId(p.id); setCode(p.mxik_code ?? ''); }} />}<Label>{wt("Mahsulot")}</Label><SearchableSelect options={options} value={id} onChange={v => { setId(v); setCode(products.find(p => p.id === v)?.mxik_code ?? ''); }} searchPlaceholder={wt("Mahsulot qidirish...")} />{selected && <p className="text-sm text-muted-foreground">{selected.name} · {wt(selected.unit)}{wt(" · Остаток:")}{fmtNum(selected.stock_qty)}</p>}{selected && <BarcodeChip product={selected} />}</div> : <>
           <div className="space-y-2"><Label htmlFor="sverka-name">{wt("Mahsulot nomi va texnik xususiyatlari")}</Label><Input id="sverka-name" required value={name} onChange={e => setName(e.target.value)} /></div>
           <div className="space-y-2"><Label htmlFor="sverka-unit">{wt("O‘lchov birligi")}</Label><Input id="sverka-unit" required value={unit} onChange={e => setUnit(e.target.value)} /></div>
           <div className="space-y-2"><Label htmlFor="sverka-barcode">{wt("Shtrix-kod (ixtiyoriy)")}</Label><BarcodeScanField id="sverka-barcode" value={barcode} onChange={setBarcode} /></div>
