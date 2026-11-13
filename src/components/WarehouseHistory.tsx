@@ -415,10 +415,10 @@ export default function WarehouseHistory({
                   <TableCell className="text-xs italic text-muted-foreground max-w-[200px] truncate">{r.comment || "—"}</TableCell>
                   {canManage && (
                     <TableCell onClick={e => e.stopPropagation()}>
-                      {r.kind === "product" && !r.raw.reconciliation_key && !r.raw.issue_document_id && (
+                      {r.kind === "product" && (
                         <div className="flex gap-1">
-                          {onEdit && <Button size="sm" variant="ghost" onClick={() => onEdit(r.raw)}><Pencil className="h-3.5 w-3.5" /></Button>}
-                          {onDelete && <Button size="sm" variant="ghost" onClick={() => onDelete(r.raw)}><Trash2 className="h-3.5 w-3.5 text-status-red" /></Button>}
+                          {onEdit && !r.raw.reconciliation_key && !r.raw.issue_document_id && <Button size="sm" variant="ghost" onClick={() => onEdit(r.raw)}><Pencil className="h-3.5 w-3.5" /></Button>}
+                          {onDelete && <Button size="sm" variant="ghost" title="Удалить / отменить" aria-label={`Удалить операцию ${r.productName}`} onClick={() => onDelete(r.raw)}><Trash2 className="h-3.5 w-3.5 text-status-red" /></Button>}
                         </div>
                       )}
                     </TableCell>
