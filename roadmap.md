@@ -1,3 +1,7 @@
+## Склад: полный русский интерфейс
+- [ ] Перевести страницу, вложенные формы, сканеры, сообщения и отчёты без изменения данных и расчётов.
+- [ ] Проверить реальные данные под пользователем «Склад», повторный вход, PDF и мобильные окна без сохранения операций.
+
 ## Sklad: bir xodimga ko‘p mahsulot
 - [x] Umumiy topshirish hujjati, atomik API, qoldiq/rol/retry nazorati.
 - [x] Ikkala chiqim oynasida ko‘p qator, skaner, tasdiqlash va HR ID bo‘yicha hujjat tarixi; eski chiqim yozuvlari o‘zgarmaydi.
