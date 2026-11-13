@@ -144,7 +144,7 @@ export default function InvoicesPage() {
       toast.success(wt("Изображение удалено"));
       setDelImgId(null);
       await load();
-    } catch (e: any) { toast.error(e.message ?? wt("Ошибка удаления изображения")); }
+    } catch (e: any) { toast.error(we(e.message ?? "Xatolik")); }
     finally { setBusy(false); }
   };
 
@@ -178,7 +178,7 @@ export default function InvoicesPage() {
       setActPreviewUrl(null);
       toast.success(wt("Накладная закрыта — товары поступили на склад"));
       await load();
-    } catch (e: any) { toast.error(e.message ?? wt("Ошибка")); }
+    } catch (e: any) { toast.error(we(e.message ?? "Xatolik")); }
     finally { setActBusy(false); }
   };
 
@@ -203,7 +203,7 @@ export default function InvoicesPage() {
               <Badge variant="outline" className={INTAKE_STATUS_META[active.status].cls}>{wt(INTAKE_STATUS_META[active.status].label)}</Badge>
             </CardTitle>
             <p className="text-xs text-muted-foreground">{wt("Начато:")}{fmtDateTime24(active.started_at)}
-              {active.finished_at ? ` · Tugagan: ${fmtDateTime24(active.finished_at)}` : ""}
+              {active.finished_at ? ` · Завершено: ${fmtDateTime24(active.finished_at)}` : ""}
               {active.supplier ? ` · ${wt("brought")} ${active.supplier}` : ""}
             </p>
           </CardHeader>
