@@ -10,6 +10,7 @@ import { useNotifications, type Notif } from "@/notifications/NotificationsConte
 import { NOTIF_MODULES, MODULE_BY_KEY, resolveModule, resolveLink, type NotifModuleKey } from "@/lib/notifModules";
 import { fmtTime24, fmtDateTime24, fmtLegacyDurations } from "@/lib/format";
 import { currentUserName, displayUser } from "@/lib/userNames";
+import { warehouseNotificationTitle } from "@/i18n/warehouseNotifications";
 
 const TYPE_DOT: Record<string, string> = {
   otk_approved: "bg-status-green",
@@ -152,7 +153,7 @@ export function NotificationBell() {
                       <span className="text-[11px] text-muted-foreground shrink-0">{fmtTime(last.created_at)}</span>
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <div className="text-xs text-muted-foreground truncate flex-1">{last.title}</div>
+                      <div className="text-xs text-muted-foreground truncate flex-1">{warehouseNotificationTitle(last)}</div>
                       {unread > 0 && (
                         <Badge variant="destructive" className="h-5 min-w-[1.25rem] px-1.5 text-[11px] rounded-full shrink-0">
                           {unread > 99 ? "999+" : unread}
@@ -173,7 +174,7 @@ export function NotificationBell() {
               >
                 <span className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${TYPE_DOT[n.type] ?? "bg-muted-foreground"}`} />
                 <div className="min-w-0 flex-1">
-                  <div className={`text-sm truncate ${n.read_at ? "font-medium" : "font-semibold"}`}>{n.title}</div>
+                  <div className={`text-sm truncate ${n.read_at ? "font-medium" : "font-semibold"}`}>{warehouseNotificationTitle(n)}</div>
                   {n.body && <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{fmtLegacyDurations(n.body)}</div>}
                   <div className="text-[11px] text-muted-foreground/80 mt-1.5 flex flex-wrap items-center gap-x-2">
                     <span>{fmtTime(n.created_at)}</span>

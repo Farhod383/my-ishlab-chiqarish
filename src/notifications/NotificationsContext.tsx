@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/auth/AuthContext";
 import { resolveModule, type NotifModuleKey } from "@/lib/notifModules";
 import { toast } from "sonner";
+import { warehouseNotificationTitle } from "@/i18n/warehouseNotifications";
 
 export interface Notif {
   id: string;
@@ -168,9 +169,10 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications" }, (payload) => {
         const n = payload.new as Notif;
         if (!belongsToMe(n)) return;
-        toast(n.title, { description: n.body ?? undefined });
+        const title = warehouseNotificationTitle(n);
+        toast(title, { description: n.body ?? undefined });
         if (typeof Notification !== "undefined" && Notification.permission === "granted" && document.hidden) {
-          try { new Notification(`MCITY ERP — ${n.title}`, { body: n.body ?? "", tag: n.id }); } catch {}
+          try { new Notification(`MCITY ERP — ${title}`, { body: n.body ?? "", tag: n.id }); } catch {}
         }
         // Badge must update without a page refresh even if the state row event is missed.
         scheduleRefresh();
