@@ -47,7 +47,6 @@ import WarehouseQuickActions from "@/components/warehouse/WarehouseQuickActions"
 import ProductBarcodeEditor from "@/components/warehouse/ProductBarcodeEditor";
 import ScanHistoryTab from "@/components/warehouse/ScanHistoryTab";
 import StockBalanceCheck from "@/components/warehouse/StockBalanceCheck";
-import { finalizeScan } from "@/lib/scanHistory";
 import BarcodeScanField from "@/components/warehouse/BarcodeScanField";
 
 const UNITS = ["dona", "kg", "tonna", "metr", "litr", "rulon", "komplekt"] as const;
@@ -78,8 +77,7 @@ export default function WarehousePage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [movements, setMovements] = useState<any[]>([]);
   const [historyReload, setHistoryReload] = useState(0);
-  const { employees, allEmployees } = useEmployees({ activeOnly: true });
-  const empName = (id: string) => allEmployees.find(e => e.id === id)?.full_name ?? id;
+  const { employees } = useEmployees({ activeOnly: true });
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [groupModal, setGroupModal] = useState<{ name: string; batches: any[] } | null>(null);
@@ -88,13 +86,6 @@ export default function WarehousePage() {
   const [mxikReviewOnly, setMxikReviewOnly] = useState(false);
   const [stockFilter, setStockFilter] = useState<"all" | StockStatus>("all");
   const [historySearch, setHistorySearch] = useState("");
-
-  // Output states
-  const [outProduct, setOutProduct] = useState("");
-  const [outOrder, setOutOrder] = useState("");
-  const [outQty, setOutQty] = useState<number>(1);
-  const [outRecipient, setOutRecipient] = useState("");
-  const [outComment, setOutComment] = useState("");
 
   // Add product
   const [addOpen, setAddOpen] = useState(false);
@@ -120,11 +111,6 @@ export default function WarehousePage() {
 
   // Other output (no order)
   const [otherOpen, setOtherOpen] = useState(false);
-  const [otherProduct, setOtherProduct] = useState("");
-  const [otherQty, setOtherQty] = useState<number>(1);
-  const [otherRecipient, setOtherRecipient] = useState("");
-  const [otherReason, setOtherReason] = useState("");
-
   // Import (from supply)
   const [importOpen, setImportOpen] = useState(false);
   const [impProductId, setImpProductId] = useState<string>("");
@@ -165,11 +151,6 @@ export default function WarehousePage() {
   const [delTarget, setDelTarget] = useState<{ ids: string[]; name: string; qty: number; unit: string } | null>(null);
   const [delBusy, setDelBusy] = useState(false);
 
-
-  // Cross-order release confirmation
-  const [crossOpen, setCrossOpen] = useState(false);
-  const [crossReason, setCrossReason] = useState("");
-  const [crossInfo, setCrossInfo] = useState<{ sourceOrderId: string; sourceOrderNumber: string } | null>(null);
 
   // Edit product
   const [editProdOpen, setEditProdOpen] = useState(false);
@@ -241,23 +222,6 @@ export default function WarehousePage() {
   const canImport = hasRole(["warehouse", "admin"]);
   const canOut = hasRole(["warehouse", "admin", "engineer"]);
 
-  // Chiqim dropdownlari uchun: bir xil nom + o'lchov birligidagi mahsulotlar bitta qatorga birlashtiriladi
-  // (DB ma'lumotlari o'zgarmaydi — faqat ko'rinish). Vakil sifatida eng katta qoldiqli yozuv olinadi.
-  const outProductOptions = useMemo(() => {
-    const groups = new Map<string, { id: string; name: string; unit: string; total: number; bestQty: number }>();
-    for (const p of products as any[]) {
-      const key = productTypeKey(p);
-      const qty = Number(p.stock_qty) || 0;
-      const g = groups.get(key);
-      if (!g) {
-        groups.set(key, { id: p.id, name: p.name, unit: p.unit ?? "", total: qty, bestQty: qty });
-      } else {
-        g.total += qty;
-        if (qty > g.bestQty) { g.id = p.id; g.bestQty = qty; g.name = p.name; }
-      }
-    }
-    return Array.from(groups.values()).map(g => ({ value: g.id, label: g.name, hint: `${g.total} ${g.unit}`, searchText: products.filter(p => p.id === g.id).map(productSearchText).join(" ") }));
-  }, [products]);
   // Anyone authenticated can create a purchase request — except supply staff (they can't order to themselves).
   const userRoles = (roles as string[] | undefined) ?? [];
   const canRequest = !!user && !(userRoles.includes("supply") && !userRoles.includes("admin"));
@@ -280,78 +244,6 @@ export default function WarehousePage() {
   const [prOrderId, setPrOrderId] = useState<string>("");
 
   const fmt = (n: number) => fmtNum(n);
-
-  const [outScanId, setOutScanId] = useState<string | null>(null);
-  const [otherScanId, setOtherScanId] = useState<string | null>(null);
-
-  const release = async () => {
-    if (!outProduct || !outQty || !outRecipient) { toast.error(t.warehouse.fillFields); return; }
-    if (!ensureOnline((m) => toast.error(m))) return;
-    const prod = products.find(p => p.id === outProduct);
-    const avail = Number(prod?.stock_qty ?? 0);
-    if (Number(outQty) > avail) {
-      await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Sklad chiqimi BLOKLANDI", entity: "stock_movement", details: `${prod?.name}: so'ralgan ${outQty}, mavjud ${avail}` });
-      toast.error(`Yetarli qoldiq mavjud emas (mavjud: ${avail})`);
-      return;
-    }
-    // Cross-order check: latest inbound with source_order_id for this product
-    if (outOrder) {
-      const { data: srcRows } = await supabase
-        .from("stock_movements")
-        .select("source_order_id")
-        .eq("product_id", outProduct).eq("direction", "in")
-        .not("source_order_id", "is", null)
-        .order("created_at", { ascending: false }).limit(1);
-      const src: any = srcRows?.[0];
-      if (src?.source_order_id && src.source_order_id !== outOrder) {
-        const { data: ord } = await supabase.from("orders").select("order_number").eq("id", src.source_order_id).maybeSingle();
-        setCrossInfo({ sourceOrderId: src.source_order_id, sourceOrderNumber: ord?.order_number ?? "—" });
-        setCrossReason("");
-        setCrossOpen(true);
-        return;
-      }
-    }
-    await finalizeRelease(null, null);
-  };
-
-  const finalizeRelease = async (crossOrderReason: string | null, sourceOrderId: string | null) => {
-    const { data: _ins, error } = await supabase.from("stock_movements").insert({
-      product_id: outProduct, order_id: outOrder || null, direction: "out",
-      quantity: outQty, recipient_name: empName(outRecipient), recipient_employee_id: outRecipient || null, comment: outComment, created_by: user?.id, taken_by: user?.id,
-      ...(crossOrderReason || sourceOrderId ? { cross_order_reason: crossOrderReason, source_order_id: sourceOrderId } : {}),
-    } as any).select("id").single();
-    if (error) { toast.error(error.message); return; }
-    await logAudit(supabase, {
-      actor_id: user?.id, actor_name: currentUserName(user),
-      action: crossOrderReason || sourceOrderId ? "Sklad chiqimi (boshqa zakazga)" : "Sklad chiqimi",
-      entity: "stock_movement", order_id: outOrder || null,
-      details: `${products.find(p=>p.id===outProduct)?.name} — ${outQty}, ${outRecipient}${crossOrderReason ? ` · manba zakaz: ${crossInfo?.sourceOrderNumber} · sabab: ${crossOrderReason}` : ""}`,
-    });
-    {
-      const { notify } = await import("@/lib/notify");
-      await notify({
-        type: "info",
-        title: `Sklad chiqimi — ${products.find(p=>p.id===outProduct)?.name ?? ""}`,
-        body: `${outQty} · ${outRecipient}`,
-        link: "/warehouse", entity: "stock_movement", entity_id: (_ins as any)?.id,
-        recipient_role: ["warehouse", "manager", "supply"],
-        sender_id: user?.id, sender_name: currentUserName(user),
-      });
-    }
-    toast.success(t.warehouse.outRecorded);
-    if (outScanId) {
-      const { data: np } = await supabase.from("products").select("stock_qty").eq("id", outProduct).maybeSingle();
-      await finalizeScan(outScanId, "out", Number(outQty), np ? Number((np as any).stock_qty) : null);
-    }
-    setOutProduct(""); setOutOrder(""); setOutQty(1); setOutRecipient(""); setOutComment(""); setOutScanId(null);
-    setCrossOpen(false); setCrossInfo(null); setCrossReason("");
-    load();
-  };
-
-  const confirmCrossRelease = async () => {
-    await finalizeRelease(crossReason.trim() || null, crossInfo?.sourceOrderId ?? null);
-  };
-
 
   const addProduct = async () => {
     if (!newName.trim()) { toast.error(t.warehouse.fillFields); return; }
@@ -448,37 +340,6 @@ export default function WarehousePage() {
     setNewMetalType(""); setNewThick(""); setNewWidth(""); setNewLength(""); setNewWeightKg("");
     setAddOpen(false);
     loadSession();
-    load();
-  };
-
-  const otherOut = async () => {
-    if (!otherProduct || !otherQty || !otherRecipient || !otherReason.trim()) { toast.error(t.warehouse.fillFields); return; }
-    if (!ensureOnline((m) => toast.error(m))) return;
-    const prod = products.find(p => p.id === otherProduct);
-    const avail = Number(prod?.stock_qty ?? 0);
-    if (Number(otherQty) > avail) {
-      await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Sklad chiqimi (boshqa) BLOKLANDI", entity: "stock_movement", details: `${prod?.name}: so'ralgan ${otherQty}, mavjud ${avail}` });
-      toast.error(`Yetarli qoldiq mavjud emas (mavjud: ${avail})`);
-      return;
-    }
-    const { error } = await supabase.from("stock_movements").insert({
-      product_id: otherProduct, order_id: null, direction: "out",
-      quantity: otherQty, recipient_name: empName(otherRecipient), recipient_employee_id: otherRecipient || null, reason: otherReason,
-      comment: otherReason, created_by: user?.id, taken_by: user?.id,
-    });
-    if (error) { toast.error(error.message); return; }
-    await logAudit(supabase, {
-      actor_id: user?.id, actor_name: currentUserName(user), action: "Sklad chiqimi (boshqa)",
-      entity: "stock_movement",
-      details: `${products.find(p=>p.id===otherProduct)?.name} — ${otherQty}, sabab: ${otherReason}`,
-    });
-    toast.success(t.warehouse.outRecorded);
-    if (otherScanId) {
-      const { data: np } = await supabase.from("products").select("stock_qty").eq("id", otherProduct).maybeSingle();
-      await finalizeScan(otherScanId, "out", Number(otherQty), np ? Number((np as any).stock_qty) : null);
-    }
-    setOtherProduct(""); setOtherQty(1); setOtherRecipient(""); setOtherReason(""); setOtherScanId(null);
-    setOtherOpen(false);
     load();
   };
 
@@ -1902,29 +1763,6 @@ export default function WarehousePage() {
             <div><Label>{(t.warehouse as any).source}</Label><Input list="dl-sources" value={emSource} onChange={e => setEmSource(e.target.value)} /></div>
             <div><Label>{t.warehouse.cols.comment}</Label><Textarea value={emComment} onChange={e => setEmComment(e.target.value)} /></div>
             <Button className="w-full" onClick={saveEditMovement}>{t.common.save}</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Cross-order release reason */}
-      <Dialog open={crossOpen} onOpenChange={(o) => { setCrossOpen(o); if (!o) { setCrossReason(""); setCrossInfo(null); } }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Boshqa zakazga berilyapti</DialogTitle>
-            <DialogDescription>
-              Bu mahsulot dastlab <b>{crossInfo?.sourceOrderNumber}</b> zakazi uchun olib kelingan.
-              Izoh ixtiyoriy.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label>Nega boshqa zakazga berilyapti? (ixtiyoriy)</Label>
-              <Textarea rows={4} value={crossReason} onChange={(e) => setCrossReason(e.target.value)} placeholder="Sabab (ixtiyoriy)" />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setCrossOpen(false)}>{t.common.cancel ?? "Bekor qilish"}</Button>
-              <Button onClick={confirmCrossRelease}>Tasdiqlash</Button>
-            </div>
           </div>
         </DialogContent>
       </Dialog>
