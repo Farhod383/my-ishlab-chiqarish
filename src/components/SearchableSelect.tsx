@@ -35,9 +35,9 @@ interface Props {
  */
 export default function SearchableSelect({
   options, value, onChange,
-  placeholder = {wt("Tanlang")},
+  placeholder = "Tanlang",
   searchPlaceholder = "🔍 Qidirish...",
-  emptyText = {wt("Topilmadi")},
+  emptyText = "Topilmadi",
   disabled, className, clearLabel,
 }: Props) {
   const wt = useWarehouseText();
@@ -66,16 +66,16 @@ export default function SearchableSelect({
           )}
         >
           <span className={cn("truncate text-left", !selected && "text-muted-foreground")}>
-            {selected ? selected.label : placeholder}
+            {selected ? selected.label : wt(placeholder)}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
         <Command loop filter={(itemValue, search) => (matchesProductText(itemValue, search) ? 1 : 0)}>
-          <CommandInput placeholder={searchPlaceholder} />
+          <CommandInput placeholder={wt(searchPlaceholder)} />
           <CommandList className="max-h-[min(60vh,320px)] overflow-y-auto">
-            <CommandEmpty>{emptyText}</CommandEmpty>
+            <CommandEmpty>{wt(emptyText)}</CommandEmpty>
             <CommandGroup>
               {clearLabel && (
                 <CommandItem

@@ -12,9 +12,9 @@ const b64 = async (url: string) => {
 };
 const fonts = () => (fontCache ??= Promise.all([b64("/fonts/DejaVuSans.ttf"), b64("/fonts/DejaVuSans-Bold.ttf")]).then(([r, b]) => ({ r, b })));
 
-async function newDoc() {
+export async function newDoc(unit: "mm" | "pt" = "mm") {
   const f = await fonts();
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const doc = new jsPDF({ unit, format: "a4" });
   doc.addFileToVFS("DV.ttf", f.r); doc.addFont("DV.ttf", "DV", "normal");
   doc.addFileToVFS("DVB.ttf", f.b); doc.addFont("DVB.ttf", "DV", "bold");
   doc.setFont("DV", "normal");

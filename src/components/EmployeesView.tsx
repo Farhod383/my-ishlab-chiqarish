@@ -1,4 +1,5 @@
 import { useWarehouseText } from "@/i18n/warehouseContext";
+import { newDoc } from "@/lib/pdfExport";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -166,7 +167,7 @@ export default function EmployeesView() {
 
               {canExport && (
                 <div className="flex justify-end">
-                  <Button size="sm" variant="outline" onClick={() => exportEmployeePDF(active, empCurrent, empHistory, profiles)}>
+                  <Button size="sm" variant="outline" onClick={() => void exportEmployeePDF(active, empCurrent, empHistory, profiles, wt, localize)}>
                     <FileDown className="h-4 w-4 mr-2" />{wt("PDF yuklab olish")}</Button>
                 </div>
               )}
@@ -250,13 +251,15 @@ export default function EmployeesView() {
 const fmtMoney = (n: number) => Number(n || 0).toLocaleString("ru-RU");
 const fmtDT = (s?: string | null) => s ? fmtDateTime24(s) : "—";
 
-function exportEmployeePDF(
+async function exportEmployeePDF(
   emp: Employee,
   current: Assignment[],
   history: Assignment[],
   profiles: Record<string, string>,
+  wt: (text: string) => string,
+  localize: (text?: string | null) => string,
 ) {
-  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const doc = await newDoc("pt");
   const W = doc.internal.pageSize.getWidth();
   let y = 40;
 
@@ -264,7 +267,7 @@ function exportEmployeePDF(
   doc.text(wt("Zavod - Xodim instrument hisoboti"), W / 2, y, { align: "center" });
   y += 20;
   doc.setFontSize(12); doc.setTextColor(90, 70, 160);
-  doc.text(emp.full_name, W / 2, y, { align: "center" });
+  doc.text(localize(emp.full_name), W / 2, y, { align: "center" });
   doc.setTextColor(0, 0, 0);
   y += 14;
   doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(120, 120, 120);
