@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { I18nProvider } from "@/i18n/context";
+import { WarehouseRussian } from "@/i18n/warehouseContext";
 import { AuthProvider } from "@/auth/AuthContext";
 import { ProtectedRoute } from "@/auth/ProtectedRoute";
 import { Layout } from "@/components/Layout";
@@ -82,10 +83,10 @@ const App = () => (
                       <Route path="/production" element={<ProductionBoard />} />
                       <Route path="/stage-groups" element={<ProtectedRoute roles={["admin","manager"]}><StageGroupsPage /></ProtectedRoute>} />
                       <Route path="/otk" element={<ProtectedRoute roles={["otk","admin"]}><OtkPage /></ProtectedRoute>} />
-                      <Route path="/warehouse" element={<WarehousePage />} />
-                      <Route path="/warehouse/report" element={<WarehouseReportPage />} />
+                      <Route path="/warehouse" element={<WarehouseRussian><WarehousePage /></WarehouseRussian>} />
+                      <Route path="/warehouse/report" element={<WarehouseRussian><WarehouseReportPage /></WarehouseRussian>} />
                       <Route path="/daily-tasks" element={<ProtectedRoute roles={["admin","otk","manager"]}><DailyTasksPage /></ProtectedRoute>} />
-                      <Route path="/invoices" element={<ProtectedRoute roles={["admin","warehouse","supply","accountant"]}><InvoicesPage /></ProtectedRoute>} />
+                      <Route path="/invoices" element={<ProtectedRoute roles={["admin","warehouse","supply","accountant"]}><WarehouseRussian><InvoicesPage /></WarehouseRussian></ProtectedRoute>} />
                       <Route path="/metal" element={<ProtectedRoute roles={["admin","engineer","warehouse"]}><MetalPage /></ProtectedRoute>} />
                       <Route path="/chat" element={<ChatPage />} />
                       <Route path="/nachalnik" element={<ProtectedRoute roles={["manager","admin"]}><NachalnikPage /></ProtectedRoute>} />

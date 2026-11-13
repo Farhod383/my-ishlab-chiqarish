@@ -1,3 +1,4 @@
+import { useWarehouseText } from "@/i18n/warehouseContext";
 // Unified stock status classification used across the ERP.
 // Rules:
 //  - red    → stock_qty <= 0 (tugagan / manfiy)
@@ -22,10 +23,11 @@ export const stockStatusMeta: Record<StockStatus, { label: string; dot: string; 
 };
 
 export function StockDot({ status, className = "" }: { status: StockStatus; className?: string }) {
+  const wt = useWarehouseText();
   const m = stockStatusMeta[status];
   return (
     <span
-      title={m.label}
+      title={wt(m.label)}
       className={`inline-block h-2.5 w-2.5 rounded-full ${m.dot} ring-2 ${m.ring} ${className}`}
     />
   );

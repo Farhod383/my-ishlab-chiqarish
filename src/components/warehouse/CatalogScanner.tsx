@@ -1,3 +1,4 @@
+import { useWarehouseText, useWarehouseError } from "@/i18n/warehouseContext";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,8 @@ interface Props { products: SearchProduct[]; onSelect: (p: any, scanId?: string 
 // oxirida Enter yoki Tab yuboradi; kodi kamida 4 belgi.
 
 export default function CatalogScanner({ products, onSelect, module, action = "search" }: Props) {
+  const wt = useWarehouseText();
+  const we = useWarehouseError();
   const { roles } = useAuth();
   const [code, setCode] = useState("");
   const [matches, setMatches] = useState<any[]>([]);
@@ -41,7 +44,7 @@ export default function CatalogScanner({ products, onSelect, module, action = "s
       // Xodim bejigi (MCT...) bu oynalarda tovar emas — faqat ogohlantirish.
       if (classifyScan(value) === "employee") {
         await logScan({ code: value, raw, module, action, result: "not_found" });
-        toast.warning("Bu xodim bejigi — tovar kodini skanerlang");
+        toast.warning(wt("Bu xodim bejigi — tovar kodini skanerlang"));
         return;
       }
       // Always search every server catalog source: a local hit must not hide aliases or ambiguity.
@@ -60,12 +63,12 @@ export default function CatalogScanner({ products, onSelect, module, action = "s
         result: hit || found.length > 1 ? "found" : "not_found",
       });
       if (single) {
-        if (single.kind === "instrument") toast.info(`Bu instrument: ${single.name}. Instrumentlar alohida bo'limda boshqariladi.`);
-        else { onSelect(single, scanIdRef.current); toast.success(`Tovar: ${single.name}`); }
+        if (single.kind === "instrument") toast.info(("" + wt("Bu instrument:") + " " + (single.name) + wt(". Instrumentlar alohida bo'limda boshqariladi.")));
+        else { onSelect(single, scanIdRef.current); toast.success(("" + wt("Tovar:") + " " + (single.name) + "")); }
       }
       else if (found.length > 1) setMatches(found);
-      else { setMissing(value); toast.error(`Kod topilmadi: ${value}`); }
-    } catch (e: any) { toast.error(e.message ?? "Skanerlashda xatolik"); }
+      else { setMissing(value); toast.error(we(("" + wt("Kod topilmadi:") + " " + (value) + ""))); }
+    } catch (e: any) { toast.error(we(e.message ?? wt("Skanerlashda xatolik"))); }
     finally { setBusy(false); setCode(""); inputRef.current?.focus(); }
   };
   const bindAlias = async () => {
@@ -75,10 +78,10 @@ export default function CatalogScanner({ products, onSelect, module, action = "s
       const { data, error } = await supabase.rpc("bind_barcode_alias", { _code: missing, _product_id: bindId });
       if (error) throw error;
       const row = data as any;
-      toast.success(`Kod biriktirildi: ${missing} → ${row.name}`);
+      toast.success(("" + wt("Kod biriktirildi:") + " " + (missing) + " → " + (row.name) + ""));
       setBindOpen(false); setMissing(""); setBindId("");
       onSelect(products.find(p => p.id === row.product_id) ?? { id: row.product_id, product_type_id: row.product_type_id, name: row.name, unit: row.unit, barcode: row.barcode }, scanIdRef.current);
-    } catch (e: any) { toast.error(e.message ?? "Kod biriktirishda xatolik"); }
+    } catch (e: any) { toast.error(we(e.message ?? wt("Kod biriktirishda xatolik"))); }
     finally { setBusy(false); }
   };
   useEffect(() => {
@@ -90,16 +93,16 @@ export default function CatalogScanner({ products, onSelect, module, action = "s
   return <div className="space-y-2" data-catalog-scan>
     <div className="flex gap-2 items-center">
       <ScanBarcode className="h-5 w-5 text-muted-foreground shrink-0" />
-      <Input ref={inputRef} aria-label="Shtrix-kod" placeholder="Shtrix-kod (ixtiyoriy)" value={code} onChange={e => setCode(e.target.value)} onKeyDown={e => { if(e.key === "Enter") { e.preventDefault(); callback.current(code); } }} />
-      <Button type="button" variant="outline" disabled={busy || !code.trim()} onClick={() => callback.current(code)} aria-label="Skanerni qidirish"><ScanBarcode className="h-4 w-4" /></Button>
+      <Input ref={inputRef} aria-label={wt("Shtrix-kod")} placeholder={wt("Shtrix-kod (ixtiyoriy)")} value={code} onChange={e => setCode(e.target.value)} onKeyDown={e => { if(e.key === "Enter") { e.preventDefault(); callback.current(code); } }} />
+      <Button type="button" variant="outline" disabled={busy || !code.trim()} onClick={() => callback.current(code)} aria-label={wt("Skanerni qidirish")}><ScanBarcode className="h-4 w-4" /></Button>
     </div>
-    {matches.length > 1 && <div className="border rounded-md divide-y max-h-48 overflow-auto"><p className="p-2 text-sm font-medium">Mahsulot turini tanlang</p>{matches.map(p => <Button key={`${p.kind}:${p.id}`} type="button" variant="ghost" className="w-full justify-start h-auto whitespace-normal text-left" onClick={() => { if (p.kind === "instrument") toast.info(`Bu instrument: ${p.name}. Instrumentlar alohida bo'limda boshqariladi.`); else onSelect(p, scanIdRef.current); setMatches([]); }}>{p.name} · {p.kind === "instrument" ? "Instrument" : p.unit}</Button>)}</div>}
-    {missing && canEditBarcode(roles) && <Button type="button" variant="outline" onClick={() => setBindOpen(true)}><Link2 className="h-4 w-4 mr-2" />Shu kodni tovarga biriktirish</Button>}
-    <Dialog open={bindOpen} onOpenChange={setBindOpen}><DialogContent><DialogHeader><DialogTitle>Kodni tovarga biriktirish</DialogTitle></DialogHeader>
-      <p className="text-sm text-muted-foreground">Kod: <span className="font-mono font-medium text-foreground">{missing}</span> — asosiy ERP kod o‘zgarmaydi, bu kod qo‘shimcha alias bo‘lib saqlanadi.</p>
-      <Label>Tovar</Label>
-      <SearchableSelect options={products.filter(p => p.id).map(p => ({ value: p.id as string, label: `${p.name}${p.unit ? ` · ${p.unit}` : ""}` }))} value={bindId} onChange={setBindId} searchPlaceholder="Tovarni qidirish..." />
-      <Button type="button" disabled={busy || !bindId} onClick={bindAlias}>{busy ? "Saqlanmoqda…" : "Biriktirish"}</Button>
+    {matches.length > 1 && <div className="border rounded-md divide-y max-h-48 overflow-auto"><p className="p-2 text-sm font-medium">{wt("Mahsulot turini tanlang")}</p>{matches.map(p => <Button key={`${p.kind}:${p.id}`} type="button" variant="ghost" className="w-full justify-start h-auto whitespace-normal text-left" onClick={() => { if (p.kind === "instrument") toast.info(("" + wt("Bu instrument:") + " " + (p.name) + wt(". Instrumentlar alohida bo'limda boshqariladi."))); else onSelect(p, scanIdRef.current); setMatches([]); }}>{p.name} · {p.kind === "instrument" ? wt("Instrument") : p.unit}</Button>)}</div>}
+    {missing && canEditBarcode(roles) && <Button type="button" variant="outline" onClick={() => setBindOpen(true)}><Link2 className="h-4 w-4 mr-2" />{wt("Shu kodni tovarga biriktirish")}</Button>}
+    <Dialog open={bindOpen} onOpenChange={setBindOpen}><DialogContent><DialogHeader><DialogTitle>{wt("Kodni tovarga biriktirish")}</DialogTitle></DialogHeader>
+      <p className="text-sm text-muted-foreground">{wt("Kod:")}<span className="font-mono font-medium text-foreground">{missing}</span>{wt(" — основной код ERP не изменяется; этот код сохраняется как дополнительный.")}</p>
+      <Label>{wt("Tovar")}</Label>
+      <SearchableSelect options={products.filter(p => p.id).map(p => ({ value: p.id as string, label: `${p.name}${p.unit ? ` · ${wt(p.unit)}` : ""}` }))} value={bindId} onChange={setBindId} searchPlaceholder={wt("Tovarni qidirish...")} />
+      <Button type="button" disabled={busy || !bindId} onClick={bindAlias}>{busy ? wt("Saqlanmoqda…") : wt("Biriktirish")}</Button>
     </DialogContent></Dialog>
   </div>;
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
+import { useWarehouseText } from "@/i18n/warehouseContext";
 
 const fmt = (iso: string) => iso.split("-").reverse().join(".");
 
@@ -17,6 +18,7 @@ export default function DateInput({
   onChange: (v: string) => void;
   className?: string;
 }) {
+  const wt = useWarehouseText();
   const [text, setText] = useState(() => fmt(value));
   useEffect(() => { setText(fmt(value)); }, [value]);
 
@@ -47,7 +49,7 @@ export default function DateInput({
       onBlur={(e) => commit(e.target.value)}
       className={className}
       inputMode="numeric"
-      placeholder="KK.OY.YYYY"
+      placeholder={wt("KK.OY.YYYY")}
     />
   );
 }

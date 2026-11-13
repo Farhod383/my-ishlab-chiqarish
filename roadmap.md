@@ -1,3 +1,7 @@
+## Склад: полный русский интерфейс
+- [x] Русские страница, формы, сканеры, сообщения и отчёты; хранимые данные и расчёты не менялись.
+- [x] Пользователь «Склад»: реальные 751 товара, 78 накладных, окна поступления/расхода/сверки, вкладки; свежая сессия, русский PDF и окно 575×586 проверены без сохранения операций. 85 тестов пройдено; физический сканер недоступен.
+
 ## Sklad: bir xodimga ko‘p mahsulot
 - [x] Umumiy topshirish hujjati, atomik API, qoldiq/rol/retry nazorati.
 - [x] Ikkala chiqim oynasida ko‘p qator, skaner, tasdiqlash va HR ID bo‘yicha hujjat tarixi; eski chiqim yozuvlari o‘zgarmaydi.

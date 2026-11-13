@@ -1,3 +1,4 @@
+import { warehouseText } from "@/i18n/warehouseRu";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { fmtDate, fmtDateTime24, fmtDuration, fmtNum } from "@/lib/format";
@@ -12,9 +13,9 @@ const b64 = async (url: string) => {
 };
 const fonts = () => (fontCache ??= Promise.all([b64("/fonts/DejaVuSans.ttf"), b64("/fonts/DejaVuSans-Bold.ttf")]).then(([r, b]) => ({ r, b })));
 
-async function newDoc() {
+export async function newDoc(unit: "mm" | "pt" = "mm") {
   const f = await fonts();
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const doc = new jsPDF({ unit, format: "a4" });
   doc.addFileToVFS("DV.ttf", f.r); doc.addFont("DV.ttf", "DV", "normal");
   doc.addFileToVFS("DVB.ttf", f.b); doc.addFont("DVB.ttf", "DV", "bold");
   doc.setFont("DV", "normal");
@@ -37,12 +38,12 @@ export function stageSpan(stages: { started_at?: string | null; finished_at?: st
   return { start, end };
 }
 
-function footer(doc: jsPDF, title: string) {
+function footer(doc: jsPDF, title: string, pageLabel = "Sahifa") {
   const n = doc.getNumberOfPages(); const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
   for (let i = 1; i <= n; i++) {
     doc.setPage(i); doc.setFont("DV", "normal"); doc.setFontSize(8); doc.setTextColor(120);
     doc.setDrawColor(210); doc.line(14, H - 12, W - 14, H - 12);
-    doc.text(title, 14, H - 7); doc.text(`Sahifa ${i} / ${n}`, W - 14, H - 7, { align: "right" });
+    doc.text(title, 14, H - 7); doc.text(`${pageLabel} ${i} / ${n}`, W - 14, H - 7, { align: "right" });
   }
 }
 
@@ -89,10 +90,10 @@ export async function buildWarehouseStockPdf(
 ) {
   const doc = await newDoc(); const W = doc.internal.pageSize.getWidth();
   doc.setFillColor(...HEAD); doc.rect(0, 0, W, 22, "F");
-  doc.setTextColor(255); doc.setFont("DV", "bold"); doc.setFontSize(16); doc.text("SKLAD QOLDIQLARI", 14, 13.5);
-  doc.setFont("DV", "normal"); doc.setFontSize(9); doc.text(`Chiqarilgan: ${nowStr()}`, W - 14, 13.5, { align: "right" });
+  doc.setTextColor(255); doc.setFont("DV", "bold"); doc.setFontSize(16); doc.text("ОСТАТКИ СКЛАДА", 14, 13.5);
+  doc.setFont("DV", "normal"); doc.setFontSize(9); doc.text(`Сформировано: ${nowStr()}`, W - 14, 13.5, { align: "right" });
   doc.setTextColor(60); doc.setFontSize(8.5);
-  doc.text(doc.splitTextToSize(`Filtrlar: ${filterText}`, W - 28), 14, 27);
+  doc.text(doc.splitTextToSize(`Фильтры: ${filterText}`, W - 28), 14, 27);
   const money = (v: number | null, c: string) => (v == null ? "—" : `${fmtNum(v)} ${c}`);
   const sumByCur = (rows: { v: number; c: string }[]) => {
     const r: Record<string, number> = {};
@@ -101,21 +102,21 @@ export async function buildWarehouseStockPdf(
   };
   let y = 33;
   doc.setTextColor(...HEAD); doc.setFont("DV", "bold"); doc.setFontSize(11);
-  doc.text(`Mahsulotlar (${products.length} ta)`, 14, y);
-  y = tbl(doc, y + 2, ["№", "Nomi", "Qoldiq", "Birlik", "Narxi", "Jami qiymati"],
-    products.map((p, i) => [i + 1, p.name, fmtNum(p.stock_qty), p.unit, money(p.price, p.currency), p.price == null ? "—" : money(Number(p.stock_qty) * p.price, p.currency)]),
+  doc.text(`Товары (${products.length} )`, 14, y);
+  y = tbl(doc, y + 2, ["№", "Название", "Остаток", "Ед. изм.", "Цена", "Общая стоимость"],
+    products.map((p, i) => [i + 1, p.name, fmtNum(p.stock_qty), warehouseText(p.unit), money(p.price, p.currency), p.price == null ? "—" : money(Number(p.stock_qty) * p.price, p.currency)]),
     { columnStyles: { 0: { cellWidth: 9, halign: "right" }, 2: { halign: "right" }, 3: { cellWidth: 18 }, 4: { halign: "right" }, 5: { halign: "right" } }, alternateRowStyles: { fillColor: [244, 246, 250] },
-      foot: [[{ content: `Jami — ${products.length} ta mahsulot`, colSpan: 4 } as any, "", sumByCur(products.filter((p) => p.price != null).map((p) => ({ v: Number(p.stock_qty) * (p.price as number), c: p.currency })))]],
+      foot: [[{ content: `Итого — ${products.length} товаров`, colSpan: 4 } as any, "", sumByCur(products.filter((p) => p.price != null).map((p) => ({ v: Number(p.stock_qty) * (p.price as number), c: p.currency })))]],
       showFoot: "lastPage", footStyles: { font: "DV", fontStyle: "bold", fillColor: [226, 232, 240], textColor: 20 } }) + 8;
   if (y > 255) { doc.addPage(); y = 16; }
   doc.setTextColor(...HEAD); doc.setFont("DV", "bold"); doc.setFontSize(11);
-  doc.text(`Instrumentlar (${instruments.length} ta)`, 14, y);
-  tbl(doc, y + 2, ["№", "Nomi", "Umumiy soni", "Skladda", "Xodimlarda", "Narxi", "Jami qiymati"],
+  doc.text(`Инструменты (${instruments.length} )`, 14, y);
+  tbl(doc, y + 2, ["№", "Название", "Всего", "На складе", "У сотрудников", "Цена", "Общая стоимость"],
     instruments.map((x, i) => [i + 1, x.name, fmtNum(x.total), fmtNum(x.quantity), fmtNum(x.issued), money(x.price, x.currency), x.price == null ? "—" : money(x.total * x.price, x.currency)]),
     { columnStyles: { 0: { cellWidth: 9, halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" }, 6: { halign: "right" } }, alternateRowStyles: { fillColor: [244, 246, 250] },
-      foot: [[{ content: `Jami — ${instruments.length} ta instrument`, colSpan: 2 } as any, fmtNum(instruments.reduce((s, x) => s + x.total, 0)), fmtNum(instruments.reduce((s, x) => s + Number(x.quantity), 0)), fmtNum(instruments.reduce((s, x) => s + x.issued, 0)), "", sumByCur(instruments.filter((x) => x.price != null).map((x) => ({ v: x.total * (x.price as number), c: x.currency })))]],
+      foot: [[{ content: `Итого — ${instruments.length} инструментов`, colSpan: 2 } as any, fmtNum(instruments.reduce((s, x) => s + x.total, 0)), fmtNum(instruments.reduce((s, x) => s + Number(x.quantity), 0)), fmtNum(instruments.reduce((s, x) => s + x.issued, 0)), "", sumByCur(instruments.filter((x) => x.price != null).map((x) => ({ v: x.total * (x.price as number), c: x.currency })))]],
       showFoot: "lastPage", footStyles: { font: "DV", fontStyle: "bold", fillColor: [226, 232, 240], textColor: 20 } });
-  footer(doc, `Sklad qoldiqlari — ${nowStr()}`);
+  footer(doc, `Остатки склада — ${nowStr()}`, "Страница");
   return doc;
 }
 

@@ -1,3 +1,4 @@
+import { useWarehouseText } from "@/i18n/warehouseContext";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ interface DiffRow { product_id: string; name: string; unit: string | null; stock
 
 /** Qoldiqni harakatlar tarixi (kirim − chiqim ± sverka) bilan solishtiradi. Faqat o'qiydi, hech narsani o'zgartirmaydi. */
 export default function StockBalanceCheck() {
+  const wt = useWarehouseText();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [rows, setRows] = useState<DiffRow[] | null>(null);
@@ -23,24 +25,24 @@ export default function StockBalanceCheck() {
 
   return (
     <>
-      <Button variant="outline" onClick={run}><ShieldCheck className="h-4 w-4 mr-2" />Tarix bo'yicha tekshirish</Button>
+      <Button variant="outline" onClick={run}><ShieldCheck className="h-4 w-4 mr-2" />{wt("Tarix bo'yicha tekshirish")}</Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle>Qoldiq ↔ harakatlar tarixi tekshiruvi</DialogTitle></DialogHeader>
-          {busy && <p className="text-sm text-muted-foreground py-6 text-center">Tekshirilmoqda...</p>}
+          <DialogHeader><DialogTitle>{wt("Qoldiq ↔ harakatlar tarixi tekshiruvi")}</DialogTitle></DialogHeader>
+          {busy && <p className="text-sm text-muted-foreground py-6 text-center">{wt("Tekshirilmoqda...")}</p>}
           {!busy && rows !== null && rows.length === 0 && (
-            <p className="text-sm py-6 text-center text-status-green font-medium">Barcha qoldiqlar harakatlar tarixi bilan mos. Farq topilmadi.</p>
+            <p className="text-sm py-6 text-center text-status-green font-medium">{wt("Barcha qoldiqlar harakatlar tarixi bilan mos. Farq topilmadi.")}</p>
           )}
           {!busy && rows !== null && rows.length > 0 && (
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">{rows.length} ta mahsulotda qoldiq tarix yig'indisidan farq qiladi (boshlang'ich qoldiq tarixsiz kiritilgan bo'lishi mumkin):</p>
+              <p className="text-sm text-muted-foreground">{rows.length}{wt(" товаров имеют расхождения с историей (начальный остаток мог быть внесён без движения):")}</p>
               <div className="border rounded-md max-h-[50vh] overflow-auto">
                 <Table>
                   <TableHeader><TableRow>
-                    <TableHead>Mahsulot</TableHead>
-                    <TableHead className="text-right">Joriy qoldiq</TableHead>
-                    <TableHead className="text-right">Tarix yig'indisi</TableHead>
-                    <TableHead className="text-right">Farq</TableHead>
+                    <TableHead>{wt("Mahsulot")}</TableHead>
+                    <TableHead className="text-right">{wt("Joriy qoldiq")}</TableHead>
+                    <TableHead className="text-right">{wt("Tarix yig'indisi")}</TableHead>
+                    <TableHead className="text-right">{wt("Farq")}</TableHead>
                   </TableRow></TableHeader>
                   <TableBody>
                     {rows.map(r => (

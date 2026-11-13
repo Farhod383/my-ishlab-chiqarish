@@ -1,3 +1,4 @@
+import { useWarehouseText, useWarehouseError } from "@/i18n/warehouseContext";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,8 @@ import { createBarcodeLabels } from "@/lib/barcodeLabels";
 import { toast } from "sonner";
 
 export default function BulkBarcodeLabels({ products }: { products: SearchProduct[] }) {
+  const wt = useWarehouseText();
+  const we = useWarehouseError();
   const [open, setOpen] = useState(false), [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set()), [busy, setBusy] = useState(false);
   const [onlyWithoutFactory, setOnlyWithoutFactory] = useState(true);
@@ -20,7 +23,7 @@ export default function BulkBarcodeLabels({ products }: { products: SearchProduc
     setLoaded(false);
     void (async () => {
       const { data, error } = await supabase.from("product_type_barcode_aliases").select("product_type_id").in("reason", ["factory_code", "Qo‘lda kod biriktirish"]);
-      if (error) { toast.error(error.message); return; }
+      if (error) { toast.error(we(error.message)); return; }
       setFactoryTypes(new Set((data ?? []).map(row => row.product_type_id))); setLoaded(true);
     })();
   }, [open]);
@@ -30,17 +33,17 @@ export default function BulkBarcodeLabels({ products }: { products: SearchProduc
   const download = async () => {
     setBusy(true);
     try { const doc = await createBarcodeLabels(eligible.filter(p => selected.has(productTypeKey(p)))); doc.save("Mahsulot_turlari_40x30.pdf"); }
-    catch (error) { toast.error(error instanceof Error ? error.message : "Yorliq yaratishda xatolik"); }
+    catch (error) { toast.error(we(error instanceof Error ? error.message : wt("Yorliq yaratishda xatolik"))); }
     finally { setBusy(false); }
   };
   return <>
-    <Button variant="outline" onClick={() => setOpen(true)}><ScanBarcode className="mr-2 h-4 w-4" />Yorliqlar PDF</Button>
-    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-w-3xl"><DialogHeader className="z-0"><DialogTitle>Mahsulot turi yorliqlari · 40×30 mm</DialogTitle></DialogHeader>
-      <Input aria-label="Yorliq mahsulotlarini qidirish" placeholder="Qidirish..." value={query} onChange={e => setQuery(e.target.value)} />
-      <label className="flex items-center gap-2"><Checkbox checked={onlyWithoutFactory} onCheckedChange={value => { setOnlyWithoutFactory(value === true); setSelected(new Set()); }} />Faqat zavod kodi yo‘q tovarlar</label>
-      <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => setSelected(prev => new Set([...prev, ...visible.map(productTypeKey)]))}>Barchasini tanlash ({visible.length})</Button><Button variant="ghost" onClick={() => setSelected(new Set())}>Tanlovni tozalash</Button></div>
-      <div className="max-h-[50dvh] overflow-auto divide-y">{visible.map(p => <label key={productTypeKey(p)} className="flex items-center gap-3 py-3 cursor-pointer"><Checkbox checked={selected.has(productTypeKey(p))} onCheckedChange={checked => setSelected(prev => { const next = new Set(prev); if (checked) next.add(productTypeKey(p)); else next.delete(productTypeKey(p)); return next; })} /><span className="min-w-0 flex-1 break-words">{p.name} · {p.unit}</span><span className="text-xs text-muted-foreground">{p.barcode}</span></label>)}</div>
-      <Button disabled={busy || !loaded || !selected.size} onClick={download}><Download className="mr-2 h-4 w-4" />{busy ? "Tayyorlanmoqda..." : `PDF yuklab olish (${eligible.filter(p => selected.has(productTypeKey(p))).length})`}</Button>
+    <Button variant="outline" onClick={() => setOpen(true)}><ScanBarcode className="mr-2 h-4 w-4" />{wt("Yorliqlar PDF")}</Button>
+    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-w-3xl"><DialogHeader className="z-0"><DialogTitle>{wt("Mahsulot turi yorliqlari · 40×30 mm")}</DialogTitle></DialogHeader>
+      <Input aria-label={wt("Yorliq mahsulotlarini qidirish")} placeholder={wt("Qidirish...")} value={query} onChange={e => setQuery(e.target.value)} />
+      <label className="flex items-center gap-2"><Checkbox checked={onlyWithoutFactory} onCheckedChange={value => { setOnlyWithoutFactory(value === true); setSelected(new Set()); }} />{wt("Faqat zavod kodi yo‘q tovarlar")}</label>
+      <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => setSelected(prev => new Set([...prev, ...visible.map(productTypeKey)]))}>{wt("Barchasini tanlash (")}{visible.length})</Button><Button variant="ghost" onClick={() => setSelected(new Set())}>{wt("Tanlovni tozalash")}</Button></div>
+      <div className="max-h-[50dvh] overflow-auto divide-y">{visible.map(p => <label key={productTypeKey(p)} className="flex items-center gap-3 py-3 cursor-pointer"><Checkbox checked={selected.has(productTypeKey(p))} onCheckedChange={checked => setSelected(prev => { const next = new Set(prev); if (checked) next.add(productTypeKey(p)); else next.delete(productTypeKey(p)); return next; })} /><span className="min-w-0 flex-1 break-words">{p.name} · {wt(p.unit)}</span><span className="text-xs text-muted-foreground">{p.barcode}</span></label>)}</div>
+      <Button disabled={busy || !loaded || !selected.size} onClick={download}><Download className="mr-2 h-4 w-4" />{busy ? wt("Tayyorlanmoqda...") : (wt("PDF yuklab olish (") + (eligible.filter(p => selected.has(productTypeKey(p))).length) + ")")}</Button>
     </DialogContent></Dialog>
   </>;
 }

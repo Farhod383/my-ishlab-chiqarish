@@ -29,6 +29,12 @@ export const useLocalize = () => {
 
 const LS_KEY = "erp_locale";
 
+/** A module-specific locale does not write or change the user's global language. */
+export function I18nScope({ locale, children }: { locale: Locale; children: React.ReactNode }) {
+  const parent = useI18n();
+  return <I18nContext.Provider value={{ ...parent, locale, t: dict[locale] }}>{children}</I18nContext.Provider>;
+}
+
 export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [locale, setLocaleState] = useState<Locale>(() => {
     const saved = (typeof localStorage !== "undefined" && localStorage.getItem(LS_KEY)) as Locale | null;

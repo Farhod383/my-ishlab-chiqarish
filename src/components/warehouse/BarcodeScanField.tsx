@@ -1,3 +1,4 @@
+import { useWarehouseText } from "@/i18n/warehouseContext";
 import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ const RESET_GAP_MS = 150;
  * aynan shu maydonga yoziladi (Enter qo'shilmaydi), boshqa maydonlarga oqmaydi.
  */
 export default function BarcodeScanField({ id, value, onChange, onScanned, disabled, placeholder }: Props) {
+  const wt = useWarehouseText();
   const [armed, setArmed] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const stateRef = useRef({ armed: false, value });
@@ -78,13 +80,13 @@ export default function BarcodeScanField({ id, value, onChange, onScanned, disab
         id={id}
         value={value}
         disabled={disabled}
-        placeholder={placeholder ?? "Shtrix-kod"}
+        placeholder={placeholder ?? wt("Shtrix-kod")}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); } }}
         onFocus={() => setArmed(true)}
         onBlur={() => setArmed(false)}
       />
-      <Button type="button" variant={armed ? "secondary" : "outline"} disabled={disabled} onClick={arm} aria-label="Skanerlash">
+      <Button type="button" variant={armed ? "secondary" : "outline"} disabled={disabled} onClick={arm} aria-label={wt("Skanerlash")}>
         <ScanBarcode className="h-4 w-4" />
       </Button>
     </div>

@@ -1,3 +1,5 @@
+import { useWarehouseText } from "@/i18n/warehouseContext";
+import { newDoc } from "@/lib/pdfExport";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -44,6 +46,7 @@ type Assignment = {
  * and inspect a profile with full instrument history (current + returned).
  */
 export default function EmployeesView() {
+  const wt = useWarehouseText();
   const { hasRole } = useAuth();
   const canExport = hasRole(["admin", "hr", "warehouse", "cashier"]);
   const localize = useLocalize();
@@ -106,7 +109,7 @@ export default function EmployeesView() {
       <div className="flex items-center gap-2">
         <Users className="h-4 w-4 text-muted-foreground" />
         <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Xodimlarni qidirish..." className="max-w-md" />
-        <span className="text-xs text-muted-foreground">Faqat ko'rish</span>
+        <span className="text-xs text-muted-foreground">{wt("Faqat ko'rish")}</span>
       </div>
 
       <Card>
@@ -115,12 +118,12 @@ export default function EmployeesView() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Ism</TableHead>
-                  <TableHead>Lavozim</TableHead>
-                  <TableHead>Bo'lim</TableHead>
-                  <TableHead>Telefon</TableHead>
-                  <TableHead>Holat</TableHead>
-                  <TableHead className="text-right">Instrumentlar</TableHead>
+                  <TableHead>{wt("Ism")}</TableHead>
+                  <TableHead>{wt("Lavozim")}</TableHead>
+                  <TableHead>{wt("Bo'lim")}</TableHead>
+                  <TableHead>{wt("Telefon")}</TableHead>
+                  <TableHead>{wt("Holat")}</TableHead>
+                  <TableHead className="text-right">{wt("Instrumentlar")}</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -133,7 +136,7 @@ export default function EmployeesView() {
                     <TableCell className="text-sm">{e.phone ?? "—"}</TableCell>
                     <TableCell>
                       <Badge variant={e.status === "active" ? "default" : "secondary"}>
-                        {e.status === "active" ? "Faol" : "Bo'shagan"}
+                        {e.status === "active" ? wt("Faol") : wt("Bo'shagan")}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm">{heldCount[e.id] ?? 0}</TableCell>
@@ -143,7 +146,7 @@ export default function EmployeesView() {
                   </TableRow>
                 ))}
                 {filtered.length === 0 && (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Xodimlar yo'q</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{wt("Xodimlar yo'q")}</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
@@ -164,25 +167,24 @@ export default function EmployeesView() {
 
               {canExport && (
                 <div className="flex justify-end">
-                  <Button size="sm" variant="outline" onClick={() => exportEmployeePDF(active, empCurrent, empHistory, profiles)}>
-                    <FileDown className="h-4 w-4 mr-2" />PDF yuklab olish
-                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => void exportEmployeePDF(active, empCurrent, empHistory, profiles, wt, localize)}>
+                    <FileDown className="h-4 w-4 mr-2" />{wt("PDF yuklab olish")}</Button>
                 </div>
               )}
 
               <div className="space-y-4">
                 <EmployeeProductHistory employeeId={active.id} />
                 <div>
-                  <h3 className="text-sm font-semibold flex items-center gap-2 mb-2"><Wrench className="h-4 w-4 text-status-green" />Hozir berilgan ({empCurrent.length})</h3>
+                  <h3 className="text-sm font-semibold flex items-center gap-2 mb-2"><Wrench className="h-4 w-4 text-status-green" />{wt("Hozir berilgan (")}{empCurrent.length})</h3>
                   <div className="border rounded-md overflow-x-auto">
                     <Table>
                       <TableHeader><TableRow>
-                        <TableHead>Instrument</TableHead>
-                        <TableHead className="text-right">Miqdor</TableHead>
-                        <TableHead className="text-right">Narx</TableHead>
-                        <TableHead>Berilgan sana</TableHead>
-                        <TableHead>Bergan</TableHead>
-                        <TableHead>Izoh</TableHead>
+                        <TableHead>{wt("Instrument")}</TableHead>
+                        <TableHead className="text-right">{wt("Miqdor")}</TableHead>
+                        <TableHead className="text-right">{wt("Narx")}</TableHead>
+                        <TableHead>{wt("Berilgan sana")}</TableHead>
+                        <TableHead>{wt("Bergan")}</TableHead>
+                        <TableHead>{wt("Izoh")}</TableHead>
                       </TableRow></TableHeader>
                       <TableBody>
                         {empCurrent.map(a => (
@@ -196,7 +198,7 @@ export default function EmployeesView() {
                           </TableRow>
                         ))}
                         {empCurrent.length === 0 && (
-                          <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-4 text-sm">Hozir berilgan instrumentlar yo'q</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-4 text-sm">{wt("Hozir berilgan instrumentlar yo'q")}</TableCell></TableRow>
                         )}
                       </TableBody>
                     </Table>
@@ -204,18 +206,18 @@ export default function EmployeesView() {
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold flex items-center gap-2 mb-2"><Wrench className="h-4 w-4 text-muted-foreground" />Tarixi ({empHistory.length})</h3>
+                  <h3 className="text-sm font-semibold flex items-center gap-2 mb-2"><Wrench className="h-4 w-4 text-muted-foreground" />{wt("Tarixi (")}{empHistory.length})</h3>
                   <div className="border rounded-md overflow-x-auto">
                     <Table>
                       <TableHeader><TableRow>
-                        <TableHead>Instrument</TableHead>
-                        <TableHead className="text-right">Miqdor</TableHead>
-                        <TableHead className="text-right">Narx</TableHead>
-                        <TableHead>Berilgan</TableHead>
-                        <TableHead>Qaytarilgan</TableHead>
-                        <TableHead>Bergan</TableHead>
-                        <TableHead>Qabul qilgan</TableHead>
-                        <TableHead>Izoh</TableHead>
+                        <TableHead>{wt("Instrument")}</TableHead>
+                        <TableHead className="text-right">{wt("Miqdor")}</TableHead>
+                        <TableHead className="text-right">{wt("Narx")}</TableHead>
+                        <TableHead>{wt("Berilgan")}</TableHead>
+                        <TableHead>{wt("Qaytarilgan")}</TableHead>
+                        <TableHead>{wt("Bergan")}</TableHead>
+                        <TableHead>{wt("Qabul qilgan")}</TableHead>
+                        <TableHead>{wt("Izoh")}</TableHead>
                       </TableRow></TableHeader>
                       <TableBody>
                         {empHistory.map(a => (
@@ -231,7 +233,7 @@ export default function EmployeesView() {
                           </TableRow>
                         ))}
                         {empHistory.length === 0 && (
-                          <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-4 text-sm">Tarixiy yozuvlar yo'q</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-4 text-sm">{wt("Tarixiy yozuvlar yo'q")}</TableCell></TableRow>
                         )}
                       </TableBody>
                     </Table>
@@ -249,55 +251,57 @@ export default function EmployeesView() {
 const fmtMoney = (n: number) => Number(n || 0).toLocaleString("ru-RU");
 const fmtDT = (s?: string | null) => s ? fmtDateTime24(s) : "—";
 
-function exportEmployeePDF(
+async function exportEmployeePDF(
   emp: Employee,
   current: Assignment[],
   history: Assignment[],
   profiles: Record<string, string>,
+  wt: (text: string) => string,
+  localize: (text?: string | null) => string,
 ) {
-  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const doc = await newDoc("pt");
   const W = doc.internal.pageSize.getWidth();
   let y = 40;
 
-  doc.setFont("helvetica", "bold"); doc.setFontSize(16);
-  doc.text("Zavod - Xodim instrument hisoboti", W / 2, y, { align: "center" });
+  doc.setFont("DV", "bold"); doc.setFontSize(16);
+  doc.text(wt("Zavod - Xodim instrument hisoboti"), W / 2, y, { align: "center" });
   y += 20;
   doc.setFontSize(12); doc.setTextColor(90, 70, 160);
-  doc.text(emp.full_name, W / 2, y, { align: "center" });
+  doc.text(localize(emp.full_name), W / 2, y, { align: "center" });
   doc.setTextColor(0, 0, 0);
   y += 14;
-  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(120, 120, 120);
-  doc.text(`Yaratilgan: ${fmtDateTime24(new Date())}`, W / 2, y, { align: "center" });
+  doc.setFont("DV", "normal"); doc.setFontSize(9); doc.setTextColor(120, 120, 120);
+  doc.text(("" + wt("Yaratilgan:") + " " + (fmtDateTime24(new Date())) + ""), W / 2, y, { align: "center" });
   doc.setTextColor(0, 0, 0);
   y += 14;
 
   autoTable(doc, {
     startY: y,
     theme: "grid",
-    styles: { font: "helvetica", fontSize: 10, cellPadding: 4 },
+    styles: { font: "DV", fontSize: 10, cellPadding: 4 },
     headStyles: { fillColor: [120, 90, 200] },
-    head: [["Maydon", "Qiymat"]],
+    head: [[wt("Maydon"), wt("Qiymat")]],
     body: [
-      ["F.I.SH", emp.full_name],
-      ["Lavozim", emp.position || "—"],
-      ["Bo'lim", emp.department || "—"],
-      ["Telefon", emp.phone ?? "—"],
-      ["Holat", emp.status === "active" ? "Faol" : "Bo'shagan"],
+      [wt("F.I.SH"), localize(emp.full_name)],
+      [wt("Lavozim"), emp.position || "—"],
+      [wt("Bo'lim"), emp.department || "—"],
+      [wt("Telefon"), emp.phone ?? "—"],
+      [wt("Holat"), emp.status === "active" ? wt("Faol") : wt("Bo'shagan")],
     ],
     columnStyles: { 0: { cellWidth: 130, fontStyle: "bold", fillColor: [245, 240, 255] } },
   });
   y = (doc as any).lastAutoTable.finalY + 16;
 
-  doc.setFont("helvetica", "bold"); doc.setFontSize(12);
-  doc.text(`Hozir berilgan (${current.length})`, 40, y); y += 6;
+  doc.setFont("DV", "bold"); doc.setFontSize(12);
+  doc.text((wt("Hozir berilgan (") + (current.length) + ")"), 40, y); y += 6;
   autoTable(doc, {
     startY: y,
     theme: "grid",
-    styles: { font: "helvetica", fontSize: 9, cellPadding: 3 },
+    styles: { font: "DV", fontSize: 9, cellPadding: 3 },
     headStyles: { fillColor: [120, 90, 200] },
-    head: [["Instrument", "Miqdor", "Narx", "Valyuta", "Berilgan sana"]],
+    head: [[wt("Instrument"), wt("Miqdor"), wt("Narx"), wt("Valyuta"), wt("Berilgan sana")]],
     body: current.length === 0
-      ? [["Yo'q", "", "", "", ""]]
+      ? [[wt("Yo'q"), "", "", "", ""]]
       : current.map(a => [
           a.instrument?.name ?? "—",
           String(a.quantity),
@@ -309,16 +313,16 @@ function exportEmployeePDF(
   });
   y = (doc as any).lastAutoTable.finalY + 16;
 
-  doc.setFont("helvetica", "bold"); doc.setFontSize(12);
-  doc.text(`Tarixi (${history.length})`, 40, y); y += 6;
+  doc.setFont("DV", "bold"); doc.setFontSize(12);
+  doc.text((wt("Tarixi (") + (history.length) + ")"), 40, y); y += 6;
   autoTable(doc, {
     startY: y,
     theme: "grid",
-    styles: { font: "helvetica", fontSize: 8, cellPadding: 3 },
+    styles: { font: "DV", fontSize: 8, cellPadding: 3 },
     headStyles: { fillColor: [120, 90, 200] },
-    head: [["Instrument", "Miqdor", "Berilgan", "Qaytarilgan", "Bergan", "Izoh"]],
+    head: [[wt("Instrument"), wt("Miqdor"), wt("Berilgan"), wt("Qaytarilgan"), wt("Bergan"), wt("Izoh")]],
     body: history.length === 0
-      ? [["Yo'q", "", "", "", "", ""]]
+      ? [[wt("Yo'q"), "", "", "", "", ""]]
       : history.map(a => [
           a.instrument?.name ?? "—",
           String(a.quantity),
@@ -338,15 +342,15 @@ function exportEmployeePDF(
     const price = Number(a.instrument?.price ?? 0);
     totals[cur] = (totals[cur] ?? 0) + price * Number(a.quantity);
   });
-  doc.setFont("helvetica", "bold"); doc.setFontSize(11);
-  doc.text("Umumiy qiymat (hozir berilgan):", 40, y); y += 14;
-  doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+  doc.setFont("DV", "bold"); doc.setFontSize(11);
+  doc.text(wt("Umumiy qiymat (hozir berilgan):"), 40, y); y += 14;
+  doc.setFont("DV", "normal"); doc.setFontSize(10);
   const entries = Object.entries(totals);
   if (entries.length === 0) {
     doc.text("—", 40, y); y += 14;
   } else {
     entries.forEach(([cur, sum]) => {
-      const suffix = cur === "USD" ? "$" : cur === "UZS" ? "so'm" : cur;
+      const suffix = cur === "USD" ? "$" : cur === "UZS" ? "UZS" : cur;
       doc.text(`${cur}: ${fmtMoney(sum)} ${suffix}`, 40, y);
       y += 14;
     });

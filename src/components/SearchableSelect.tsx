@@ -1,3 +1,4 @@
+import { useWarehouseText } from "@/i18n/warehouseContext";
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -39,6 +40,7 @@ export default function SearchableSelect({
   emptyText = "Topilmadi",
   disabled, className, clearLabel,
 }: Props) {
+  const wt = useWarehouseText();
   const [open, setOpen] = useState(false);
   const selected = options.find(o => o.value === value);
 
@@ -64,16 +66,16 @@ export default function SearchableSelect({
           )}
         >
           <span className={cn("truncate text-left", !selected && "text-muted-foreground")}>
-            {selected ? selected.label : placeholder}
+            {selected ? selected.label : wt(placeholder)}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
         <Command loop filter={(itemValue, search) => (matchesProductText(itemValue, search) ? 1 : 0)}>
-          <CommandInput placeholder={searchPlaceholder} />
+          <CommandInput placeholder={wt(searchPlaceholder)} />
           <CommandList className="max-h-[min(60vh,320px)] overflow-y-auto">
-            <CommandEmpty>{emptyText}</CommandEmpty>
+            <CommandEmpty>{wt(emptyText)}</CommandEmpty>
             <CommandGroup>
               {clearLabel && (
                 <CommandItem
