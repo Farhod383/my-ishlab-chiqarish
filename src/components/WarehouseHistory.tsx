@@ -380,7 +380,7 @@ export default function WarehouseHistory({
                 <TableRow
                   key={`${r.kind}-${r.id}`}
                   className={canManage && r.kind === "product" ? "cursor-pointer hover:bg-muted/40" : undefined}
-                  onClick={canManage && r.kind === "product" && !r.raw.reconciliation_key && onEdit ? () => onEdit(r.raw) : undefined}
+                  onClick={canManage && r.kind === "product" && !r.raw.reconciliation_key && !r.raw.issue_document_id && onEdit ? () => onEdit(r.raw) : undefined}
                 >
                   <TableCell className="text-right text-xs font-mono text-muted-foreground">{idx + 1}</TableCell>
                   <TableCell className="text-xs whitespace-nowrap">{fmtDateTime24(r.created_at)}</TableCell>
@@ -389,7 +389,7 @@ export default function WarehouseHistory({
                       ? <span className="inline-flex items-center gap-1 text-status-red text-xs font-semibold"><ArrowDownCircle className="h-3.5 w-3.5" />Chiqim</span>
                       : <span className="inline-flex items-center gap-1 text-status-green text-xs font-semibold"><ArrowUpCircle className="h-3.5 w-3.5" />{r.raw.reconciliation_key ? 'Sverka — nakladnoysiz kirim' : 'Kirim'}</span>}
                   </TableCell>
-                  <TableCell className="text-sm font-medium">{r.productName}</TableCell>
+                  <TableCell className="text-sm font-medium">{r.productName}{r.raw.issue_document_id && <div className="text-xs font-mono text-muted-foreground">TOP-{r.raw.issue_document_id.slice(0, 8).toUpperCase()}</div>}</TableCell>
                   <TableCell className="text-xs">{r.metalType || "—"}</TableCell>
                   <TableCell className="text-right text-xs font-mono">{dim(r.thickness)}</TableCell>
                   <TableCell className="text-right text-xs font-mono">{dim(r.length)}</TableCell>
@@ -415,7 +415,7 @@ export default function WarehouseHistory({
                   <TableCell className="text-xs italic text-muted-foreground max-w-[200px] truncate">{r.comment || "—"}</TableCell>
                   {canManage && (
                     <TableCell onClick={e => e.stopPropagation()}>
-                      {r.kind === "product" && !r.raw.reconciliation_key && (
+                      {r.kind === "product" && !r.raw.reconciliation_key && !r.raw.issue_document_id && (
                         <div className="flex gap-1">
                           {onEdit && <Button size="sm" variant="ghost" onClick={() => onEdit(r.raw)}><Pencil className="h-3.5 w-3.5" /></Button>}
                           {onDelete && <Button size="sm" variant="ghost" onClick={() => onDelete(r.raw)}><Trash2 className="h-3.5 w-3.5 text-status-red" /></Button>}

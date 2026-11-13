@@ -1,3 +1,8 @@
+## Sklad: bir xodimga ko‘p mahsulot
+- [x] Umumiy topshirish hujjati, atomik API, qoldiq/rol/retry nazorati.
+- [x] Ikkala chiqim oynasida ko‘p qator, skaner, tasdiqlash va HR ID bo‘yicha hujjat tarixi; eski chiqim yozuvlari o‘zgarmaydi.
+- [x] 5 mahsulot oynadan tasdiqlanib saqlandi: 10→9/8/7/6/5, bitta hujjat va xodim tarixidan qayta o‘qildi. 38 test: duplicate sum, retry, insufficient rollback, parallel, single va API guard. Sinov mahsulotlari nolga tushirildi, sinov tarixi/audit saqlandi; fizik skaner mavjud emas.
+
 ## HR shtrix-kod: faqat Admin 2
 - [x] Admin 2 uchun himoyalangan kod ko‘rish/tahrirlash; unikal kod, eski alias, optimistic tekshiruv va server audit. Barcha 122 HR yozuvi saqlandi.
 - [x] HR maydoni, nusxalash/skaner, faol/nofaol kod qidiruvi; boshqa rollarga maydon/PDF/API yopiq. Kod-only tahrir tarixiy HR maydonlarini o‘zgartirmaydi.

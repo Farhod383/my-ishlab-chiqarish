@@ -14,6 +14,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useEmployees } from "@/hooks/useEmployees";
 import { fmtDate as fmtDateG, fmtDateTime24 } from "@/lib/format";
+import EmployeeProductHistory from '@/components/warehouse/EmployeeProductHistory';
 
 type Employee = {
   id: string;
@@ -170,6 +171,7 @@ export default function EmployeesView() {
               )}
 
               <div className="space-y-4">
+                <EmployeeProductHistory employeeId={active.id} />
                 <div>
                   <h3 className="text-sm font-semibold flex items-center gap-2 mb-2"><Wrench className="h-4 w-4 text-status-green" />Hozir berilgan ({empCurrent.length})</h3>
                   <div className="border rounded-md overflow-x-auto">
