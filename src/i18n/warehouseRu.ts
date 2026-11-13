@@ -505,4 +505,7 @@ export const warehouseRu: Record<string, string> = {
   "qiymati": "стоимость",
   " j ami:": "Итого:"
 };
-export function warehouseText(text: string): string { return warehouseRu[text.trim()] ?? text; }
+export function warehouseText(text: string | null | undefined): string {
+  if (!text) return "";
+  return warehouseRu[text] ?? warehouseRu[text.trim()] ?? text;
+}
