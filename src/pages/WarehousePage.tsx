@@ -37,7 +37,7 @@ import { currentUserName, displayUser } from "@/lib/userNames";
 import { useFocusEntity } from "@/notifications/FocusHighlighter";
 import { matchesProduct, matchesProductText, productSearchText, scannedQuantity, productTypeKey } from "@/lib/productSearch";
 import CatalogScanner from "@/components/warehouse/CatalogScanner";
-import IssueScanner from "@/components/warehouse/IssueScanner";
+import EmployeeIssueDialog from "@/components/warehouse/EmployeeIssueDialog";
 import BarcodeLabel from "@/components/warehouse/BarcodeLabel";
 import BarcodeChip from "@/components/warehouse/BarcodeChip";
 import CatalogReview from "@/components/warehouse/CatalogReview";
@@ -1109,71 +1109,9 @@ export default function WarehousePage() {
           )}
           {canOut && (
             <>
-              <Dialog open={otherOpen} onOpenChange={setOtherOpen}>
-                <DialogTrigger asChild><Button variant="outline"><PackageMinus className="h-4 w-4 mr-2" />{t.warehouse.otherOut}</Button></DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>{t.warehouse.otherOutTitle}</DialogTitle></DialogHeader>
-                  <div className="space-y-3">
-                    <IssueScanner kind="product" onEmployee={setOtherRecipient} onProduct={(p, scanId) => { setOtherScanId(scanId); setOtherProduct(p.id); }} />
-                    <div><Label>{t.warehouse.cols.product}</Label>
-                      <SearchableSelect
-                        value={otherProduct}
-                        onChange={setOtherProduct}
-                        placeholder={t.supply.select}
-                        options={outProductOptions}
-                      />
-                    </div>
-                    <div><Label>{t.warehouse.qty}</Label><NumberInput min={0.1} step={0.1} value={otherQty} onChange={e => setOtherQty(Number(e.target.value))} /></div>
-                    <div><Label>{t.warehouse.takenBy}</Label>
-                      <SearchableSelect
-                        value={otherRecipient}
-                        onChange={setOtherRecipient}
-                        placeholder={t.warehouse.takenByPh}
-                        options={employees.map(e => ({ value: e.id, label: localize(e.full_name), hint: [e.position, e.department, e.phone].filter(Boolean).join(" · ") }))}
-                      />
-                    </div>
-                    <div><Label>{t.warehouse.reason} *</Label><Textarea value={otherReason} onChange={e => setOtherReason(e.target.value)} placeholder={t.warehouse.reasonPh} /></div>
-                    <Button className="w-full" onClick={otherOut}>{t.warehouse.saveOut}</Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-
-              <Dialog open={releaseOpen} onOpenChange={setReleaseOpen}>
-                <DialogTrigger asChild><Button className="hidden">release</Button></DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>{t.warehouse.releaseTitle}</DialogTitle></DialogHeader>
-                  <div className="space-y-3">
-                    <IssueScanner kind="product" onEmployee={setOutRecipient} onProduct={(p, scanId) => { setOutScanId(scanId); setOutProduct(p.id); }} />
-                    <div><Label>{t.warehouse.forOrder}</Label>
-                      <SearchableSelect
-                        value={outOrder}
-                        onChange={setOutOrder}
-                        placeholder={t.warehouse.orderPh}
-                        options={orders.map(o => ({ value: o.id, label: o.product_name, hint: [o.order_number, o.client?.name].filter(Boolean).join(" · ") }))}
-                      />
-                    </div>
-                    <div><Label>{t.warehouse.cols.product}</Label>
-                      <SearchableSelect
-                        value={outProduct}
-                        onChange={setOutProduct}
-                        placeholder={t.supply.select}
-                        options={outProductOptions}
-                      />
-                    </div>
-                    <div><Label>{t.warehouse.qty}</Label><NumberInput min={0.1} step={0.1} value={outQty} onChange={e => setOutQty(Number(e.target.value))} /></div>
-                    <div><Label>{t.warehouse.takenBy}</Label>
-                      <SearchableSelect
-                        value={outRecipient}
-                        onChange={setOutRecipient}
-                        placeholder={t.warehouse.takenByPh}
-                        options={employees.map(e => ({ value: e.id, label: localize(e.full_name), hint: [e.position, e.department, e.phone].filter(Boolean).join(" · ") }))}
-                      />
-                    </div>
-                    <div><Label>{t.warehouse.commentOpt}</Label><Textarea value={outComment} onChange={e => setOutComment(e.target.value)} /></div>
-                    <Button className="w-full" onClick={release}>{t.warehouse.saveOut}</Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <Button variant="outline" onClick={() => setOtherOpen(true)}><PackageMinus className="h-4 w-4 mr-2" />{t.warehouse.otherOut}</Button>
+              <EmployeeIssueDialog open={otherOpen} onOpenChange={setOtherOpen} products={products} orders={orders} mode="other" onSaved={load} />
+              <EmployeeIssueDialog open={releaseOpen} onOpenChange={setReleaseOpen} products={products} orders={orders} mode="order" onSaved={load} />
             </>
           )}
           {canImport && (
