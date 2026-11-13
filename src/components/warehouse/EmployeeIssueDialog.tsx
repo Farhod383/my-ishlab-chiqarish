@@ -45,11 +45,11 @@ export default function EmployeeIssueDialog({ open, onOpenChange, products, orde
         if (!row.order_id) continue;
         const { data, error } = await supabase.from('stock_movements').select('source_order_id').eq('product_id', row.product_id).eq('direction', 'in').not('source_order_id', 'is', null).order('created_at', { ascending: false }).limit(1);
         if (error) throw error;
-        if (data?.[0]?.source_order_id && data[0].source_order_id !== row.order_id && !row.cross_order_reason.trim()) {
-          toast.error(`${products.find(p => p.id === row.product_id)?.name}: boshqa zakaz uchun sabab kiriting`);
-          patch(row.key, { cross_order_reason: ' ' }); return;
+        if (data?.[0]?.source_order_id && data[0].source_order_id !== row.order_id && row.cross_order_reason === '') {
+          next[i] = { ...row, cross_order_reason: ' ' };
         }
       }
+      setLines(next);
       setConfirm(true);
     } catch (e) { toast.error((e as { message: string }).message); }
   };
@@ -83,7 +83,7 @@ export default function EmployeeIssueDialog({ open, onOpenChange, products, orde
           <SearchableSelect value={row.product_id} onChange={id => patch(row.key, { product_id: id, scan_id: null, cross_order_reason: '' })} options={options} placeholder="Mahsulotni tanlang" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><div><Label>Miqdor {p ? `(${p.unit})` : ''}</Label><NumberInput aria-label={`Miqdor ${i + 1}`} min={0.001} step="any" value={row.quantity} onChange={e => patch(row.key, { quantity: Number(e.target.value) })} /></div>{mode === 'order' && <div><Label>Zakaz (ixtiyoriy)</Label><SearchableSelect value={row.order_id} onChange={id => patch(row.key, { order_id: id, cross_order_reason: '' })} placeholder="Zakaz (ixtiyoriy)" options={orders.map(o => ({ value: o.id, label: o.order_number, hint: o.product_name }))} /></div>}</div>
           <div><Label>Izoh / sabab (ixtiyoriy)</Label><Textarea value={row.comment} onChange={e => patch(row.key, { comment: e.target.value })} /></div>
-          {row.cross_order_reason !== '' && <div><Label>Boshqa zakazga berish sababi</Label><Textarea data-required value={row.cross_order_reason} onChange={e => patch(row.key, { cross_order_reason: e.target.value })} /></div>}
+          {row.cross_order_reason !== '' && <div><Label>Boshqa zakazga berish sababi (ixtiyoriy)</Label><Textarea value={row.cross_order_reason} onChange={e => patch(row.key, { cross_order_reason: e.target.value })} /></div>}
         </section>; })}
         <Button className="w-full" disabled={!employee} onClick={() => void review()}>Ro‘yxatni tasdiqlash</Button>
       </div>}
