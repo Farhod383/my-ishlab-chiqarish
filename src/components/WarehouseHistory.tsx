@@ -364,10 +364,10 @@ export default function WarehouseHistory({
                 <TableHead className="text-right">{wt("Bo'yi")}</TableHead>
                 <TableHead className="text-right">{wt("Eni")}</TableHead>
                 <TableHead className="text-right">{wt("Miqdor")}</TableHead>
-                <TableHead className="text-right">kg</TableHead>
-                <TableHead className="text-right">tonna</TableHead>
+                <TableHead className="text-right">{wt("kg")}</TableHead>
+                <TableHead className="text-right">{wt("tonna")}</TableHead>
                 <TableHead className="text-right">{wt("Narx")}</TableHead>
-                <TableHead>Zavod</TableHead>
+                <TableHead>{wt("Zavod")}</TableHead>
                 <TableHead>{wt("Kim")}</TableHead>
                 <TableHead>{wt("Zakaz")}</TableHead>
                 <TableHead>{wt("Nakladnoy")}</TableHead>

@@ -1,4 +1,4 @@
-import { useWarehouseText } from "@/i18n/warehouseContext";
+import { useWarehouseText, useWarehouseError } from "@/i18n/warehouseContext";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Copy, Check, Download } from "lucide-react";
@@ -9,6 +9,7 @@ import type { SearchProduct } from "@/lib/productSearch";
 /** Tanlangan mahsulotning doimiy shtrix-kodini ko'rsatadi: nusxalash + 40×30 mm PDF yorliq. */
 export default function BarcodeChip({ product }: { product: SearchProduct | null | undefined }) {
   const wt = useWarehouseText();
+  const we = useWarehouseError();
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   if (!product?.barcode) return null;
@@ -18,14 +19,14 @@ export default function BarcodeChip({ product }: { product: SearchProduct | null
       await navigator.clipboard.writeText(product.barcode);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch { toast.error(wt("Nusxalash imkoni bo'lmadi")); }
+    } catch { toast.error(we(wt("Nusxalash imkoni bo'lmadi"))); }
   };
   const pdf = async () => {
     setBusy(true);
     try {
       const doc = await createBarcodeLabels([product]);
       doc.save(`${product.barcode}_40x30.pdf`);
-    } catch { toast.error(wt("Yorliq yaratishda xatolik")); }
+    } catch { toast.error(we(wt("Yorliq yaratishda xatolik"))); }
     finally { setBusy(false); }
   };
   return (

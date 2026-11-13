@@ -1,4 +1,4 @@
-import { useWarehouseText } from "@/i18n/warehouseContext";
+import { useWarehouseText, useWarehouseError } from "@/i18n/warehouseContext";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureOnline } from "@/components/OnlineGuard";
@@ -71,6 +71,7 @@ const CURRENCIES = ["UZS", "USD"] as const;
 
 export default function WarehousePage() {
   const wt = useWarehouseText();
+  const we = useWarehouseError();
   const { user, hasRole, roles } = useAuth() as any;
   const { t } = useI18n();
   const localize = useLocalize();
@@ -248,14 +249,14 @@ export default function WarehousePage() {
   const fmt = (n: number) => fmtNum(n);
 
   const addProduct = async () => {
-    if (!newName.trim()) { toast.error(t.warehouse.fillFields); return; }
+    if (!newName.trim()) { toast.error(we(t.warehouse.fillFields)); return; }
     const qtyN = Number(newQty) || 0;
-    if (qtyN < 0) { toast.error(t.warehouse.fillFields); return; }
+    if (qtyN < 0) { toast.error(we(t.warehouse.fillFields)); return; }
     let image_url: string | null = null;
     if (newImage) {
       const path = `${Date.now()}_${newImage.name}`;
       const up = await supabase.storage.from("product-images").upload(path, newImage);
-      if (up.error) { toast.error(up.error.message); return; }
+      if (up.error) { toast.error(we(up.error.message)); return; }
       image_url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
     }
     const priceN = Number(newPrice) || 0;
@@ -277,12 +278,12 @@ export default function WarehousePage() {
       priority: newPriority, currency: newCurrency,
       ...metalFields,
     } as any).select("id,barcode").single();
-    if ((error as any)?.code === "23505") { toast.error(wt("Bu mahsulot (nomi, birligi, o'lchami, valyutasi) allaqachon mavjud")); return; }
-    if (error || !created) { toast.error(error?.message || wt("Error")); return; }
+    if ((error as any)?.code === "23505") { toast.error(we(wt("Bu mahsulot (nomi, birligi, o'lchami, valyutasi) allaqachon mavjud"))); return; }
+    if (error || !created) { toast.error(we(error?.message || wt("Error"))); return; }
     const createdBarcode = (created as any).barcode as string | null;
     if (newFactoryCode.trim()) {
       const { error: aliasError } = await supabase.rpc("bind_barcode_alias", { _code: newFactoryCode, _product_id: created.id });
-      if (aliasError) toast.error(("" + wt("Mahsulot yaratildi, zavod kodi biriktirilmadi:") + " " + (aliasError.message) + ""));
+      if (aliasError) toast.error(we(("" + wt("Mahsulot yaratildi, zavod kodi biriktirilmadi:") + " " + (aliasError.message) + "")));
     }
     // Metall normativi: Konstruktor sarfida ishlatilishi uchun saqlanadi
     if (isMetalProduct && newMetalType.trim() && num(newThick) && num(newWidth) && num(newLength) && num(newWeightKg)) {
@@ -323,7 +324,7 @@ export default function WarehousePage() {
           comment: `${t.warehouse.addProduct}${newSupplier ? ` · ${newSupplier}` : ""}`,
         } as any);
       } catch (e: any) {
-        toast.error(e.message ?? wt("Kirim sessiyasini ochib bo'lmadi"));
+        toast.error(we(e.message ?? wt("Kirim sessiyasini ochib bo'lmadi")));
         return;
       }
     }
@@ -370,7 +371,7 @@ export default function WarehousePage() {
   const doImport = async () => {
     const qtyN = Number(impQty);
     const priceN = Number(impPrice) || 0;
-    if (!impProductName.trim() || !qtyN) { toast.error(t.warehouse.fillFields); return; }
+    if (!impProductName.trim() || !qtyN) { toast.error(we(t.warehouse.fillFields)); return; }
     let imgUrl: string | null = null;
     if (impImage) {
       const ext = impImage.name.split(".").pop();
@@ -426,7 +427,7 @@ export default function WarehousePage() {
           } as any)
           .select("id").single();
         if (createError || !newProduct) {
-          toast.error(createError?.message || wt("Mahsulot yaratishda xatolik"));
+          toast.error(we(createError?.message || wt("Mahsulot yaratishda xatolik")));
           return;
         }
         productId = newProduct.id;
@@ -439,10 +440,10 @@ export default function WarehousePage() {
     let session: any;
     try {
       session = await getOrStartSession(user?.id, currentUserName(user), impSupplier || null);
-    } catch (e: any) { toast.error(e.message ?? wt("Kirim sessiyasini ochib bo'lmadi")); return; }
+    } catch (e: any) { toast.error(we(e.message ?? wt("Kirim sessiyasini ochib bo'lmadi"))); return; }
     if ((session.payment_type ?? "cash") !== impPayment) {
       try { await updateSessionPayment(session.id, { payment_type: impPayment }); }
-      catch (e: any) { toast.error(e.message ?? wt("To'lov turini saqlab bo'lmadi")); return; }
+      catch (e: any) { toast.error(we(e.message ?? wt("To'lov turini saqlab bo'lmadi"))); return; }
     }
 
     let merged = false;
@@ -464,7 +465,7 @@ export default function WarehousePage() {
         comment: `Nakladnoy${impSupplier ? ` · ${impSupplier}` : ""} · ${impLocation}${orderLabel ? ` · zakaz: ${orderLabel}` : ""}`,
       });
       merged = res.merged;
-    } catch (e: any) { toast.error(e.message ?? wt("Xatolik")); return; }
+    } catch (e: any) { toast.error(we(e.message ?? wt("Xatolik"))); return; }
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: currentUserName(user),
       action: "Nakladnoyga mahsulot qo'shildi", entity: "intake_item",
@@ -501,7 +502,7 @@ export default function WarehousePage() {
 
   const removeSessionItem = async (id: string) => {
     const { error } = await supabase.from("intake_items").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(we(error.message)); return; }
     loadSession();
   };
 
@@ -515,7 +516,7 @@ export default function WarehousePage() {
     if (!editItem) return;
     const qtyN = Number(eiQty);
     const priceN = Number(eiPrice);
-    if (!qtyN || qtyN <= 0 || priceN < 0) { toast.error(t.warehouse.fillFields); return; }
+    if (!qtyN || qtyN <= 0 || priceN < 0) { toast.error(we(t.warehouse.fillFields)); return; }
     setEiBusy(true);
     try {
       const { error } = await supabase.rpc("update_intake_invoice_item" as any, {
@@ -530,7 +531,7 @@ export default function WarehousePage() {
       toast.success(wt("Mahsulot yangilandi"));
       setEditItem(null);
       await loadSession();
-    } catch (e: any) { toast.error(e.message ?? wt("Xatolik")); }
+    } catch (e: any) { toast.error(we(e.message ?? wt("Xatolik"))); }
     finally { setEiBusy(false); }
   };
 
@@ -556,14 +557,14 @@ export default function WarehousePage() {
       toast.success(wt("Nakladnoy rasmi yuklandi"));
       await loadSession();
     } catch (e: any) {
-      toast.error(e.message ?? wt("Rasm yuklashda xatolik"));
+      toast.error(we(e.message ?? wt("Rasm yuklashda xatolik")));
     } finally { setNaklBusy(false); }
   };
 
   /** Tugatish — rasm majburiy; sessiya yopiladi va skladga kirim qilinadi */
   const doFinishSession = async () => {
     if (!openSession) return;
-    if (sessionItems.length === 0) { toast.error(wt("Avval mahsulot qo'shing")); return; }
+    if (sessionItems.length === 0) { toast.error(we(wt("Avval mahsulot qo'shing"))); return; }
     setNaklBusy(true);
     try {
       await closeInvoice(openSession.id);
@@ -580,7 +581,7 @@ export default function WarehousePage() {
       setImportOpen(false);
       await loadSession();
       await load();
-    } catch (e: any) { toast.error(e.message ?? wt("Xatolik")); }
+    } catch (e: any) { toast.error(we(e.message ?? wt("Xatolik"))); }
     finally { setNaklBusy(false); }
   };
 
@@ -598,7 +599,7 @@ export default function WarehousePage() {
     if (!editProd || epLock.current) return;
     const newStock = Number(epStock);
     if (epStock.trim() === "" || !Number.isFinite(newStock) || newStock < 0) {
-      toast.error(wt("Yangi yakuniy qoldiqni (0 yoki undan katta) kiriting")); return;
+      toast.error(we(wt("Yangi yakuniy qoldiqni (0 yoki undan katta) kiriting"))); return;
     }
     const newVals = {
       name: epName.trim(), unit: epUnit, last_price: Number(epPrice) || 0,
@@ -615,7 +616,7 @@ export default function WarehousePage() {
       toast.success(t.common.save);
       setEditProdOpen(false); setEditProd(null); await load();
     } catch (error) {
-      toast.error((error as { message?: string }).message || wt("Saqlashda xatolik"));
+      toast.error(we((error as { message?: string }).message || wt("Saqlashda xatolik")));
     } finally { epLock.current = false; setEpBusy(false); }
   };
 
@@ -629,7 +630,7 @@ export default function WarehousePage() {
   const saveEditMovement = async () => {
     if (!editMov) return;
     const newQty = Number(emQty);
-    if (!newQty || newQty <= 0) { toast.error(t.warehouse.fillFields); return; }
+    if (!newQty || newQty <= 0) { toast.error(we(t.warehouse.fillFields)); return; }
     const oldQty = Number(editMov.quantity);
     const delta = newQty - oldQty;
     const diffs: string[] = [];
@@ -642,7 +643,7 @@ export default function WarehousePage() {
       quantity: newQty, recipient_name: emRecipient || null,
       comment: emComment || null, source: emSource.trim() || null,
     }).eq("id", editMov.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(we(error.message)); return; }
 
     // Adjust product stock + order_parts for quantity delta (trigger only fires on insert)
     if (delta !== 0 && editMov.product_id) {
@@ -671,11 +672,11 @@ export default function WarehousePage() {
 
   const confirmDeleteProduct = async () => {
     if (!delTarget) return;
-    if (!ensureOnline((m) => toast.error(m))) return;
+    if (!ensureOnline((m) => toast.error(we(m)))) return;
     setDelBusy(true);
     const { error } = await supabase.from("products").delete().in("id", delTarget.ids);
     setDelBusy(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(we(error.message)); return; }
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: currentUserName(user),
       action: "Mahsulot o'chirildi", entity: "product",
@@ -706,7 +707,7 @@ export default function WarehousePage() {
       }
     }
     const { error } = await supabase.from("stock_movements").delete().eq("id", m.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(we(error.message)); return; }
     await logAudit(supabase, {
       actor_id: user?.id, actor_name: currentUserName(user),
       action: m.direction === "in" ? "Kirim o'chirildi" : "Chiqim o'chirildi",
@@ -1095,7 +1096,7 @@ export default function WarehousePage() {
                   <div><Label>{wt("To'lov turi")}</Label>
                     <Select value={impPayment} onValueChange={(v) => {
                       setImpPayment(v as IntakePaymentType);
-                      if (openSession) updateSessionPayment(openSession.id, { payment_type: v as IntakePaymentType }).then(loadSession).catch((e) => toast.error(e.message));
+                      if (openSession) updateSessionPayment(openSession.id, { payment_type: v as IntakePaymentType }).then(loadSession).catch((e) => toast.error(we(e.message)));
                     }}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>{INTAKE_PAYMENT_TYPES.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}</SelectContent>
@@ -1766,8 +1767,7 @@ export default function WarehousePage() {
             <AlertDialogDescription>
               <span className="font-semibold">{delTarget?.name}</span> o'chirilsinmi?
               {delTarget && delTarget.ids.length > 1 ? (" " + wt("Barcha") + " " + (delTarget.ids.length) + " partiya o'chiriladi.") : ""}
-              {" "}{wt("Joriy qoldiq:")}{delTarget?.qty} {delTarget?.unit}. Bu amalni ortga qaytarib bo'lmaydi, harakatlar tarixi saqlanadi.
-            </AlertDialogDescription>
+              {" "}{wt("Joriy qoldiq:")}{delTarget?.qty} {delTarget?.unit}{wt(". Bu amalni ortga qaytarib bo'lmaydi, harakatlar tarixi saqlanadi.")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={delBusy}>{wt("Bekor qilish")}</AlertDialogCancel>

@@ -1,4 +1,4 @@
-import { useWarehouseText } from "@/i18n/warehouseContext";
+import { useWarehouseText, useWarehouseError } from "@/i18n/warehouseContext";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -84,6 +84,7 @@ const daysBetween = (a: string, b?: string | null) => {
 
 export default function InstrumentsTab() {
   const wt = useWarehouseText();
+  const we = useWarehouseError();
   const { user, hasRole } = useAuth();
   const localize = useLocalize();
   const canManage = hasRole(["warehouse", "admin", "cashier", "hr"]);
@@ -117,7 +118,7 @@ export default function InstrumentsTab() {
     if (v === null) return;
     const next = v.trim() || null;
     const { error } = await supabase.from("instrument_assignments").update({ box_number: next } as any).eq("id", a.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(we(error.message)); return; }
     await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Instrument karobka raqami o'zgartirildi", entity: "instrument_assignment", details: `${a.instrument?.name ?? ""} · ${a.employee?.full_name ?? ""}: ${a.box_number ?? "—"} → ${next ?? "—"}` });
     setAssignments(prev => prev.map(x => x.id === a.id ? { ...x, box_number: next } : x));
     toast.success(wt("Saqlandi"));
@@ -228,7 +229,7 @@ export default function InstrumentsTab() {
   };
 
   const saveInstrument = async () => {
-    if (!iForm.name.trim()) { toast.error(wt("Nomini kiriting")); return; }
+    if (!iForm.name.trim()) { toast.error(we(wt("Nomini kiriting"))); return; }
     const payload: any = {
       name: iForm.name.trim(),
       category: iForm.category.trim(),
@@ -241,15 +242,15 @@ export default function InstrumentsTab() {
     };
     if (iEditId) {
       const { error } = await supabase.from("instruments").update(payload).eq("id", iEditId);
-      if (error) { toast.error(error.message); return; }
+      if (error) { toast.error(we(error.message)); return; }
       await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Instrument tahrirlandi", entity: "instrument", details: `${payload.name}` });
     } else {
       payload.created_by = user?.id;
       const { data: created, error } = await supabase.from("instruments").insert(payload).select("id").single();
-      if (error) { toast.error(error.message); return; }
+      if (error) { toast.error(we(error.message)); return; }
       if (created && factoryCode.trim()) {
         const { error: aliasError } = await supabase.rpc("bind_barcode_alias", { _code: factoryCode, _product_id: created.id });
-        if (aliasError) toast.error(("" + wt("Instrument yaratildi, zavod kodi biriktirilmadi:") + " " + (aliasError.message) + ""));
+        if (aliasError) toast.error(we(("" + wt("Instrument yaratildi, zavod kodi biriktirilmadi:") + " " + (aliasError.message) + "")));
       }
       await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Instrument kirimi (batch)", entity: "instrument", details: `${payload.name} ×${payload.quantity}` });
     }
@@ -261,10 +262,10 @@ export default function InstrumentsTab() {
 
   const deleteInstrument = async (it: Instrument) => {
     const held = assignments.some(a => a.instrument_id === it.id && !a.returned_at);
-    if (held) { toast.error(wt("Bu batch xodimlarda mavjud. Avval qaytarib oling.")); return; }
+    if (held) { toast.error(we(wt("Bu batch xodimlarda mavjud. Avval qaytarib oling."))); return; }
     if (!window.confirm(("" + wt("Batchni o'chirish:") + " " + (it.name) + " (" + (it.quantity) + " dona)?"))) return;
     const { error } = await supabase.from("instruments").delete().eq("id", it.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(we(error.message)); return; }
     await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Instrument batch o'chirildi", entity: "instrument", details: it.name });
     toast.success(wt("O'chirildi"));
   };
@@ -273,11 +274,11 @@ export default function InstrumentsTab() {
   const doIssue = async () => {
     const qty = Number(issueForm.quantity);
     const g = groups.find(x => x.key === issueForm.group_key);
-    if (!issueForm.employee_id || !g || !qty) { toast.error(wt("Maydonlarni to'ldiring")); return; }
-    if (!ensureOnline((m) => toast.error(m))) return;
+    if (!issueForm.employee_id || !g || !qty) { toast.error(we(wt("Maydonlarni to'ldiring"))); return; }
+    if (!ensureOnline((m) => toast.error(we(m)))) return;
     if (qty > g.totalQty) {
       await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Instrument berish BLOKLANDI", entity: "instrument_assignment", details: `${g.name}: so'ralgan ${qty}, mavjud ${g.totalQty}` });
-      toast.error((wt("Skladda yetarli emas (") + (g.totalQty) + ")")); return;
+      toast.error(we((wt("Skladda yetarli emas (") + (g.totalQty) + ")"))); return;
     }
     // FIFO: oldest active batches first
     const usable = [...g.batches]
@@ -297,10 +298,10 @@ export default function InstrumentsTab() {
         box_number: issueForm.box_number.trim() || null,
         issued_by: user?.id,
       });
-      if (error) { toast.error(error.message); return; }
+      if (error) { toast.error(we(error.message)); return; }
       remaining -= take;
     }
-    if (remaining > 0) { toast.error(wt("Faol batchlarda yetarli emas")); return; }
+    if (remaining > 0) { toast.error(we(wt("Faol batchlarda yetarli emas"))); return; }
     await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Instrument berildi", entity: "instrument_assignment", details: `${g.name} ×${qty} → ${emp?.full_name}` });
     toast.success(wt("Berildi"));
     setIssueForm({ employee_id: "", group_key: "", quantity: "1", issued_at: new Date().toISOString().slice(0, 10), comment: "", box_number: "" });
@@ -309,7 +310,7 @@ export default function InstrumentsTab() {
 
   const empHeld = returnEmp ? (heldByEmp[returnEmp] ?? []) : [];
   const doReturn = async () => {
-    if (!returnEmp || !returnAssignment) { toast.error(wt("Tanlang")); return; }
+    if (!returnEmp || !returnAssignment) { toast.error(we(wt("Tanlang"))); return; }
     const a = assignments.find(x => x.id === returnAssignment);
     if (!a) return;
     const { error } = await supabase.from("instrument_assignments").update({
@@ -317,7 +318,7 @@ export default function InstrumentsTab() {
       return_comment: returnComment.trim() || null,
       returned_by: user?.id,
     }).eq("id", returnAssignment);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(we(error.message)); return; }
     await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Instrument qaytarildi", entity: "instrument_assignment", details: `${a.instrument?.name} ×${a.quantity} ← ${a.employee?.full_name}` });
     toast.success(wt("Qaytarildi"));
     setReturnEmp(""); setReturnAssignment(""); setReturnComment("");
@@ -588,7 +589,7 @@ export default function InstrumentsTab() {
                         <div className="flex items-center justify-between flex-wrap gap-2">
                           <div className="font-medium text-sm">{localize(a.employee?.full_name) || "—"}</div>
                           {active
-                            ? <Badge className="bg-status-green text-white">🟢 Hozir shu xodimda</Badge>
+                            ? <Badge className="bg-status-green text-white">{wt("🟢 Hozir shu xodimda")}</Badge>
                             : <Badge variant="outline">{wt("Qaytarilgan")}</Badge>}
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1.5 text-xs">
@@ -611,8 +612,8 @@ export default function InstrumentsTab() {
                         </div>
                         {(a.issue_comment || a.return_comment) && (
                           <div className="mt-1.5 text-xs text-muted-foreground italic space-y-0.5">
-                            {a.issue_comment && <div>📝 Berishda: {a.issue_comment}</div>}
-                            {a.return_comment && <div>↩️ Qaytarishda: {a.return_comment}</div>}
+                            {a.issue_comment && <div>{wt("📝 Berishda:")}{a.issue_comment}</div>}
+                            {a.return_comment && <div>{wt("↩️ Qaytarishda:")}{a.return_comment}</div>}
                           </div>
                         )}
                       </div>

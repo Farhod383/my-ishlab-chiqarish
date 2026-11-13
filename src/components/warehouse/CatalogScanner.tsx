@@ -1,4 +1,4 @@
-import { useWarehouseText } from "@/i18n/warehouseContext";
+import { useWarehouseText, useWarehouseError } from "@/i18n/warehouseContext";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,7 @@ interface Props { products: SearchProduct[]; onSelect: (p: any, scanId?: string 
 
 export default function CatalogScanner({ products, onSelect, module, action = "search" }: Props) {
   const wt = useWarehouseText();
+  const we = useWarehouseError();
   const { roles } = useAuth();
   const [code, setCode] = useState("");
   const [matches, setMatches] = useState<any[]>([]);
@@ -66,8 +67,8 @@ export default function CatalogScanner({ products, onSelect, module, action = "s
         else { onSelect(single, scanIdRef.current); toast.success(("" + wt("Tovar:") + " " + (single.name) + "")); }
       }
       else if (found.length > 1) setMatches(found);
-      else { setMissing(value); toast.error(("" + wt("Kod topilmadi:") + " " + (value) + "")); }
-    } catch (e: any) { toast.error(e.message ?? wt("Skanerlashda xatolik")); }
+      else { setMissing(value); toast.error(we(("" + wt("Kod topilmadi:") + " " + (value) + ""))); }
+    } catch (e: any) { toast.error(we(e.message ?? wt("Skanerlashda xatolik"))); }
     finally { setBusy(false); setCode(""); inputRef.current?.focus(); }
   };
   const bindAlias = async () => {
@@ -80,7 +81,7 @@ export default function CatalogScanner({ products, onSelect, module, action = "s
       toast.success(("" + wt("Kod biriktirildi:") + " " + (missing) + " → " + (row.name) + ""));
       setBindOpen(false); setMissing(""); setBindId("");
       onSelect(products.find(p => p.id === row.product_id) ?? { id: row.product_id, product_type_id: row.product_type_id, name: row.name, unit: row.unit, barcode: row.barcode }, scanIdRef.current);
-    } catch (e: any) { toast.error(e.message ?? wt("Kod biriktirishda xatolik")); }
+    } catch (e: any) { toast.error(we(e.message ?? wt("Kod biriktirishda xatolik"))); }
     finally { setBusy(false); }
   };
   useEffect(() => {

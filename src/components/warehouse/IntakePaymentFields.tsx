@@ -1,4 +1,4 @@
-import { useWarehouseText } from "@/i18n/warehouseContext";
+import { useWarehouseText, useWarehouseError } from "@/i18n/warehouseContext";
 import { useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import {
 /** Ochiq nakladnoyning to'lov turi, raqami va izohi — bazaga darhol saqlanadi. */
 export function IntakePaymentFields({ session, onSaved }: { session: IntakeSession; onSaved?: () => void }) {
   const wt = useWarehouseText();
+  const we = useWarehouseError();
   const [pt, setPt] = useState<IntakePaymentType>((session.payment_type as IntakePaymentType) ?? "cash");
   const [num, setNum] = useState(session.invoice_number ?? "");
   const [comment, setComment] = useState(session.comment ?? "");
@@ -23,7 +24,7 @@ export function IntakePaymentFields({ session, onSaved }: { session: IntakeSessi
 
   const save = async (patch: Parameters<typeof updateSessionPayment>[1]) => {
     try { await updateSessionPayment(session.id, patch); onSaved?.(); }
-    catch (e: any) { toast.error(e.message ?? wt("Saqlab bo'lmadi")); }
+    catch (e: any) { toast.error(we(e.message ?? wt("Saqlab bo'lmadi"))); }
   };
 
   return (

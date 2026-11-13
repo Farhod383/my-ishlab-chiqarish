@@ -1,4 +1,4 @@
-import { useWarehouseText } from "@/i18n/warehouseContext";
+import { useWarehouseText, useWarehouseError } from "@/i18n/warehouseContext";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { toast } from "sonner";
 
 export default function BulkBarcodeLabels({ products }: { products: SearchProduct[] }) {
   const wt = useWarehouseText();
+  const we = useWarehouseError();
   const [open, setOpen] = useState(false), [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set()), [busy, setBusy] = useState(false);
   const [onlyWithoutFactory, setOnlyWithoutFactory] = useState(true);
@@ -22,7 +23,7 @@ export default function BulkBarcodeLabels({ products }: { products: SearchProduc
     setLoaded(false);
     void (async () => {
       const { data, error } = await supabase.from("product_type_barcode_aliases").select("product_type_id").in("reason", ["factory_code", "Qo‘lda kod biriktirish"]);
-      if (error) { toast.error(error.message); return; }
+      if (error) { toast.error(we(error.message)); return; }
       setFactoryTypes(new Set((data ?? []).map(row => row.product_type_id))); setLoaded(true);
     })();
   }, [open]);
@@ -32,7 +33,7 @@ export default function BulkBarcodeLabels({ products }: { products: SearchProduc
   const download = async () => {
     setBusy(true);
     try { const doc = await createBarcodeLabels(eligible.filter(p => selected.has(productTypeKey(p)))); doc.save("Mahsulot_turlari_40x30.pdf"); }
-    catch (error) { toast.error(error instanceof Error ? error.message : wt("Yorliq yaratishda xatolik")); }
+    catch (error) { toast.error(we(error instanceof Error ? error.message : wt("Yorliq yaratishda xatolik"))); }
     finally { setBusy(false); }
   };
   return <>

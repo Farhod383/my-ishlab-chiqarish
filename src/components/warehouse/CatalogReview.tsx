@@ -1,4 +1,4 @@
-import { useWarehouseText } from "@/i18n/warehouseContext";
+import { useWarehouseText, useWarehouseError } from "@/i18n/warehouseContext";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,12 @@ import { toast } from "sonner";
 
 export default function CatalogReview({canEdit,onUpdated}:{canEdit:boolean;onUpdated:()=>void}) {
   const wt = useWarehouseText();
+  const we = useWarehouseError();
   const [open,setOpen]=useState(false), [rows,setRows]=useState<any[]>([]), [summary,setSummary]=useState<any>(null);
   const [codes,setCodes]=useState<Record<string,string>>({}), [busy,setBusy]=useState(false);
   const [reviewOnly,setReviewOnly]=useState(true);
-  const load=async()=>{const {data,error}=await supabase.from("catalog_import_runs").select("results,summary").eq("source_key","warehouse-mxik-451-2026-10-31").limit(1);if(error){toast.error(error.message);return;}const run=data?.[0];setRows(Array.isArray(run?.results)?run.results:[]);setSummary(run?.summary);};
-  const save=async(row:any)=>{const code=codes[row.product_id]?.trim();if(!code || !/^\d{17}$/.test(code)){toast.error(wt("Rasmiy 17 raqamli MXIK kiriting"));return;}setBusy(true);const {error}=await supabase.from("products").update({mxik_code:code}).eq("id",row.product_id);setBusy(false);if(error)toast.error(error.message);else{toast.success(wt("MXIK saqlandi"));setRows(prev=>prev.map(r=>r.product_id===row.product_id?{...r,mxik:code,review:false,outcome:"MXIK qo‘lda tasdiqlandi"}:r));onUpdated();}};
+  const load=async()=>{const {data,error}=await supabase.from("catalog_import_runs").select("results,summary").eq("source_key","warehouse-mxik-451-2026-10-31").limit(1);if(error){toast.error(we(error.message));return;}const run=data?.[0];setRows(Array.isArray(run?.results)?run.results:[]);setSummary(run?.summary);};
+  const save=async(row:any)=>{const code=codes[row.product_id]?.trim();if(!code || !/^\d{17}$/.test(code)){toast.error(we(wt("Rasmiy 17 raqamli MXIK kiriting")));return;}setBusy(true);const {error}=await supabase.from("products").update({mxik_code:code}).eq("id",row.product_id);setBusy(false);if(error)toast.error(we(error.message));else{toast.success(wt("MXIK saqlandi"));setRows(prev=>prev.map(r=>r.product_id===row.product_id?{...r,mxik:code,review:false,outcome:"MXIK qo‘lda tasdiqlandi"}:r));onUpdated();}};
   return <><Button variant="outline" onClick={()=>{setOpen(true);load();}}>{wt("Nomlar / MXIK hisoboti")}</Button><Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-w-5xl"><DialogHeader><DialogTitle>{wt("Nomlar va MXIK tekshiruvi")}</DialogTitle></DialogHeader>
     {summary && <p className="text-sm">{wt("Yangilangan nomlar:")}{summary.renamed} · MXIK: {summary.mxik_updated} · Tekshirishga qolgan: {summary.review}</p>}
     <div className="flex gap-2"><Button variant={reviewOnly?"secondary":"outline"} onClick={()=>setReviewOnly(true)}>{wt("Tekshiruv kerak")}</Button><Button variant={!reviewOnly?"secondary":"outline"} onClick={()=>setReviewOnly(false)}>{wt("Barchasi")}</Button><Button variant="outline" asChild><a href="https://tasnif.soliq.uz" target="_blank" rel="noopener noreferrer">{wt("Rasmiy MXIK katalogi")}</a></Button></div>

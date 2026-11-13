@@ -1,4 +1,4 @@
-import { useWarehouseText } from "@/i18n/warehouseContext";
+import { useWarehouseText, useWarehouseError } from "@/i18n/warehouseContext";
 import { useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -22,6 +22,7 @@ export default function EmployeeIssueDialog({ open, onOpenChange, products, orde
   orders: { id: string; order_number: string; product_name: string }[]; mode: 'order' | 'other'; onSaved: () => void;
 }) {
   const wt = useWarehouseText();
+  const we = useWarehouseError();
   const { employees } = useEmployees({ activeOnly: true });
   const localize = useLocalize();
   const [employee, setEmployee] = useState('');
@@ -53,10 +54,10 @@ export default function EmployeeIssueDialog({ open, onOpenChange, products, orde
       }
       setLines(next);
       setConfirm(true);
-    } catch (e) { toast.error((e as { message: string }).message); }
+    } catch (e) { toast.error(we((e as { message: string }).message)); }
   };
   const save = async () => {
-    if (saving.current || !ensureOnline(m => toast.error(m))) return;
+    if (saving.current || !ensureOnline(m => toast.error(we(m)))) return;
     const payload = lines.map(({ key: _key, ...row }) => row);
     const fingerprint = JSON.stringify({ employee, payload });
     if (lockedPayload.current && lockedPayload.current !== fingerprint) key.current = crypto.randomUUID();
@@ -67,7 +68,7 @@ export default function EmployeeIssueDialog({ open, onOpenChange, products, orde
       toast.success(("" + wt("Topshirish saqlandi —") + " " + (lines.length) + " mahsulot qatori"));
       const row = newIssueLine(); setLines([row]); setActiveKey(row.key); setEmployee(''); setConfirm(false); key.current = crypto.randomUUID(); lockedPayload.current = null;
       onOpenChange(false); onSaved();
-    } catch (e) { toast.error((e as { message: string }).message); }
+    } catch (e) { toast.error(we((e as { message: string }).message)); }
     finally { saving.current = false; setBusy(false); }
   };
   return <Dialog open={open} onOpenChange={o => { if (!busy) { setConfirm(false); onOpenChange(o); } }}>

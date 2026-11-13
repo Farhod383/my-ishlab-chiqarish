@@ -1,4 +1,4 @@
-import { useWarehouseText } from "@/i18n/warehouseContext";
+import { useWarehouseText, useWarehouseError } from "@/i18n/warehouseContext";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,10 +9,11 @@ import { toast } from "sonner";
 type Review = { name: string; count: number; reason: string; records: { id: string; name: string; barcode: string }[] };
 export default function ProductTypeReview() {
   const wt = useWarehouseText();
+  const we = useWarehouseError();
   const [open, setOpen] = useState(false), [rows, setRows] = useState<Review[]>([]);
   const load = async () => {
     const { data, error } = await supabase.from("catalog_import_runs").select("results").eq("source_key", "product-type-barcode-audit-2026-10-31").maybeSingle();
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(we(error.message)); return; }
     setRows(Array.isArray(data?.results) ? data.results as unknown as Review[] : []);
   };
   return <><Button variant="outline" onClick={() => { setOpen(true); void load(); }}>{wt("Mahsulot turi tekshiruvi")}</Button>

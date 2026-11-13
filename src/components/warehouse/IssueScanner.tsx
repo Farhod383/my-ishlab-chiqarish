@@ -1,4 +1,4 @@
-import { useWarehouseText } from "@/i18n/warehouseContext";
+import { useWarehouseText, useWarehouseError } from "@/i18n/warehouseContext";
 import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ type Row = { id: string; name: string; kind?: string; product_type_id?: string |
 type Props = { kind: "product" | "instrument"; onEmployee: (id: string) => void; onProduct: (row: Row, scanId: string | null) => void };
 export default function IssueScanner({ kind, onEmployee, onProduct }: Props) {
   const wt = useWarehouseText();
+  const we = useWarehouseError();
   const localize = useLocalize();
   const { roles } = useAuth();
   const [missing, setMissing] = useState("");
@@ -42,7 +43,7 @@ export default function IssueScanner({ kind, onEmployee, onProduct }: Props) {
         if (error) throw error;
         const data = found?.[0];
         await logScan({ code: normalized, raw, module: "Chiqim", action: "out", kind: "employee", productName: data?.full_name ?? null, result: data?.status === "active" ? "found" : "not_found" });
-        if (!data || data.status !== "active") { toast.error(("" + wt("Kod topilmadi:") + " " + (normalized) + "")); return; }
+        if (!data || data.status !== "active") { toast.error(we(("" + wt("Kod topilmadi:") + " " + (normalized) + ""))); return; }
         onEmployee(data.id); toast.success(("" + wt("Xodim:") + " " + (localize(data.full_name)) + "")); return;
       }
       // MCT dan tashqari HAR QANDAY kod tovar/instrument sifatida qidiriladi.
@@ -53,8 +54,8 @@ export default function IssueScanner({ kind, onEmployee, onProduct }: Props) {
       scanId.current = await logScan({ code: normalized, raw, module: kind === "instrument" ? "Instrument berish" : "Chiqim", action: "out", productId: rows.length === 1 ? rows[0].id : null, productName: rows.length === 1 ? rows[0].name : null, productTypeId: rows.length === 1 ? rows[0].product_type_id : null, kind: rows.length ? kind : null, result: rows.length ? "found" : "not_found" });
       if (rows.length === 1) { onProduct(rows[0], scanId.current); toast.success(("" + wt("Tovar:") + " " + (rows[0].name) + "")); }
       else if (rows.length > 1) setMatches(rows);
-      else { setMissing(normalized); toast.error(("" + wt("Kod topilmadi:") + " " + (normalized) + "")); }
-    } catch (error) { toast.error(error instanceof Error ? error.message : wt("Skanerlashda xatolik")); }
+      else { setMissing(normalized); toast.error(we(("" + wt("Kod topilmadi:") + " " + (normalized) + ""))); }
+    } catch (error) { toast.error(we(error instanceof Error ? error.message : wt("Skanerlashda xatolik"))); }
     finally { busy.current = false; }
   };
   useEffect(() => registerScanHandler(createIssueScanHandler((_code, raw) => scan.current(raw))), []);
@@ -62,7 +63,7 @@ export default function IssueScanner({ kind, onEmployee, onProduct }: Props) {
     const { data, error } = kind === "product"
       ? await supabase.from("products").select("id,name,unit,product_type_id").is("instrument_id", null)
       : await supabase.from("instruments").select("id,name,product_type_id");
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(we(error.message)); return; }
     setChoices((data ?? []) as Row[]); setBindId(""); setBindOpen(true);
   };
   const bind = async () => {
@@ -73,7 +74,7 @@ export default function IssueScanner({ kind, onEmployee, onProduct }: Props) {
       if (error) throw error;
       const row = data as unknown as Row;
       setBindOpen(false); setMissing(""); onProduct(row, scanId.current); toast.success(("" + wt("Tovar:") + " " + (row.name) + ""));
-    } catch (error) { toast.error((error as { message?: string }).message ?? wt("Biriktirishda xatolik")); }
+    } catch (error) { toast.error(we((error as { message?: string }).message ?? wt("Biriktirishda xatolik"))); }
     finally { busy.current = false; }
   };
   return <div className="space-y-2">

@@ -1,4 +1,4 @@
-import { useWarehouseText } from "@/i18n/warehouseContext";
+import { useWarehouseText, useWarehouseError } from "@/i18n/warehouseContext";
 import { useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/auth/AuthContext';
@@ -26,6 +26,7 @@ import { Plus, Trash2 } from 'lucide-react';
 type Product = { id: string; name: string; unit: string; stock_qty: number; mxik_code: string | null; currency: string; product_type_id?: string | null; barcode?: string | null; old_names?: string[] };
 export default function WarehouseQuickActions({ products, onUpdated }: { products: Product[]; onUpdated: () => void | Promise<void> }) {
   const wt = useWarehouseText();
+  const we = useWarehouseError();
   const { roles } = useAuth();
   const [mode, setMode] = useState<'sverka' | 'mxik' | null>(null);
   const [isNew, setIsNew] = useState(false);
@@ -54,12 +55,12 @@ export default function WarehouseQuickActions({ products, onUpdated }: { product
   };
   const prepare = () => {
     if (mode === 'mxik') {
-      if (!selected || !code.trim()) { toast.error(wt("Mahsulot va MXIK kodini kiriting")); return; }
+      if (!selected || !code.trim()) { toast.error(we(wt("Mahsulot va MXIK kodini kiriting"))); return; }
     } else {
-      if (isNew && !validManualBarcode(barcode, true)) { toast.error(wt("To‘g‘ri shtrix-kod kiriting")); return; }
-      if ((isNew && (!name.trim() || !unit.trim())) || (!isNew && !selected) || !validateReconciliation(Number(qty), price === '' ? null : Number(price), isNew)) { toast.error(isNew ? wt("Mahsulot, musbat boshlang‘ich qoldiq va to‘g‘ri narxni kiriting") : wt("Mahsulot va yangi yakuniy qoldiqni (0 yoki undan katta) kiriting")); return; }
-      if (Object.entries(tech).some(([k,v]) => k !== 'metal_type' && v !== '' && (!Number.isFinite(Number(v)) || Number(v) <= 0))) { toast.error(wt("Texnik o‘lchamlar musbat bo‘lishi kerak")); return; }
-      if (expenses.some(e => !validExpense(e))) { toast.error(wt("Ta’minotchi xarajatlarining barcha maydonlarini to‘g‘ri kiriting")); return; }
+      if (isNew && !validManualBarcode(barcode, true)) { toast.error(we(wt("To‘g‘ri shtrix-kod kiriting"))); return; }
+      if ((isNew && (!name.trim() || !unit.trim())) || (!isNew && !selected) || !validateReconciliation(Number(qty), price === '' ? null : Number(price), isNew)) { toast.error(we(isNew ? wt("Mahsulot, musbat boshlang‘ich qoldiq va to‘g‘ri narxni kiriting") : wt("Mahsulot va yangi yakuniy qoldiqni (0 yoki undan katta) kiriting"))); return; }
+      if (Object.entries(tech).some(([k,v]) => k !== 'metal_type' && v !== '' && (!Number.isFinite(Number(v)) || Number(v) <= 0))) { toast.error(we(wt("Texnik o‘lchamlar musbat bo‘lishi kerak"))); return; }
+      if (expenses.some(e => !validExpense(e))) { toast.error(we(wt("Ta’minotchi xarajatlarining barcha maydonlarini to‘g‘ri kiriting"))); return; }
     }
     setConfirm(true);
   };
@@ -83,7 +84,7 @@ export default function WarehouseQuickActions({ products, onUpdated }: { product
         setSavedProduct({ id: result.product_id, name: isNew ? name : selected?.name ?? '', unit: isNew ? unit : selected?.unit ?? 'dona', stock_qty: result.after, barcode: result.barcode, currency, mxik_code: null });
       } else return;
       setConfirm(false); setMode(null); await onUpdated();
-    } catch (error) { toast.error((error as { message?: string }).message || wt("Saqlashda xatolik")); }
+    } catch (error) { toast.error(we((error as { message?: string }).message || wt("Saqlashda xatolik"))); }
     finally { lock.current = false; setBusy(false); }
   };
   return <>

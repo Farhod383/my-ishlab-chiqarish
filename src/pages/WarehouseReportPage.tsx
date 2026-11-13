@@ -1,4 +1,4 @@
-import { useWarehouseText } from "@/i18n/warehouseContext";
+import { useWarehouseText, useWarehouseError } from "@/i18n/warehouseContext";
 import { useEffect, useMemo, useState } from "react";
 import { isWarehouseProduct } from "@/lib/productClassification";
 import { Link } from "react-router-dom";
@@ -39,6 +39,7 @@ interface Mv {
 
 export default function WarehouseReportPage() {
   const wt = useWarehouseText();
+  const we = useWarehouseError();
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<any[]>([]);
   const [instruments, setInstruments] = useState<any[]>([]);
@@ -180,7 +181,7 @@ export default function WarehouseReportPage() {
   const [pdfBusy, setPdfBusy] = useState(false);
   const downloadStockPdf = async () => {
     if (!fProducts.length && !fInstruments.length) {
-      toast.error(wt("Tanlangan filtrlar bo'yicha mahsulot topilmadi — bo'sh hisobot yuklab olinmaydi."));
+      toast.error(we(wt("Tanlangan filtrlar bo'yicha mahsulot topilmadi — bo'sh hisobot yuklab olinmaydi.")));
       return;
     }
     setPdfBusy(true);
@@ -189,7 +190,7 @@ export default function WarehouseReportPage() {
       doc.save(`Sklad_Qoldiqlari_${todayFile()}.pdf`);
     } catch (e) {
       console.error(e);
-      toast.error(wt("PDF yaratishda xatolik yuz berdi. Qayta urinib ko'ring."));
+      toast.error(we(wt("PDF yaratishda xatolik yuz berdi. Qayta urinib ko'ring.")));
     } finally { setPdfBusy(false); }
   };
 

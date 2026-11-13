@@ -263,14 +263,14 @@ async function exportEmployeePDF(
   const W = doc.internal.pageSize.getWidth();
   let y = 40;
 
-  doc.setFont("helvetica", "bold"); doc.setFontSize(16);
+  doc.setFont("DV", "bold"); doc.setFontSize(16);
   doc.text(wt("Zavod - Xodim instrument hisoboti"), W / 2, y, { align: "center" });
   y += 20;
   doc.setFontSize(12); doc.setTextColor(90, 70, 160);
   doc.text(localize(emp.full_name), W / 2, y, { align: "center" });
   doc.setTextColor(0, 0, 0);
   y += 14;
-  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(120, 120, 120);
+  doc.setFont("DV", "normal"); doc.setFontSize(9); doc.setTextColor(120, 120, 120);
   doc.text(("" + wt("Yaratilgan:") + " " + (fmtDateTime24(new Date())) + ""), W / 2, y, { align: "center" });
   doc.setTextColor(0, 0, 0);
   y += 14;
@@ -278,7 +278,7 @@ async function exportEmployeePDF(
   autoTable(doc, {
     startY: y,
     theme: "grid",
-    styles: { font: "helvetica", fontSize: 10, cellPadding: 4 },
+    styles: { font: "DV", fontSize: 10, cellPadding: 4 },
     headStyles: { fillColor: [120, 90, 200] },
     head: [[wt("Maydon"), wt("Qiymat")]],
     body: [
@@ -292,12 +292,12 @@ async function exportEmployeePDF(
   });
   y = (doc as any).lastAutoTable.finalY + 16;
 
-  doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+  doc.setFont("DV", "bold"); doc.setFontSize(12);
   doc.text((wt("Hozir berilgan (") + (current.length) + ")"), 40, y); y += 6;
   autoTable(doc, {
     startY: y,
     theme: "grid",
-    styles: { font: "helvetica", fontSize: 9, cellPadding: 3 },
+    styles: { font: "DV", fontSize: 9, cellPadding: 3 },
     headStyles: { fillColor: [120, 90, 200] },
     head: [[wt("Instrument"), wt("Miqdor"), wt("Narx"), wt("Valyuta"), wt("Berilgan sana")]],
     body: current.length === 0
@@ -313,12 +313,12 @@ async function exportEmployeePDF(
   });
   y = (doc as any).lastAutoTable.finalY + 16;
 
-  doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+  doc.setFont("DV", "bold"); doc.setFontSize(12);
   doc.text((wt("Tarixi (") + (history.length) + ")"), 40, y); y += 6;
   autoTable(doc, {
     startY: y,
     theme: "grid",
-    styles: { font: "helvetica", fontSize: 8, cellPadding: 3 },
+    styles: { font: "DV", fontSize: 8, cellPadding: 3 },
     headStyles: { fillColor: [120, 90, 200] },
     head: [[wt("Instrument"), wt("Miqdor"), wt("Berilgan"), wt("Qaytarilgan"), wt("Bergan"), wt("Izoh")]],
     body: history.length === 0
@@ -342,9 +342,9 @@ async function exportEmployeePDF(
     const price = Number(a.instrument?.price ?? 0);
     totals[cur] = (totals[cur] ?? 0) + price * Number(a.quantity);
   });
-  doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+  doc.setFont("DV", "bold"); doc.setFontSize(11);
   doc.text(wt("Umumiy qiymat (hozir berilgan):"), 40, y); y += 14;
-  doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+  doc.setFont("DV", "normal"); doc.setFontSize(10);
   const entries = Object.entries(totals);
   if (entries.length === 0) {
     doc.text("—", 40, y); y += 14;
