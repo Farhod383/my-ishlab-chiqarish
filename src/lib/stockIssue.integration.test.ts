@@ -13,7 +13,7 @@ describe.skipIf(!sessionPath)('atomic employee product issue', () => {
   });
   afterAll(async () => { for (const id of ids) { const s = await stock(id); const r = await db.rpc('save_product_inventory', { _key: crypto.randomUUID(), _product_id: id, _quantity: 0, _expected_stock: s, _changes: {}, _comment: 'TEST ko‘p mahsulot sinovi yakuni' }); if (r.error) throw r.error; } });
   async function stock(id: string) { const r = await db.from('products').select('stock_qty').eq('id', id).single(); if (r.error) throw r.error; return r.data.stock_qty; }
-  const issue = (items: typeof payload, document = crypto.randomUUID()) => db.rpc('issue_employee_products', { _key: document, _employee_id: employee, _items: items });
+  const issue = (items: typeof payload, document: string = crypto.randomUUID()) => db.rpc('issue_employee_products', { _key: document, _employee_id: employee, _items: items });
   it('five products and repeated rows debit once: 10 - (2+3)=5', async () => {
     key = crypto.randomUUID(); payload = [...ids.map(product_id => ({ product_id, quantity: 2 })), { product_id: ids[0], quantity: 3 }];
     const r = await issue(payload, key); expect(r.error).toBeNull();
