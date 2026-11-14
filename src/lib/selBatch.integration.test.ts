@@ -7,6 +7,7 @@ describe.skipIf(!sessionPath)("SEL November 14 batch", () => {
   const db = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
   let orders: any[] = [];
   let sample: any;
+  let activeRange: any[] = [];
   beforeAll(async () => {
     if (!sessionPath) throw new Error("Session required");
     const auth = await db.auth.setSession(JSON.parse(readFileSync(sessionPath, "utf8")).session);
@@ -17,10 +18,36 @@ describe.skipIf(!sessionPath)("SEL November 14 batch", () => {
     const source = await db.from("orders").select("*,order_stages(*)").eq("order_number", "SEL0092").single();
     if (source.error) throw source.error;
     sample = source.data;
+    const active = await db.from("orders").select("*,order_stages(*)").gte("order_number", "SEL0093").lte("order_number", "SEL0120").order("order_number");
+    if (active.error) throw active.error;
+    activeRange = active.data ?? [];
   });
   it("contains exactly SEL0101 through SEL0120 without duplicate numbers", () => {
     expect(orders.map(o => o.order_number)).toEqual(Array.from({ length: 20 }, (_, i) => `SEL${String(i + 101).padStart(4, "0")}`));
     expect(new Set(orders.map(o => o.id)).size).toBe(20);
+  });
+  it("contains exactly the requested 28 existing orders SEL0093 through SEL0120", () => {
+    expect(activeRange.map(o => o.order_number)).toEqual(Array.from({ length: 28 }, (_, i) => `SEL${String(i + 93).padStart(4, "0")}`));
+    expect(new Set(activeRange.map(o => o.id)).size).toBe(28);
+    for (const o of activeRange) expect(o.status).toBe("in_progress");
+  });
+  it("has one started, unfinished drawing without current OTK approval on all 28 orders", () => {
+    expect(activeRange).toHaveLength(28);
+    for (const o of activeRange) {
+      const drawings = o.order_stages.filter((s: any) => s.name === "Chizma chizish");
+      expect(drawings).toHaveLength(1);
+      expect(drawings[0]).toMatchObject({ status: "in_progress", finished_at: null, qc_passed: null, otk_checked_at: null, worker_name: "Bakirov Xudoyorxon" });
+      expect(drawings[0].started_at).toBeTruthy();
+    }
+  });
+  it("retains the previous completion and OTK history when reopening eight drawings", async () => {
+    const result = await db.from("entity_audit").select("entity_id,old_value,new_value").eq("action", "sel_drawing_reopened_20261114");
+    if (result.error) throw result.error;
+    expect(result.data).toHaveLength(8);
+    for (const a of result.data ?? []) {
+      expect(a.old_value).toMatchObject({ status: "completed", qc_passed: true });
+      expect(a.new_value).toMatchObject({ status: "in_progress", qc_passed: null, finished_at: null });
+    }
   });
   it("all 20 orders are in progress with the sample product and client", () => {
     expect(orders).toHaveLength(20);
