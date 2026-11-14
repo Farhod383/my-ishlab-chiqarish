@@ -1,3 +1,8 @@
+## SEL: 93 mavjud va 20 yangi zakaz
+- [ ] 93 zakaz tekshirildi: 80 tugallangan, SEL0069–SEL0080 va SEL0093 (13 ta) bajarilmagan bosqichlar/OTK sababli yakunlanmadi. Bloker: haqiqiy bajarish ma’lumoti va mavjud OTK jarayonida tasdiq kerak; soxta tarix yozilmadi.
+- [x] SEL0092 namunasidan SEL0101–SEL0120 yaratildi: 20 Jarayonda, har birida Bakirov Xudoyorxon chizmasi boshlangan + 10 mustaqil pending bosqich. Namuna muddati 23.11.2026 saqlandi; namuna chizmasiz bo‘lgani uchun mavjud SEL chizma taqsimotidan foydalanildi.
+- [x] 33 test; haqiqiy hisobda SEL0120 chizmasi/xodimi/0 of 11 va mobil ko‘rinish tekshirildi, page errors yo‘q. Eski barcha zakaz/bosqich fingerprintlari o‘zgarmadi, takroriy raqam yo‘q, audit yozildi.
+
 ## Sklad: testlarni tozalash va xavfsiz o‘chirish
 - [x] 15 tasdiqlangan TEST Multi issue / TEST UI Multi va test-only harakat/hujjatlar tozalandi; haqiqiy mahsulotlar fingerprinti o‘zgarmadi. Yetim test turlari ham audit bilan tozalandi.
 - [x] Sklad/Admin uchun tasdiqlash, atomik qoldiq qaytarish, bog‘langan hujjatlar himoyasi va server auditi; himoyalangan topshirish butun hujjat bo‘yicha teskari harakat bilan bekor qilinadi.
