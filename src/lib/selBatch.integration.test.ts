@@ -31,6 +31,37 @@ describe.skipIf(!sessionPath)("SEL November 14 batch", () => {
     expect(new Set(activeRange.map(o => o.id)).size).toBe(28);
     for (const o of activeRange) expect(o.status).toBe("in_progress");
   });
+  it("marks exactly SEL0001 through SEL0092 and all their stages completed", async () => {
+    const result = await db.from("orders").select("order_number,status,order_stages(status)").gte("order_number", "SEL0000").lte("order_number", "SEL0092").order("order_number");
+    if (result.error) throw result.error;
+    expect(result.data?.map(o => o.order_number)).toEqual(Array.from({ length: 92 }, (_, i) => `SEL${String(i + 1).padStart(4, "0")}`));
+    for (const o of result.data ?? []) {
+      expect(o.status).toBe("completed");
+      expect(o.order_stages.length).toBeGreaterThan(0);
+      for (const stage of o.order_stages) expect(stage.status).toBe("completed");
+    }
+  });
+  it("administrative completion changes no OTK, worker, or historical date fields", async () => {
+    const result = await db.from("entity_audit").select("entity,old_value,new_value").eq("action", "sel_admin_status_correction_20261114");
+    if (result.error) throw result.error;
+    const stageAudits = (result.data ?? []).filter(a => a.entity === "order_stages");
+    expect(stageAudits).toHaveLength(252);
+    for (const a of stageAudits) {
+      const oldRow = a.old_value as Record<string, unknown>;
+      const newRow = a.new_value as Record<string, unknown>;
+      expect(newRow.status).toBe("completed");
+      expect(oldRow.status).not.toBe("completed");
+      const { status: oldStatus, ...oldMetadata } = oldRow;
+      const { status: newStatus, ...newMetadata } = newRow;
+      expect(newMetadata).toEqual(oldMetadata);
+    }
+    const orderAudits = (result.data ?? []).filter(a => a.entity === "orders");
+    expect(orderAudits).toHaveLength(12);
+    for (const a of orderAudits) {
+      expect(a.old_value).toMatchObject({ status: "in_progress" });
+      expect(a.new_value).toMatchObject({ status: "completed" });
+    }
+  });
   it("has one started, unfinished drawing without current OTK approval on all 28 orders", () => {
     expect(activeRange).toHaveLength(28);
     for (const o of activeRange) {
