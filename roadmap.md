@@ -1,3 +1,8 @@
+## SEL: 93 mavjud va 20 yangi zakaz
+- [ ] SEL0001–SEL0093 bosqichlari va haqiqiy OTK dalillarini tekshirish; bajarilmagan ishlarni soxtalashtirmasdan yakunlash.
+- [ ] SEL0092 namunasidan SEL0101–SEL0120 mustaqil zakaz/bosqichlarini yaratish, chizmani boshlash; SEL0094–SEL0100 va boshqa turlarni saqlash.
+- [ ] Haqiqiy baza va zakaz sahifasida raqamlar, bosqichlar, tarix va yakuniy sonlarni tekshirish.
+
 ## Sklad: testlarni tozalash va xavfsiz o‘chirish
 - [x] 15 tasdiqlangan TEST Multi issue / TEST UI Multi va test-only harakat/hujjatlar tozalandi; haqiqiy mahsulotlar fingerprinti o‘zgarmadi. Yetim test turlari ham audit bilan tozalandi.
 - [x] Sklad/Admin uchun tasdiqlash, atomik qoldiq qaytarish, bog‘langan hujjatlar himoyasi va server auditi; himoyalangan topshirish butun hujjat bo‘yicha teskari harakat bilan bekor qilinadi.
