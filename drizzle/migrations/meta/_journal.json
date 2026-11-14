@@ -568,6 +568,13 @@
       "when": 1794650453756,
       "tag": "0080_warehouse_catalog_archive_and_edit",
       "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1794650527736,
+      "tag": "0081_warehouse_archive_catalog_validation",
+      "breakpoints": true
     }
   ]
 }

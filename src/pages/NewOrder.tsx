@@ -82,7 +82,7 @@ export default function NewOrder() {
   useEffect(() => {
     (async () => {
       const [{ data: p }, { count }, { data: activeOrders }] = await Promise.all([
-        supabase.from("products").select("id, name, unit, old_names, mxik_code, barcode").is("instrument_id", null),
+        supabase.from("products").select("id, name, unit, old_names, mxik_code, barcode").is("instrument_id", null).is("archived_at", null),
         supabase.from("orders").select("*", { count: "exact", head: true }),
         supabase.from("orders").select("id, order_stages(norm_days, status)").neq("status", "completed"),
       ]);
