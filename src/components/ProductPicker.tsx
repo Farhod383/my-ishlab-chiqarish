@@ -16,6 +16,7 @@ export interface PickerProduct {
   mxik_code?: string | null;
   barcode?: string | null;
   product_type_id?: string | null;
+  archived_at?: string | null;
 }
 
 interface Props {
@@ -69,7 +70,7 @@ export default function ProductPicker({ products, value, onChange, placeholder =
           <CommandList className="max-h-[60vh] select-none">
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
-              {uniqueProductTypes(products).map(p => (
+              {uniqueProductTypes(products.filter(p => !p.archived_at)).map(p => (
                 <CommandItem
                   key={p.id}
                   value={productSearchText(p)}
