@@ -1,3 +1,8 @@
+## SEL: boshlang‘ich raqam–92 va 93–120 holatlarini tekshirish
+- [ ] Haqiqiy boshlang‘ich raqam va 92 gacha tugallanish dalillarini tekshirish; soxta bajarish/OTK yozmaslik.
+- [ ] SEL0093–SEL0120: aynan 28 mavjud zakaz, Jarayonda va boshlangan chizma; ID/sana/tarixni saqlash, faqat yetishmaganini yaratish.
+- [ ] Haqiqiy sonlar, yangi raqamlar, audit va foydalanuvchi sahifasini tekshirish.
+
 ## SEL: 93 mavjud va 20 yangi zakaz
 - [ ] 93 zakaz tekshirildi: 80 tugallangan, SEL0069–SEL0080 va SEL0093 (13 ta) bajarilmagan bosqichlar/OTK sababli yakunlanmadi. Bloker: haqiqiy bajarish ma’lumoti va mavjud OTK jarayonida tasdiq kerak; soxta tarix yozilmadi.
 - [x] SEL0092 namunasidan SEL0101–SEL0120 yaratildi: 20 Jarayonda, har birida Bakirov Xudoyorxon chizmasi boshlangan + 10 mustaqil pending bosqich. Namuna muddati 23.11.2026 saqlandi; namuna chizmasiz bo‘lgani uchun mavjud SEL chizma taqsimotidan foydalanildi.
