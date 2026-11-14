@@ -752,7 +752,7 @@ export default function WarehousePage() {
   // Grouped products by name (for stat cards + reorder list)
   const productGroups = useMemo(() => {
     const map = new Map<string, any[]>();
-    (showArchive ? archivedProducts : products).forEach(p => {
+    products.forEach(p => {
       const k = productTypeKey(p);
       const arr = map.get(k) ?? [];
       arr.push(p);
@@ -763,7 +763,16 @@ export default function WarehousePage() {
       const minLim = batches.reduce((s, b) => s + Number(b.min_limit || 0), 0);
       return { batches, totalQty, minLim, status: getStockStatus(totalQty, minLim), first: batches[0] };
     });
-  }, [products, archivedProducts, showArchive]);
+  }, [products]);
+  const archivedGroups = useMemo(() => {
+    const map = new Map<string, any[]>();
+    archivedProducts.forEach(p => map.set(productTypeKey(p), [...(map.get(productTypeKey(p)) ?? []), p]));
+    return Array.from(map.values()).map(batches => {
+      const totalQty = batches.reduce((sum, p) => sum + Number(p.stock_qty || 0), 0);
+      const minLim = batches.reduce((sum, p) => sum + Number(p.min_limit || 0), 0);
+      return { batches, totalQty, minLim, status: getStockStatus(totalQty, minLim), first: batches[0] };
+    });
+  }, [archivedProducts]);
   const stockCounts = useMemo(() => ({
     green: productGroups.filter(g => g.status === "green").length,
     yellow: productGroups.filter(g => g.status === "yellow").length,
@@ -1386,7 +1395,7 @@ export default function WarehousePage() {
                 <TableBody>
                   {(() => {
                     const q = search.trim().toLowerCase();
-                    let rows = productGroups
+                    let rows = (showArchive ? archivedGroups : productGroups)
                       .filter(g => stockFilter === "all" ? true : g.status === stockFilter)
                       .filter(g => locFilter === "all" || g.batches.some((p: any) => (prodLocations[p.id] ?? []).includes(locFilter)))
                       .filter(g => !idFilter.trim() || g.batches.some((p: any) => p.id.toLowerCase().includes(idFilter.trim().toLowerCase())))
