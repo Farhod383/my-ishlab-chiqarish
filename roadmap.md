@@ -1,6 +1,6 @@
 ## HR: Admin 2 raqamli shtrix-kod tahriri
 - [x] Klaviatura skaneri qo‘lda yozishni tutib qolishi o‘rniga oddiy raqamli matn maydoni; o‘zgarmas MCT, boshidagi nollar va alohida kod saqlash.
-- [ ] API raqamli format va mavjud Admin 2/alias/audit himoyasini tekshirish; haqiqiy hisobda saqlash/qayta ochish/skanerlash.
+- [x] Haqiqiy Admin 2 hisobida MCT0012→MCT0055 saqlandi/qayta ochildi, keyin MCT0012 qaytarildi; ikkala kod chiqim skanerida aynan Jansaidni tanladi. Boshqa HR ma’lumotlari fingerprinti teng; 15 sinov, oddiy admin rad etilishi va raqamli API himoyasi tekshirildi. MCT00121 boshqa xodimning tarixiy aliasi bo‘lib qoladi.
 
 ## Sklad: katalogni tahrirlash va arxivlash
 - [x] Sklad/Admin uchun nom, kategoriya, birlik, texnik xususiyatlar, MXIK va shtrix-kod tahriri; server auditi va qoldiq mustaqilligi. Tarix/qoldiq bor birlikni almashtirish hisoblarni buzmaslik uchun rad etiladi; alohida tur zarur.
