@@ -1,3 +1,7 @@
+## HR: Admin 2 raqamli shtrix-kod tahriri
+- [x] Klaviatura skaneri qo‘lda yozishni tutib qolishi o‘rniga oddiy raqamli matn maydoni; o‘zgarmas MCT, boshidagi nollar va alohida kod saqlash.
+- [ ] API raqamli format va mavjud Admin 2/alias/audit himoyasini tekshirish; haqiqiy hisobda saqlash/qayta ochish/skanerlash.
+
 ## Sklad: katalogni tahrirlash va arxivlash
 - [x] Sklad/Admin uchun nom, kategoriya, birlik, texnik xususiyatlar, MXIK va shtrix-kod tahriri; server auditi va qoldiq mustaqilligi. Tarix/qoldiq bor birlikni almashtirish hisoblarni buzmaslik uchun rad etiladi; alohida tur zarur.
 - [x] Ishlatilmagan nol-qoldiqli mahsulotni o‘chirish, tarixli/qoldiqli mahsulotni arxivlash; yangi tanlov/API/skanerda yashirish, tarix/hisobotni saqlash. Boshqa rollarning mavjud siyosatlari o‘zgarmadi.
