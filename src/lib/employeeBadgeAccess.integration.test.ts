@@ -39,4 +39,15 @@ describe.skipIf(!admin2Path || !otherPath)('employee badge API permissions', () 
       expect(resolved.data?.map(e => e.id)).toEqual([alias.employee_id]);
     }
   });
+  it('rejects a nonnumeric suffix through the API', async () => {
+    const row = rows[0];
+    expect((await admin2.rpc('set_employee_badge', { _employee_id: row.id, _code: 'MCT00A55', _expected_code: row.badge_code })).error?.message).toContain('0–9');
+  });
+  it('MCT0012 and the verified MCT0055 alias resolve to Bakitov Jansaid', async () => {
+    for (const code of ['MCT0012', 'MCT0055']) {
+      const result = await admin2.rpc('resolve_employee_badge', { _code: code });
+      expect(result.error).toBeNull();
+      expect(result.data?.map(e => e.id)).toEqual(['0e2820b9-9cb6-4da9-90db-f6bda45ef8aa']);
+    }
+  });
 });
