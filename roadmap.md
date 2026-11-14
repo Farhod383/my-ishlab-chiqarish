@@ -1,7 +1,7 @@
 ## SEL: boshlang‘ich raqam–92 va 93–120 holatlarini tekshirish
-- [ ] Haqiqiy boshlang‘ich raqam va 92 gacha tugallanish dalillarini tekshirish; soxta bajarish/OTK yozmaslik.
-- [ ] SEL0093–SEL0120: aynan 28 mavjud zakaz, Jarayonda va boshlangan chizma; ID/sana/tarixni saqlash, faqat yetishmaganini yaratish.
-- [ ] Haqiqiy sonlar, yangi raqamlar, audit va foydalanuvchi sahifasini tekshirish.
+- [ ] SEL0001 dan boshlanadi: 80 Tugallangan; SEL0069–SEL0080 (12 ta) har birida 21 bajarilmagan bosqich va OTK tasdiqlari yo‘q. Bloker: haqiqiy bajarish va OTK tasdiqlari kerak; soxta yakunlash yozilmadi.
+- [x] SEL0093–SEL0120: aynan 28 mavjud zakaz Jarayonda, chizmasi boshlangan. SEL0093–SEL0100 dagi 8 chizma auditli qayta ochildi, eski bajarish/OTK qiymatlari auditda saqlandi. Yangi zakaz: 0; barcha ID, hujjat, sana va mas’ullar saqlandi.
+- [x] 7 haqiqiy ma’lumotli integratsiya va 7 hisobot testi o‘tdi; o‘z hisobida SEL0093 chizmasi/mas’uli/Jarayonda desktop va mobil tekshirildi, page errors yo‘q. Boshqa zakazlar fingerprinti va auditdan tiklangan barcha eski bosqichlar fingerprinti teng. Jami 80 Tugallangan, 40 Jarayonda (28 talab qilingan + 12 bloklangan).
 
 ## SEL: 93 mavjud va 20 yangi zakaz
 - [ ] 93 zakaz tekshirildi: 80 tugallangan, SEL0069–SEL0080 va SEL0093 (13 ta) bajarilmagan bosqichlar/OTK sababli yakunlanmadi. Bloker: haqiqiy bajarish ma’lumoti va mavjud OTK jarayonida tasdiq kerak; soxta tarix yozilmadi.
