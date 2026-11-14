@@ -24,7 +24,6 @@ import { currentUserName, displayUser } from "@/lib/userNames";
 import { useFocusEntity } from "@/notifications/FocusHighlighter";
 import { Checkbox } from "@/components/ui/checkbox";
 import EmployeeBadgePrint from "@/components/hr/EmployeeBadgePrint";
-import BarcodeScanField from "@/components/warehouse/BarcodeScanField";
 import { employeeBadgeCode } from "@/lib/employeeBadgeAccess";
 
 // Uzbek phone format validator: +998 XX XXX XX XX  or XX XXX XX XX  (spaces optional)
@@ -144,6 +143,23 @@ export default function HRPage() {
   const nameKey = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
 
   const resetForm = () => setForm(emptyForm());
+
+  const saveBadge = async () => {
+    if (!editId || !canManageBadges || saving) return;
+    setSaving(true);
+    try {
+      const code = employeeBadgeCode(badgeDraft);
+      const { data, error } = await supabase.rpc("set_employee_badge", { _employee_id: editId, _code: code, _expected_code: badgeMap[editId] ?? undefined });
+      if (error) throw error;
+      setBadgeDraft(data);
+      setBadgeMap(prev => ({ ...prev, [editId]: data }));
+      toast.success("Shtrix-kod saqlandi");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : (error as { message?: string })?.message ?? "Kod saqlanmadi");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const save = async () => {
     if (saving) return;
@@ -327,9 +343,13 @@ export default function HRPage() {
                 {editId && canManageBadges && <div className="space-y-1">
                   <Label htmlFor="employee-badge-code">Shtrix-kod (ixtiyoriy)</Label>
                   <div className="flex gap-2">
-                    <div className="min-w-0 flex-1"><BarcodeScanField id="employee-badge-code" value={badgeDraft} onChange={setBadgeDraft} placeholder="MCT… (ixtiyoriy)" /></div>
+                    <div className="min-w-0 flex-1 flex items-center gap-2">
+                      <span className="font-mono text-sm shrink-0">MCT</span>
+                      <Input id="employee-badge-code" className="font-mono min-w-0" type="text" inputMode="numeric" maxLength={61} value={badgeDraft.startsWith("MCT") ? badgeDraft.slice(3) : ""} onChange={e => { const digits = e.target.value; if (/^[0-9]*$/.test(digits)) setBadgeDraft(`MCT${digits}`); }} placeholder="0012 (ixtiyoriy)" onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); void saveBadge(); } }} />
+                    </div>
                     <Button type="button" size="icon" variant="outline" aria-label="Shtrix-kodni nusxalash" title="Shtrix-kodni nusxalash" disabled={!badgeDraft} onClick={async () => { try { await navigator.clipboard.writeText(badgeDraft); toast.success("Kod nusxalandi"); } catch { toast.error("Nusxalash amalga oshmadi"); } }}><Copy className="h-4 w-4" /></Button>
                   </div>
+                  <Button type="button" variant="outline" disabled={saving || badgeDraft === (badgeMap[editId] ?? "")} onClick={() => void saveBadge()}>Shtrix-kodni saqlash</Button>
                 </div>}
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>Familiya *</Label><Input value={form.last_name} onChange={e => setForm({ ...form, last_name: e.target.value })} /></div>

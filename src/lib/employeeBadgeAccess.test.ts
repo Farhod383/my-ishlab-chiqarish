@@ -11,4 +11,10 @@ describe('employee badge edits', () => {
   it('rejects an empty badge rather than creating a new one', () => {
     expect(() => employeeBadgeCode('')).toThrow();
   });
+  it('preserves leading zeros in the requested MCT0055 code', () => {
+    expect(employeeBadgeCode('MCT0055')).toBe('MCT0055');
+  });
+  it('rejects letters in the editable numeric suffix', () => {
+    expect(() => employeeBadgeCode('MCT00A55')).toThrow();
+  });
 });

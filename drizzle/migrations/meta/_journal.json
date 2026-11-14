@@ -575,6 +575,13 @@
       "when": 1794650527736,
       "tag": "0081_warehouse_archive_catalog_validation",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1794653904885,
+      "tag": "0082_employee_badge_numeric_edit",
+      "breakpoints": true
     }
   ]
 }
