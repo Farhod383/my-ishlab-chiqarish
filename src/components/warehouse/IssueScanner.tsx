@@ -61,7 +61,7 @@ export default function IssueScanner({ kind, onEmployee, onProduct }: Props) {
   useEffect(() => registerScanHandler(createIssueScanHandler((_code, raw) => scan.current(raw))), []);
   const openBinding = async () => {
     const { data, error } = kind === "product"
-      ? await supabase.from("products").select("id,name,unit,product_type_id").is("instrument_id", null)
+      ? await supabase.from("products").select("id,name,unit,product_type_id").is("instrument_id", null).is("archived_at", null)
       : await supabase.from("instruments").select("id,name,product_type_id");
     if (error) { toast.error(we(error.message)); return; }
     setChoices((data ?? []) as Row[]); setBindId(""); setBindOpen(true);

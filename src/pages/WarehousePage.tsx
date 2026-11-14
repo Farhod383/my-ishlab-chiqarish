@@ -46,6 +46,7 @@ import BulkBarcodeLabels from "@/components/warehouse/BulkBarcodeLabels";
 import ProductTypeReview from "@/components/warehouse/ProductTypeReview";
 import WarehouseQuickActions from "@/components/warehouse/WarehouseQuickActions";
 import ProductBarcodeEditor from "@/components/warehouse/ProductBarcodeEditor";
+import ProductMxikEditor from "@/components/warehouse/ProductMxikEditor";
 import ScanHistoryTab from "@/components/warehouse/ScanHistoryTab";
 import StockBalanceCheck from "@/components/warehouse/StockBalanceCheck";
 import BarcodeScanField from "@/components/warehouse/BarcodeScanField";
@@ -77,6 +78,8 @@ export default function WarehousePage() {
   const localize = useLocalize();
   const focusEntity = useFocusEntity();
   const [products, setProducts] = useState<any[]>([]);
+  const [archivedProducts, setArchivedProducts] = useState<any[]>([]);
+  const [showArchive, setShowArchive] = useState(false);
   const [orders, setOrders] = useState<any[]>([]);
   const [movements, setMovements] = useState<any[]>([]);
   const [historyReload, setHistoryReload] = useState(0);
@@ -164,6 +167,8 @@ export default function WarehousePage() {
   const [epPhone, setEpPhone] = useState(""); const [epSource, setEpSource] = useState("");
   const [epPriority, setEpPriority] = useState("green"); const [epCurrency, setEpCurrency] = useState("UZS");
   const [epStock, setEpStock] = useState(""); const [epStockReason, setEpStockReason] = useState("");
+  const [epCategory, setEpCategory] = useState("");
+  const [epTechnical, setEpTechnical] = useState<Record<string, string>>({});
   const [epBusy, setEpBusy] = useState(false);
   const epLock = useRef(false);
   const epRequest = useRef<{ key: string; payload: string } | null>(null);
@@ -181,7 +186,7 @@ export default function WarehousePage() {
       supabase.from("orders").select("id, order_number, product_name, status, client:clients(name)").order("created_at", { ascending: false }),
       supabase.from("stock_movements").select("*, product:products(name, unit), order:orders(order_number, product_name), intake_session:intake_sessions(id, started_at, finished_at, supplier, created_by_name)").order("created_at", { ascending: false }).limit(200),
     ]);
-    setProducts(p.data ?? []); setOrders(o.data ?? []); setMovements(m.data ?? []);
+    setProducts((p.data ?? []).filter(p => !p.archived_at)); setArchivedProducts((p.data ?? []).filter(p => p.archived_at)); setOrders(o.data ?? []); setMovements(m.data ?? []);
     setHistoryReload(v => v + 1);
     const ids = Array.from(new Set((m.data ?? []).map((x: any) => x.created_by).filter(Boolean)));
     if (ids.length) {
@@ -594,6 +599,8 @@ export default function WarehousePage() {
     setEpPhone(p.phone ?? ""); setEpSource(p.source ?? "");
     setEpPriority(p.priority ?? "green"); setEpCurrency(p.currency ?? "UZS");
     setEpStock(String(p.stock_qty ?? 0)); setEpStockReason("");
+    setEpCategory(p.category ?? "");
+    setEpTechnical(Object.fromEntries(["metal_type", "thickness_mm", "width_mm", "length_mm", "weight_kg", "image_url"].map(key => [key, String(p[key] ?? "")])));
     setEditProdOpen(true);
   };
   const saveEditProduct = async () => {
@@ -606,6 +613,8 @@ export default function WarehousePage() {
       name: epName.trim(), unit: epUnit, last_price: Number(epPrice) || 0,
       min_limit: Number(epMin) || 0, phone: epPhone || null, source: epSource.trim() || null,
       priority: epPriority, currency: epCurrency,
+      category: epCategory.trim() || null,
+      ...Object.fromEntries(Object.entries(epTechnical).map(([key, value]) => [key, value.trim() === "" ? null : ["metal_type", "image_url"].includes(key) ? value.trim() : Number(value)])),
     };
     const args = { _product_id: editProd.id, _quantity: newStock, _expected_stock: Number(editProd.stock_qty ?? 0), _changes: newVals, _comment: epStockReason || null };
     const payload = JSON.stringify(args);
@@ -675,10 +684,10 @@ export default function WarehousePage() {
     if (!delTarget) return;
     if (!ensureOnline((m) => toast.error(we(m)))) return;
     setDelBusy(true);
-    const { error } = await supabase.rpc("delete_warehouse_record", { _entity: "product", _ids: delTarget.ids, _expected_qty: delTarget.qty });
+    const { data, error } = await supabase.rpc("archive_or_delete_warehouse_products", { _ids: delTarget.ids, _expected_qty: delTarget.qty });
     setDelBusy(false);
     if (error) { toast.error(we(error.message)); return; }
-    toast.success(wt("Mahsulot o'chirildi"));
+    toast.success((data as { archived?: boolean })?.archived ? "Товар перенесён в архив" : wt("Mahsulot o'chirildi"));
     if (delTarget.ids.includes(selectedProduct?.id)) setSelectedProduct(null);
     setProducts((prev) => prev.filter((p: any) => !delTarget.ids.includes(p.id)));
     setDelTarget(null);
@@ -743,7 +752,7 @@ export default function WarehousePage() {
   // Grouped products by name (for stat cards + reorder list)
   const productGroups = useMemo(() => {
     const map = new Map<string, any[]>();
-    products.forEach(p => {
+    (showArchive ? archivedProducts : products).forEach(p => {
       const k = productTypeKey(p);
       const arr = map.get(k) ?? [];
       arr.push(p);
@@ -754,7 +763,7 @@ export default function WarehousePage() {
       const minLim = batches.reduce((s, b) => s + Number(b.min_limit || 0), 0);
       return { batches, totalQty, minLim, status: getStockStatus(totalQty, minLim), first: batches[0] };
     });
-  }, [products]);
+  }, [products, archivedProducts, showArchive]);
   const stockCounts = useMemo(() => ({
     green: productGroups.filter(g => g.status === "green").length,
     yellow: productGroups.filter(g => g.status === "yellow").length,
@@ -1344,6 +1353,7 @@ export default function WarehousePage() {
         <TabsContent value="stock" className="mt-4 space-y-3">
 
           <div className="flex flex-wrap items-center gap-2">
+            <Button variant={showArchive ? "secondary" : "outline"} onClick={() => setShowArchive(v => !v)}>{showArchive ? "Активные товары" : `Архив (${archivedProducts.length})`}</Button>
             <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={(t.warehouse as any).search} className="max-w-md" />
             <Input aria-label={wt("Mahsulot ID filtri")} value={idFilter} onChange={e => setIdFilter(e.target.value)} placeholder={wt("ID filtri (ixtiyoriy)")} className="max-w-xs" />
             <Button variant={mxikReviewOnly ? "secondary" : "outline"} onClick={() => setMxikReviewOnly(v => !v)}>{wt("MXIK tekshiruvi kerak (")}{products.filter(p => !p.mxik_code).length})</Button>
@@ -1423,13 +1433,13 @@ export default function WarehousePage() {
                           <TableCell>
                             <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-semibold ${meta.bg} ${meta.border} ${meta.text}`}>
                               <span className={`inline-block h-1.5 w-1.5 rounded-full ${meta.dot}`} />
-                              {wt(meta.label)}
+                              {showArchive ? "В архиве" : wt(meta.label)}
                             </span>
                           </TableCell>
-                          {canManage && (
+                          {canManage && !showArchive && (
                             <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                               <div className="flex justify-end gap-1">
-                                <Button size="sm" variant="ghost" title={t.common.edit ?? wt("Tahrirlash")} onClick={() => openEditProduct(r.first)}>
+                                <Button size="sm" variant="ghost" aria-label={`Редактировать ${r.first.name}`} title={t.common.edit ?? wt("Tahrirlash")} onClick={() => openEditProduct(r.first)}>
                                   <Pencil className="h-3.5 w-3.5" />
                                 </Button>
                                 <Button size="sm" variant="ghost" aria-label={`Удалить ${r.first.name}`} title="Удалить" onClick={() => setDelTarget({ ids: r.batches.map((b: any) => b.id), name: r.first.name, qty: r.totalQty, unit: r.first.unit })}>
@@ -1662,11 +1672,14 @@ export default function WarehousePage() {
 
       {/* Edit Product */}
       <Dialog open={editProdOpen} onOpenChange={v => { if (!epBusy) setEditProdOpen(v); }}>
-        <DialogContent>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader><DialogTitle>{wt(t.common.edit)} — {editProd?.name}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>{wt(t.warehouse.productName)}</Label><Input list="dl-product-names" value={epName} onChange={e => setEpName(e.target.value)} /></div>
             {editProd && <ProductBarcodeEditor product={editProd} onUpdated={code => { setEditProd((p: any) => p ? { ...p, barcode: code } : p); void load(); }} />}
+            {editProd && <ProductMxikEditor key={editProd.id} product={editProd} onUpdated={code => { setEditProd((p: any) => p ? { ...p, mxik_code: code } : p); void load(); }} />}
+            <div><Label htmlFor="catalog-category">Категория (ixtiyoriy)</Label><Input id="catalog-category" value={epCategory} onChange={e => setEpCategory(e.target.value)} /></div>
+            <div className="grid grid-cols-2 gap-3">{Object.entries({ metal_type: "Тип металла", thickness_mm: "Толщина, мм", width_mm: "Ширина, мм", length_mm: "Длина, мм", weight_kg: "Вес единицы, кг", image_url: "Фото — URL" }).map(([key, label]) => <div key={key}><Label htmlFor={`catalog-${key}`}>{label} (ixtiyoriy)</Label><Input id={`catalog-${key}`} type={["metal_type", "image_url"].includes(key) ? "text" : "number"} min="0" step="any" value={epTechnical[key] ?? ""} onChange={e => setEpTechnical(v => ({ ...v, [key]: e.target.value }))} /></div>)}</div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{wt(t.warehouse.unit)}</Label>
                 <Select value={epUnit} onValueChange={setEpUnit}>
@@ -1748,7 +1761,7 @@ export default function WarehousePage() {
           <AlertDialogHeader>
             <AlertDialogTitle>{wt("Mahsulotni o'chirish")}</AlertDialogTitle>
             <AlertDialogDescription>
-              <span className="font-semibold">{delTarget?.name}</span> — удалить товар ({delTarget?.ids.length} партий)? Остаток: {delTarget?.qty} {wt(delTarget?.unit)}. Товар с остатком или связанной историей удалить нельзя. Коды и связанные документы сохраняются; действие записывается в аудит.</AlertDialogDescription>
+              <span className="font-semibold">{delTarget?.name}</span> — удалить или архивировать товар ({delTarget?.ids.length} партий)? Остаток: {delTarget?.qty} {wt(delTarget?.unit)}. Неиспользованный товар без остатка будет удалён. Товар с историей или остатком будет перенесён в архив: новые поступления и расходы запрещены, коды, остатки, история и отчёты сохраняются. Действие записывается в аудит.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={delBusy}>{wt("Bekor qilish")}</AlertDialogCancel>
@@ -1756,7 +1769,7 @@ export default function WarehousePage() {
               disabled={delBusy}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={(e) => { e.preventDefault(); confirmDeleteProduct(); }}
-            >{wt("O'chirish")}</AlertDialogAction>
+            >Подтвердить</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
