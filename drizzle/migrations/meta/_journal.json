@@ -561,6 +561,13 @@
       "when": 1794570335598,
       "tag": "0079_warehouse_reversal_cash_isolation",
       "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1794650453756,
+      "tag": "0080_warehouse_catalog_archive_and_edit",
+      "breakpoints": true
     }
   ]
 }

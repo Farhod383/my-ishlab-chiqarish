@@ -2379,7 +2379,10 @@ export type Database = {
       }
       products: {
         Row: {
+          archived_at: string | null
+          archived_by: string | null
           barcode: string | null
+          category: string | null
           created_at: string
           currency: string
           id: string
@@ -2403,7 +2406,10 @@ export type Database = {
           width_mm: number | null
         }
         Insert: {
+          archived_at?: string | null
+          archived_by?: string | null
           barcode?: string | null
+          category?: string | null
           created_at?: string
           currency?: string
           id?: string
@@ -2427,7 +2433,10 @@ export type Database = {
           width_mm?: number | null
         }
         Update: {
+          archived_at?: string | null
+          archived_by?: string | null
           barcode?: string | null
+          category?: string | null
           created_at?: string
           currency?: string
           id?: string
@@ -3332,6 +3341,10 @@ export type Database = {
         Args: { _rows: Json; _source_key: string }
         Returns: Json
       }
+      archive_or_delete_warehouse_products: {
+        Args: { _expected_qty: number; _ids: string[] }
+        Returns: Json
+      }
       bind_barcode_alias: {
         Args: { _code: string; _product_id: string }
         Returns: Json
@@ -3515,7 +3528,10 @@ export type Database = {
       resolve_catalog_scan: {
         Args: { _code: string }
         Returns: {
+          archived_at: string | null
+          archived_by: string | null
           barcode: string | null
+          category: string | null
           created_at: string
           currency: string
           id: string
@@ -3611,6 +3627,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      warehouse_product_has_history: { Args: { _id: string }; Returns: boolean }
       warehouse_reconcile: {
         Args: {
           _comment?: string
