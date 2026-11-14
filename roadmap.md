@@ -1,7 +1,7 @@
 ## Sklad: katalogni tahrirlash va arxivlash
-- [ ] Sklad/Admin uchun nom, kategoriya, birlik, texnik xususiyatlar, MXIK va shtrix-kod tahriri; server auditi va qoldiq mustaqilligi.
-- [ ] Ishlatilmagan nol-qoldiqli mahsulotni o‘chirish, tarixli/qoldiqli mahsulotni arxivlash; yangi tanlov/API/skanerda yashirish, tarix/hisobotni saqlash.
-- [ ] Haqiqiy Sklad hisobida tahrir, kodlar, o‘chirish, arxiv, qoldiq/tarix va ruxsatlarni sinash.
+- [x] Sklad/Admin uchun nom, kategoriya, birlik, texnik xususiyatlar, MXIK va shtrix-kod tahriri; server auditi va qoldiq mustaqilligi. Tarix/qoldiq bor birlikni almashtirish hisoblarni buzmaslik uchun rad etiladi; alohida tur zarur.
+- [x] Ishlatilmagan nol-qoldiqli mahsulotni o‘chirish, tarixli/qoldiqli mahsulotni arxivlash; yangi tanlov/API/skanerda yashirish, tarix/hisobotni saqlash. Boshqa rollarning mavjud siyosatlari o‘zgarmadi.
+- [x] Haqiqiy Sklad oynasida nom, MXIK, shtrix-kod va arxiv saqlanib qayta o‘qildi; 3 qoldiq, tarix va audit saqlandi, test kirimi keyin 0 ga qaytarildi; 41 sinov o‘tdi, sahifa xatosiz. Testlar arxivda, haqiqiy mahsulotlar o‘zgarmadi.
 
 ## SEL: boshlang‘ich raqam–92 va 93–120 holatlarini tekshirish
 - [x] 07:50 aniqlashtirish bajarildi: faqat aniq SEL prefiksi; SEL0001–SEL0092 = 92 Tugallangan, barcha bosqichlari completed. Qolgan 12 zakaz/252 bosqich foydalanuvchi topshirig‘i asosidagi ma’muriy status tuzatishi sifatida auditlandi; OTK tasdiqlari va tarixiy bajarish sanalari o‘zgartirilmadi.

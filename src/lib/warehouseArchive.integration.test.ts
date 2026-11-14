@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
 
@@ -13,6 +13,12 @@ describe.skipIf(!sessionPath)("Sklad catalog editing and archive", () => {
     const p = await db.from("products").insert([{ name: `TEST Archive proof ${crypto.randomUUID()}`, unit: "dona", stock_qty: 0, last_price: 7 }, { name: `TEST Unused proof ${crypto.randomUUID()}`, unit: "dona", stock_qty: 0, last_price: 0 }]).select("id,barcode"); if (p.error) throw p.error;
     id = p.data[0].id; originalCode = p.data[0].barcode ?? ""; unused = p.data[1].id;
     const m = await db.from("stock_movements").insert({ product_id: id, direction: "in", quantity: 10, unit_price: 7 }).select("id").single(); if (m.error) throw m.error; movement = m.data.id;
+  });
+  afterAll(async () => {
+    if (!movement) return;
+    const r = await db.rpc("delete_warehouse_record", { _entity: "movement", _ids: [movement], _expected_qty: 10 });
+    if (r.error) throw r.error;
+    expect((await read()).stock_qty).toBe(0);
   });
   it("warehouse saves name/category/dimensions without changing stock or price", async () => {
     const r = await db.rpc("save_product_inventory", { _key: crypto.randomUUID(), _product_id: id, _quantity: 10, _expected_stock: 10, _changes: { name: "TEST Archive edited " + id, category: "Sinov", thickness_mm: 2 }, _comment: null });
