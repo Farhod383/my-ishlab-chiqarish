@@ -1,7 +1,8 @@
 ## SEL: boshlang‘ich raqam–92 va 93–120 holatlarini tekshirish
-- [ ] SEL0001 dan boshlanadi: 80 Tugallangan; SEL0069–SEL0080 (12 ta) har birida 21 bajarilmagan bosqich va OTK tasdiqlari yo‘q. Bloker: haqiqiy bajarish va OTK tasdiqlari kerak; soxta yakunlash yozilmadi.
+- [x] 07:50 aniqlashtirish bajarildi: faqat aniq SEL prefiksi; SEL0001–SEL0092 = 92 Tugallangan, barcha bosqichlari completed. Qolgan 12 zakaz/252 bosqich foydalanuvchi topshirig‘i asosidagi ma’muriy status tuzatishi sifatida auditlandi; OTK tasdiqlari va tarixiy bajarish sanalari o‘zgartirilmadi.
+- [x] Boshqa prefiksli barcha zakaz va bosqichlar fingerprintlari teng; SEL mijoz/chizma/sana/mas’ul/OTK metadata fingerprintlari teng. Yangi yoki qayta yaratilgan zakaz: 0.
 - [x] SEL0093–SEL0120: aynan 28 mavjud zakaz Jarayonda, chizmasi boshlangan. SEL0093–SEL0100 dagi 8 chizma auditli qayta ochildi, eski bajarish/OTK qiymatlari auditda saqlandi. Yangi zakaz: 0; barcha ID, hujjat, sana va mas’ullar saqlandi.
-- [x] 7 haqiqiy ma’lumotli integratsiya va 7 hisobot testi o‘tdi; o‘z hisobida SEL0093 chizmasi/mas’uli/Jarayonda desktop va mobil tekshirildi, page errors yo‘q. Boshqa zakazlar fingerprinti va auditdan tiklangan barcha eski bosqichlar fingerprinti teng. Jami 80 Tugallangan, 40 Jarayonda (28 talab qilingan + 12 bloklangan).
+- [x] 9 haqiqiy ma’lumotli integratsiya va 7 hisobot testi o‘tdi; o‘z hisobida SEL0069 Tugallangan/22 of 22 hamda avval SEL0093 chizmasi/Jarayonda tekshirildi, page errors yo‘q. Yakuniy SEL soni: 92 Tugallangan, 28 Jarayonda; barcha 28 chizma boshlangan.
 
 ## SEL: 93 mavjud va 20 yangi zakaz
 - [x] Oldingi 93 zakazni tugallash talabi yangi 1–92/93–120 topshirig‘i bilan almashtirildi; SEL0093 Jarayonda qoladi. SEL0069–SEL0080 uchun bajarish/OTK blokeri yuqoridagi joriy vazifada qayd etilgan.
