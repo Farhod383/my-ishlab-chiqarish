@@ -1,3 +1,8 @@
+## HR: 22 tayyor bejik kodi bilan xodimlarni kiritish
+- [ ] Ism/kod/alias to‘qnashuvlarini tekshirish; mavjud HR yozuvlarini o‘zgartirmasdan atomik va takrorlanishga xavfsiz import.
+- [ ] MCT00134 ishlatmaslik, keyingi avtomatik kod kamida MCT00140; trigger va eski HR/Face ID/davomatni saqlash.
+- [ ] Har kodning haqiqiy API natijasi, HR/Sklad tanlovi va MCT00139/MCT00121 skaner natijasi; yakuniy hisobot.
+
 ## HR: Admin 2 raqamli shtrix-kod tahriri
 - [x] Klaviatura skaneri qo‘lda yozishni tutib qolishi o‘rniga oddiy raqamli matn maydoni; o‘zgarmas MCT, boshidagi nollar va alohida kod saqlash.
 - [x] Haqiqiy Admin 2 hisobida MCT0012→MCT0055 saqlandi/qayta ochildi, keyin MCT0012 qaytarildi; ikkala kod chiqim skanerida aynan Jansaidni tanladi. Boshqa HR ma’lumotlari fingerprinti teng; 15 sinov, oddiy admin rad etilishi va raqamli API himoyasi tekshirildi. MCT00121 boshqa xodimning tarixiy aliasi bo‘lib qoladi.
