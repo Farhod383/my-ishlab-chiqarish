@@ -582,6 +582,13 @@
       "when": 1794653904885,
       "tag": "0082_employee_badge_numeric_edit",
       "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1794808447147,
+      "tag": "0083_prepared_employee_badge_import",
+      "breakpoints": true
     }
   ]
 }
