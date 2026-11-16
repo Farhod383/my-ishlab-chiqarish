@@ -3428,6 +3428,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      import_prepared_employee_badges: { Args: { _rows: Json }; Returns: Json }
       is_chat_participant: {
         Args: { _conv: string; _user: string }
         Returns: boolean
