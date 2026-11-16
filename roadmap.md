@@ -1,7 +1,7 @@
 ## HR: 22 tayyor bejik kodi bilan xodimlarni kiritish
-- [ ] Ism/kod/alias to‘qnashuvlarini tekshirish; mavjud HR yozuvlarini o‘zgartirmasdan atomik va takrorlanishga xavfsiz import.
-- [ ] MCT00134 ishlatmaslik, keyingi avtomatik kod kamida MCT00140; trigger va eski HR/Face ID/davomatni saqlash.
-- [ ] Har kodning haqiqiy API natijasi, HR/Sklad tanlovi va MCT00139/MCT00121 skaner natijasi; yakuniy hisobot.
+- [x] Atomik import: 10 yangi xodim, 4 mavjud xodimga alias; qayta import 0/0, dublikat yo‘q. 8 band kod foydalanuvchi talabi bo‘yicha o‘tkazib yuborildi: 00118–00125, mavjud egalari o‘zgarmadi.
+- [x] MCT00134 bo‘sh; sequence 139, keyingi kod MCT00140. Barcha triggerlar yoqilgan; 124 eski HR yozuvi to‘liq teng, Face ID/davomat saqlandi.
+- [x] 22 test; 10 yangi kod/4 alias haqiqiy Sklad API bilan tekshirildi. HR Admin 2: Sherpulatov MCT00139; Sklad chiqim skaneri MCT00139→Sherpulatov, MCT00121→Atabayev, MCT0012→Jansaid, xatosiz. Hisobot Files’da. Band 8 kodni boshqa egaga biriktirish bajarilmadi; fizik skaner tekshirilmagan.
 
 ## HR: Admin 2 raqamli shtrix-kod tahriri
 - [x] Klaviatura skaneri qo‘lda yozishni tutib qolishi o‘rniga oddiy raqamli matn maydoni; o‘zgarmas MCT, boshidagi nollar va alohida kod saqlash.
