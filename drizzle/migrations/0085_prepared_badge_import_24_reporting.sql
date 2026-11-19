@@ -1,0 +1,6 @@
+DO $$ DECLARE definition text; BEGIN
+ SELECT pg_get_functiondef('public.import_prepared_employee_badges(jsonb)'::regprocedure) INTO definition;
+ definition:=replace(definition,'seq_value,139','seq_value,141');
+ definition:=replace(definition,'RETURN jsonb_build_object(''created'',',E'RAISE NOTICE ''YANGI: %, ALIAS: %, ALLAQACHON MAVJUD: %, TO‘QNASHUV: %'', inserted_count, alias_count, (SELECT count(*) FROM jsonb_array_elements(result) x WHERE x->>''outcome''=''already_linked''), conflict_count;\n FOR r IN SELECT value FROM jsonb_array_elements(result) LOOP RAISE NOTICE ''%: %, %, asosiy kod: %'', r->>''outcome'',r->>''code'',r->>''name'',r->>''primary_code''; END LOOP;\n IF max_code>=142 THEN RAISE NOTICE ''Yuqori kod mavjud: %, sequence orqaga qaytarilmadi'', max_code; END IF;\n RETURN jsonb_build_object(''already_linked'',(SELECT count(*) FROM jsonb_array_elements(result) x WHERE x->>''outcome''=''already_linked''),''errors'',(SELECT count(*) FROM jsonb_array_elements(result) x WHERE x->>''outcome''=''ambiguous_name''),''created'',');
+ EXECUTE definition;
+END $$;

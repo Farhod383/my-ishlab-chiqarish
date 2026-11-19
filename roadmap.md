@@ -1,3 +1,8 @@
+## HR: 24 tayyor bejik kodi — qayta tekshirish
+- [x] 0 yangi xodim, 1 alias (Soyipov MCT00141), 14 allaqachon bog‘langan, 9 band kod (00118–00125 va 00140) foydalanuvchi qoidasi bo‘yicha o‘zgarmadi. Mavjud lavozimlar saqlandi.
+- [x] Qayta import: 0 yangi xodim/alias, 15 mavjud, 9 to‘qnashuv. Sequence 141 → keyingi MCT00142; 00134 bo‘sh; 135 HR yozuvi fingerprinti teng, Face ID/davomat o‘zgarmadi, triggerlar yoqilgan.
+- [x] HR Admin 2: Soyipov/Sherpulatov/Jansaid mavjud. Sklad oynasi haqiqiy API: 00141→Soyipov, 00139→Sherpulatov, band 00121→Atabayev (Jansaidning 0012 saqlandi); 23 test, xatosiz. 24 kod hisoboti Files’da; fizik skaner tekshirilmagan. To‘qnashuv sababli 7 yetishmayotgan xodim yaratilmadi, 9 kod qayta biriktirilmadi.
+
 ## HR: 22 tayyor bejik kodi bilan xodimlarni kiritish
 - [x] Atomik import: 10 yangi xodim, 4 mavjud xodimga alias; qayta import 0/0, dublikat yo‘q. 8 band kod foydalanuvchi talabi bo‘yicha o‘tkazib yuborildi: 00118–00125, mavjud egalari o‘zgarmadi.
 - [x] MCT00134 bo‘sh; sequence 139, keyingi kod MCT00140. Barcha triggerlar yoqilgan; 124 eski HR yozuvi to‘liq teng, Face ID/davomat saqlandi.

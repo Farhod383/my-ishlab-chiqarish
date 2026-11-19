@@ -39,6 +39,11 @@ describe.skipIf(!sessionPath)('Prepared employee badge import: real Sklad API', 
     expect(await resolve('MCT0012')).toEqual([expect.objectContaining({ full_name: 'Bakitov Jansaid' })]);
   });
   it('MCT00134 remains unassigned', async () => { expect(await resolve('MCT00134')).toEqual([]); });
+  it('MCT00141 alias selects Soyipov Sarvar without replacing MCT00140', async () => {
+    const alias = await resolve('MCT00141');
+    expect(alias).toEqual(await resolve('MCT00140'));
+    expect(alias).toEqual([expect.objectContaining({ full_name: 'Soyipov Sarvar', status: 'active' })]);
+  });
   it('Sklad cannot invoke privileged prepared-code imports', async () => {
     const r = await db.rpc('import_prepared_employee_badges', { _rows: [{ code: 'MCT00134', name: 'Forbidden import' }] });
     expect(r.error).not.toBeNull();
