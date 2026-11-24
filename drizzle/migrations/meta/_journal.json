@@ -610,6 +610,20 @@
       "when": 1795507972888,
       "tag": "0086_employee_work_shift",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1795513233201,
+      "tag": "0087_perf_indexes_reorder",
+      "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1795513233202,
+      "tag": "0088_rls_initplan_auth_uid",
+      "breakpoints": true
     }
   ]
 }
