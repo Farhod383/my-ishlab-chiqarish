@@ -183,7 +183,10 @@ export default function WarehousePage() {
   const load = async () => {
     const [p, o, m] = await Promise.all([
       supabase.from("products").select("*").is("instrument_id", null).order("name"),
-      supabase.from("orders").select("id, order_number, product_name, status, client:clients(name)").order("created_at", { ascending: false }),
+      // Tezlik: chiqim tanlovi uchun faqat ochiq zakazlar + oxirgi 60 kunda tugaganlar (butun tarix emas)
+      supabase.from("orders").select("id, order_number, product_name, status, client:clients(name)")
+        .or(`status.neq.completed,updated_at.gte.${new Date(Date.now() - 60 * 86400_000).toISOString()}`)
+        .order("created_at", { ascending: false }),
       supabase.from("stock_movements").select("*, product:products(name, unit), order:orders(order_number, product_name), intake_session:intake_sessions(id, started_at, finished_at, supplier, created_by_name)").order("created_at", { ascending: false }).limit(200),
     ]);
     setProducts((p.data ?? []).filter(p => !p.archived_at)); setArchivedProducts((p.data ?? []).filter(p => p.archived_at)); setOrders(o.data ?? []); setMovements(m.data ?? []);
@@ -199,7 +202,7 @@ export default function WarehousePage() {
   useEffect(() => {
     load();
     supabase.from("locations").select("id, name").order("name").then(({ data }) => setLocations(data ?? []));
-    supabase.from("stock_movements").select("product_id, location").eq("direction", "in").limit(5000).then(({ data }) => {
+    supabase.from("stock_movements").select("product_id, location").eq("direction", "in").not("location", "is", null).limit(5000).then(({ data }) => {
       const map: Record<string, string[]> = {};
       for (const r of (data ?? []) as any[]) {
         if (!r.product_id || !r.location) continue;

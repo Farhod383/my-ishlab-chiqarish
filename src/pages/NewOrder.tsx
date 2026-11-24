@@ -159,11 +159,13 @@ export default function NewOrder() {
     try {
       let imgUrl: string | null = null;
       const uploadedFileUrls: { file_url: string; file_name: string }[] = [];
-      for (const f of tzFiles) {
-        const url = await uploadFile(f, "order-files");
-        uploadedFileUrls.push({ file_url: url, file_name: f.name });
-      }
-      if (productImage) imgUrl = await uploadFile(productImage, "product-images");
+      // Tezlik: fayllar ketma-ket emas, bir vaqtda yuklanadi
+      const [urls, img] = await Promise.all([
+        Promise.all(tzFiles.map((f) => uploadFile(f, "order-files"))),
+        productImage ? uploadFile(productImage, "product-images") : Promise.resolve(null),
+      ]);
+      urls.forEach((url, i) => uploadedFileUrls.push({ file_url: url, file_name: tzFiles[i].name }));
+      imgUrl = img;
 
       const { data: existing } = await supabase.from("orders").select("queue_position").order("queue_position", { ascending: false }).limit(1);
       const maxPos = existing?.[0]?.queue_position ?? 0;
@@ -171,8 +173,11 @@ export default function NewOrder() {
 
       if (priority === "exception") {
         const { data: all } = await supabase.from("orders").select("id, queue_position").neq("status", "completed");
-        for (const o of all ?? []) {
-          await supabase.from("orders").update({ queue_position: (o.queue_position ?? 0) + 1 }).eq("id", o.id);
+        // Tezlik: navbatni surish — 10 tadan parallel (oldin har zakaz alohida, ketma-ket)
+        const list = all ?? [];
+        for (let i = 0; i < list.length; i += 10) {
+          await Promise.all(list.slice(i, i + 10).map((o) =>
+            supabase.from("orders").update({ queue_position: (o.queue_position ?? 0) + 1 }).eq("id", o.id)));
         }
       }
 

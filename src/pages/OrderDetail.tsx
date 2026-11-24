@@ -358,14 +358,18 @@ export default function OrderDetail() {
                   const files = e.target.files;
                   if (!files || files.length === 0) return;
                   try {
-                    for (const file of Array.from(files)) {
+                    // Tezlik: fayllar parallel yuklanadi, yozuvlar bitta so'rovda
+                    const list = Array.from(files);
+                    const rows = await Promise.all(list.map(async (file) => {
                       const ext = file.name.split(".").pop();
                       const path = `${crypto.randomUUID()}.${ext}`;
                       const { error } = await supabase.storage.from("order-files").upload(path, file);
                       if (error) throw error;
                       const { data } = supabase.storage.from("order-files").getPublicUrl(path);
-                      await supabase.from("order_files").insert({ order_id: order.id, file_url: data.publicUrl, file_name: file.name, uploaded_by: user?.id ?? null } as any);
-                    }
+                      return { order_id: order.id, file_url: data.publicUrl, file_name: file.name, uploaded_by: user?.id ?? null };
+                    }));
+                    const { error: insErr } = await supabase.from("order_files").insert(rows as any);
+                    if (insErr) throw insErr;
                     toast.success("Fayllar yuklandi");
                     load();
                   } catch (err: any) { toast.error(err.message); }

@@ -178,11 +178,11 @@ export default function KassaPage() {
   const load = async (silent = false) => {
     // Realtime yangilanishda ekran bo'shatilmaydi (pirillamaslik uchun) — eski ma'lumot turadi.
     if (!silent) setLoading(true);
-    const [{ data: exp }, { data: inc }] = await Promise.all([
+    const [{ data: exp }, { data: inc }, { data: rs }] = await Promise.all([
       supabase.from("cash_expenses").select("*, recipient:employees(full_name)").order("expense_date", { ascending: false }),
       (supabase.from as any)("cash_incomes").select("*").order("income_date", { ascending: false }),
+      (supabase.from as any)("cash_resets").select("reset_at").eq("kassa", "main").order("reset_at", { ascending: false }).limit(1),
     ]);
-    const { data: rs } = await (supabase.from as any)("cash_resets").select("reset_at").eq("kassa", "main").order("reset_at", { ascending: false }).limit(1);
     setMainReset(rs?.[0]?.reset_at ? new Date(rs[0].reset_at).getTime() : 0);
     setExpenses(exp ?? []);
     setIncomes(inc ?? []);
@@ -193,10 +193,29 @@ export default function KassaPage() {
     load();
     loadReasons();
     const reload = createReloader(() => load(true), 1000); // bir nechta o'zgarish — bitta yangilash
+    // Tezlik: butun kassani qayta yuklash o'rniga faqat o'zgargan bitta yozuvni almashtiramiz.
+    const sortDesc = (key: string) => (a: any, b: any) => String(b[key] ?? "").localeCompare(String(a[key] ?? ""));
+    const patchIncome = (payload: any) => {
+      if (payload.eventType === "DELETE") { setIncomes((prev: any[]) => prev.filter((r) => r.id !== payload.old?.id)); return; }
+      const row = payload.new;
+      if (!row?.id) { reload.schedule(); return; }
+      setIncomes((prev: any[]) => [row, ...prev.filter((r) => r.id !== row.id)].sort(sortDesc("income_date")));
+    };
+    const patchExpense = async (payload: any) => {
+      if (payload.eventType === "DELETE") { setExpenses((prev: any[]) => prev.filter((r) => r.id !== payload.old?.id)); return; }
+      const id = payload.new?.id;
+      if (!id) { reload.schedule(); return; }
+      const { data, error } = await supabase.from("cash_expenses").select("*, recipient:employees(full_name)").eq("id", id).maybeSingle();
+      if (error) { reload.schedule(); return; }
+      setExpenses((prev: any[]) => {
+        const rest = prev.filter((r) => r.id !== id);
+        return data ? [data, ...rest].sort(sortDesc("expense_date")) : rest;
+      });
+    };
     const channel = supabase
       .channel("kassa-currency-totals")
-      .on("postgres_changes", { event: "*", schema: "public", table: "cash_incomes" }, reload.schedule)
-      .on("postgres_changes", { event: "*", schema: "public", table: "cash_expenses" }, reload.schedule)
+      .on("postgres_changes", { event: "*", schema: "public", table: "cash_incomes" }, patchIncome)
+      .on("postgres_changes", { event: "*", schema: "public", table: "cash_expenses" }, (p: any) => { void patchExpense(p); })
       .subscribe();
     return () => { reload.cancel(); supabase.removeChannel(channel); };
   }, []);

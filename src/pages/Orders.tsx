@@ -64,11 +64,14 @@ export default function Orders() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("orders")
-        .select("*, client:clients(name, client_type), order_stages(name, stage_order, started_at, finished_at, status, qc_required, qc_passed, worker_name), order_parts(part_name, product_id), order_number_history(old_number, new_number)")
-        .order("priority", { ascending: false })
-        .order("queue_position");
+      // Tezlik: avval tugamagan zakazlar darhol ko'rsatiladi, tugaganlar fonda qo'shiladi
+      // (hisoblar va filtrlar oxirida avvalgidek to'liq ro'yxat bo'yicha ishlaydi).
+      const SELECT = "*, client:clients(name, client_type), order_stages(name, stage_order, started_at, finished_at, status, qc_required, qc_passed, worker_name), order_parts(part_name, product_id), order_number_history(old_number, new_number)";
+      const [{ data }, { data: prods }] = await Promise.all([
+        supabase.from("orders").select(SELECT).neq("status", "completed")
+          .order("priority", { ascending: false }).order("queue_position"),
+        supabase.from("products").select("id, stock_qty, min_limit").is("instrument_id", null),
+      ]);
       const list = (data as any[]) ?? [];
       // Auto-fix any orders whose stages are all completed (with OTK where required) but status != completed.
       const fixed = await recalcOrdersBatch(list);
@@ -76,9 +79,16 @@ export default function Orders() {
         for (const r of list) if (fixed.has(r.id)) r.status = "completed";
       }
       setRows(list as any);
-      const { data: prods } = await supabase.from("products").select("id, stock_qty, min_limit").is("instrument_id", null);
       setLowStockIds(new Set((prods ?? []).filter((p: any) => Number(p.stock_qty) <= Number(p.min_limit)).map((p: any) => p.id)));
       setLoading(false);
+      const { data: done } = await supabase.from("orders").select(SELECT).eq("status", "completed")
+        .order("priority", { ascending: false }).order("queue_position");
+      const doneRows = (done as any[]) ?? [];
+      if (doneRows.length) setRows((prev: any[]) => {
+        const seen = new Set(prev.map((r: any) => r.id));
+        const merged = [...prev, ...doneRows.filter((r) => !seen.has(r.id))];
+        return merged;
+      });
     })();
   }, []);
 
@@ -115,7 +125,10 @@ export default function Orders() {
     const { buildOrderListPdf, todayFile } = await import("@/lib/pdfExport");
     const ids = rows.map((r: any) => r.id); const spans = new Map<string, { start: string | null; end: string | null }>();
     const st: any[] = [];
-    for (let i = 0; i < ids.length; i += 40) { const { data } = await supabase.from("order_stages").select("order_id, started_at, finished_at").in("order_id", ids.slice(i, i + 40)); st.push(...(data ?? [])); }
+    // Tezlik: 40 talik bo'laklar ketma-ket emas, bir vaqtda so'raladi
+    const chunks: string[][] = []; for (let i = 0; i < ids.length; i += 40) chunks.push(ids.slice(i, i + 40));
+    const parts = await Promise.all(chunks.map((c) => supabase.from("order_stages").select("order_id, started_at, finished_at").in("order_id", c)));
+    for (const { data } of parts) st.push(...(data ?? []));
     const { stageSpan } = await import("@/lib/pdfExport");
     const by = new Map<string, any[]>(); st.forEach((x) => { const a = by.get(x.order_id) ?? []; a.push(x); by.set(x.order_id, a); });
     ids.forEach((id) => spans.set(id, stageSpan(by.get(id) ?? [])));

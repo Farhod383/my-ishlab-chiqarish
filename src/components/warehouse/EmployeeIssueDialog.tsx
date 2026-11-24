@@ -43,10 +43,14 @@ export default function EmployeeIssueDialog({ open, onOpenChange, products, orde
       const totals = issueTotals(lines);
       for (const [id, qty] of totals) { const p = products.find(p => p.id === id); if (!p || Number(p.stock_qty) < qty) throw new Error(("" + wt("Yetarli qoldiq mavjud emas:") + " " + (p?.name ?? '') + "")); }
       const next = [...lines];
+      // Tezlik: har qator tekshiruvi ketma-ket emas, bir vaqtda (faqat o'qish)
+      const checks = await Promise.all(next.map((row) => row.order_id
+        ? supabase.from('stock_movements').select('source_order_id').eq('product_id', row.product_id).eq('direction', 'in').not('source_order_id', 'is', null).order('created_at', { ascending: false }).limit(1)
+        : Promise.resolve({ data: null, error: null } as any)));
       for (let i = 0; i < next.length; i++) {
         const row = next[i];
         if (!row.order_id) continue;
-        const { data, error } = await supabase.from('stock_movements').select('source_order_id').eq('product_id', row.product_id).eq('direction', 'in').not('source_order_id', 'is', null).order('created_at', { ascending: false }).limit(1);
+        const { data, error } = checks[i];
         if (error) throw error;
         if (data?.[0]?.source_order_id && data[0].source_order_id !== row.order_id && row.cross_order_reason === '') {
           next[i] = { ...row, cross_order_reason: ' ' };

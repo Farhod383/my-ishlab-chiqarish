@@ -139,11 +139,12 @@ export default function EditOrder() {
       }
 
       // Upload new files
-      for (const f of tzFilesNew) {
-        const url = await uploadFile(f, "order-files");
-        await supabase.from("order_files").insert({
-          order_id: id, file_url: url, file_name: f.name, uploaded_by: user?.id ?? null,
-        } as any);
+      // Tezlik: fayllar parallel yuklanadi va bitta so'rov bilan yoziladi
+      if (tzFilesNew.length) {
+        const urls = await Promise.all(tzFilesNew.map((f) => uploadFile(f, "order-files")));
+        await supabase.from("order_files").insert(tzFilesNew.map((f, i) => ({
+          order_id: id, file_url: urls[i], file_name: f.name, uploaded_by: user?.id ?? null,
+        })) as any);
       }
 
       // Update stages in place: existing stages keep their id, status, dates,
@@ -160,6 +161,7 @@ export default function EditOrder() {
       if (removable.length) await supabase.from("order_stages").delete().in("id", removable);
       const perGroup: Record<string, number> = {};
       const newRows: any[] = [];
+      const updates: PromiseLike<unknown>[] = [];
       for (let idx = 0; idx < stages.length; idx++) {
         const s = stages[idx];
         const gid = s.group_id ?? guessGroupId(s.name, groups);
@@ -170,11 +172,13 @@ export default function EditOrder() {
           group_id: gid, group_order: perGroup[key],
         };
         if (s.id) {
-          await supabase.from("order_stages").update(structural as any).eq("id", s.id);
+          updates.push(supabase.from("order_stages").update(structural as any).eq("id", s.id));
         } else {
           newRows.push({ order_id: id!, status: "pending" as const, ...structural });
         }
       }
+      // Tezlik: bosqichlar ketma-ket emas, 10 tadan parallel yangilanadi
+      for (let i = 0; i < updates.length; i += 10) await Promise.all(updates.slice(i, i + 10));
       if (newRows.length) await supabase.from("order_stages").insert(newRows as any);
 
       // Update parts: delete old and re-insert
