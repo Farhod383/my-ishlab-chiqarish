@@ -3529,6 +3529,7 @@ export type Database = {
         Args: { _include_completed: boolean }
         Returns: number
       }
+      reorder_orders: { Args: { _ids: string[] }; Returns: undefined }
       resolve_catalog_scan: {
         Args: { _code: string }
         Returns: {
