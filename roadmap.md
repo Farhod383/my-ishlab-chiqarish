@@ -168,3 +168,7 @@
 - [x] BarcodeScanField: Shtrix-kod maydoni + Skanerlash tugmasi (tahrirlash oynasi, Sverka yangi mahsulot)
 - [x] Sverka: noma'lum kod → "Yangi mahsulot yaratish" taklifi, kod avtomatik shtrix-kod maydoniga
 - [x] Testlar: 29 o'tdi, build OK; brauzerda Admin 2 bilan 4 oqim tekshirildi (DB o'zgartirilmadi)
+
+## Kunlik topshiriqlar 3 smena (24.11.2026) — TAYYOR
+- [x] Xodimga vaqtsiz 1/2/3-smena, faqat Admin, audit
+- [x] Bo‘lim/lavozim guruhlash, smena filtrlari, MCT qidiruv, bir nechta xodimga topshiriq
