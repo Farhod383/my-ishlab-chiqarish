@@ -1117,6 +1117,7 @@ export type Database = {
           shift_id: string | null
           status: string
           updated_at: string
+          work_shift: number | null
           work_site: string | null
         }
         Insert: {
@@ -1142,6 +1143,7 @@ export type Database = {
           shift_id?: string | null
           status?: string
           updated_at?: string
+          work_shift?: number | null
           work_site?: string | null
         }
         Update: {
@@ -1167,6 +1169,7 @@ export type Database = {
           shift_id?: string | null
           status?: string
           updated_at?: string
+          work_shift?: number | null
           work_site?: string | null
         }
         Relationships: [
@@ -3590,6 +3593,10 @@ export type Database = {
       set_employee_badge: {
         Args: { _code: string; _employee_id: string; _expected_code: string }
         Returns: string
+      }
+      set_employee_work_shift: {
+        Args: { _employee_id: string; _shift: number }
+        Returns: undefined
       }
       set_product_barcode: {
         Args: { _code: string; _expected_code: string; _product_id: string }

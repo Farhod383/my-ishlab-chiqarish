@@ -19,6 +19,7 @@ import DailyTasksRating from "@/components/DailyTasksRating";
 import { fmtDate as fmtDateG, fmtDateTime24 } from "@/lib/format";
 import { currentUserName, displayUser } from "@/lib/userNames";
 import { isDailyTaskEligible, isDailyTaskOrderVisible } from "@/lib/dailyTaskEligibility";
+import { matchesEmployee, groupEmployees, SHIFTS, shiftLabel, type ShiftFilter } from "@/lib/dailyTaskShifts";
 
 type Status = "in_progress" | "closed" | "cancelled";
 interface Task {
@@ -42,7 +43,8 @@ const fmtDate = (d: string) => d.split("-").reverse().join(".");
 const fmtDT = (s: string) => fmtDateTime24(s);
 
 export default function DailyTasksPage() {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
+  const isAdmin = roles.includes("admin" as any);
   const localize = useLocalize();
   const { employees, allEmployees } = useEmployees({ activeOnly: true });
   const [date, setDate] = useState(todayTashkent());
@@ -52,12 +54,19 @@ export default function DailyTasksPage() {
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
   const [newOpen, setNewOpen] = useState(false);
-  const [form, setForm] = useState({ employee_id: "", order_id: "", task_title: "", description: "", progress: 0 });
+  const [form, setForm] = useState({ employee_ids: [] as string[], order_id: "", task_title: "", description: "", progress: 0 });
   const [detail, setDetail] = useState<Task | null>(null);
   const [prog, setProg] = useState(0);
   const [saving, setSaving] = useState(false);
-  const [view, setView] = useState<"tasks" | "rating">("tasks");
+  const [view, setView] = useState<"tasks" | "rating" | "shifts">("tasks");
   const [aliasIds, setAliasIds] = useState<Set<string>>(new Set());
+  const [shift, setShift] = useState<ShiftFilter>("all");
+  const [dep, setDep] = useState("");
+  const [pos, setPos] = useState("");
+  const [badgeIds, setBadgeIds] = useState<Set<string>>(new Set());
+  const [fDep, setFDep] = useState(""); const [fPos, setFPos] = useState(""); const [fShift, setFShift] = useState<ShiftFilter>("all"); const [fQ, setFQ] = useState("");
+  const [fBadge, setFBadge] = useState<Set<string>>(new Set());
+  const [shiftOverride, setShiftOverride] = useState<Record<string, number | null>>({});
 
   const load = async () => {
     const [{ data: t }, { data: o }] = await Promise.all([
@@ -81,12 +90,18 @@ export default function DailyTasksPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date]);
 
+  useEffect(() => { resolveBadge(q, setBadgeIds); }, [q]);
+  useEffect(() => { resolveBadge(fQ, setFBadge); }, [fQ]);
+  const shiftOf = (e: any) => (e && e.id in shiftOverride ? shiftOverride[e.id] : e?.work_shift ?? null);
   const empMap = useMemo(() => Object.fromEntries(allEmployees.map((e) => [e.id, e])), [allEmployees]);
   const orderMap = useMemo(() => Object.fromEntries(orders.map((o) => [o.id, o])), [orders]);
   const openByEmp = useMemo(() => Object.fromEntries(openTasks.map((t) => [t.employee_id, t])), [openTasks]);
 
   const filtered = tasks.filter((t) => {
     if (!isDailyTaskEligible(empMap[t.employee_id])) return false;
+    const te = empMap[t.employee_id];
+    if (te && (shift !== "all" || dep || pos) && !matchesEmployee({ ...te, work_shift: shiftOf(te) }, { shift, department: dep, position: pos, q: "" })) return false;
+    if (q.trim() && badgeIds.has(t.employee_id)) return true;
     if (orderMap[t.order_id] && !isDailyTaskOrderVisible(orderMap[t.order_id])) return false;
     if (!q.trim()) return true;
     const o = orderMap[t.order_id];
@@ -103,36 +118,48 @@ export default function DailyTasksPage() {
     avg: st.length ? Math.round(st.reduce((s, t) => s + t.progress, 0) / st.length) : 0,
   };
 
-  const blockedFor = form.employee_id ? openByEmp[form.employee_id] : undefined;
-  const staleBlocker = blockedFor && blockedFor.task_date < todayTashkent() ? blockedFor : undefined;
+  const blockerOf = (id: string) => openByEmp[id];
+  const isHardBlocked = (id: string) => { const b = openByEmp[id]; return !!b && b.task_date >= todayTashkent(); };
 
   const create = async () => {
-    if (!form.employee_id || !form.order_id || !form.task_title.trim()) { toast.error("Ishchi, zakaz va topshiriqni to'ldiring"); return; }
+    if (!form.employee_ids.length || !form.order_id || !form.task_title.trim()) { toast.error("Xodim, zakaz va topshiriqni to'ldiring"); return; }
     if (date > todayTashkent()) { toast.error("Kelajak sanaga topshiriq berib bo'lmaydi."); return; }
-    if (blockedFor && !staleBlocker) { toast.error("Bu xodimning joriy topshirig'i hali yopilmagan. Avval mavjud topshiriqni yakunlang."); return; }
-    if (staleBlocker) {
-      const { error: cErr } = await supabase.from("daily_tasks").update({ status: "closed" } as any).eq("id", staleBlocker.id);
-      if (cErr) { toast.error(cErr.message); return; }
-      toast.info(`Eski kundagi yopilmagan topshiriq joriy foizi (${staleBlocker.progress}%) bilan yopildi (${fmtDateG(staleBlocker.task_date)}: ${staleBlocker.task_title})`);
-    }
+    const ids = form.employee_ids.filter((id) => !isHardBlocked(id));
+    if (!ids.length) { toast.error("Tanlangan xodimlarning joriy topshirig'i hali yopilmagan."); return; }
     setSaving(true);
-    const { data, error } = await supabase.from("daily_tasks").insert({
-      task_date: date, employee_id: form.employee_id, order_id: form.order_id,
-      task_title: form.task_title.trim(), description: form.description.trim() || null,
-      progress: Math.max(0, Math.min(100, Math.round(form.progress))),
-      assigned_by_name: user ? profiles[user.id] ?? currentUserName(user) : null,
-    } as any).select().single();
-    setSaving(false);
-    if (error) {
-      toast.error(error.message.includes("daily_tasks_one_open") ? "Bu xodimning joriy topshirig'i hali yopilmagan. Avval mavjud topshiriqni yakunlang." : error.message);
-      return;
-    }
     const o = orderMap[form.order_id];
-    await supabase.from("audit_log").insert({ actor_id: user?.id, actor_name: profiles[user?.id ?? ""] ?? currentUserName(user), action: "daily_task.create", entity: "daily_task", order_id: form.order_id, details: `${empMap[form.employee_id]?.full_name} — ${form.task_title}` } as any);
-    toast.success(`Topshiriq berildi${o ? ` (#${o.order_number})` : ""}`);
-    setNewOpen(false); setForm({ employee_id: "", order_id: "", task_title: "", description: "", progress: 0 });
-    setDetail(data as any); setProg((data as any).progress);
+    let ok = 0; let last: any = null;
+    for (const id of ids) {
+      const stale = blockerOf(id);
+      if (stale) {
+        const { error: cErr } = await supabase.from("daily_tasks").update({ status: "closed" } as any).eq("id", stale.id);
+        if (cErr) { toast.error(`${localize(empMap[id]?.full_name)}: ${cErr.message}`); continue; }
+      }
+      const { data, error } = await supabase.from("daily_tasks").insert({
+        task_date: date, employee_id: id, order_id: form.order_id,
+        task_title: form.task_title.trim(), description: form.description.trim() || null,
+        progress: Math.max(0, Math.min(100, Math.round(form.progress))),
+        assigned_by_name: user ? profiles[user.id] ?? currentUserName(user) : null,
+      } as any).select().single();
+      if (error) { toast.error(`${localize(empMap[id]?.full_name)}: ` + (error.message.includes("daily_tasks_one_open") ? "joriy topshiriq hali yopilmagan" : error.message)); continue; }
+      ok++; last = data;
+      await supabase.from("audit_log").insert({ actor_id: user?.id, actor_name: profiles[user?.id ?? ""] ?? currentUserName(user), action: "daily_task.create", entity: "daily_task", order_id: form.order_id, details: `${empMap[id]?.full_name} — ${form.task_title}` } as any);
+    }
+    setSaving(false);
+    if (ok) {
+      toast.success(`${ok} ta xodimga topshiriq berildi${o ? ` (#${o.order_number})` : ""}`);
+      setNewOpen(false); setForm({ employee_ids: [], order_id: "", task_title: "", description: "", progress: 0 });
+      if (ok === 1 && last) { setDetail(last); setProg(last.progress); }
+    }
     load();
+  };
+
+  const changeShift = async (id: string, v: string) => {
+    const val = v ? Number(v) : null;
+    const { error } = await supabase.rpc("set_employee_work_shift" as any, { _employee_id: id, _shift: val } as any);
+    if (error) { toast.error(error.message); return; }
+    setShiftOverride((m) => ({ ...m, [id]: val }));
+    toast.success(`${localize(empMap[id]?.full_name)} — ${shiftLabel(val)}`);
   };
 
   const update = async (patch: Partial<Task>, msg: string) => {
@@ -145,22 +172,61 @@ export default function DailyTasksPage() {
   };
 
   const orderOptions = orders.filter(isDailyTaskOrderVisible).map((o) => ({ value: o.id, label: `#${o.order_number} — ${o.product_name}` }));
-  const empOptions = employees.filter((e) => isDailyTaskEligible(e) && !aliasIds.has(e.id)).map((e, i) => ({
-    value: e.id, label: `${i + 1}. ` + localize(e.full_name) + (openByEmp[e.id] ? " 🔒" : ""),
-    hint: [e.position, e.department, openByEmp[e.id] ? "ochiq topshiriq bor" : null].filter(Boolean).join(" · "),
-  }));
+  const eligible = employees.filter((e) => isDailyTaskEligible(e) && !aliasIds.has(e.id)).map((e: any) => ({ ...e, work_shift: shiftOf(e) }));
+  const departments = [...new Set(eligible.map((e) => e.department).filter(Boolean))].sort() as string[];
+  const positionsFor = (d: string) => [...new Set(eligible.filter((e) => !d || e.department === d).map((e) => e.position).filter(Boolean))].sort() as string[];
+  const formCandidates = eligible.filter((e) => matchesEmployee(e, { shift: fShift, department: fDep, position: fPos, q: fQ, badgeIds: fBadge }, localize));
+  const shiftGroups = groupEmployees(eligible.filter((e) => matchesEmployee(e, { shift, department: dep, position: pos, q, badgeIds }, localize)));
+  const sel = "h-9 rounded-md border border-input bg-background px-2 text-sm";
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Kunlik topshiriqlar</h1>
         <div className="flex gap-2">
+          <Button variant={view === "shifts" ? "default" : "outline"} onClick={() => setView(view === "shifts" ? "tasks" : "shifts")}>{view === "shifts" ? "Topshiriqlar" : "Xodimlar va smenalar"}</Button>
           <Button variant={view === "rating" ? "default" : "outline"} onClick={() => setView(view === "rating" ? "tasks" : "rating")}><Trophy className="h-4 w-4 mr-1" />{view === "rating" ? "Topshiriqlar" : "Reyting"}</Button>
           <Button onClick={() => setNewOpen(true)}><Plus className="h-4 w-4 mr-1" />Yangi topshiriq</Button>
         </div>
       </div>
 
-      {view === "rating" ? <DailyTasksRating empMap={empMap} orderMap={orderMap} /> : <>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex rounded-md border overflow-hidden">
+          {(["all", ...SHIFTS] as ShiftFilter[]).map((s) => (
+            <button key={String(s)} type="button" onClick={() => setShift(s)} className={`px-3 h-9 text-sm ${shift === s ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}>{s === "all" ? "Barcha smenalar" : shiftLabel(s)}</button>
+          ))}
+        </div>
+        <select aria-label="Bo'lim" className={sel} value={dep} onChange={(e) => { setDep(e.target.value); setPos(""); }}><option value="">Barcha bo'limlar</option>{departments.map((d) => <option key={d}>{d}</option>)}</select>
+        <select aria-label="Lavozim" className={sel} value={pos} onChange={(e) => setPos(e.target.value)}><option value="">Barcha lavozimlar</option>{positionsFor(dep).map((d) => <option key={d}>{d}</option>)}</select>
+      </div>
+
+      {view === "rating" ? <DailyTasksRating empMap={empMap} orderMap={orderMap} /> : view === "shifts" ? (
+        <div className="space-y-3">
+          <div className="relative w-full sm:w-80"><Search className="h-4 w-4 absolute left-2.5 top-2.5 text-muted-foreground" /><Input className="pl-8" placeholder="Ism, familiya yoki MCT kodi" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+          {!isAdmin && <p className="text-sm text-muted-foreground">Smenani faqat Admin o'zgartira oladi.</p>}
+          {shiftGroups.length === 0 && <Card><CardContent className="p-6 text-center text-muted-foreground">Xodim topilmadi</CardContent></Card>}
+          {shiftGroups.map((g) => (
+            <Card key={g.department}><CardContent className="p-3 space-y-3">
+              <div className="font-semibold">{g.department} <span className="text-muted-foreground font-normal">({g.count})</span></div>
+              {g.positions.map((p) => (
+                <div key={p.position} className="space-y-1">
+                  <div className="text-sm font-medium text-muted-foreground">{p.position} ({p.employees.length})</div>
+                  {p.employees.map((e) => (
+                    <div key={e.id} className="flex flex-wrap items-center gap-2 text-sm px-2 py-1 rounded hover:bg-muted/40">
+                      <span className="flex-1 min-w-[160px]">{localize(e.full_name)}{openByEmp[e.id] ? " 🔒" : ""}</span>
+                      {isAdmin ? (
+                        <select aria-label={`Smena: ${e.full_name}`} className={sel} value={e.work_shift ?? ""} onChange={(ev) => changeShift(e.id, ev.target.value)}>
+                          <option value="">Smenasiz</option>{SHIFTS.map((s) => <option key={s} value={s}>{shiftLabel(s)}</option>)}
+                        </select>
+                      ) : <Badge variant="outline">{shiftLabel(e.work_shift)}</Badge>}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </CardContent></Card>
+          ))}
+        </div>
+      ) : <>
 
 
       <div className="flex flex-wrap items-center gap-2">
@@ -171,7 +237,7 @@ export default function DailyTasksPage() {
         <span className="font-semibold ml-2">{fmtDateG(date)}</span>
         <div className="relative ml-auto w-full sm:w-72">
           <Search className="h-4 w-4 absolute left-2.5 top-2.5 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Ishchi, zakaz, topshiriq, status..." value={q} onChange={(e) => setQ(e.target.value)} />
+          <Input className="pl-8" placeholder="Ishchi, MCT kodi, zakaz, topshiriq..." value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
       </div>
 
@@ -234,17 +300,35 @@ export default function DailyTasksPage() {
           <DialogHeader><DialogTitle>Yangi topshiriq</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>Sana</Label><DateInput value={date} onChange={setDate} className="w-44" /></div>
-            <div><Label>Ishchi *</Label>
-              <SearchableSelect value={form.employee_id} onChange={(v) => setForm({ ...form, employee_id: v })} placeholder="Xodimni tanlang" options={empOptions} />
-              {blockedFor && !staleBlocker && <p className="text-sm text-destructive mt-1">Bu xodimning joriy topshirig'i hali yopilmagan ({fmtDateG(blockedFor.task_date)}: {blockedFor.task_title}, {blockedFor.progress}%). Avval mavjud topshiriqni yakunlang.</p>}
-              {staleBlocker && <p className="text-sm text-muted-foreground mt-1">Eski kundagi yopilmagan topshiriq ({fmtDateG(staleBlocker.task_date)}: {staleBlocker.task_title}, {staleBlocker.progress}%) joriy foizi bilan avtomatik yopiladi.</p>}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div><Label>Bo'lim (ixtiyoriy)</Label><select className={sel + " w-full"} value={fDep} onChange={(e) => { setFDep(e.target.value); setFPos(""); }}><option value="">Barchasi</option>{departments.map((d) => <option key={d}>{d}</option>)}</select></div>
+              <div><Label>Lavozim (ixtiyoriy)</Label><select className={sel + " w-full"} value={fPos} onChange={(e) => setFPos(e.target.value)}><option value="">Barchasi</option>{positionsFor(fDep).map((d) => <option key={d}>{d}</option>)}</select></div>
+              <div><Label>Smena (ixtiyoriy)</Label><select className={sel + " w-full"} value={String(fShift)} onChange={(e) => setFShift(e.target.value === "all" ? "all" : (Number(e.target.value) as ShiftFilter))}><option value="all">Barcha smenalar</option>{SHIFTS.map((s) => <option key={s} value={s}>{shiftLabel(s)}</option>)}</select></div>
+            </div>
+            <div data-required>
+              <div className="flex items-center justify-between"><Label>Xodimlar * ({form.employee_ids.length} tanlandi)</Label>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setForm({ ...form, employee_ids: formCandidates.filter((e) => !isHardBlocked(e.id)).map((e) => e.id) })}>Barchasini tanlash</Button></div>
+              <Input placeholder="Qidiruv: ism yoki MCT kodi" value={fQ} onChange={(e) => setFQ(e.target.value)} />
+              <div className="max-h-56 overflow-y-auto border rounded-md mt-1 divide-y">
+                {formCandidates.length === 0 && <div className="p-3 text-sm text-muted-foreground">Xodim topilmadi</div>}
+                {formCandidates.map((e) => {
+                  const blocked = isHardBlocked(e.id); const checked = form.employee_ids.includes(e.id); const stale = !blocked && blockerOf(e.id);
+                  return (
+                    <label key={e.id} className={`flex items-start gap-2 p-2 text-sm ${blocked ? "opacity-50" : "cursor-pointer hover:bg-muted/40"}`}>
+                      <input type="checkbox" className="mt-1" disabled={blocked} checked={checked} onChange={() => setForm({ ...form, employee_ids: checked ? form.employee_ids.filter((x) => x !== e.id) : [...form.employee_ids, e.id] })} />
+                      <span className="flex-1"><span className="font-medium">{localize(e.full_name)}</span>
+                        <span className="block text-xs text-muted-foreground">{[e.position, e.department, shiftLabel(e.work_shift), blocked ? "ochiq topshiriq bor 🔒" : stale ? "eski topshiriq joriy foizi bilan yopiladi" : null].filter(Boolean).join(" · ")}</span></span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
             <div><Label>Zakaz *</Label><SearchableSelect value={form.order_id} onChange={(v) => setForm({ ...form, order_id: v })} placeholder="Zakazni tanlang" options={orderOptions} /></div>
             <div><Label>Ish / topshiriq *</Label><Input value={form.task_title} onChange={(e) => setForm({ ...form, task_title: e.target.value })} placeholder="Masalan: Chizma chizish" /></div>
             <div><Label>Izoh</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
             <div><Label>Boshlang'ich foiz</Label><Input type="number" min={0} max={100} value={form.progress} onChange={(e) => setForm({ ...form, progress: Number(e.target.value) })} /></div>
             {date > todayTashkent() && <p className="text-sm text-destructive">Kelajak sanaga topshiriq berib bo'lmaydi.</p>}
-            <Button className="w-full" disabled={saving || date > todayTashkent() || (!!blockedFor && !staleBlocker)} onClick={create}>Topshiriq berish</Button>
+            <Button className="w-full" disabled={saving || date > todayTashkent() || !form.employee_ids.length} onClick={create}>Topshiriq berish</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -299,4 +383,11 @@ export default function DailyTasksPage() {
       </Dialog>
     </div>
   );
+}
+
+async function resolveBadge(q: string, set: (s: Set<string>) => void) {
+  const t = q.trim();
+  if (!/^mct\s*\d{2,}$/i.test(t)) { set(new Set()); return; }
+  const { data } = await supabase.rpc("resolve_employee_badge", { _code: t.replace(/\s+/g, "").toUpperCase() } as any);
+  set(new Set(((data as any[]) ?? []).map((r) => r.id)));
 }

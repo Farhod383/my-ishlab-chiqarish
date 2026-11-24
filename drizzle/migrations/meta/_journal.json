@@ -603,6 +603,13 @@
       "when": 1795068473618,
       "tag": "0085_prepared_badge_import_24_reporting",
       "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1795507972888,
+      "tag": "0086_employee_work_shift",
+      "breakpoints": true
     }
   ]
 }
