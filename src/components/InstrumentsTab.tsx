@@ -28,6 +28,7 @@ import BulkBarcodeLabels from "@/components/warehouse/BulkBarcodeLabels";
 import IssueScanner from "@/components/warehouse/IssueScanner";
 import FactoryBarcodeEditor from "@/components/warehouse/FactoryBarcodeEditor";
 import BarcodeScanField from "@/components/warehouse/BarcodeScanField";
+import { createReloader } from "@/lib/realtimeReload";
 
 type Instrument = {
   id: string;
@@ -153,12 +154,13 @@ export default function InstrumentsTab() {
 
   useEffect(() => {
     load();
+    const reload = createReloader(() => load(), 700); // bir nechta o'zgarish — bitta yangilash
     const ch = supabase
       .channel("instruments-tab")
-      .on("postgres_changes", { event: "*", schema: "public", table: "instruments" }, () => load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "instrument_assignments" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "instruments" }, reload.schedule)
+      .on("postgres_changes", { event: "*", schema: "public", table: "instrument_assignments" }, reload.schedule)
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { reload.cancel(); supabase.removeChannel(ch); };
   }, []);
 
   const heldByEmp = useMemo(() => {

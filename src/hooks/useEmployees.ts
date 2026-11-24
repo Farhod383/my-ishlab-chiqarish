@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { createReloader } from "@/lib/realtimeReload";
 
 export interface CentralEmployee {
   id: string;
@@ -42,11 +43,14 @@ function ensureLoaded(force = false) {
   return inflight;
 }
 
+// Bir nechta xodim o'zgarishi — bitta qayta yuklash (1 s).
+const employeesReload = createReloader(() => ensureLoaded(true), 1000);
+
 function ensureChannel() {
   if (channel) return;
   channel = supabase
     .channel("central-employees")
-    .on("postgres_changes", { event: "*", schema: "public", table: "employees" }, () => { ensureLoaded(true); })
+    .on("postgres_changes", { event: "*", schema: "public", table: "employees" }, employeesReload.schedule)
     .subscribe();
 }
 

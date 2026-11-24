@@ -28,6 +28,7 @@ import { useNotifications, notifStageId } from "@/notifications/NotificationsCon
 import { fmtDateTime24, fmtDuration, fmtLegacyDurations, fmtDate } from "@/lib/format";
 import { currentUserName, displayUser } from "@/lib/userNames";
 import { useFocusEntity } from "@/notifications/FocusHighlighter";
+import { createReloader } from "@/lib/realtimeReload";
 
 
 export default function OrderDetail() {
@@ -121,12 +122,13 @@ export default function OrderDetail() {
   // Realtime: keep Admin / Nachalnik in sync when either side changes a stage.
   useEffect(() => {
     if (!id) return;
+    const reload = createReloader(() => load(), 700); // bir nechta o'zgarish — bitta yangilash
     const ch = supabase
       .channel(`order-stages-${id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "order_stages", filter: `order_id=eq.${id}` }, () => load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `id=eq.${id}` }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "order_stages", filter: `order_id=eq.${id}` }, reload.schedule)
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `id=eq.${id}` }, reload.schedule)
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { reload.cancel(); supabase.removeChannel(ch); };
   }, [id]);
 
   const startStage = async (stage: StageRow, workers: string[], startedAtIso: string) => {

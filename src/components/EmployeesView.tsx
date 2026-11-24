@@ -17,6 +17,7 @@ import autoTable from "jspdf-autotable";
 import { useEmployees } from "@/hooks/useEmployees";
 import { fmtDate as fmtDateG, fmtDateTime24 } from "@/lib/format";
 import EmployeeProductHistory from '@/components/warehouse/EmployeeProductHistory';
+import { createReloader } from "@/lib/realtimeReload";
 
 type Employee = {
   id: string;
@@ -77,11 +78,12 @@ export default function EmployeesView() {
 
   useEffect(() => {
     load();
+    const reload = createReloader(() => load(), 700); // bir nechta o'zgarish — bitta yangilash
     const ch = supabase.channel("emp-view")
-      .on("postgres_changes", { event: "*", schema: "public", table: "instrument_assignments" }, () => load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "employees" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "instrument_assignments" }, reload.schedule)
+      .on("postgres_changes", { event: "*", schema: "public", table: "employees" }, reload.schedule)
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { reload.cancel(); supabase.removeChannel(ch); };
   }, []);
 
   const q = search.trim();

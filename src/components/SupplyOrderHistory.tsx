@@ -4,14 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchSupplyHistory, type SupplyHistoryItem } from "@/lib/supplyHistory";
 import { fmtDateTime24 } from "@/lib/format";
 import { History, ArrowRight, Loader2 } from "lucide-react";
+import { createReloader } from "@/lib/realtimeReload";
 
 /** Per-order supply change timeline: what changed, from → to, by whom and when. */
 export default function SupplyOrderHistory({ orderId, title = "O'zgarishlar tarixi" }: { orderId: string | null; title?: string }) {
   const [items, setItems] = useState<SupplyHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true);
     setItems(await fetchSupplyHistory(orderId));
     setLoading(false);
   };
@@ -19,12 +20,13 @@ export default function SupplyOrderHistory({ orderId, title = "O'zgarishlar tari
   useEffect(() => { void load(); }, [orderId]);
 
   useEffect(() => {
+    const reload = createReloader(() => load(true), 1500); // bir nechta o'zgarish — bitta yangilash
     const ch = supabase
       .channel(`supply-history-${orderId ?? "general"}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "entity_audit" }, () => void load())
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "audit_log" }, () => void load())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "entity_audit" }, reload.schedule)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "audit_log", ...(orderId ? { filter: `order_id=eq.${orderId}` } : {}) }, reload.schedule)
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { reload.cancel(); supabase.removeChannel(ch); };
   }, [orderId]);
 
   return (

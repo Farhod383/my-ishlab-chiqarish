@@ -27,6 +27,7 @@ import { useEmployees, refreshEmployees } from "@/hooks/useEmployees";
 import { currentUserName, displayUser } from "@/lib/userNames";
 import { useFocusEntity } from "@/notifications/FocusHighlighter";
 import DebtItemsDialog from "@/components/kassa/DebtItemsDialog";
+import { createReloader } from "@/lib/realtimeReload";
 
 const PAYMENT_TYPES = ["cash", "transfer", "corporate_card"] as const;
 type PaymentType = typeof PAYMENT_TYPES[number] | "other";
@@ -174,8 +175,9 @@ export default function KassaPage() {
     setDebts(((data ?? []) as any[]).map((d) => ({ ...d, paid_uzs: paidMap[d.id]?.UZS ?? 0, paid_usd: paidMap[d.id]?.USD ?? 0 })));
   };
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (silent = false) => {
+    // Realtime yangilanishda ekran bo'shatilmaydi (pirillamaslik uchun) — eski ma'lumot turadi.
+    if (!silent) setLoading(true);
     const [{ data: exp }, { data: inc }] = await Promise.all([
       supabase.from("cash_expenses").select("*, recipient:employees(full_name)").order("expense_date", { ascending: false }),
       (supabase.from as any)("cash_incomes").select("*").order("income_date", { ascending: false }),
@@ -190,12 +192,13 @@ export default function KassaPage() {
   useEffect(() => {
     load();
     loadReasons();
+    const reload = createReloader(() => load(true), 1000); // bir nechta o'zgarish — bitta yangilash
     const channel = supabase
       .channel("kassa-currency-totals")
-      .on("postgres_changes", { event: "*", schema: "public", table: "cash_incomes" }, () => load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "cash_expenses" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "cash_incomes" }, reload.schedule)
+      .on("postgres_changes", { event: "*", schema: "public", table: "cash_expenses" }, reload.schedule)
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { reload.cancel(); supabase.removeChannel(channel); };
   }, []);
 
   // Joriy davr: oxirgi nolga tushirishdan keyin yaratilgan operatsiyalar (eski tarix saqlanadi, balansga qo'shilmaydi).

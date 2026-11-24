@@ -25,6 +25,7 @@ import { useFocusEntity } from "@/notifications/FocusHighlighter";
 import { Checkbox } from "@/components/ui/checkbox";
 import EmployeeBadgePrint from "@/components/hr/EmployeeBadgePrint";
 import { employeeBadgeCode } from "@/lib/employeeBadgeAccess";
+import { createReloader } from "@/lib/realtimeReload";
 
 // Uzbek phone format validator: +998 XX XXX XX XX  or XX XXX XX XX  (spaces optional)
 const PHONE_RE = /^(\+?998)?\s*\d{2}\s*\d{3}\s*\d{2}\s*\d{2}$/;
@@ -91,10 +92,11 @@ export default function HRPage() {
   };
   useEffect(() => {
     load();
+    const reload = createReloader(() => load(), 700); // bir nechta o'zgarish — bitta yangilash
     const ch = supabase.channel("hr-instruments")
-      .on("postgres_changes", { event: "*", schema: "public", table: "instrument_assignments" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "instrument_assignments" }, reload.schedule)
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { reload.cancel(); supabase.removeChannel(ch); };
   }, []);
 
   const loading = assignLoading || empLoading;

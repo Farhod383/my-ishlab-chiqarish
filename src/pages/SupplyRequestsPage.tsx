@@ -34,6 +34,7 @@ import { currentUserName } from "@/lib/userNames";
 import { fmtDate, fmtDateTime24 as fmtDT } from "@/lib/format";
 import { supplyRequestDates } from "@/lib/supplyRequestDates";
 import SupplierExpensesHistory from '@/components/supply/SupplierExpensesHistory';
+import { createReloader } from "@/lib/realtimeReload";
 
 type Filter = "all" | Status;
 
@@ -101,8 +102,9 @@ export default function SupplyRequestsPage() {
   }, [openOrderId, notifItems, rows]);
 
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (silent = false) => {
+    // Realtime yangilanishda ekran bo'shatilmaydi (pirillamaslik uchun) — eski ma'lumot turadi.
+    if (!silent) setLoading(true);
     const { data } = await supabase
       .from("order_supply_requests")
       .select("*, order:orders(id, order_number, product_name, status, deadline)")
@@ -127,11 +129,12 @@ export default function SupplyRequestsPage() {
   useEffect(() => { load(); }, []);
 
   useEffect(() => {
+    const reload = createReloader(() => load(true), 700); // bir nechta o'zgarish — bitta yangilash
     const ch = supabase
       .channel("supply-requests-list")
-      .on("postgres_changes", { event: "*", schema: "public", table: "order_supply_requests" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "order_supply_requests" }, reload.schedule)
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { reload.cancel(); supabase.removeChannel(ch); };
   }, []);
 
   const GENERAL_KEY = "__general__";

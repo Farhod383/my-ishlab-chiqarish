@@ -28,6 +28,7 @@ import { resolveModule } from "@/lib/notifModules";
 import SupplyOrderHistory from "@/components/SupplyOrderHistory";
 import { logSupplyChange } from "@/lib/supplyHistory";
 import { currentUserName } from "@/lib/userNames";
+import { createReloader } from "@/lib/realtimeReload";
 
 interface Props {
   orderId: string;
@@ -82,11 +83,12 @@ export default function OrderSupplyRequests({ orderId, orderNumber }: Props) {
   useEffect(() => { load(); }, [orderId]);
 
   useEffect(() => {
+    const reload = createReloader(() => load(), 700); // bir nechta o'zgarish — bitta yangilash
     const ch = supabase
       .channel(`order-supply-${orderId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "order_supply_requests", filter: `order_id=eq.${orderId}` }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "order_supply_requests", filter: `order_id=eq.${orderId}` }, reload.schedule)
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { reload.cancel(); supabase.removeChannel(ch); };
   }, [orderId]);
 
   const handlePid = (id: string) => {

@@ -7,6 +7,7 @@ import { fmtDateTime24 } from "@/lib/format";
 import { fmtSpace } from "@/components/kassa/KassaOverview";
 import SupplierExpensesHistory from '@/components/supply/SupplierExpensesHistory';
 import { toast } from 'sonner';
+import { createReloader } from "@/lib/realtimeReload";
 
 const PT_LABEL: Record<string, string> = { cash: "Naqd pul", transfer: "O'tkazma", corporate_card: "Korporativ karta", card: "Karta", other: "Boshqa" };
 
@@ -81,8 +82,9 @@ export default function SupplyFinancePage({ canManage = false, onGive, kassa = "
   const [mounted, setMounted] = useState(false);
   useEffect(() => { const t = setTimeout(() => setMounted(true), 60); return () => clearTimeout(t); }, []);
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (silent = false) => {
+    // Realtime yangilanishda ekran bo'shatilmaydi (pirillamaslik uchun) — eski ma'lumot turadi.
+    if (!silent) setLoading(true);
     const [{ data: exp }, { data: mov }, { data: profs }, { data: supplierCosts, error: supplierError }] = await Promise.all([
       supabase
         .from("cash_expenses")
@@ -155,12 +157,13 @@ export default function SupplyFinancePage({ canManage = false, onGive, kassa = "
 
   useEffect(() => {
     load();
+    const reload = createReloader(() => load(true), 2000); // bir nechta o'zgarish — bitta yangilash
     const ch = supabase
       .channel(`supply-finance-${kassa}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "cash_expenses" }, () => load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "stock_movements" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "cash_expenses" }, reload.schedule)
+      .on("postgres_changes", { event: "*", schema: "public", table: "stock_movements" }, reload.schedule)
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { reload.cancel(); supabase.removeChannel(ch); };
   }, [kassa]);
 
   // Formulalar o'zgarmagan: kirim = Kassadan berilgan, chiqim = Sklad kirimlari (narx × miqdor).

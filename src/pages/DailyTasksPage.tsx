@@ -20,6 +20,7 @@ import { fmtDate as fmtDateG, fmtDateTime24 } from "@/lib/format";
 import { currentUserName, displayUser } from "@/lib/userNames";
 import { isDailyTaskEligible, isDailyTaskOrderVisible } from "@/lib/dailyTaskEligibility";
 import { matchesEmployee, groupEmployees, SHIFTS, shiftLabel, type ShiftFilter } from "@/lib/dailyTaskShifts";
+import { createReloader } from "@/lib/realtimeReload";
 
 type Status = "in_progress" | "closed" | "cancelled";
 interface Task {
@@ -85,8 +86,9 @@ export default function DailyTasksPage() {
       setAliasIds(new Set(((data as any) ?? []).map((r: any) => r.alias_id))));
   }, []);
   useEffect(() => {
-    const ch = supabase.channel("daily-tasks-" + date).on("postgres_changes", { event: "*", schema: "public", table: "daily_tasks" }, () => load()).subscribe();
-    return () => { supabase.removeChannel(ch); };
+    const reload = createReloader(() => load(), 700); // bir nechta o'zgarish — bitta yangilash
+    const ch = supabase.channel("daily-tasks-" + date).on("postgres_changes", { event: "*", schema: "public", table: "daily_tasks" }, reload.schedule).subscribe();
+    return () => { reload.cancel(); supabase.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date]);
 
