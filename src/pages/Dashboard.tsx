@@ -38,30 +38,40 @@ export default function Dashboard() {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [q, setQ] = useState("");
 
+  // Tezlik: birinchi ochilishda faqat TUGAMAGAN zakazlar (bosqichlari bilan) yuklanadi.
+  // Tugaganlar uchun avval faqat yengil ustunlar (soni va guruhi), to'liq ro'yxat — kerak bo'lganda.
+  const [completedLight, setCompletedLight] = useState<{ id: string; product_name: string }[]>([]);
+  const [completedLoaded, setCompletedLoaded] = useState(false);
+  const ORDER_SELECT = "*, client:clients(name), order_stages(stage_order, started_at, status, qc_required, qc_passed)";
+
   useEffect(() => {
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
-      const [{ data: orderRows }, { data: products }, { data: log }] = await Promise.all([
+      const [{ data: orderRows }, { data: doneRows }, { data: products }, { data: log }] = await Promise.all([
         supabase
           .from("orders")
-          .select("*, client:clients(name), order_stages(stage_order, started_at, status, qc_required, qc_passed)")
+          .select(ORDER_SELECT)
+          .neq("status", "completed")
           .order("priority", { ascending: false })
           .order("queue_position"),
-        supabase.from("products").select("*").is("instrument_id", null),
-        supabase.from("audit_log").select("*").order("created_at", { ascending: false }).limit(8),
+        supabase.from("orders").select("id, product_name").eq("status", "completed"),
+        supabase.from("products").select("id, stock_qty, min_limit").is("instrument_id", null),
+        supabase.from("audit_log").select("id, action, details, created_at").order("created_at", { ascending: false }).limit(8),
       ]);
       const all = (orderRows as any[]) ?? [];
       // Sync with Orders module: auto-complete orders whose stages are all done + OTK-approved.
       const fixed = await recalcOrdersBatch(all);
       if (fixed.size > 0) for (const r of all) if (fixed.has(r.id)) r.status = "completed";
+      const done = ((doneRows as any[]) ?? []).filter((r) => !fixed.has(r.id));
+      setCompletedLight(done);
       setOrders(all);
       setStats({
-        total: all.length,
+        total: all.length + done.length,
         active: all.filter((o) => o.status === "in_progress" || o.status === "pending").length,
         delayed: all.filter((o) => o.status === "delayed" || (o.status !== "completed" && o.deadline < today)).length,
         today: all.filter((o) => o.deadline === today && o.status !== "completed").length,
         exception: all.filter((o) => o.priority === "exception" && o.status !== "completed").length,
-        completed: all.filter((o) => o.status === "completed").length,
+        completed: all.filter((o) => o.status === "completed").length + done.length,
       });
       setLowStock((products ?? []).filter((p) => Number(p.stock_qty) <= Number(p.min_limit)));
       setRecentLog(log ?? []);
@@ -69,6 +79,23 @@ export default function Dashboard() {
     })();
   }, []);
 
+  // Tugagan zakazlarning to'liq ro'yxati faqat kerak bo'lganda (filtr «Tugagan» yoki ro'yxat oxiri).
+  const loadCompleted = async () => {
+    if (completedLoaded) return;
+    setCompletedLoaded(true);
+    const { data } = await supabase
+      .from("orders")
+      .select(ORDER_SELECT)
+      .eq("status", "completed")
+      .order("priority", { ascending: false })
+      .order("queue_position");
+    const rows = (data as any[]) ?? [];
+    setOrders((prev) => {
+      const seen = new Set(prev.map((o) => o.id));
+      return [...prev, ...rows.filter((r) => !seen.has(r.id))];
+    });
+  };
+  useEffect(() => { if (filter === "completed") void loadCompleted(); }, [filter]);
   
 
   const today = new Date().toISOString().slice(0, 10);
@@ -106,7 +133,8 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {ORDER_GROUPS.map((g) => {
-          const n = orders.filter((o) => orderGroupOf(o.product_name) === g.key).length;
+          const n = orders.filter((o) => orderGroupOf(o.product_name) === g.key).length
+            + (completedLoaded ? 0 : completedLight.filter((o) => orderGroupOf(o.product_name) === g.key).length);
           return (
             <button key={g.key} type="button" onClick={() => nav(`/orders?group=${g.key}`)}
               className="text-left rounded-lg border bg-card p-4 shadow-sm hover:border-primary hover:shadow-md transition">
@@ -205,6 +233,13 @@ export default function Dashboard() {
             </div>
 
             <div ref={sentinelRef} className="h-6" />
+            {filter === "all" && !hasMore && !completedLoaded && completedLight.length > 0 && (
+              <div className="flex justify-center pb-3">
+                <Button variant="outline" size="sm" onClick={() => void loadCompleted()}>
+                  Tugagan zakazlarni ham ko'rsatish ({completedLight.length})
+                </Button>
+              </div>
+            )}
             {hasMore && (
               <div className="text-center text-xs text-muted-foreground py-2">Yuklanmoqda…</div>
             )}

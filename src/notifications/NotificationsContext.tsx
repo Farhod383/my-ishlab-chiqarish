@@ -65,6 +65,8 @@ export function useNotifications(): Ctx {
 
 import { MODULE_BY_KEY } from "@/lib/notifModules";
 
+const READ_HISTORY_LIMIT = 100;
+
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
   const { user, roles } = useAuth();
   const myRoles = roles as string[];
@@ -96,21 +98,9 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     let from = 0;
     let failed = false;
 
-    while (true) {
-      const { data, error } = await supabase
-        .from("notification_user_states")
-        .select("notification_id,is_read,read_at,created_at,notifications(*)")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .range(from, from + pageSize - 1);
-
-      if (error) {
-        console.warn("Bildirishnomalarni yuklashda xato", error);
-        failed = true;
-        break;
-      }
-
-      const rows = (data ?? []) as any[];
+    // Tezlik: hamma tarixni emas — barcha O'QILMAGANLAR + oxirgi 100 ta o'qilgan.
+    // O'qilmaganlar soni (badge) to'g'ri qoladi, eski o'qilganlar esa har safar yuklanmaydi.
+    const pushRows = (rows: any[]) => {
       for (const row of rows) {
         const notification = Array.isArray(row.notifications) ? row.notifications[0] : row.notifications;
         if (!notification) continue;
@@ -119,9 +109,41 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
           read_at: row.is_read ? (row.read_at ?? row.created_at) : null,
         } as Notif);
       }
-
+    };
+    const SELECT = "notification_id,is_read,read_at,created_at,notifications(*)";
+    while (true) {
+      const { data, error } = await supabase
+        .from("notification_user_states")
+        .select(SELECT)
+        .eq("user_id", user.id)
+        .eq("is_read", false)
+        .order("created_at", { ascending: false })
+        .range(from, from + pageSize - 1);
+      if (error) {
+        console.warn("Bildirishnomalarni yuklashda xato", error);
+        failed = true;
+        break;
+      }
+      const rows = (data ?? []) as any[];
+      pushRows(rows);
       if (rows.length < pageSize) break;
       from += pageSize;
+    }
+    if (!failed) {
+      const { data, error } = await supabase
+        .from("notification_user_states")
+        .select(SELECT)
+        .eq("user_id", user.id)
+        .eq("is_read", true)
+        .order("created_at", { ascending: false })
+        .limit(READ_HISTORY_LIMIT);
+      if (error) {
+        console.warn("Bildirishnomalarni yuklashda xato", error);
+        failed = true;
+      } else {
+        pushRows((data ?? []) as any[]);
+        loaded.sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0));
+      }
     }
 
     if (!failed) {
@@ -152,7 +174,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     refreshTimerRef.current = window.setTimeout(() => {
       refreshTimerRef.current = null;
       void refresh();
-    }, 100);
+    }, 1500);
   }, [refresh]);
 
   useEffect(() => {
@@ -202,8 +224,14 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       .subscribe();
 
     // Safety net if the socket drops.
-    const poll = window.setInterval(() => { if (!document.hidden) refresh(); }, 60_000);
-    const onVisible = () => { if (!document.hidden) refresh(); };
+    // Zaxira tekshiruv: socket uzilsa ham 5 daqiqada bir marta (oldin har 60 soniyada hammasi yuklanardi).
+    let lastVisibleRefresh = Date.now();
+    const poll = window.setInterval(() => { if (!document.hidden) { lastVisibleRefresh = Date.now(); refresh(); } }, 300_000);
+    const onVisible = () => {
+      if (document.hidden || Date.now() - lastVisibleRefresh < 30_000) return;
+      lastVisibleRefresh = Date.now();
+      refresh();
+    };
     document.addEventListener("visibilitychange", onVisible);
 
     return () => {

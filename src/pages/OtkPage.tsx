@@ -44,11 +44,13 @@ export default function OtkPage() {
   const [edit, setEdit] = useState<Record<string, { comment: string; passed: boolean; dirty: boolean }>>({});
 
   const load = async () => {
-    // Same data source as other modules: all active orders with their stages
+    // Tezlik: faqat faol zakazlar + oxirgi 14 kunda tugaganlar (butun tarix emas).
+    const since = new Date(Date.now() - 14 * 86400_000).toISOString();
     const { data } = await supabase
       .from("orders")
-      .select("id, order_number, product_name, status, priority, deadline, queue_position, order_stages(*)")
+      .select("id, order_number, product_name, status, priority, deadline, queue_position, order_stages(id, order_id, name, stage_order, status, qc_required, qc_passed, otk_comment, otk_checked_at, worker_name, started_at, finished_at)")
       .neq("status", "cancelled")
+      .or(`status.neq.completed,updated_at.gte.${since}`)
       .order("queue_position");
     const rows = (data as any[]) ?? [];
     const flat: any[] = [];
@@ -120,7 +122,9 @@ export default function OtkPage() {
       sender_id: user?.id, sender_name: currentUserName(user),
     });
     toast.success(t.otk.save);
-    load();
+    // Butun ro'yxatni qayta yuklamasdan — faqat shu bosqichni yangilaymiz (pirillamaydi).
+    setStages((prev) => prev.map((x) => (x.id === s.id ? { ...x, ...patch } : x)));
+    setEdit((prev) => ({ ...prev, [s.id]: { ...prev[s.id], dirty: false } }));
   };
 
   const canEdit = hasRole(["admin", "otk"]);

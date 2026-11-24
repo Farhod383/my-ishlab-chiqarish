@@ -63,12 +63,16 @@ export default function ProductionBoard() {
     // Build new ordering: remove moveOrder from current list (already sorted by queue_position), insert at target-1
     const rest = orders.filter((x) => x.id !== moveOrder.id);
     const newList = [...rest.slice(0, target - 1), moveOrder, ...rest.slice(target - 1)];
-    // Reassign queue_position sequentially
-    for (let i = 0; i < newList.length; i++) {
-      const desired = i + 1;
-      const row = newList[i];
-      if ((row.queue_position ?? 0) !== desired) {
-        await supabase.from("orders").update({ queue_position: desired }).eq("id", row.id);
+    // Navbatni saqlash: avval bitta RPC (reorder_orders) bilan; u hali bo'lmasa —
+    // o'zgargan zakazlarni ketma-ket emas, bir vaqtda (parallel) yangilaymiz.
+    const rpc = await (supabase as any).rpc("reorder_orders", { _ids: newList.map((r) => r.id) });
+    if (rpc.error) {
+      const changed = newList
+        .map((row, i) => ({ row, desired: i + 1 }))
+        .filter(({ row, desired }) => (row.queue_position ?? 0) !== desired);
+      for (let i = 0; i < changed.length; i += 10) {
+        await Promise.all(changed.slice(i, i + 10).map(({ row, desired }) =>
+          supabase.from("orders").update({ queue_position: desired }).eq("id", row.id)));
       }
     }
     // Mark exception on moved order

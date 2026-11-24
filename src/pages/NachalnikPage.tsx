@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,13 +30,18 @@ export default function NachalnikPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
 
+  // Tezlik/pirillash: kechikib kelgan eski javob yangisining ustiga yozilmasin.
+  const loadSeq = useRef(0);
+  const reloadTimer = useRef<number | null>(null);
   const load = async () => {
+    const seq = ++loadSeq.current;
     const { data } = await supabase
       .from("orders")
       .select("*, client:clients(name), stages:order_stages(*)")
       .neq("status", "completed")
       .neq("status", "cancelled")
       .order("queue_position");
+    if (seq !== loadSeq.current) return;
     const raw = ((data as any) ?? []).map((o: any) => ({
       ...o,
       stages: (o.stages ?? []).sort((a: any, b: any) => a.stage_order - b.stage_order),
@@ -47,14 +52,21 @@ export default function NachalnikPage() {
 
   useEffect(() => { load(); }, []);
 
-  // Realtime: any stage change (Admin or Nachalnik) refreshes the panel.
+  // Realtime: bir zumda kelgan bir nechta o'zgarish (bosqich + zakaz) — bitta yangilash (0.7 s).
   useEffect(() => {
+    const schedule = () => {
+      if (reloadTimer.current !== null) window.clearTimeout(reloadTimer.current);
+      reloadTimer.current = window.setTimeout(() => { reloadTimer.current = null; void load(); }, 700);
+    };
     const ch = supabase
       .channel("nachalnik-stages")
-      .on("postgres_changes", { event: "*", schema: "public", table: "order_stages" }, () => load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "order_stages" }, schedule)
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, schedule)
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      supabase.removeChannel(ch);
+      if (reloadTimer.current !== null) window.clearTimeout(reloadTimer.current);
+    };
   }, []);
 
   const currentStage = (o: any) =>
