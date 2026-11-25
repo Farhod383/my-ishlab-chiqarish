@@ -35,7 +35,7 @@ const fmtD = (d?: string | null) => (d ? fmtDate(d) : "—");
 
 const FIELD_LABELS: Record<string, string> = {
   name: "Nomi", phone: "Telefon", phone2: "Qo'shimcha telefon", contact_person: "Kontakt shaxs",
-  email: "Email", address: "Manzil", note: "Izoh", client_type: "Klient turi",
+  email: "Email", address: "Manzil", note: "Izoh", client_type: "Klient turi", inn: "STIR (INN)",
   status: "Holati", partnership_start: "Hamkorlik sanasi", responsible_employee_id: "Mas'ul xodim",
 };
 
@@ -150,6 +150,7 @@ export default function ClientDetail() {
       name: nm,
       phone: edit.phone || null, phone2: edit.phone2 || null, address: edit.address || null,
       contact_person: edit.contact_person || null, email: edit.email || null, note: edit.note || null,
+      ...(((edit as any).inn ?? "") !== ((client as any)?.inn ?? "") ? { inn: String((edit as any).inn ?? "").replace(/\D/g, "") || null } : {}),
       client_type: edit.client_type || "Mijoz", status: edit.status || "active",
       partnership_start: edit.partnership_start || null,
       responsible_employee_id: edit.responsible_employee_id || null,
@@ -275,6 +276,7 @@ export default function ClientDetail() {
               <CardHeader className="pb-2"><CardTitle className="text-base">Klient ma'lumotlari</CardTitle></CardHeader>
               <CardContent className="text-sm space-y-1.5">
                 <div><span className="text-muted-foreground">Nomi: </span>{client.name}</div>
+                <div><span className="text-muted-foreground">STIR (INN): </span>{(client as any).inn || "—"}</div>
                 <div><span className="text-muted-foreground">Kontakt shaxs: </span>{client.contact_person || "—"}</div>
                 <div><span className="text-muted-foreground">Telefon: </span>{client.phone || "—"}</div>
                 <div><span className="text-muted-foreground">Qo'shimcha telefon: </span>{client.phone2 || "—"}</div>
@@ -440,6 +442,7 @@ export default function ClientDetail() {
             <div><Label>Qo'shimcha telefon</Label><Input value={edit.phone2 ?? ""} onChange={(e) => setEdit({ ...edit, phone2: e.target.value })} /></div>
             <div><Label>Kontakt shaxs</Label><Input value={edit.contact_person ?? ""} onChange={(e) => setEdit({ ...edit, contact_person: e.target.value })} /></div>
             <div><Label>Email</Label><Input value={edit.email ?? ""} onChange={(e) => setEdit({ ...edit, email: e.target.value })} /></div>
+            <div><Label>STIR (INN)</Label><Input inputMode="numeric" maxLength={14} placeholder="9 yoki 14 raqam" value={(edit as any).inn ?? ""} onChange={(e) => setEdit({ ...edit, inn: e.target.value.replace(/\D/g, "") } as any)} /></div>
             <div><Label>Manzil</Label><Input value={edit.address ?? ""} onChange={(e) => setEdit({ ...edit, address: e.target.value })} /></div>
             <div>
               <Label>Mas'ul xodim</Label>

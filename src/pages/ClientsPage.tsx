@@ -20,13 +20,13 @@ export const CLIENT_TYPES = ["Mijoz", "Diler"];
 
 interface ClientRow {
   id: string; name: string; phone: string | null; phone2?: string | null; address: string | null;
-  contact_person?: string | null; email?: string | null; note?: string | null;
+  contact_person?: string | null; email?: string | null; note?: string | null; inn?: string | null;
   client_type?: string | null; status?: string | null; partnership_start?: string | null;
   responsible_employee_id?: string | null; created_at?: string;
 }
 
 const emptyForm = {
-  name: "", phone: "", phone2: "", contact_person: "", address: "", email: "", note: "",
+  name: "", phone: "", phone2: "", contact_person: "", address: "", email: "", note: "", inn: "",
   client_type: "Mijoz", status: "active", partnership_start: "", responsible_employee_id: "",
 };
 
@@ -117,7 +117,7 @@ export default function ClientsPage() {
     return clients.filter((c) => {
       const m = byClient[c.id];
       if (s) {
-        const hay = [c.name, c.phone, c.phone2, c.contact_person, c.address, ...(m?.numbers ?? [])];
+        const hay = [c.name, c.phone, c.phone2, c.contact_person, c.address, c.inn, ...(m?.numbers ?? [])];
         if (!hay.some((v) => (v ?? "").toLowerCase().includes(s))) return false;
       }
       if (fResp !== "all" && (c.responsible_employee_id ?? "") !== fResp) return false;
@@ -160,6 +160,8 @@ export default function ClientsPage() {
       phone2: form.phone2.trim() || null,
       address: form.address.trim() || null,
       contact_person: form.contact_person.trim() || null,
+      // inn faqat to'ldirilganda yuboriladi (0092 migratsiyasi qo'llanguncha ham klient saqlanaversin)
+      ...(form.inn.replace(/\D/g, "") ? { inn: form.inn.replace(/\D/g, "") } : {}),
       email: form.email.trim() || null,
       note: form.note.trim() || null,
       client_type: form.client_type || null,
@@ -379,6 +381,7 @@ export default function ClientsPage() {
             <div><Label>Qo'shimcha telefon</Label><Input value={form.phone2} onChange={(e) => setForm({ ...form, phone2: e.target.value })} /></div>
             <div><Label>Kontakt shaxs</Label><Input value={form.contact_person} onChange={(e) => setForm({ ...form, contact_person: e.target.value })} /></div>
             <div><Label>Email</Label><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+            <div><Label>STIR (INN)</Label><Input inputMode="numeric" maxLength={14} placeholder="9 yoki 14 raqam" value={form.inn} onChange={(e) => setForm({ ...form, inn: e.target.value.replace(/\D/g, "") })} /></div>
             <div><Label>Manzil</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
             <div>
               <Label>Mas'ul xodim</Label>
