@@ -518,6 +518,7 @@ export type Database = {
           kit: Json
           mileage_km: number | null
           model: string
+          onec_intake_ref: string | null
           order_id: string | null
           photo_paths: string[]
           received_at: string | null
@@ -541,6 +542,7 @@ export type Database = {
           kit?: Json
           mileage_km?: number | null
           model?: string
+          onec_intake_ref?: string | null
           order_id?: string | null
           photo_paths?: string[]
           received_at?: string | null
@@ -564,6 +566,7 @@ export type Database = {
           kit?: Json
           mileage_km?: number | null
           model?: string
+          onec_intake_ref?: string | null
           order_id?: string | null
           photo_paths?: string[]
           received_at?: string | null
@@ -1161,6 +1164,7 @@ export type Database = {
           created_by: string | null
           email: string | null
           id: string
+          inn: string | null
           name: string
           note: string | null
           partnership_start: string | null
@@ -1178,6 +1182,7 @@ export type Database = {
           created_by?: string | null
           email?: string | null
           id?: string
+          inn?: string | null
           name: string
           note?: string | null
           partnership_start?: string | null
@@ -1195,6 +1200,7 @@ export type Database = {
           created_by?: string | null
           email?: string | null
           id?: string
+          inn?: string | null
           name?: string
           note?: string | null
           partnership_start?: string | null
@@ -2116,6 +2122,48 @@ export type Database = {
           started_at?: string
           status?: string
           supplier?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      integration_log: {
+        Row: {
+          attempts: number
+          created_at: string
+          direction: string
+          entity: string
+          erp_id: string | null
+          id: string
+          onec_ref: string | null
+          request: Json | null
+          response: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          direction: string
+          entity: string
+          erp_id?: string | null
+          id?: string
+          onec_ref?: string | null
+          request?: Json | null
+          response?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          direction?: string
+          entity?: string
+          erp_id?: string | null
+          id?: string
+          onec_ref?: string | null
+          request?: Json | null
+          response?: string | null
+          status?: string
           updated_at?: string
         }
         Relationships: []
