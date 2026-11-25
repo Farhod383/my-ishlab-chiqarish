@@ -14,7 +14,7 @@ import SearchableSelect from "@/components/SearchableSelect";
 import { ChassisBadge, ChassisHeader, STATUS_LABEL, Vin, useChassisCan } from "@/components/chassis/ChassisUI";
 import { useChassisText } from "@/i18n/chassis";
 import { displayUser } from "@/lib/userNames";
-import { CHASSIS_FLOW, CHASSIS_PHOTO_BUCKET, NEXT_ACTION, cdb, chassisRpc, matchesChassis, type ChassisStatus } from "@/lib/chassis";
+import { CHASSIS_FLOW, CHASSIS_PHOTO_BUCKET, NEXT_ACTION, cdb, chassisRpc, sendIntakeTo1C, matchesChassis, type ChassisStatus } from "@/lib/chassis";
 import { fmtDate, fmtDateTime24 } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -122,6 +122,40 @@ export default function ChassisRegistryPage() {
 
 const KIT_LABEL: Record<string, string> = { spare: "Zapaska", jack: "Domkrat", tools: "Asboblar", docs: "Hujjatlar", keys: "Kalitlar", firstaid: "Aptechka" };
 
+/** 1C:УК dagi qabul qoralamasi holati va qayta yuborish */
+function OnecIntake({ chassisId }: { chassisId: string }) {
+  const tr = useChassisText();
+  const qc = useQueryClient();
+  const [busy, setBusy] = useState(false);
+  const q = useQuery({
+    queryKey: ["chassis", "onec", chassisId],
+    queryFn: async () => {
+      const [{ data: ch }, { data: log }] = await Promise.all([
+        cdb.from("chassis").select("onec_intake_ref").eq("id", chassisId).maybeSingle(),
+        cdb.from("integration_log").select("status, response, attempts, updated_at").eq("entity", "chassis_intake").eq("erp_id", chassisId)
+          .order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      ]);
+      return { ref: (ch as any)?.onec_intake_ref as string | null, log: log as any };
+    },
+  });
+  const send = async () => {
+    setBusy(true);
+    try {
+      const r = await sendIntakeTo1C(chassisId, true);
+      toast.success(`${tr("1C'ga qoralama yuborildi")}${r.number ? `: ${r.number}` : ""}`);
+    } catch (e: any) { toast.error(e.message, { duration: 10000 }); }
+    finally { setBusy(false); qc.invalidateQueries({ queryKey: ["chassis", "onec", chassisId] }); }
+  };
+  if (q.isLoading) return <span className="text-muted-foreground">…</span>;
+  const log = q.data?.log;
+  if (q.data?.ref) return <span className="text-status-green">{tr("Qoralama yaratilgan")}{log?.response ? ` — ${log.response}` : ""}</span>;
+  return <div className="space-y-1">
+    {log?.status === "error" && <p className="text-status-red text-xs">{log.response} ({log.attempts}×)</p>}
+    {!log && <p className="text-muted-foreground text-xs">{tr("Hali yuborilmagan")}</p>}
+    <Button size="sm" variant="outline" disabled={busy} onClick={send}>{tr("1C'ga qayta yuborish")}</Button>
+  </div>;
+}
+
 function ChassisCard({ row, onClose }: { row: OverviewRow | null; onClose: () => void }) {
   const tr = useChassisText();
   const events = useQuery({
@@ -166,6 +200,7 @@ function ChassisCard({ row, onClose }: { row: OverviewRow | null; onClose: () =>
             <dt className="text-muted-foreground">{tr("Akt")}</dt><dd>{row.act_no ? <Link className="text-primary underline" to={`/chassis/acts?act=${row.act_id}`}>{row.act_no}</Link> : "—"}</dd>
             <dt className="text-muted-foreground">ESF</dt><dd>{row.esf_number ?? "—"}</dd>
             {row.test_passed_at && <><dt className="text-muted-foreground">{tr("Sinov")}</dt><dd>{fmtDate(row.test_passed_at)}</dd></>}
+            {row.status !== "expected" && <><dt className="text-muted-foreground">1C:УК</dt><dd><OnecIntake chassisId={row.id} /></dd></>}
           </dl>
           {row.photo_paths.length > 0 && <div className="mt-5">
             <h3 className="text-sm font-semibold mb-2">{tr("Rasmlar")}</h3>

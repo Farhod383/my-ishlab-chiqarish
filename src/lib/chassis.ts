@@ -81,6 +81,18 @@ export async function chassisRpc<T = unknown>(fn: string, args: Record<string, u
   if (error) throw new Error(cleanDbError(error.message));
   return data as T;
 }
+/** Shassi qabulini 1C:УК ga qoralama «Приходная накладная» qilib yuboradi (edge function onec-chassis-intake). */
+export async function sendIntakeTo1C(chassisId: string, force = false): Promise<{ ok?: boolean; number?: string; already?: boolean; contract?: string }> {
+  const { data, error } = await cdb.functions.invoke("onec-chassis-intake", { body: { chassisId, force } });
+  if (error) {
+    let msg = error.message;
+    try { const j = await (error as any).context?.json?.(); if (j?.error) msg = j.error; } catch { /* javob JSON emas */ }
+    throw new Error(msg);
+  }
+  if (data?.error) throw new Error(data.error);
+  return data ?? {};
+}
+
 export function cleanDbError(msg: string): string {
   return String(msg ?? "").replace(/^.*?ERROR:\s*/i, "").replace(/\s*\(SQLSTATE.*$/, "").trim() || "Amal bajarilmadi";
 }

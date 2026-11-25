@@ -14,7 +14,7 @@ import { ChassisHeader, STATUS_LABEL, useBodyTypes, useChassisCan, useClients } 
 import { useChassisText } from "@/i18n/chassis";
 import { createIssueScanHandler } from "@/lib/issueScan";
 import { registerScanHandler } from "@/lib/scanChannel";
-import { CHASSIS_PHOTO_BUCKET, cdb, chassisRpc, checkVin } from "@/lib/chassis";
+import { CHASSIS_PHOTO_BUCKET, cdb, chassisRpc, sendIntakeTo1C, checkVin } from "@/lib/chassis";
 import { cn } from "@/lib/utils";
 
 const KIT = ["spare", "jack", "tools", "docs", "keys", "firstaid"] as const;
@@ -85,11 +85,15 @@ export default function ChassisReceivePage() {
         if (error) throw new Error(`${tr("Rasm yuklanmadi")}: ${error.message}`);
         paths.push(path);
       }
-      await chassisRpc("chassis_receive", {
+      const newId = await chassisRpc<string>("chassis_receive", {
         _vin: check.vin, _engine_no: engine || null, _mileage: mileage ? Number(mileage) : null, _kit: kit, _defects: defects || null,
         _photo_paths: paths, _proxy: proxy, _body_type_id: bodyType || null, _client_id: expected ? null : clientId,
       });
       toast.success(`${tr("Qabul qilindi")}: ${check.vin}`);
+      // 1C:УК ga qoralama — qabulni to'xtatmaydi, xato bo'lsa reestr kartasidan qayta yuboriladi
+      if (newId) sendIntakeTo1C(newId)
+        .then((r) => { toast.success(`${tr("1C'ga qoralama yuborildi")}${r.number ? `: ${r.number}` : ""}`); qc.invalidateQueries({ queryKey: ["chassis", "onec"] }); })
+        .catch((e) => toast.warning(`${tr("1C'ga yuborilmadi")}: ${e.message}`, { duration: 10000 }));
       qc.invalidateQueries({ queryKey: ["chassis"] });
       setVinRaw(""); setEngine(""); setMileage(""); setDefects(""); setFiles([]); setBodyType("");
     } catch (e: any) { toast.error(e.message); } finally { setBusy(false); }

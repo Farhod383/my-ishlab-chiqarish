@@ -64,4 +64,6 @@ export const CHASSIS_RU: Record<string, string> = {
   "Shartnoma №": "№ договора", "Spetsifikatsiya №": "№ спецификации", "Soni (ixtiyoriy)": "Кол-во (необязательно)", "Qator": "Строка",
   "Soni bo'sh bo'lsa — cheklanmagan.": "Пустое количество — без ограничения.", "MXIK kodi (ixtiyoriy)": "Код МХИК (необязательно)",
   "Zakaz prefiksi (ixtiyoriy)": "Префикс заказа (необязательно)", "Sinov majburiy": "Испытание обязательно",
+  "1C'ga qoralama yuborildi": "Черновик отправлен в 1С", "1C'ga yuborilmadi": "Не отправлено в 1С", "Qoralama yaratilgan": "Черновик создан",
+  "Hali yuborilmagan": "Ещё не отправлено", "1C'ga qayta yuborish": "Отправить в 1С повторно",
 };
