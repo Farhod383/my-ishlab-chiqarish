@@ -6,6 +6,16 @@ import {
 } from "https://esm.sh/docx@8.5.0";
 import { sumInWordsUz } from "./rubWords.ts";
 
+// Ijrochi rekvizitlari — 1C:УК «Реквизиты организации» dan (25.11.2026)
+const EXECUTOR = {
+  name: "ООО «Mcity»",
+  inn: "306858501",
+  vat: "327200106525",
+  address: "Ташкентская область, г. Чирчик, ул. Kamolot, 44-A",
+  bank: "АТБ «O'zsanoatqurilishbank» (головной офис), МФО 00440",
+  account: "20208000105142541001",
+};
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -60,7 +70,7 @@ Deno.serve(async (req) => {
           p("приёма-передачи надстроек, установленных на давальческие шасси, и возврата шасси", { bold: true, align: AlignmentType.CENTER, after: 40 }),
           p(`к договору № ${spec?.contract_no ?? "—"} (с дополнительным соглашением), спецификация № ${spec?.spec_no ?? "—"} от ${ddmmyyyy(spec?.spec_date)}`, { align: AlignmentType.CENTER, after: 200 }),
           p(`г. Ташкент${" ".repeat(20)}${ddmmyyyy(act.act_date)}`, { after: 160 }),
-          p(`Исполнитель: MCITY, с одной стороны, и Заказчик: ${act.client?.name ?? "—"}, с другой стороны, составили настоящий акт о нижеследующем:`, { after: 120 }),
+          p(`Исполнитель: ${EXECUTOR.name}, с одной стороны, и Заказчик: ${act.client?.name ?? "—"}, с другой стороны, составили настоящий акт о нижеследующем:`, { after: 120 }),
           p("1. Исполнитель передал, а Заказчик принял надстройки, установленные на давальческие шасси Заказчика:", { after: 80 }),
           new Table({
             width: { size: W.reduce((a, z) => a + z, 0), type: WidthType.DXA }, columnWidths: W,
@@ -95,7 +105,7 @@ Deno.serve(async (req) => {
             width: { size: 14000, type: WidthType.DXA }, columnWidths: [7000, 7000],
             borders: { top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, insideHorizontal: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, insideVertical: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } },
             rows: [new TableRow({ children: [
-              new TableCell({ width: { size: 7000, type: WidthType.DXA }, children: [p("Исполнитель: MCITY", { bold: true }), p("Передал: ____________________ / ________________ /"), p("М.П.")] }),
+              new TableCell({ width: { size: 7000, type: WidthType.DXA }, children: [p(`Исполнитель: ${EXECUTOR.name}`, { bold: true }), p(EXECUTOR.address, { size: 18 }), p(`ИНН ${EXECUTOR.inn}, рег. код НДС ${EXECUTOR.vat}`, { size: 18 }), p(`р/с ${EXECUTOR.account}, ${EXECUTOR.bank}`, { size: 18 }), p("Передал: ____________________ / ________________ /"), p("М.П.")] }),
               new TableCell({ width: { size: 7000, type: WidthType.DXA }, children: [p(`Заказчик: ${act.client?.name ?? ""}`, { bold: true }), p("Принял: ____________________ / ________________ /"), p("М.П.")] }),
             ] })],
           }),
