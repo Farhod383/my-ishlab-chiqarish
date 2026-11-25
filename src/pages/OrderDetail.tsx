@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { OrderCostReport } from "@/components/OrderCostReport";
+import { autoTasksOnStageStart, autoTasksOnStageDone, describeAuto } from "@/lib/dailyTaskAuto";
 import MultiEmployeeSelect, { parseWorkerNames, joinWorkerNames } from "@/components/MultiEmployeeSelect";
 import { useLocalize } from "@/i18n/context";
 import { notify } from "@/lib/notify";
@@ -131,6 +132,11 @@ export default function OrderDetail() {
     return () => { reload.cancel(); supabase.removeChannel(ch); };
   }, [id]);
 
+  // Kunlik topshiriq avtomatikasi — xato bo'lsa ham bosqich amali to'xtamaydi
+  const runDailyAuto = (job: Promise<Parameters<typeof describeAuto>[0]>) =>
+    job.then((r) => { const m = describeAuto(r); if (m) toast.info(m, { duration: 8000 }); })
+      .catch((e) => toast.warning(`Kunlik topshiriq avtomatik yangilanmadi: ${e?.message ?? e}`));
+
   const startStage = async (stage: StageRow, workers: string[], startedAtIso: string) => {
     // Parallel stages allowed: previous stage no longer required to be completed.
     if (workers.length === 0) {
@@ -150,6 +156,7 @@ export default function OrderDetail() {
       order_id: order!.id, stage_id: stage.id,
       details: `${stage.name} · Ishchilar: ${workerStr} · ${fmtDateTime24(startedAtIso)}`,
     });
+    runDailyAuto(autoTasksOnStageStart({ orderId: order!.id, stageName: stage.name, workerNames: workers, actorName: currentUserName(user) }));
     await notify({
       type: "stage_started",
       title: `Bosqich boshlandi — ${order?.order_number}`,
@@ -168,6 +175,7 @@ export default function OrderDetail() {
     const finishedTs = Date.now();
     const durationMin = startedTs ? Math.round((finishedTs - startedTs) / 60000) : 0;
     await supabase.from("order_stages").update({ status: "completed", finished_at: new Date(finishedTs).toISOString() }).eq("id", stage.id);
+    if (!stage.qc_required) runDailyAuto(autoTasksOnStageDone({ orderId: order!.id, stageId: stage.id }));
     await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: "Bosqich tugatildi", entity: "stage", order_id: order!.id, stage_id: stage.id, details: `${stage.name} · ishchi: ${(stage as any).worker_name ?? "—"} · davomiyligi: ${fmtDuration(durationMin)}` });
     await notify({
       type: "stage_finished",
@@ -201,6 +209,7 @@ export default function OrderDetail() {
       otk_checked_at: val ? new Date().toISOString() : null,
     }).eq("id", stage.id);
     await logAudit(supabase, { actor_id: user?.id, actor_name: currentUserName(user), action: val ? "OTK o'tdi" : "OTK bekor", entity: "stage", order_id: order!.id, stage_id: stage.id, details: stage.name });
+    if (val) runDailyAuto(autoTasksOnStageDone({ orderId: order!.id, stageId: stage.id }));
     load();
   };
 

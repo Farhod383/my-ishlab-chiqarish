@@ -1,3 +1,4 @@
+import { autoTasksOnStageDone, describeAuto } from "@/lib/dailyTaskAuto";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -122,6 +123,10 @@ export default function OtkPage() {
       sender_id: user?.id, sender_name: currentUserName(user),
     });
     toast.success(t.otk.save);
+    // OTK tasdiqladi → shu ishchilarning shu zakaz bo'yicha kunlik topshirig'i avtomatik yopiladi
+    if (e.passed) autoTasksOnStageDone({ orderId: s.order_id, stageId: s.id })
+      .then((r) => { const m = describeAuto(r); if (m) toast.info(m, { duration: 8000 }); })
+      .catch((err) => toast.warning(`Kunlik topshiriq avtomatik yopilmadi: ${err?.message ?? err}`));
     // Butun ro'yxatni qayta yuklamasdan — faqat shu bosqichni yangilaymiz (pirillamaydi).
     setStages((prev) => prev.map((x) => (x.id === s.id ? { ...x, ...patch } : x)));
     setEdit((prev) => ({ ...prev, [s.id]: { ...prev[s.id], dirty: false } }));
