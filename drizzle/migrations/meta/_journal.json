@@ -631,6 +631,13 @@
       "when": 1795515108807,
       "tag": "0089_apply_pending_0087_0088",
       "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "7",
+      "when": 1795592452590,
+      "tag": "0090_chassis_module",
+      "breakpoints": true
     }
   ]
 }

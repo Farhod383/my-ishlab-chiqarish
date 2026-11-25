@@ -1,4 +1,4 @@
-import { LayoutDashboard, ClipboardList, Factory, Warehouse, ShieldCheck, LogOut, MessageSquare, History, UserCog, Users, Wallet, RotateCcw, AlertOctagon, FileBarChart, Truck, Wrench, Contact, ScanFace, Plane, FileText, Layers, Ruler, ListChecks } from "lucide-react";
+import { LayoutDashboard, ClipboardList, Factory, Warehouse, ShieldCheck, LogOut, MessageSquare, History, UserCog, Users, Wallet, RotateCcw, AlertOctagon, FileBarChart, Truck, Wrench, Contact, ScanFace, Plane, FileText, Layers, Ruler, ListChecks, Container } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -13,11 +13,12 @@ import { useNotifications } from "@/notifications/NotificationsContext";
 import logo from "@/assets/logo.png"
 import { currentUserName, displayUser } from "@/lib/userNames";
 import { SUPPLY_VIEW_ROLES } from "@/lib/supplyAccess";
+import { CHASSIS_ROLES } from "@/lib/chassis";
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const { user, signOut, hasRole, roles } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { unreadByUrl } = useNotifications();
   const collapsed = state === "collapsed";
   const loc = useLocation();
@@ -37,6 +38,7 @@ export function AppSidebar() {
     { title: t.nav.otk, url: "/otk", icon: ShieldCheck },
     { title: "Kunlik topshiriqlar", url: "/daily-tasks", icon: ListChecks, roles: ["admin", "otk", "manager"] },
     { title: t.nav.warehouse, url: "/warehouse", icon: Warehouse },
+    { title: locale === "ru" ? "Шасси" : locale === "uzc" ? "Шасси" : "Shassi", url: "/chassis", icon: Container, roles: CHASSIS_ROLES.view },
     { title: t.nav.supply, url: "/supply", icon: Truck, roles: SUPPLY_VIEW_ROLES },
     { title: "Nakladnoy", url: "/invoices", icon: FileText, roles: ["admin", "warehouse", "supply", "accountant"] },
     { title: t.metal.title, url: "/metal", icon: Ruler, roles: ["admin", "engineer", "warehouse"] },
@@ -50,12 +52,12 @@ export function AppSidebar() {
     { title: t.nav.audit, url: "/audit", icon: History, roles: ["admin"] },
   ];
 
-  const engineerAllowed = new Set(["/", "/orders", "/production", "/warehouse", "/metal", "/supply", "/chat"]);
+  const engineerAllowed = new Set(["/", "/orders", "/production", "/warehouse", "/metal", "/supply", "/chassis", "/chat"]);
   // Oddiy xodim faqat o'ziga tegishli bo'limlarni ko'radi.
   const isWorkerOnly = roles.length > 0 && roles.every((r) => r === "worker");
   const workerAllowed = new Set(["/trips", "/chat"]);
   const isAccountantOnly = roles.length > 0 && roles.every((r) => r === "accountant");
-  const accountantAllowed = new Set(["/kassa", "/orders", "/warehouse", "/supply", "/invoices", "/returns", "/defects", "/service", "/trips", "/chat"]);
+  const accountantAllowed = new Set(["/kassa", "/orders", "/warehouse", "/supply", "/invoices", "/returns", "/defects", "/service", "/chassis", "/trips", "/chat"]);
   const items = isAccountantOnly
     ? allItems.filter((i) => accountantAllowed.has(i.url))
     : isEngineerOnly

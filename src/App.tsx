@@ -45,6 +45,13 @@ import BusinessTripsPage from "./pages/BusinessTripsPage";
 import SupplyFinancePage from "./pages/SupplyFinancePage";
 import InvoicesPage from "./pages/InvoicesPage";
 import MetalPage from "./pages/MetalPage";
+import ChassisOverviewPage from "./pages/chassis/ChassisOverviewPage";
+import ChassisRegistryPage from "./pages/chassis/ChassisRegistryPage";
+import ChassisReceivePage from "./pages/chassis/ChassisReceivePage";
+import ChassisActsPage from "./pages/chassis/ChassisActsPage";
+import ChassisReconcilePage from "./pages/chassis/ChassisReconcilePage";
+import ChassisSpecsPage from "./pages/chassis/ChassisSpecsPage";
+import { CHASSIS_ROLES } from "@/lib/chassis";
 import NotFound from "./pages/NotFound";
 import { SUPPLY_VIEW_ROLES } from "@/lib/supplyAccess";
 
@@ -88,6 +95,12 @@ const App = () => (
                       <Route path="/daily-tasks" element={<ProtectedRoute roles={["admin","otk","manager"]}><DailyTasksPage /></ProtectedRoute>} />
                       <Route path="/invoices" element={<ProtectedRoute roles={["admin","warehouse","supply","accountant"]}><WarehouseRussian><InvoicesPage /></WarehouseRussian></ProtectedRoute>} />
                       <Route path="/metal" element={<ProtectedRoute roles={["admin","engineer","warehouse"]}><MetalPage /></ProtectedRoute>} />
+                      <Route path="/chassis" element={<ProtectedRoute roles={CHASSIS_ROLES.view}><ChassisOverviewPage /></ProtectedRoute>} />
+                      <Route path="/chassis/registry" element={<ProtectedRoute roles={CHASSIS_ROLES.view}><ChassisRegistryPage /></ProtectedRoute>} />
+                      <Route path="/chassis/receive" element={<ProtectedRoute roles={CHASSIS_ROLES.view}><ChassisReceivePage /></ProtectedRoute>} />
+                      <Route path="/chassis/acts" element={<ProtectedRoute roles={CHASSIS_ROLES.view}><ChassisActsPage /></ProtectedRoute>} />
+                      <Route path="/chassis/reconcile" element={<ProtectedRoute roles={CHASSIS_ROLES.view}><ChassisReconcilePage /></ProtectedRoute>} />
+                      <Route path="/chassis/specs" element={<ProtectedRoute roles={CHASSIS_ROLES.view}><ChassisSpecsPage /></ProtectedRoute>} />
                       <Route path="/chat" element={<ChatPage />} />
                       <Route path="/nachalnik" element={<ProtectedRoute roles={["manager","admin"]}><NachalnikPage /></ProtectedRoute>} />
                       <Route path="/service" element={<ProtectedRoute roles={["manager","admin","accountant"]}><ServicePage /></ProtectedRoute>} />
