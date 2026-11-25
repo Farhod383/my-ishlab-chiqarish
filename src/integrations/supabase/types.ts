@@ -118,6 +118,45 @@ export type Database = {
           },
         ]
       }
+      body_types: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          mxik_code: string | null
+          name: string
+          order_prefix: string | null
+          requires_test: boolean
+          short_name: string
+          unit: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          mxik_code?: string | null
+          name: string
+          order_prefix?: string | null
+          requires_test?: boolean
+          short_name: string
+          unit?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          mxik_code?: string | null
+          name?: string
+          order_prefix?: string | null
+          requires_test?: boolean
+          short_name?: string
+          unit?: string
+        }
+        Relationships: []
+      }
       business_trip_expenses: {
         Row: {
           amount: number
@@ -462,6 +501,452 @@ export type Database = {
             columns: ["run_id"]
             isOneToOne: false
             referencedRelation: "catalog_import_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chassis: {
+        Row: {
+          body_type_id: string | null
+          client_id: string
+          created_at: string
+          defects: string | null
+          engine_no: string | null
+          id: string
+          inbound_proxy: string | null
+          intake_act_no: string | null
+          kit: Json
+          mileage_km: number | null
+          model: string
+          order_id: string | null
+          photo_paths: string[]
+          received_at: string | null
+          received_by: string | null
+          spec_line_id: string | null
+          status: Database["public"]["Enums"]["chassis_status"]
+          test_passed_at: string | null
+          updated_at: string
+          vin: string
+          warning: string | null
+        }
+        Insert: {
+          body_type_id?: string | null
+          client_id: string
+          created_at?: string
+          defects?: string | null
+          engine_no?: string | null
+          id?: string
+          inbound_proxy?: string | null
+          intake_act_no?: string | null
+          kit?: Json
+          mileage_km?: number | null
+          model?: string
+          order_id?: string | null
+          photo_paths?: string[]
+          received_at?: string | null
+          received_by?: string | null
+          spec_line_id?: string | null
+          status?: Database["public"]["Enums"]["chassis_status"]
+          test_passed_at?: string | null
+          updated_at?: string
+          vin: string
+          warning?: string | null
+        }
+        Update: {
+          body_type_id?: string | null
+          client_id?: string
+          created_at?: string
+          defects?: string | null
+          engine_no?: string | null
+          id?: string
+          inbound_proxy?: string | null
+          intake_act_no?: string | null
+          kit?: Json
+          mileage_km?: number | null
+          model?: string
+          order_id?: string | null
+          photo_paths?: string[]
+          received_at?: string | null
+          received_by?: string | null
+          spec_line_id?: string | null
+          status?: Database["public"]["Enums"]["chassis_status"]
+          test_passed_at?: string | null
+          updated_at?: string
+          vin?: string
+          warning?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chassis_body_type_id_fkey"
+            columns: ["body_type_id"]
+            isOneToOne: false
+            referencedRelation: "body_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chassis_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chassis_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chassis_spec_line_id_fkey"
+            columns: ["spec_line_id"]
+            isOneToOne: false
+            referencedRelation: "chassis_spec_balance"
+            referencedColumns: ["spec_line_id"]
+          },
+          {
+            foreignKeyName: "chassis_spec_line_id_fkey"
+            columns: ["spec_line_id"]
+            isOneToOne: false
+            referencedRelation: "chassis_spec_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chassis_act_counters: {
+        Row: {
+          last_no: number
+          year: number
+        }
+        Insert: {
+          last_no?: number
+          year: number
+        }
+        Update: {
+          last_no?: number
+          year?: number
+        }
+        Relationships: []
+      }
+      chassis_act_items: {
+        Row: {
+          act_id: string
+          chassis_id: string
+          price_gross: number
+          spec_line_id: string
+        }
+        Insert: {
+          act_id: string
+          chassis_id: string
+          price_gross: number
+          spec_line_id: string
+        }
+        Update: {
+          act_id?: string
+          chassis_id?: string
+          price_gross?: number
+          spec_line_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chassis_act_items_act_id_fkey"
+            columns: ["act_id"]
+            isOneToOne: false
+            referencedRelation: "chassis_acts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chassis_act_items_act_id_fkey"
+            columns: ["act_id"]
+            isOneToOne: false
+            referencedRelation: "chassis_overview"
+            referencedColumns: ["act_id"]
+          },
+          {
+            foreignKeyName: "chassis_act_items_chassis_id_fkey"
+            columns: ["chassis_id"]
+            isOneToOne: false
+            referencedRelation: "chassis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chassis_act_items_chassis_id_fkey"
+            columns: ["chassis_id"]
+            isOneToOne: false
+            referencedRelation: "chassis_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chassis_act_items_spec_line_id_fkey"
+            columns: ["spec_line_id"]
+            isOneToOne: false
+            referencedRelation: "chassis_spec_balance"
+            referencedColumns: ["spec_line_id"]
+          },
+          {
+            foreignKeyName: "chassis_act_items_spec_line_id_fkey"
+            columns: ["spec_line_id"]
+            isOneToOne: false
+            referencedRelation: "chassis_spec_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chassis_acts: {
+        Row: {
+          act_date: string
+          act_no: string | null
+          body_type_id: string
+          client_id: string
+          created_at: string
+          created_by: string | null
+          esf_amount: number | null
+          esf_date: string | null
+          esf_number: string | null
+          id: string
+          onec_ref: string | null
+          price_gross: number
+          qty: number
+          recipient_name: string | null
+          recipient_proxy: string | null
+          replaces_act_id: string | null
+          shipped_at: string | null
+          status: Database["public"]["Enums"]["chassis_act_status"]
+          total_gross: number
+          total_net: number | null
+          total_vat: number | null
+          updated_at: string
+          void_reason: string | null
+        }
+        Insert: {
+          act_date: string
+          act_no?: string | null
+          body_type_id: string
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          esf_amount?: number | null
+          esf_date?: string | null
+          esf_number?: string | null
+          id?: string
+          onec_ref?: string | null
+          price_gross: number
+          qty: number
+          recipient_name?: string | null
+          recipient_proxy?: string | null
+          replaces_act_id?: string | null
+          shipped_at?: string | null
+          status?: Database["public"]["Enums"]["chassis_act_status"]
+          total_gross: number
+          total_net?: number | null
+          total_vat?: number | null
+          updated_at?: string
+          void_reason?: string | null
+        }
+        Update: {
+          act_date?: string
+          act_no?: string | null
+          body_type_id?: string
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          esf_amount?: number | null
+          esf_date?: string | null
+          esf_number?: string | null
+          id?: string
+          onec_ref?: string | null
+          price_gross?: number
+          qty?: number
+          recipient_name?: string | null
+          recipient_proxy?: string | null
+          replaces_act_id?: string | null
+          shipped_at?: string | null
+          status?: Database["public"]["Enums"]["chassis_act_status"]
+          total_gross?: number
+          total_net?: number | null
+          total_vat?: number | null
+          updated_at?: string
+          void_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chassis_acts_body_type_id_fkey"
+            columns: ["body_type_id"]
+            isOneToOne: false
+            referencedRelation: "body_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chassis_acts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chassis_acts_replaces_act_id_fkey"
+            columns: ["replaces_act_id"]
+            isOneToOne: false
+            referencedRelation: "chassis_acts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chassis_acts_replaces_act_id_fkey"
+            columns: ["replaces_act_id"]
+            isOneToOne: false
+            referencedRelation: "chassis_overview"
+            referencedColumns: ["act_id"]
+          },
+        ]
+      }
+      chassis_events: {
+        Row: {
+          act_id: string | null
+          actor_id: string | null
+          actor_role: string | null
+          chassis_id: string
+          comment: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          to_status: string | null
+        }
+        Insert: {
+          act_id?: string | null
+          actor_id?: string | null
+          actor_role?: string | null
+          chassis_id: string
+          comment?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          to_status?: string | null
+        }
+        Update: {
+          act_id?: string | null
+          actor_id?: string | null
+          actor_role?: string | null
+          chassis_id?: string
+          comment?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          to_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chassis_events_act_id_fkey"
+            columns: ["act_id"]
+            isOneToOne: false
+            referencedRelation: "chassis_acts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chassis_events_act_id_fkey"
+            columns: ["act_id"]
+            isOneToOne: false
+            referencedRelation: "chassis_overview"
+            referencedColumns: ["act_id"]
+          },
+          {
+            foreignKeyName: "chassis_events_chassis_id_fkey"
+            columns: ["chassis_id"]
+            isOneToOne: false
+            referencedRelation: "chassis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chassis_events_chassis_id_fkey"
+            columns: ["chassis_id"]
+            isOneToOne: false
+            referencedRelation: "chassis_overview"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chassis_spec_lines: {
+        Row: {
+          body_type_id: string
+          created_at: string
+          id: string
+          price_gross: number
+          qty: number | null
+          spec_id: string
+        }
+        Insert: {
+          body_type_id: string
+          created_at?: string
+          id?: string
+          price_gross: number
+          qty?: number | null
+          spec_id: string
+        }
+        Update: {
+          body_type_id?: string
+          created_at?: string
+          id?: string
+          price_gross?: number
+          qty?: number | null
+          spec_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chassis_spec_lines_body_type_id_fkey"
+            columns: ["body_type_id"]
+            isOneToOne: false
+            referencedRelation: "body_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chassis_spec_lines_spec_id_fkey"
+            columns: ["spec_id"]
+            isOneToOne: false
+            referencedRelation: "chassis_spec_balance"
+            referencedColumns: ["spec_id"]
+          },
+          {
+            foreignKeyName: "chassis_spec_lines_spec_id_fkey"
+            columns: ["spec_id"]
+            isOneToOne: false
+            referencedRelation: "chassis_specs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chassis_specs: {
+        Row: {
+          client_id: string
+          contract_no: string
+          created_at: string
+          created_by: string | null
+          id: string
+          spec_date: string
+          spec_no: string
+        }
+        Insert: {
+          client_id: string
+          contract_no: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          spec_date: string
+          spec_no: string
+        }
+        Update: {
+          client_id?: string
+          contract_no?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          spec_date?: string
+          spec_no?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chassis_specs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]
@@ -3278,6 +3763,134 @@ export type Database = {
       }
     }
     Views: {
+      chassis_alerts: {
+        Row: {
+          detail: string | null
+          entity: string | null
+          entity_id: string | null
+          kind: string | null
+          severity: string | null
+          since: string | null
+          title: string | null
+        }
+        Relationships: []
+      }
+      chassis_monthly: {
+        Row: {
+          acts_gross: number | null
+          body_type_id: string | null
+          body_type_name: string | null
+          month: string | null
+          received: number | null
+          shipped: number | null
+        }
+        Relationships: []
+      }
+      chassis_overview: {
+        Row: {
+          act_id: string | null
+          act_no: string | null
+          act_status: Database["public"]["Enums"]["chassis_act_status"] | null
+          body_type_id: string | null
+          body_type_name: string | null
+          client_id: string | null
+          client_name: string | null
+          created_at: string | null
+          days_expected: number | null
+          days_on_site: number | null
+          defects: string | null
+          engine_no: string | null
+          esf_date: string | null
+          esf_number: string | null
+          id: string | null
+          inbound_proxy: string | null
+          intake_act_no: string | null
+          kit: Json | null
+          mileage_km: number | null
+          model: string | null
+          order_id: string | null
+          order_number: string | null
+          order_status: Database["public"]["Enums"]["order_status"] | null
+          photo_paths: string[] | null
+          received_at: string | null
+          spec_line_id: string | null
+          status: Database["public"]["Enums"]["chassis_status"] | null
+          test_passed_at: string | null
+          vin: string | null
+          vin_tail: string | null
+          warning: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chassis_body_type_id_fkey"
+            columns: ["body_type_id"]
+            isOneToOne: false
+            referencedRelation: "body_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chassis_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chassis_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chassis_spec_line_id_fkey"
+            columns: ["spec_line_id"]
+            isOneToOne: false
+            referencedRelation: "chassis_spec_balance"
+            referencedColumns: ["spec_line_id"]
+          },
+          {
+            foreignKeyName: "chassis_spec_line_id_fkey"
+            columns: ["spec_line_id"]
+            isOneToOne: false
+            referencedRelation: "chassis_spec_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chassis_spec_balance: {
+        Row: {
+          body_type_id: string | null
+          body_type_name: string | null
+          client_id: string | null
+          client_name: string | null
+          contract_no: string | null
+          in_acts: number | null
+          price_gross: number | null
+          qty: number | null
+          remaining: number | null
+          spec_date: string | null
+          spec_id: string | null
+          spec_line_id: string | null
+          spec_no: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chassis_spec_lines_body_type_id_fkey"
+            columns: ["body_type_id"]
+            isOneToOne: false
+            referencedRelation: "body_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chassis_specs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_integrity_issues: {
         Row: {
           cnt: number | null
@@ -3379,6 +3992,94 @@ export type Database = {
           _values?: Json
           _version: number
         }
+        Returns: undefined
+      }
+      chassis__begin: {
+        Args: { _roles: Database["public"]["Enums"]["app_role"][] }
+        Returns: string
+      }
+      chassis__end: { Args: never; Returns: undefined }
+      chassis__log: {
+        Args: {
+          _act: string
+          _chassis: string
+          _comment: string
+          _from: string
+          _role: string
+          _to: string
+        }
+        Returns: undefined
+      }
+      chassis__move_act_chassis: {
+        Args: {
+          _act: string
+          _comment: string
+          _from: Database["public"]["Enums"]["chassis_status"]
+          _role: string
+          _to: Database["public"]["Enums"]["chassis_status"]
+        }
+        Returns: undefined
+      }
+      chassis_business_days_since: { Args: { _ts: string }; Returns: number }
+      chassis_can_view: { Args: never; Returns: boolean }
+      chassis_close_act: { Args: { _act_id: string }; Returns: undefined }
+      chassis_create_act: {
+        Args: { _act_date: string; _chassis_ids: string[] }
+        Returns: string
+      }
+      chassis_esf_line: { Args: { _act_id: string }; Returns: Json }
+      chassis_expect: {
+        Args: { _client_id: string; _proxy?: string; _vins: string[] }
+        Returns: Json
+      }
+      chassis_mark_ready: {
+        Args: { _chassis_id: string; _comment?: string; _test_passed: boolean }
+        Returns: undefined
+      }
+      chassis_normalize_vin: { Args: { _vin: string }; Returns: string }
+      chassis_receive: {
+        Args: {
+          _body_type_id?: string
+          _client_id?: string
+          _defects: string
+          _engine_no: string
+          _kit: Json
+          _mileage: number
+          _photo_paths: string[]
+          _proxy: string
+          _vin: string
+        }
+        Returns: string
+      }
+      chassis_register_esf: {
+        Args: {
+          _act_id: string
+          _esf_amount: number
+          _esf_date: string
+          _esf_number: string
+        }
+        Returns: undefined
+      }
+      chassis_replace_act: {
+        Args: { _chassis_ids: string[]; _old_act_id: string; _reason: string }
+        Returns: string
+      }
+      chassis_ship_act: {
+        Args: {
+          _act_id: string
+          _recipient_name: string
+          _recipient_proxy: string
+          _shipped_at: string
+        }
+        Returns: undefined
+      }
+      chassis_status_label: { Args: { _s: string }; Returns: string }
+      chassis_to_production: {
+        Args: { _chassis_id: string; _order_id: string; _spec_line_id: string }
+        Returns: undefined
+      }
+      chassis_void_act: {
+        Args: { _act_id: string; _reason: string }
         Returns: undefined
       }
       clear_intake_invoice_image: {
@@ -3697,6 +4398,17 @@ export type Database = {
         | "engineer"
         | "chief_accountant"
         | "accountant"
+      chassis_act_status: "draft" | "shipped" | "esf_issued" | "closed" | "void"
+      chassis_status:
+        | "expected"
+        | "received"
+        | "in_production"
+        | "ready"
+        | "in_act"
+        | "shipped"
+        | "esf_issued"
+        | "closed"
+        | "returned_without_work"
       defect_resolution: "rework" | "write_off" | "pending"
       movement_direction: "in" | "out"
       order_priority: "normal" | "exception"
@@ -3848,6 +4560,18 @@ export const Constants = {
         "engineer",
         "chief_accountant",
         "accountant",
+      ],
+      chassis_act_status: ["draft", "shipped", "esf_issued", "closed", "void"],
+      chassis_status: [
+        "expected",
+        "received",
+        "in_production",
+        "ready",
+        "in_act",
+        "shipped",
+        "esf_issued",
+        "closed",
+        "returned_without_work",
       ],
       defect_resolution: ["rework", "write_off", "pending"],
       movement_direction: ["in", "out"],
