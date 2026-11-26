@@ -25,6 +25,7 @@ import { useLocalize } from "@/i18n/context";
 import { notify } from "@/lib/notify";
 import { recalcOrderStatus } from "@/lib/orderStatus";
 import OrderSupplyRequests from "@/components/OrderSupplyRequests";
+import ProductionSeqControl from "@/components/ProductionSeqControl";
 import { useNotifications, notifStageId } from "@/notifications/NotificationsContext";
 import { fmtDateTime24, fmtDuration, fmtLegacyDurations, fmtDate } from "@/lib/format";
 import { currentUserName, displayUser } from "@/lib/userNames";
@@ -308,6 +309,7 @@ export default function OrderDetail() {
 
         </div>
         <div className="flex gap-2 flex-wrap">
+          <ProductionSeqControl order={order as any} onChanged={load} />
           {hasRole(["admin", "marketing", "accountant"]) && (
             <Button variant="outline" asChild>
               <Link to={`/orders/${order.id}/edit`}>

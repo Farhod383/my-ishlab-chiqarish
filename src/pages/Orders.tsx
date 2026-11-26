@@ -22,9 +22,10 @@ import { CompletedOrdersReport } from "@/components/CompletedOrdersReport";
 import { ORDER_GROUPS, orderGroupOf, orderPdfLabel, orderNumberSearchText, sortSelOrdersDescending, type OrderGroup } from "@/lib/orderGroups";
 import { EMPTY_FILTERS, matchOrderFilters, activeFilterCount, type OrderFilters } from "@/lib/orderFilters";
 import { OrderFiltersPanel } from "@/components/OrderFiltersPanel";
+import { ProductionSeqBadge } from "@/components/ProductionSeqControl";
 import { ClipboardList, Activity, AlertTriangle, Clock, AlertOctagon, CheckCircle2 } from "lucide-react";
 
-type FilterKey = "all" | "active" | "exception" | "delayed" | "completed" | "today" | "clients";
+type FilterKey = "all" | "active" | "exception" | "delayed" | "completed" | "today" | "clients" | "seq";
 
 export default function Orders() {
   const { hasRole } = useAuth();
@@ -117,9 +118,12 @@ export default function Orders() {
     if (filter === "delayed") return o.status === "delayed" || (o.status !== "completed" && o.deadline < today);
     if (filter === "today") return o.deadline === today && o.status !== "completed";
     if (filter === "completed") return o.status === "completed";
+    if (filter === "seq") return (o as any).production_seq != null;
     return true;
   });
-  const filtered = filter === "all" ? sortOrdersByStatusAndDate(filteredRaw) : filteredRaw;
+  const filtered = filter === "all" ? sortOrdersByStatusAndDate(filteredRaw)
+    : filter === "seq" ? filteredRaw.slice().sort((a: any, b: any) => a.production_seq - b.production_seq)
+    : filteredRaw;
 
   const downloadPdf = async () => {
     const { buildOrderListPdf, todayFile } = await import("@/lib/pdfExport");
@@ -215,6 +219,7 @@ export default function Orders() {
                 <TabsTrigger value="exception">{t.orders.tabs.exception}</TabsTrigger>
                 <TabsTrigger value="delayed">{t.orders.tabs.delayed}</TabsTrigger>
                 <TabsTrigger value="completed">{t.orders.tabs.completed}</TabsTrigger>
+                <TabsTrigger value="seq">Ishlab chiqarish tartibi</TabsTrigger>
                 <TabsTrigger value="clients">Mijozlar</TabsTrigger>
               </TabsList>
             </Tabs>
@@ -244,6 +249,7 @@ export default function Orders() {
               <TableBody>
                 {loading && <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-8">{t.common.loading}</TableCell></TableRow>}
                 {!loading && (() => {
+                  if (filter === "seq") return filtered; // tartib bo'yicha — guruhlarsiz
                   const isSel = (o: any) => orderGroupOf(o.product_name) === "SEL";
                   const selRows = sortSelOrdersDescending(filtered.filter(isSel));
                   const out: any[] = [];
@@ -284,6 +290,7 @@ export default function Orders() {
                       <TableCell><HealthDot color={orderHealth(o)} /></TableCell>
                       <TableCell className="font-mono text-sm">
                         <span className="inline-flex items-center gap-1.5">
+                          <ProductionSeqBadge seq={o.production_seq} />
                           {o.order_number}
                           <OrderUnreadBadge orderId={o.id} />
                         </span>

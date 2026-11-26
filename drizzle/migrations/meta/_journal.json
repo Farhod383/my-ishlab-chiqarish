@@ -680,6 +680,13 @@
       "when": 1795602318480,
       "tag": "0096_chassis_receive_cashier",
       "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1795602319480,
+      "tag": "0097_order_production_seq",
+      "breakpoints": true
     }
   ]
 }
