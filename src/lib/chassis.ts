@@ -34,10 +34,10 @@ export const ACT_TONE: Record<ActStatus, string> = {
 
 /** Rollar (bazadagi funksiyalar bilan bir xil). Admin hammasini qila oladi. */
 export const CHASSIS_ROLES = {
-  view: ["admin", "manager", "marketing", "warehouse", "otk", "engineer", "accountant", "chief_accountant"] as AppRole[],
-  // 0094: qabul buxgalterda, omborda emas
-  expect: ["accountant", "chief_accountant"] as AppRole[],
-  receive: ["accountant", "chief_accountant"] as AppRole[],
+  view: ["admin", "manager", "marketing", "warehouse", "otk", "engineer", "accountant", "chief_accountant", "cashier"] as AppRole[],
+  // 0096: qabul buxgalter va kassirda (ombor va bosh buxgalterda emas)
+  expect: ["accountant", "cashier"] as AppRole[],
+  receive: ["accountant", "cashier"] as AppRole[],
   ship: ["warehouse"] as AppRole[],
   production: ["engineer", "manager"] as AppRole[],
   ready: ["otk"] as AppRole[],

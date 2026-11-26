@@ -21,7 +21,7 @@ CREATE TABLE public.order_stages (id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 CREATE TABLE public.entity_audit (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), entity text, entity_id uuid, action text, old_value jsonb,
   new_value jsonb, actor_id uuid, actor_name text, role text, created_at timestamptz DEFAULT now());
 `;
-const MIGRATION = ["0090_chassis_module.sql", "0094_chassis_receive_accountant.sql"]
+const MIGRATION = ["0090_chassis_module.sql", "0094_chassis_receive_accountant.sql", "0096_chassis_receive_cashier.sql"]
   .map((f) => readFileSync(resolve(__dirname, "../../drizzle/migrations/" + f), "utf8")).join("\n");
 
 const U = {
