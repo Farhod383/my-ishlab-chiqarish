@@ -666,6 +666,13 @@
       "when": 1795602316480,
       "tag": "0094_chassis_receive_accountant",
       "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1795602317480,
+      "tag": "0095_onec_intake_in_db",
+      "breakpoints": true
     }
   ]
 }

@@ -35,9 +35,9 @@ export const ACT_TONE: Record<ActStatus, string> = {
 /** Rollar (bazadagi funksiyalar bilan bir xil). Admin hammasini qila oladi. */
 export const CHASSIS_ROLES = {
   view: ["admin", "manager", "marketing", "warehouse", "otk", "engineer", "accountant", "chief_accountant"] as AppRole[],
-  // 0094: qabul buxgalterda. «warehouse» 0094 bazaga qo'llanguncha vaqtincha qoldi — qo'llangach olib tashlanadi.
-  expect: ["accountant", "chief_accountant", "warehouse"] as AppRole[],
-  receive: ["accountant", "chief_accountant", "warehouse"] as AppRole[],
+  // 0094: qabul buxgalterda, omborda emas
+  expect: ["accountant", "chief_accountant"] as AppRole[],
+  receive: ["accountant", "chief_accountant"] as AppRole[],
   ship: ["warehouse"] as AppRole[],
   production: ["engineer", "manager"] as AppRole[],
   ready: ["otk"] as AppRole[],
@@ -83,15 +83,20 @@ export async function chassisRpc<T = unknown>(fn: string, args: Record<string, u
   return data as T;
 }
 /** Shassi qabulini 1C:УК ga qoralama «Приходная накладная» qilib yuboradi (edge function onec-chassis-intake). */
-export async function sendIntakeTo1C(chassisId: string, force = false): Promise<{ ok?: boolean; number?: string; already?: boolean; contract?: string }> {
-  const { data, error } = await cdb.functions.invoke("onec-chassis-intake", { body: { chassisId, force } });
-  if (error) {
-    let msg = error.message;
-    try { const j = await (error as any).context?.json?.(); if (j?.error) msg = j.error; } catch { /* javob JSON emas */ }
-    throw new Error(msg);
+type OnecIntakeState = { status: "pending" | "ok" | "error" | "none"; ref?: string; number?: string; already?: boolean; contract?: string; message?: string };
+
+/** Shassi qabulini 1C:УК ga qoralama «Приходная накладная» qilib yuboradi.
+ *  0095: baza o'zi yuboradi (pg_net) — bosqichma-bosqich; shu yerda natija kutiladi (≤90 s), keyin ham baza o'zi tugatadi (pg_cron). */
+export async function sendIntakeTo1C(chassisId: string, force = false): Promise<OnecIntakeState> {
+  let st = await chassisRpc<OnecIntakeState>("onec_send_chassis_intake", { _chassis_id: chassisId, _force: force });
+  const until = Date.now() + 90_000;
+  while (st?.status === "pending" && Date.now() < until) {
+    await new Promise((r) => setTimeout(r, 2000));
+    st = await chassisRpc<OnecIntakeState>("onec_intake_status", { _chassis_id: chassisId });
   }
-  if (data?.error) throw new Error(data.error);
-  return data ?? {};
+  if (st?.status === "error") throw new Error(st.message ?? "1C xatosi");
+  if (st?.status === "pending") throw new Error("1C javobi kutilmoqda — bir daqiqadan keyin reestrda holatini ko'ring");
+  return st ?? { status: "none" };
 }
 
 export function cleanDbError(msg: string): string {
