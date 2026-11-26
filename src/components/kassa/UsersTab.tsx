@@ -48,7 +48,7 @@ export default function UsersTab() {
   const { roles } = useAuth();
   const isAdmin = roles.includes("admin");
   const assignableRoles = isAdmin
-    ? ["cashier", "chief_accountant", "hr", "warehouse", "supply", "otk", "manager", "marketing", "engineer", "admin"]
+    ? ["cashier", "accountant", "chief_accountant", "hr", "warehouse", "supply", "otk", "manager", "marketing", "engineer", "admin"]
     : ["cashier"];
 
   const [users, setUsers] = useState<ManagedUser[]>([]);

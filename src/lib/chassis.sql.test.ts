@@ -21,7 +21,8 @@ CREATE TABLE public.order_stages (id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 CREATE TABLE public.entity_audit (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), entity text, entity_id uuid, action text, old_value jsonb,
   new_value jsonb, actor_id uuid, actor_name text, role text, created_at timestamptz DEFAULT now());
 `;
-const MIGRATION = readFileSync(resolve(__dirname, "../../drizzle/migrations/0090_chassis_module.sql"), "utf8");
+const MIGRATION = ["0090_chassis_module.sql", "0094_chassis_receive_accountant.sql"]
+  .map((f) => readFileSync(resolve(__dirname, "../../drizzle/migrations/" + f), "utf8")).join("\n");
 
 const U = {
   admin: "00000000-0000-0000-0000-00000000000a",
@@ -51,7 +52,7 @@ async function order(num: string, qcPassed: boolean | null = true) {
   return o;
 }
 async function readyChassis(n: number, lineId = line) {
-  const id = await one<{ id: string }>("warehouse",
+  const id = await one<{ id: string }>("accountant",
     `SELECT chassis_receive($1, 'ENG-1', 100, '{}'::jsonb, NULL, ARRAY['p/1.jpg'], 'Ishonchnoma 1', NULL, $2) AS id`, [VIN(n), client]);
   const o = await order(`SEL${String(1000 + n)}`);
   await as("engineer", `SELECT chassis_to_production($1, $2, $3)`, [id.id, lineId, o]);
@@ -93,24 +94,28 @@ describe("Shassi moduli (SQL)", () => {
   });
 
   it("dubl VIN: kutilganlar ro'yxatida va qabulda rad etiladi, O/I tuzatiladi", async () => {
-    const r = await one<{ r: { added: number; rejected: { vin: string; reason: string }[] } }>("warehouse",
+    const r = await one<{ r: { added: number; rejected: { vin: string; reason: string }[] } }>("accountant",
       `SELECT chassis_expect(ARRAY[$1, $2, 'XYZ'], $3, NULL) AS r`, [VIN(2).toLowerCase().replace("0", "o"), VIN(2), client]);
     expect(r.r.added).toBe(1);
     expect(r.r.rejected.map((x) => x.reason)).toEqual(["Ro'yxatda takrorlangan", expect.stringContaining("VIN noto'g'ri")]);
     await readyChassis(2);
-    await expect(as("warehouse", `SELECT chassis_receive($1, NULL, 1, '{}', NULL, ARRAY['p.jpg'], 'x', NULL, $2)`, [VIN(2), client]))
+    await expect(as("accountant", `SELECT chassis_receive($1, NULL, 1, '{}', NULL, ARRAY['p.jpg'], 'x', NULL, $2)`, [VIN(2), client]))
       .rejects.toThrow(/VIN allaqachon reestrda: tayyor/);
   });
 
   it("rasmsiz qabul va ruxsatsiz rol rad etiladi", async () => {
-    await expect(as("warehouse", `SELECT chassis_receive($1, NULL, 1, '{}', NULL, ARRAY[]::text[], 'x', NULL, $2)`, [VIN(3), client]))
+    await expect(as("accountant", `SELECT chassis_receive($1, NULL, 1, '{}', NULL, ARRAY[]::text[], 'x', NULL, $2)`, [VIN(3), client]))
       .rejects.toThrow(/Kamida 1 ta rasm/);
     await expect(as("worker", `SELECT chassis_receive($1, NULL, 1, '{}', NULL, ARRAY['p.jpg'], 'x', NULL, $2)`, [VIN(3), client]))
       .rejects.toThrow(/ruxsat yo'q/);
+    // 0094: ombor endi qabul qilmaydi
+    await expect(as("warehouse", `SELECT chassis_receive($1, NULL, 1, '{}', NULL, ARRAY['p.jpg'], 'x', NULL, $2)`, [VIN(3), client]))
+      .rejects.toThrow(/ruxsat yo'q/);
+    await expect(as("warehouse", `SELECT chassis_expect(ARRAY[$1], $2, NULL)`, [VIN(3), client])).rejects.toThrow(/ruxsat yo'q/);
   });
 
   it("OTK'dan o'tmagan zakaz bilan «tayyor» bo'lmaydi; prefiks mos kelmasa ishlab chiqarishga berilmaydi", async () => {
-    const id = (await one<{ id: string }>("warehouse", `SELECT chassis_receive($1, NULL, 1, '{}', NULL, ARRAY['p.jpg'], 'x', NULL, $2) AS id`, [VIN(4), client])).id;
+    const id = (await one<{ id: string }>("accountant", `SELECT chassis_receive($1, NULL, 1, '{}', NULL, ARRAY['p.jpg'], 'x', NULL, $2) AS id`, [VIN(4), client])).id;
     await expect(as("engineer", `SELECT chassis_to_production($1, $2, $3)`, [id, line, await order("KDM0004")]))
       .rejects.toThrow(/prefiksi/);
     await as("engineer", `SELECT chassis_to_production($1, $2, $3)`, [id, line, await order("SEL0004", false)]);
@@ -166,7 +171,7 @@ describe("Shassi moduli (SQL)", () => {
   });
 
   it("«Diqqat talab qiladi» va qoldiq ko'rinishlari ishlaydi", async () => {
-    await as("warehouse", `SELECT chassis_expect(ARRAY[$1], $2, NULL)`, [VIN(13), client]);
+    await as("accountant", `SELECT chassis_expect(ARRAY[$1], $2, NULL)`, [VIN(13), client]);
     await db.exec(`ALTER TABLE chassis DISABLE TRIGGER chassis_status_guard; UPDATE chassis SET created_at = now() - interval '9 days'; ALTER TABLE chassis ENABLE TRIGGER chassis_status_guard`);
     const al = await as<{ kind: string }>("otk", `SELECT kind FROM chassis_alerts`);
     expect(al.map((a) => a.kind)).toContain("chassis_expected_old");

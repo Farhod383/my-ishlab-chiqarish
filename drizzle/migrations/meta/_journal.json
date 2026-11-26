@@ -659,6 +659,13 @@
       "when": 1795602315480,
       "tag": "0093_apply_pending_0092_clients_inn",
       "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "7",
+      "when": 1795602316480,
+      "tag": "0094_chassis_receive_accountant",
+      "breakpoints": true
     }
   ]
 }
