@@ -5,7 +5,7 @@
 // - Har urinish integration_log ga yoziladi (ko'pi bilan 5 urinish).
 // Secrets: CLOBUS_UK_ODATA_URL, CLOBUS_UK_ODATA_USER, CLOBUS_UK_ODATA_PASSWORD
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { buildIntakeDoc, isGuid, odataStr, onecError, pickContract, UK, type OnecContract } from "../_shared/onecUk.ts";
+import { buildIntakeDoc, isGuid, onecError, pickContract, UK, type OnecContract } from "../_shared/onecUk.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,7 +23,8 @@ function onec() {
   if (!user || !pass) throw new Error("1C ulanish sozlanmagan: CLOBUS_UK_ODATA_USER / CLOBUS_UK_ODATA_PASSWORD secret'lari yo'q");
   const auth = "Basic " + btoa(String.fromCharCode(...new TextEncoder().encode(`${user}:${pass}`)));
   const call = async (method: string, path: string, params: Record<string, string> = {}, body?: unknown) => {
-    const qs = new URLSearchParams({ ...params, $format: "json" }).toString();
+    // Bo'sh joy «+» emas, %20 bo'lsin (1C OData «+» ni tushunmaydi)
+    const qs = Object.entries({ ...params, $format: "json" }).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
     const r = await fetch(`${base}/${encodeURI(path)}?${qs}`, {
       method,
       headers: { Authorization: auth, Accept: "application/json", ...(body ? { "Content-Type": "application/json" } : {}) },
@@ -41,9 +42,9 @@ function onec() {
 }
 
 async function findOrCreateNomenclature(c: ReturnType<typeof onec>): Promise<string> {
-  const found = await c.list("Catalog_Номенклатура", {
-    $filter: `Description eq ${odataStr(UK.chassisNomenclature)} and DeletionMark eq false`, $select: "Ref_Key", $top: "1",
-  });
+  // 1C'da filtrli so'rov 500 qaytardi (26.11 sinov) — ro'yxatni olib, shu yerda tanlaymiz
+  const all = await c.list("Catalog_Номенклатура", { $select: "Ref_Key,Description,DeletionMark,IsFolder" });
+  const found = all.filter((x: any) => !x.DeletionMark && !x.IsFolder && x.Description === UK.chassisNomenclature);
   if (found[0]?.Ref_Key) return found[0].Ref_Key;
   // Ma'lumotnoma elementi (hujjat emas). Buxgalter keyin to'ldiradi/o'zgartiradi.
   const made = await c.create("Catalog_Номенклатура", {
@@ -107,9 +108,10 @@ Deno.serve(async (req) => {
     const c = onec();
     // Takrorlanmasin: 1C'da shu qabul akti raqami bilan qoralama bormi
     if (ch.intake_act_no) {
-      const dup = await c.list("Document_ПриходнаяНакладная", {
-        $filter: `НомерВходящегоДокумента eq ${odataStr(ch.intake_act_no)} and DeletionMark eq false`, $select: "Ref_Key,Number", $top: "1",
+      const docs = await c.list("Document_ПриходнаяНакладная", {
+        $select: "Ref_Key,Number,НомерВходящегоДокумента,DeletionMark", $orderby: "Date desc", $top: "500",
       });
+      const dup = docs.filter((d: any) => !d.DeletionMark && d.НомерВходящегоДокумента === ch.intake_act_no);
       if (dup[0]?.Ref_Key) {
         await db.from("chassis").update({ onec_intake_ref: dup[0].Ref_Key }).eq("id", ch.id);
         await log({ status: "ok", onec_ref: dup[0].Ref_Key, response: `1C'da allaqachon bor: ${dup[0].Number}` });
@@ -117,9 +119,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    const cps = await c.list("Catalog_Контрагенты", {
-      $filter: `ИНН eq ${odataStr(client.inn)} and DeletionMark eq false and IsFolder eq false`, $select: "Ref_Key,Description", $top: "5",
-    });
+    const allCps = await c.list("Catalog_Контрагенты", { $select: "Ref_Key,Description,ИНН,DeletionMark,IsFolder" });
+    const cps = allCps.filter((x: any) => !x.DeletionMark && !x.IsFolder && String(x.ИНН ?? "").trim() === client.inn);
     if (!cps.length) {
       await log({ status: "error", response: `1C'da STIR ${client.inn} bilan kontragent yo'q` });
       return json({ error: `1C:УК da STIR ${client.inn} («${client.name}») bilan kontragent yo'q. Buxgalter kontragentni qo'shsin, keyin qayta yuboring.` }, 422);
@@ -127,10 +128,9 @@ Deno.serve(async (req) => {
     const counterparty = cps[0].Ref_Key as string;
 
     const { data: specs } = await db.from("chassis_specs").select("contract_no").eq("client_id", client.id);
-    const contracts: OnecContract[] = await c.list("Catalog_ДоговорыКонтрагентов", {
-      $filter: `Owner eq cast(guid'${counterparty}', 'Catalog_Контрагенты')`,
-      $select: "Ref_Key,Description,НомерДоговора,ВидДоговора,DeletionMark,Недействителен,Организация_Key",
-    }).catch(() => []);
+    const contracts: OnecContract[] = (await c.list("Catalog_ДоговорыКонтрагентов", {
+      $select: "Ref_Key,Owner,Description,НомерДоговора,ВидДоговора,DeletionMark,Недействителен,Организация_Key",
+    }).catch(() => [])).filter((x: any) => x.Owner === counterparty);
     const contract = pickContract(contracts, (specs ?? []).map((s: any) => s.contract_no));
 
     const nomenclature = await findOrCreateNomenclature(c);
